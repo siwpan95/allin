@@ -1,0 +1,15 @@
+# ===== 系统 / 回收站 / 缓存（非用户内容） =====
+$RECYCLE.BIN/
+System Volume Information/
+Thumbs.db
+.mypy_cache/
+__pycache__/
+
+# ===== 凭证（明文含 gitee / deepseek 令牌，禁止上传远程） =====
+私人令牌.txt
+*.token
+*.key
+.env
+
+# ===== Windows 保留设备名文件（git 无法索引，跳过） =====
+/Life Reset Simulator/nul
