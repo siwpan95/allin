@@ -1,4 +1,4 @@
-# ===== 系统 / 回收站 / 缓存（非用户内容） =====
+﻿# ===== 系统 / 回收站 / 缓存（非用户内容） =====
 $RECYCLE.BIN/
 System Volume Information/
 Thumbs.db
@@ -13,3 +13,14 @@ __pycache__/
 
 # ===== Windows 保留设备名文件（git 无法索引，跳过） =====
 /Life Reset Simulator/nul
+
+# ===== 远程既有规则（Build/Release） =====
+bin-debug/
+bin-release/
+[Oo]bj/
+[Bb]in/
+.settings/
+*.swf
+*.air
+*.ipa
+*.apk

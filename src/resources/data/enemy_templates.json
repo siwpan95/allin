@@ -1,0 +1,11 @@
+{
+  "enemy_templates": [
+    {"name": "哥布林", "level": 1, "hp": 30, "damage": 5, "defense": 0, "exp": 10, "gold": 5, "loot_table": "normal", "race": "哥布林", "description": "弱小的哥布林，成群出现"},
+    {"name": "兽人", "level": 3, "hp": 60, "damage": 12, "defense": 3, "exp": 25, "gold": 12, "loot_table": "normal", "race": "兽人", "description": "凶猛的兽人战士"},
+    {"name": "暗影生物", "level": 5, "hp": 45, "damage": 18, "defense": 2, "exp": 35, "gold": 15, "loot_table": "magic", "race": "暗影", "description": "从暗影中出现的神秘生物"},
+    {"name": "巨魔", "level": 8, "hp": 120, "damage": 22, "defense": 8, "exp": 60, "gold": 25, "loot_table": "rare", "race": "巨魔", "description": "再生能力极强的巨魔"},
+    {"name": "龙裔士兵", "level": 12, "hp": 200, "damage": 35, "defense": 15, "exp": 100, "gold": 50, "loot_table": "epic", "race": "龙裔", "description": "装备精良的龙裔战士"},
+    {"name": "巨龙", "level": 20, "hp": 800, "damage": 80, "defense": 40, "exp": 500, "gold": 200, "loot_table": "legendary", "race": "龙族", "description": "远古巨龙，喷吐龙息"},
+    {"name": "黑暗领主", "level": 25, "hp": 1500, "damage": 120, "defense": 60, "exp": 1000, "gold": 500, "loot_table": "artifact", "race": "人类", "description": "堕落的黑暗领主"}
+  ]
+}
