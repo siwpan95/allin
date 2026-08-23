@@ -24,3 +24,6 @@ bin-release/
 *.air
 *.ipa
 *.apk
+# ===== 大体积下载缓存（本地保留，不进版本库，2026-08-23） =====
+/music/yasuobao/
+
