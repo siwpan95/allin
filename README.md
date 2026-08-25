@@ -23,10 +23,16 @@
 
 ## 核心项目速览
 
-- **alloy**（games/alloy）：统一游戏引擎——ECS + EventBus（emit/waterfall/serial）+ Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。测试 369 项。
+- **alloy**（games/alloy）：统一游戏引擎——ECS + EventBus（emit/waterfall/serial）+ Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。**J2 引擎整合完成（2026-08-25）**：media 子系统（media 域公式引擎 + 21 效果原语 + 4973 配方，自 pywallpaper 并入）+ ca 规则引擎（141 规则 8 族，自 cellular_automaton 并入）；bloodmusic 维持外部库（提取独立化）。测试 374 项（唯一失败 = 无头 Tk 基线）。
 - **private-radio-stations / video / audio/private-radio-stations-2.0**：Node.js + Cordis 插件式转播站（cordis.yml 插件注册表 + 启动装配审计 + invariants + schemastery）。
 - **crawl_hub**（crawlers/crawl_hub）：爬虫聚合启动器（聚合不融合、子进程隔离、配置审计 + JSONL 任务日志）。
 - **musickit**（music/musickit）：phonk 混音项目（真实采样 + 授权分级治理 + 本地混音引擎）。
+
+## 引擎整合声明（J2 · 2026-08-25）
+
+- 仓库内引擎类**只保留 alloy 一个综合引擎** + 外部库 bloodmusic。
+- pywallpaper（壁纸应用）与 cellular_automaton（CA 壁纸应用）的能力层已并入 alloy（media/ 与 media/ca/），应用侧保留内联副本（各自 engine.patch.yaml 记录），内容层（effects JSON/规则 JSON）不吞并。
+- 详见 docs/md/allin主工作区/引擎整合规划_2026-08-24.md 与《引擎能力清单_2026-08-25》。
 
 ## 治理文档
 
