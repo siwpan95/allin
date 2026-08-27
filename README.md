@@ -1,55 +1,42 @@
-# allin —— 个人全项目大仓库（G:\）
+# allin —— 个人全项目大仓库（G:\ 盘整体）
 
-一个**单一 git 仓库**承载全部个人项目：游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等。
+一个**单一索引仓库**承载 G:\ 盘全部个人项目的目录索引与治理说明：游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等。
 
 ## 命名约定（重要）
 
-- **allin** = 本仓库（G:\ 盘整体）
-- **alloy** = 统一游戏引擎（原名 allin_engine，2026-08-23 改名；兼容 shim 见 G:\games\allin_engine）
-- **复制优于共享**：项目内联引擎/字体/资源副本是**有意为之**，不算冗余；缓存（.pyc/__pycache__/.venv/node_modules）不算重复。
+- **allin** = 本仓（索引四件套：README / .gitignore / LICENSE / 目录索引.txt），单独挂载于 `G:\allin`，不再摊在 G:\ 根。
+- **一仓一目录**（2026-08-27 重建仓 + 目录重构）：每个 gitee 仓库对应 `G:\repos\<仓名>` 一个目录，仓名 = 目录名。
+- **alloy** = 统一游戏引擎（原 allin_engine，2026-08-23 改名；仓库 siwpan/an-engine，目录 G:\repos\an-engine）。
+- **复制优于共享**：项目内联引擎/字体/资源副本是**有意为之**，不算冗余；缓存（__pycache__/.venv/node_modules/build/dist）不算重复。
 
 ## 顶层结构
 
 | 目录 | 内容 |
 |---|---|
-| games/ | 游戏项目 + 引擎本体 alloy/（6 个项目内联引擎副本） |
-| tools/ | video（Cordis 视频转播站）、private-radio-stations（Cordis monorepo 电台+视频）、audio/crawler/desktop/visual/dev/ai 六组工具 |
-| crawlers/ | crawl_hub 聚合启动器 + 爬虫项目 |
-| music/ | 音乐项目与资产（musickit、station、stem 库） |
-| media/ ai/ web/ | 媒体、AI、网页项目 |
-| docs/md/allin主工作区/ | 治理文档（规划、报告、MEMORY/SKILL 约定） |
+| allin/ | 本仓四件套（索引 + 治理说明） |
+| repos/ | 与 gitee siwpan 一一对应的 86+ 项目（一仓一目录，master） |
+| platform/ | allin-platform 集成平台（库/工坊/引擎视图 + registry） |
+| docs/ | 治理文档（规划、报告、MEMORY/SKILL 约定、端口分配表） |
+| local/ | 未发布/本地独有项目与历史归档（原 games/tools/ai/crawlers/media 中未上仓者） |
+| assets/ | 音乐资产（stems/转码素材/采样库，不入版本库） |
+| archive/ | 归档区（只进不出） |
 | notpython/ | 外部参考源码（deepseek-harness 等） |
-| archive/ _migration/ _backup/ | 归档/迁移区（只进不出） |
+| ai/ | 暂留：video_generator（本地服务运行中，未迁移） |
+| Temp/ tmp/ job/ logs/ _job/ | 临时与任务区 |
 
 ## 核心项目速览
 
-- **alloy**（games/alloy）：统一游戏引擎——ECS + EventBus（emit/waterfall/serial）+ Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。**J2 引擎整合完成（2026-08-25）**：media 子系统（media 域公式引擎 + 21 效果原语 + 4973 配方，自 pywallpaper 并入）+ ca 规则引擎（141 规则 8 族，自 cellular_automaton 并入）；bloodmusic 维持外部库（提取独立化）。测试 374 项（唯一失败 = 无头 Tk 基线）。
-- **private-radio-stations / video / audio/private-radio-stations-2.0**：Node.js + Cordis 插件式转播站（cordis.yml 插件注册表 + 启动装配审计 + invariants + schemastery）。
-- **crawl_hub**（crawlers/crawl_hub）：爬虫聚合启动器（聚合不融合、子进程隔离、配置审计 + JSONL 任务日志）。
-- **musickit**（music/musickit）：phonk 混音项目（真实采样 + 授权分级治理 + 本地混音引擎）。
+- **alloy**（repos/an-engine）：统一游戏引擎——ECS + EventBus（emit/waterfall/serial）+ Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。**J2 引擎整合完成（2026-08-25）**：media 子系统（media 域公式引擎 + 21 效果原语 + 4973 配方，自 pywallpaper 并入）、ca 规则引擎（141 规则 8 族，自 cellular_automaton 并入）；bloodmusic 维持外部仓。测试 374 项。
+- **private-radio-stations**（repos/private-radio-stations）：Node.js + Cordis 插件式转播站（radio/video/portal 三簇；cordis.yml 插件注册表 + 启动装配审计 + invariants + schemastery）。
+- **crawl_hub**（repos/crawl-hub）：爬虫聚合启动器（聚合不融合、子进程隔离、配置审计 + JSONL 任务日志）。
+- **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理 + 本地混音引擎 + 框架安装包）。
+- **allin-platform**（platform/）：Steam 式全项目集成平台（库 + 创意工坊 + 引擎视图，聚合不融合；registry 项目清单 + ports 查表纪律）。
 
-## 引擎整合声明（J2 · 2026-08-25）
+## 发布面（gitee）
 
-- 仓库内引擎类**只保留 alloy 一个综合引擎** + 外部库 bloodmusic。
-- pywallpaper（壁纸应用）与 cellular_automaton（CA 壁纸应用）的能力层已并入 alloy（media/ 与 media/ca/），应用侧保留内联副本（各自 engine.patch.yaml 记录），内容层（effects JSON/规则 JSON）不吞并。
-- 详见 docs/md/allin主工作区/引擎整合规划_2026-08-24.md 与《引擎能力清单_2026-08-25》。
+- 全部仓库公开 + MIT（铁律 0）；一项目一仓，主分支 master，发行版 tag `<项目>-v<版本>`。
+- 2026-08-27 重建仓：集合仓退役改名 `*-legacy`（media/tools/game/ai-collection、music），45 个分支项目拆为独立仓，版本分支转 tag。详见 docs/md/allin主工作区/重建仓执行报告_2026-08-27.md。
 
 ## 治理文档
 
-规划与报告集中在 docs/md/allin主工作区/（引擎插件化三件事规划、其余项目插件化路线图、资产治理执行报告、每日日志、MEMORY 约定）。
-
-## 本远程仓库（gitee: siwpan/allin）
-
-体量超 gitee 限制，本仓库**只存索引三件套**，不含文件内容：
-
-- .gitignore —— 大仓库忽略规则（yasuobao 等大体积下载缓存本地保留、不进版本库）
-- 目录索引.txt —— 全仓库文件索引（路径+字节数，生成时间见头部）
-- README.md —— 本说明
-
-## 常用命令
-
-- 引擎测试：cd G:\games && python -m alloy.test.run_all
-- 引擎装配自省：python -m alloy dump-profile [--json]
-- 副本同步：python -m alloy sync <项目> --dry-run|--apply
-- 爬虫启动器审计：cd G:\crawlers\crawl_hub && python launcher.py --check
-- 电台/视频：cd G:\tools\private-radio-stations && npm run radio / npm run video
+规划与报告集中在 docs/md/allin主工作区/（引擎插件化规划、重建仓报告、资产治理报告、每日日志、MEMORY 约定）。
