@@ -13,15 +13,14 @@
 
 | 目录 | 内容 |
 |---|---|
-| allin/ | 本仓四件套（索引 + 治理说明） |
-| repos/ | 与 gitee siwpan 一一对应的 86+ 项目（一仓一目录，master） |
+| allin/ | 本仓四件套（索引 + 治理说明 + 深度审核报告） |
+| repos/ | 与 gitee siwpan 一一对应的 84 个项目（一仓一目录，master；2026-08-27 深度审核后已全部挂接 git 远端） |
 | platform/ | allin-platform 集成平台（库/工坊/引擎视图 + registry） |
 | docs/ | 治理文档（规划、报告、MEMORY/SKILL 约定、端口分配表） |
 | local/ | 未发布/本地独有项目与历史归档（原 games/tools/ai/crawlers/media 中未上仓者） |
-| assets/ | 音乐资产（stems/转码素材/采样库，不入版本库） |
+| assets/ | 音乐资产与字体工具（stems/转码素材/采样库/字体下载工具，不入版本库） |
 | archive/ | 归档区（只进不出） |
-| notpython/ | 外部参考源码（deepseek-harness 等） |
-| ai/ | 暂留：video_generator（本地服务运行中，未迁移） |
+| notpython/ | 外部参考源码（deepseek-harness 等，来源与许可表见 notpython/来源与许可表.md） |
 | Temp/ tmp/ job/ logs/ _job/ | 临时与任务区 |
 
 ## 核心项目速览
