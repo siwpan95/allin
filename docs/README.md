@@ -70,7 +70,7 @@
 | `G:\repos\<项目>\README.md` | 107 个项目的门面文档 | 属于各仓，随仓公开；本枢纽只做汇总索引 |
 | `G:\platform\registry\projects\*.yaml` · `G:\platform\ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读） |
 | `G:\tools\gate\` | 可执行门禁：`scan_hardcoded.ps1`（死根路径门禁，含 `-SelfTest` 与基线棘轮）、`check_undefined_names.py`（AST 未定义名）、`audit/` 基线目录 | 工具不是文档，独立成区；用法见该目录 `README.md` |
-| `G:\allin\目录索引.txt` | 全盘目录/文件/体量快照（500 MB 级） | **时点快照：2026-08-28 15:12**（头部已写明）——只反映那一刻的现盘，之后的增删改名都不在其中（例：缺 `repos/zhuangtaiji/core/kernel`）。不手改、不逐次提交，需要一致时周期性整盘重生成（历史脚本见 `G:\logs\_gen_index_final.ps1` 等，需先适配） |
+| `G:\allin\目录索引.txt` | **项目目录文档化索引**（2026-09-24 形态换代）：**118 个项目 / 32.55 KB**，每项目一条 = 标题 + 首段摘要 + README 链接 + 体量。**以各项目自己的 README 为唯一事实源，不复制正文**。生成器 `G:\tools\build_dir_index.py`（`--apply` 落盘，带体量缓存）。**改项目请改它的 README，勿手改索引**。旧「全盘文件快照」形态（48.53 MB / 555,220 行）已归档 `G:\archive\目录索引-全盘快照-20260828\` |
 | `G:\workbuddy\` | 另一套 AI 工作区（WorkBuddy）的**活跃记忆**，含 `CONSOLIDATED_MEMORY.md` | 由该应用写入，**不搬移**（搬走会破坏其运行），本枢纽只登记位置 |
 | [`G:\allin\siwpan旧机配置汇总.html`](../siwpan旧机配置汇总.html) | **本机（旧机）配置汇总**：OS / 盘位容量 / 运行时 / 关键工具二进制 / Python 包可用性 / 与旧记忆的实测偏差（173 行单文件离线报告） | 在**仓根**而非枢纽内（枢纽只放 `.md/.txt/说明性 .yaml`）；作为《治理模式换机可迁移化方案》的**机器事实源**被引用，机器类事实只写这一份 |
 | `G:\archive\docs-nondoc-20260924\` | 从本枢纽迁出的非文档内容（审计产物、XJ380 SDK、GURPS 第三方规则文本）+ `MANIFEST.md` | 归档可逆，**永不入库**（含敏感串扫描产物与第三方版权内容） |
