@@ -27,6 +27,7 @@
 | archive/ | 归档区（只进不出；`docs-nondoc-20260924/` 为文档枢纽纯文档化时迁出的非文档内容，含 MANIFEST，永不入库） |
 | notpython/ | 外部参考源码（deepseek-harness 等；来源与许可表已汇总到 `docs/来源与许可表.md`） |
 | tools/ | 工作区门禁与工具（`G:\tools\gate\`：死根路径门禁 + AST 未定义名检查，见其 README） |
+| preset/ | **治理模式的载体**（2026-09-24 新增）：`preset/allin/` = DSH agent preset「工作区治理」的可重装副本（出厂 `cordis` 组装 + 治理段 27 行），使治理段不再只活在单机部署里。见 [`preset/allin/安装说明.md`](preset/allin/安装说明.md) |
 | Temp/ tmp/ job/ logs/ _job/ | 临时与任务区 |
 
 ## 核心项目速览
