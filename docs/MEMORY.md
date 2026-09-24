@@ -209,3 +209,24 @@
 
 43. **共享仓（尤其是多人/多会话在写的仓）禁止破坏性工作区操作，写前先同步（2026-09-24 沉淀，`G:\allin` 并发写入实证）**：同一时段有两条会话/进程在 `G:\allin` 提交并推送（提交图线性、无覆盖），而我在其中一次 `git status` 报「有改动」时跑了 `git checkout -- .`（事后核对无内容差异、无丢失，但**差点就是数据损失**）。**纪律**：① 在共享仓写之前先 `git fetch` + `git ls-remote` 看远端是否已被推进，提交后**推之前再看一次**，被拒就 `pull --rebase` 而不是强推；② **禁止** `git checkout -- .`、`git reset --hard`、`git clean -fd`、`push --force`——工作区「看起来脏」时先 `git diff --ignore-cr-at-eol --numstat` 判断是不是换行噪音，是就放着别动或只对**自己改的文件**做 checkout；③ 发现并发写入时，先对齐分工（谁改哪个文件/目录），必要时停下等对方提交完再动；④ 推完必须核对 `ls-remote` 与本地一致，并检查是否有别人的新提交被自己漏看（`git log --oneline HEAD..origin/BR`）。
 
+
+---
+
+## 新机（DESKTOP-8RSV60V）挂载事实 —— 旧工作区换硬件，非迁移（2026-09-24 实测）
+
+> **本节是本机（第二台物理机）的事实源。** 上面各节写于旧机 SIWPAN；**路径全部照旧成立**，因为外置盘已原样插到新机上。
+
+- **旧机的 F: / G: 是两块外置盘，已原样接到新机**（两块 WD Game Drive 3,726.0 GB，**NTFS**）：
+  - **`G:` 卷标 `allin`** = 项目盘：`repos`(**107 目录 / 107 含 .git**)、`allin`、`platform`、`tools`、`archive`、`assets`、`venvs`、`notpython`、`workbuddy`、`job`、`logs`、`local`、`tmp`、`Temp`、`web`、`_job`、`shurufa` —— **目录契约一项不缺**；
+  - **`F:` 卷标 `trash`** = 大依赖盘：`Python314`(3.14.7)、`node`、`PowerShell`、`mingw64`、`VS2022`、`ldyun`(ffmpeg)、`calibre`、`models`、`venvs`、`Godot-4.7.1`、`UE_5.8` …；
+  - **⇒ 所以「换机要复制 107 仓 / 1.2 TB」这个前提不成立** —— 数据从来没离开过这两块盘。
+- **新机硬件**：`i5-12600KF`(10C/16T, 3686 MHz) · 内存 **15.9 GB**（旧机 32 GB，此项倒退）· 内置 `C:` 465.8 GB **NTFS** · `D:` 7,451.9 GB **exFAT**（卷标 `save`，个人数据盘，**不是工作区**）。
+- **没能一起过来的**：旧机内置 `C:` —— 因此 `C:\Users\13122\.workbuddy`、`.agent-presets`、`.dsh` 都不在；旧机的会话/服务状态也随之不存在（不迁，重建）。
+- **⚠ exFAT（仅 D:）不支持硬链接与目录联接**（实测：`Hard links are not supported` / `Incorrect function`）。
+  后果：① 文件写入工具在 D: 上报 `EISDIR`（其落盘用硬链接）；② 目录联接（原型的 junction 类方案）在 D: 上不可用。
+  **C:/F:/G: 均为 NTFS，能力完整** —— 工作区与仓应留在 NTFS 卷上。
+- **本次纠错（代价：一轮重复建设）**：我曾误判「本机是从零重建、旧资产未迁移」，于是在 `D:\local` 建了重复的 `docs` 与 `tools` 仓。
+  已按「合并优于双仓并存」归并回权威副本：三处回写 → `G:\allin` 提交 `e51ba964`；
+  冗余副本整体归档 **`G:\archive\local-d-rebuild-20260924\`**（docs 69 / tools 51 / allin 310 文件，逐项校验一致，**零删除**）。
+- **教训**：**盘符枚举不要只看 `DriveType=3`** —— 外置 NTFS 盘同样报 `DriveType=3`，但会因筛选条件被漏掉；
+  枚举卷一律用 `Get-Volume` / `Win32_DiskDrive` 全量对照，**先确认"盘到底有几块"再下"缺什么"的结论**。
