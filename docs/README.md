@@ -63,7 +63,7 @@
 | `G:\repos\<项目>\README.md` | 107 个项目的门面文档 | 属于各仓，随仓公开；本枢纽只做汇总索引 |
 | `G:\platform\registry\projects\*.yaml` · `G:\platform\ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读） |
 | `G:\tools\gate\` | 可执行门禁：`scan_hardcoded.ps1`（死根路径门禁，含 `-SelfTest` 与基线棘轮）、`check_undefined_names.py`（AST 未定义名）、`audit/` 基线目录 | 工具不是文档，独立成区；用法见该目录 `README.md` |
-| `G:\allin\目录索引.txt` | 全盘目录/文件/体量快照（500 MB 级） | 周期性重生成，不逐次提交 |
+| `G:\allin\目录索引.txt` | 全盘目录/文件/体量快照（500 MB 级） | **时点快照：2026-08-28 15:12**（头部已写明）——只反映那一刻的现盘，之后的增删改名都不在其中（例：缺 `repos/zhuangtaiji/core/kernel`）。不手改、不逐次提交，需要一致时周期性整盘重生成（历史脚本见 `G:\logs\_gen_index_final.ps1` 等，需先适配） |
 | `G:\workbuddy\` | 另一套 AI 工作区（WorkBuddy）的**活跃记忆**，含 `CONSOLIDATED_MEMORY.md` | 由该应用写入，**不搬移**（搬走会破坏其运行），本枢纽只登记位置 |
 | `G:\archive\docs-nondoc-20260924\` | 从本枢纽迁出的非文档内容（审计产物、XJ380 SDK、GURPS 第三方规则文本）+ `MANIFEST.md` | 归档可逆，**永不入库**（含敏感串扫描产物与第三方版权内容） |
 
