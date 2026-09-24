@@ -1,6 +1,6 @@
 # ports.yaml —— 端口分配表的机器可读版（平台/工具消费；人类可读版仍为 端口分配表.md）
 # 规则：新服务先查本表再选端口；占用 = 同时改本文件与 端口分配表.md；禁止口头约定。
-# 生成/更新：2026-08-25（平台立项 P0）；2026-08-27 目录重构更新 owner 路径 + 三仓编排 harness（probe 只读既有 9000，无新增端口）
+# 生成/更新：2026-08-25（平台立项 P0）；2026-08-27 目录重构更新 owner 路径 + 三仓编排 harness（probe 只读既有 9000，无新增端口）；2026-09-24 登记 zhuangtaiji 8011
 
 segments:
   - range: 8000-8099
@@ -25,6 +25,12 @@ ports:
     service: mixer-stream
     owner: G:\repos\musickit\remix\tools
     entry: mixer_stream.py
+    status: active
+  - port: 8011
+    service: zhuangtaiji-webui
+    owner: G:\repos\zhuangtaiji\web\server.py
+    paths: [/, /api/orchestrations, /api/orchestration/*]
+    note: 多范式决策引擎的 Web 编排编辑器；按需启动（默认端口，可显式传参覆盖）
     status: active
   - port: 8080
     service: audio-separator-web
@@ -71,3 +77,5 @@ change_log:
     change: 目录重构后更新 owner 路径（repos/platform）
   - date: 2026-08-27
     change: portal 9000 退役——门户改为 DSH 插件版（临时端口，释放固定端口占用）
+  - date: 2026-09-24
+    change: 登记 zhuangtaiji Web 编排编辑器 8011——其文档原默认 8000 与已 active 的 radio-panel 冲突；默认端口改 8011，README/README.en/server.py 已同步
