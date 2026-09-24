@@ -43,6 +43,30 @@
 - **不以"省事"为由跳过**：一次错误的公开推送是永久历史，改不回来。
 - **反模式**：为了让"无人值守也能推"而层层加固检查 —— 方向错了；不需要的动作，加多少检查都不需要。
 - **总口径在《协作工作流程约定_2026-08-28.md》§零「协作模式两态」**：在场 / 自主的权限矩阵、自主模式三条纪律（选推荐项并记账 / 攒着不推 / 不可逆不做）、升级触发。**本条是它在推送上的具体化。**
+
+## 铁律 4：建仓三件套（README + LICENSE + .gitignore）（2026-09-24 用户拍板）
+
+**强烈建议所有 git 仓库都带这三个文件**，建仓时一次备齐，不用事后补：
+
+| 文件 | 作用 | 缺了会怎样 |
+| --- | --- | --- |
+| `README.md` | 门面：是什么、怎么跑、依赖、门禁怎么跑 | 违反铁律 1（README 优先）；接手者只能靠结构扫描猜 |
+| `LICENSE` | 开源身份与授权边界 | 违反铁律 0；「公开」但无授权 = 法律上默认保留所有权利，别人不能用 |
+| `.gitignore` | 挡住生成物、依赖、本地产物、**凭据** | 生成物与 `node_modules` 混进库；**凭据泄露风险**（见「敏感信息检查」节） |
+
+- **实测覆盖率（2026-09-24，`G:\repos` 逐仓扫）**：**108 仓 = README 108/108 ✅、`.gitignore` 108/108 ✅、LICENSE 107/108**
+  —— 唯一缺口 **`cordis-text-game`（缺 LICENSE）**，待补。
+- **与铁律 0/1 的关系**：本条是它们的**可执行化** —— 铁律 0 说「公开 + MIT」，落到仓上就是「根 `LICENSE` 存在」；
+  铁律 1 说「先读 README」，落到仓上就是「`README` 存在且是最新的」。
+- **`cordis-text-game` 另有两处缺口（同批发现，2026-09-24）**：① **无 `remote`**（尚未推 gitee）；② **未登记进 platform 注册表**
+  （`G:\platform\registry\projects\` 无对应 yaml）。它是 2026-09-04 建的 Cordis「一切皆插件」文字冒险引擎示例，
+  2 个提交（`906a34e` → `6ae1c7a`）；顶层含 `dist/` 与 `node_modules/`（已确认被 `.gitignore` 挡住，未入库）。
+- **仓数订正**：`G:\repos` 现为 **108 仓 / 108 含 `.git`**；本文件另三处（许可分布、全域同步、新机挂载事实）原写 **107**，
+  均因 `cordis-text-game` 当时未被计入 —— 以本节为准。
+- **引用消歧（重要）**：本文件有**两套「铁律」编号**，引用时必须带限定词 ——
+  **`铁律 N`（0–4）= 本节的命名铁律**；**`调试铁律 N`（1–45）= `## 调试铁律` 标题下的编号列表**。
+  裸写「铁律 4」在本文件里同时匹配两者，**禁止**这样引用。
+
 ## 治理准则：创新三原则（2026-08-27 深度审核固化，铁律级）
 
 > **创新 = 借鉴 + 调整 + 同步 + 记账；「推倒重来」只允许发生在结构层，资产与历史永远保全。**
@@ -216,9 +240,9 @@
 
 42. **「把文件搬到别处」是一类会静默弄坏门禁与链接的结构变更；副本仓的门禁必须单独跑（2026-09-23 沉淀，players-unified/pluginplayer 副本实证）**：该副本导入时（`2f146bb`）把 `AGENTS.md`/`CLAUDE.md`/`DEPLOY.md`/`ENHANCEMENT_PLAN.md`/`THIRD_PARTY_NOTICES.md` 放进了 `docs/`，引用却没跟着改，于是**三条门禁长期红**（`third-party-notices` 永远「文件不存在」、`doc-links` 17 处断链、`docs-index` 缺 2 篇），而**源仓 `pluginplayer` 同三条全绿**——只看源仓会得出「一切正常」的错误结论。**纪律**：① 搬动/移动文件后必须同时核三处：**相对链接**（含 README 内链）、**生成器与门禁里写死的路径**（本例 `gen_third_party_notices.py` 的 `OUT=ROOT/…` 与 `verify.py`）、**索引文件**（如 `docs/README.md`）；② **副本/镜像仓要单独跑该仓自己的门禁**，源仓绿 ≠ 副本绿；③ 判断「是不是我改坏的」用 `git status`（本次只有 5 条 `R100` 改名，门禁输入没变 → 失败必属既有漂移）。**同族发现**：门禁若把环境依赖（如 `host-js/node_modules`）当作事实来源，**没装依赖的检出会判红**——这类红先做环境补齐（`npm install`）再看，别急着改文档或改代码。
 
-> **许可分布事实（2026-09-24 全域收尾逐仓核对）**：`G:\repos` 107 仓 = **106 个 MIT + 1 个 GPL**，唯一的非 MIT 是 **`pluginplayer`（`GPL-3.0-or-later`）**——它随包分发 gyan.dev 的 FFmpeg `full_build-shared`（该构建是 **GPL v3**）与 MinGW-w64 GCC 运行时，**属于必须随上游走 GPL、不能改 MIT** 的情形；仓库自己已把理由与合规义务写清（README「开源与合规」L216-233 + `THIRD_PARTY_NOTICES.md` 逐条证据与复核命令）。gitee API 复核两仓均 `public=true`（pluginplayer license=GPL-3.0 默认分支 main；players-unified license=MIT 默认分支 master）。**据此读铁律 0 的正确姿势**：默认「公开 + MIT」；但当发布物**链接/随包 GPL/AGPL 上游**时，许可必须随上游（改 MIT 反而是违规）。此处只记事实，未改铁律 0 文本与预设 persona（用户 2026-09-24 选择「只记事实」）。
+> **许可分布事实（2026-09-24 全域收尾逐仓核对）**：`G:\repos` **108 仓**（原记 107，见铁律 4 的仓数订正）= **107 个 MIT + 1 个 GPL**，唯一的非 MIT 是 **`pluginplayer`（`GPL-3.0-or-later`）**——它随包分发 gyan.dev 的 FFmpeg `full_build-shared`（该构建是 **GPL v3**）与 MinGW-w64 GCC 运行时，**属于必须随上游走 GPL、不能改 MIT** 的情形；仓库自己已把理由与合规义务写清（README「开源与合规」L216-233 + `THIRD_PARTY_NOTICES.md` 逐条证据与复核命令）。gitee API 复核两仓均 `public=true`（pluginplayer license=GPL-3.0 默认分支 main；players-unified license=MIT 默认分支 master）。**据此读铁律 0 的正确姿势**：默认「公开 + MIT」；但当发布物**链接/随包 GPL/AGPL 上游**时，许可必须随上游（改 MIT 反而是违规）。此处只记事实，未改铁律 0 文本与预设 persona（用户 2026-09-24 选择「只记事实」）。
 
-> **全域同步事实（2026-09-24 收尾扫描 116 仓）**：`G:\repos` 107 仓 + `G:\allin`、`G:\platform`、`G:\local\{markdown,novel-run}`、`G:\archive\`4 个归档、`G:\tmp\santi-remote` = **116 个仓，0 未提交、0 未推送**。扫描一度报 `calculator`（2 条）、`mathematical-formula-renderer`（1 条）「未推送」，`git ls-remote` 核实**远端 HEAD 与本地完全一致**——是本地 remote-tracking ref 陈旧（该仓此前用 URL 直推、后续没 fetch）导致的**假阳性**；`git fetch origin` 后差异归零。**教训**：判「未推送」只信 `git ls-remote`（对远端实际值），`origin/BR..BR` 只能当线索——同一坑已在 MEMORY 里出现过一次（推送凭据/ref 陈旧同族）。
+> **全域同步事实（2026-09-24 收尾扫描 116 仓）**：`G:\repos` **108 仓**（原记 107，见铁律 4 的仓数订正）+ `G:\allin`、`G:\platform`、`G:\local\{markdown,novel-run}`、`G:\archive\`4 个归档、`G:\tmp\santi-remote` = **116 个仓，0 未提交、0 未推送**。扫描一度报 `calculator`（2 条）、`mathematical-formula-renderer`（1 条）「未推送」，`git ls-remote` 核实**远端 HEAD 与本地完全一致**——是本地 remote-tracking ref 陈旧（该仓此前用 URL 直推、后续没 fetch）导致的**假阳性**；`git fetch origin` 后差异归零。**教训**：判「未推送」只信 `git ls-remote`（对远端实际值），`origin/BR..BR` 只能当线索——同一坑已在 MEMORY 里出现过一次（推送凭据/ref 陈旧同族）。
 
 43. **批量改写路径这类字符串时，Python 非 raw 字符串里的 `\a`/`\b`/`\f`/`\t`/`\v` 会被解释成控制字符（2026-09-24 沉淀，crawl-hub 实证）**：文档枢纽从 `G:\docs` 迁到 `G:\allin\docs` 后，`crawler_registry.py` 里那句提示文案 `f"...先查 G:\allin\docs\md\allin主工作区\端口分配表.md"` 运行时打印成 `G:\x07llin\docs\md\x07llin主工作区\端口分配表.md`——`\a` 变成 **BEL(0x07)**（旧路径 `G:\docs\md\allin主工作区\...` 就已经中过一次，改名只是又叠加一个）；`\d`/`\m` 是非法转义，只发 `SyntaxWarning`（**不报错，最容易被忽略**）。**纪律**：① 路径字面量一律用 **raw 字符串**（`r"..."` / `rf"..."`）或双反斜杠——Windows 路径里 `\a`（`\allin`/`\assets`）、`\t`（`\tmp`/`\tools`）、`\n`（`\new`）、`\b`（`\bin`）、`\v`、`\f` 全是高危；② 改写后必须**真实运行一次看输出**（`repr()` 或触发该分支），只看源码字符串看不出来；③ 验证时用 `python -W error::SyntaxWarning -m py_compile` 把非法转义升级成错误，能顺带抓出 `\d` 这类隐患。**同族**：PowerShell 单/双引号对 `\` 语义不同、JS 模板串里 `\` 仍需转义——跨语言批量改路径要逐语言确认转义规则。**第二次实证（同日，audio-generation）**：我在 **docstring** 里写了「与 G:\repos\zhuangtaiji 的 web/server.py 保持同一口径」，`\z` 立即被判非法转义；默认 `py_compile` 只发警告、代码照跑，是 `-W error::SyntaxWarning` 把它拦下的——**文档字符串同样属于字符串字面量，别忘了它**。
 
@@ -240,9 +264,9 @@
 > **本节是本机（第二台物理机）的事实源。** 上面各节写于旧机 SIWPAN；**路径全部照旧成立**，因为外置盘已原样插到新机上。
 
 - **旧机的 F: / G: 是两块外置盘，已原样接到新机**（两块 WD Game Drive 3,726.0 GB，**NTFS**）：
-  - **`G:` 卷标 `allin`** = 项目盘：`repos`(**107 目录 / 107 含 .git**)、`allin`、`platform`、`tools`、`archive`、`assets`、`venvs`、`notpython`、`workbuddy`、`job`、`logs`、`local`、`tmp`、`Temp`、`web`、`_job`、`shurufa` —— **目录契约一项不缺**；
+  - **`G:` 卷标 `allin`** = 项目盘：`repos`(**108 目录 / 108 含 .git**；原记 107，见铁律 4 的仓数订正)、`allin`、`platform`、`tools`、`archive`、`assets`、`venvs`、`notpython`、`workbuddy`、`job`、`logs`、`local`、`tmp`、`Temp`、`web`、`_job`、`shurufa` —— **目录契约一项不缺**；
   - **`F:` 卷标 `trash`** = 大依赖盘：`Python314`(3.14.7)、`node`、`PowerShell`、`mingw64`、`VS2022`、`ldyun`(ffmpeg)、`calibre`、`models`、`venvs`、`Godot-4.7.1`、`UE_5.8` …；
-  - **⇒ 所以「换机要复制 107 仓 / 1.2 TB」这个前提不成立** —— 数据从来没离开过这两块盘。
+  - **⇒ 所以「换机要复制 108 仓 / 1.2 TB」这个前提不成立** —— 数据从来没离开过这两块盘。
 - **新机硬件**：`i5-12600KF`(10C/16T, 3686 MHz) · 内存 **15.9 GB**（旧机 32 GB，此项倒退）· 内置 `C:` 465.8 GB **NTFS** · `D:` 7,451.9 GB **exFAT**（卷标 `save`，个人数据盘，**不是工作区**）。
 - **没能一起过来的**：旧机内置 `C:` —— 因此 `C:\Users\13122\.workbuddy`、`.agent-presets`、`.dsh` 都不在；旧机的会话/服务状态也随之不存在（不迁，重建）。
 - **⚠ exFAT（仅 D:）不支持硬链接与目录联接**（实测：`Hard links are not supported` / `Incorrect function`）。
