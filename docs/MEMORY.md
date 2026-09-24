@@ -54,13 +54,27 @@
 | `LICENSE` | 开源身份与授权边界 | 违反铁律 0；「公开」但无授权 = 法律上默认保留所有权利，别人不能用 |
 | `.gitignore` | 挡住生成物、依赖、本地产物、**凭据** | 生成物与 `node_modules` 混进库；**凭据泄露风险**（见「敏感信息检查」节） |
 
-- **实测覆盖率（2026-09-24，`G:\repos` 逐仓扫）**：**108 仓 = README 108/108 ✅、`.gitignore` 108/108 ✅、LICENSE 107/108**
-  —— 唯一缺口 **`cordis-text-game`（缺 LICENSE）**，待补。
+- **实测覆盖率（2026-09-24，`G:\repos` 逐仓扫）**：**108 仓 = README 108/108 ✅、`.gitignore` 108/108 ✅、LICENSE 108/108 ✅**
+  —— 原唯一缺口 **`cordis-text-game`（缺 LICENSE）已于同日补齐**（见下）。
 - **与铁律 0/1 的关系**：本条是它们的**可执行化** —— 铁律 0 说「公开 + MIT」，落到仓上就是「根 `LICENSE` 存在」；
   铁律 1 说「先读 README」，落到仓上就是「`README` 存在且是最新的」。
-- **`cordis-text-game` 另有两处缺口（同批发现，2026-09-24）**：① **无 `remote`**（尚未推 gitee）；② **未登记进 platform 注册表**
-  （`G:\platform\registry\projects\` 无对应 yaml）。它是 2026-09-04 建的 Cordis「一切皆插件」文字冒险引擎示例，
-  2 个提交（`906a34e` → `6ae1c7a`）；顶层含 `dist/` 与 `node_modules/`（已确认被 `.gitignore` 挡住，未入库）。
+- **`cordis-text-game` 三处缺口已于 2026-09-24 全部闭合**（发现 → 补齐 → 建仓 → 推送）：
+
+  | 缺口 | 处置 |
+  | --- | --- |
+  | 缺 `LICENSE` | ✅ 补 MIT（正文照抄 `dict-scene-engine` 模板，仅版权行不同，逐字符核对通过）；`package.json` 同步补 `"license": "MIT"` |
+  | `package.json` 的 `private: true` | ✅ **删除** —— 它是 npm「禁止发布」标记，与公开项目语义冲突；现有 5 个 Node 仓均无该字段 |
+  | 无 `remote` | ✅ 建仓 `siwpan/cordis-text-game`（公开 + MIT）并推送，`ls-remote` 核实 IN_SYNC |
+  | 未登记 platform | ✅ 新增 `registry/projects/cordis-text-game.yaml`（`manual: true`、**不设 `port`**：它无常驻服务，`npm run web` 的 8080 是临时静态服务且该端口已登记给 audio-separator） |
+
+  建仓后验证：**匿名克隆** 33 文件 / 0.092 MB，三件套齐备，`dist/` 与 `node_modules/` 均未入库。
+- **建仓事故与纪律（2026-09-24，必读）**：用 Gitee API 建仓时**请求体明确写了 `private: false`，但响应仍是 `private: true`** ——
+  即**该字段被静默忽略，仓被建成私有**（违反铁律 0）。处置：`PATCH /repos/{owner}/{repo}` 显式改回公开
+  （**坑：Gitee 的 PATCH 要求 body 里必须带 `name`，否则报 `name is missing` 400**）。
+  **纪律**：① 建仓后**不能只看创建响应**，必须用**匿名视角**复验（`Invoke-WebRequest https://gitee.com/<owner>/<repo>` 应 200；
+  `git ls-remote` 匿名应 exit 0；`GET /repos` 看 `private`/`public` 两个字段）；② `license_template: MIT` **会**让 Gitee
+  自动生成一个 `Initial commit`（含 LICENSE），因此建仓后远端非空，首次推送会遇到 unrelated histories ——
+  用 `git merge --allow-unrelated-histories` 而非 `force push`（后者会抹掉远端提交）。
 - **仓数订正**：`G:\repos` 现为 **108 仓 / 108 含 `.git`**；本文件另三处（许可分布、全域同步、新机挂载事实）原写 **107**，
   均因 `cordis-text-game` 当时未被计入 —— 以本节为准。
 - **引用消歧（重要）**：本文件有**两套「铁律」编号**，引用时必须带限定词 ——
