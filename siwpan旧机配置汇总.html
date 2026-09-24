@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本机配置汇总 · SIWPAN</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1f2329; --sub:#5a6472;
+    --line:#e5e8ee; --accent:#2f6fed; --warn:#d93636; --ok:#1a9d54;
+    --warnbg:#fff1f0; --okbg:#eafaf0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.55;padding:28px 16px;}
+  .wrap{max-width:960px;margin:0 auto;}
+  h1{font-size:24px;margin:0 0 4px;}
+  .meta{color:var(--sub);font-size:13px;margin-bottom:22px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:18px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .card h2{font-size:16px;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+  .card h2::before{content:"";width:4px;height:16px;background:var(--accent);border-radius:2px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);}
+  th{color:var(--sub);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  td.k{color:var(--sub);width:38%;}
+  code{background:#eef1f6;padding:1px 6px;border-radius:5px;font-family:"Cascadia Code",Consolas,monospace;font-size:12.5px;}
+  .bar{height:9px;border-radius:5px;background:#eef1f6;overflow:hidden;min-width:120px;}
+  .bar>i{display:block;height:100%;border-radius:5px;}
+  .pct{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--sub);width:64px;text-align:right;}
+  .tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:20px;vertical-align:middle;}
+  .tag.ok{background:var(--okbg);color:var(--ok);}
+  .tag.warn{background:var(--warnbg);color:var(--warn);}
+  .tag.off{background:#eef1f6;color:var(--sub);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 26px;}
+  @media(max-width:640px){.grid{grid-template-columns:1fr;}.card{padding:14px;}}
+  .note{border-left:3px solid var(--warn);background:var(--warnbg);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-top:6px;}
+  .oknote{border-left:3px solid var(--ok);background:var(--okbg);}
+  ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;}
+  li{margin:3px 0;}
+  footer{color:var(--sub);font-size:12px;text-align:center;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>本机配置汇总</h1>
+  <div class="meta">主机名 SIWPAN · 生成于 2026-09-24 11:57 (GMT+8) · 全部数据为本机实测，非记忆推断</div>
+
+  <div class="card">
+    <h2>系统概览</h2>
+    <table>
+      <tr><td class="k">操作系统</td><td>Microsoft Windows 11 专业版 · Build 26100</td></tr>
+      <tr><td class="k">系统类型</td><td>x64-based PC（独立工作站）</td></tr>
+      <tr><td class="k">初始安装</td><td>2026/7/13</td></tr>
+      <tr><td class="k">本次启动</td><td>2026/9/23 10:08:29</td></tr>
+      <tr><td class="k">处理器</td><td>Intel64 Family 6 Model 158 Stepping 10 · 12 逻辑核 · ~2592 MHz</td></tr>
+      <tr><td class="k">物理内存</td><td>32,671 MB（≈32 GB）· 当前可用 18,043 MB</td></tr>
+      <tr><td class="k">系统区域</td><td>zh-CN（中文·中国）· 时区 UTC+08:00</td></tr>
+      <tr><td class="k">WorkBuddy</td><td>v5.6.2（zh-CN）· 配置目录 <code>C:\Users\13122\.workbuddy</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>磁盘分区</h2>
+    <table>
+      <thead><tr><th>盘符</th><th>总容量</th><th>已用</th><th>剩余</th><th>占用</th><th style="width:140px">使用率</th></tr></thead>
+      <tbody>
+        <tr><td class="k">C:（系统/沙箱根）</td><td>119 GB</td><td>90 GB</td><td>29 GB</td><td class="pct">76%</td>
+            <td><div class="bar"><i style="width:76%;background:var(--warn)"></i></div></td></tr>
+        <tr><td class="k">D:</td><td>406 GB</td><td>51 GB</td><td>355 GB</td><td class="pct">13%</td>
+            <td><div class="bar"><i style="width:13%;background:var(--accent)"></i></div></td></tr>
+        <tr><td class="k">E:</td><td>407 GB</td><td>5.1 GB</td><td>402 GB</td><td class="pct">2%</td>
+            <td><div class="bar"><i style="width:2%;background:var(--accent)"></i></div></td></tr>
+        <tr><td class="k">F:（大依赖盘）</td><td>3.7 TB</td><td>3.1 TB</td><td>629 GB</td><td class="pct">84%</td>
+            <td><div class="bar"><i style="width:84%;background:var(--warn)"></i></div></td></tr>
+        <tr><td class="k">G:（项目盘）</td><td>3.7 TB</td><td>1.4 TB</td><td>2.4 TB</td><td class="pct">37%</td>
+            <td><div class="bar"><i style="width:37%;background:var(--accent)"></i></div></td></tr>
+      </tbody>
+    </table>
+    <div class="note">⚠️ <b>C 盘 76% 占用、仅剩 29 GB</b>，印证长期规则「重工具/大依赖装 F 盘，不占 C 盘」。F 盘已用 3.1 TB（84%），新增大依赖前需先腾挪。</div>
+  </div>
+
+  <div class="card">
+    <h2>运行时环境</h2>
+    <table>
+      <thead><tr><th>运行时</th><th>实测版本</th><th>路径</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Python（本机主用）</td><td>3.14.7</td><td><code>F:\Python314</code></td><td>GUI/打包（含 Tk 9.0）/音频链</td></tr>
+        <tr><td class="k">Python（WorkBuddy 托管）</td><td>3.13.14</td><td><code>~\.workbuddy\binaries\python\versions\3.13.12</code></td><td>纯逻辑测试</td></tr>
+        <tr><td class="k">Node.js（托管）</td><td>v22.22.2</td><td><code>~\.workbuddy\binaries\node\versions\22.22.2-3</code></td><td>Cordis host 等</td></tr>
+        <tr><td class="k">Node.js（系统）</td><td>v26.7.0</td><td><code>F:\node</code></td><td>系统级</td></tr>
+        <tr><td class="k">Git</td><td>2.55.0.windows.3</td><td>PortableGit 1.2.0（WorkBuddy 附带）</td><td>版本控制</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Python 关键包 / 依赖可用性（F:\Python314）</h2>
+    <div class="grid">
+      <div>torch <span class="tag ok">✓ 2.14.0+cu126</span></div>
+      <div>tkinter / Tk <span class="tag ok">✓ 9.0</span></div>
+      <div>audioop-lts <span class="tag ok">✓ 0.2.2</span>（修复 pydub 缺失）</div>
+      <div>pydub <span class="tag ok">✓ 0.25.1</span></div>
+      <div>soundfile <span class="tag ok">✓ 0.14.0</span></div>
+      <div>numpy <span class="tag ok">✓ 2.5.3</span></div>
+      <div>scipy <span class="tag ok">✓ 1.18.0</span></div>
+      <div>pandas <span class="tag ok">✓ 3.0.5</span></div>
+      <div>customtkinter <span class="tag ok">✓ 6.0.0</span></div>
+      <div>imageio-ffmpeg <span class="tag ok">✓ 0.6.0</span></div>
+      <div>demucs <span class="tag off">✗ 未安装</span></div>
+      <div>Ollama <span class="tag off">✗ 未安装</span></div>
+    </div>
+    <div class="note">⚠️ <b>demucs 未安装</b>（<code>import demucs</code> 失败）——视频生成项目 P0-3「stem-based audio driving」依赖缺失，需 <code>pip install demucs</code> 并补 numpy/soundfile/torchaudio。<br>
+    ⚠️ <b>Ollama 当前未安装</b>：PATH 含 <code>AppData\Local\Programs\Ollama</code> 但该目录不存在，<code>ollama</code> 命令不可用（gguf 导出/本地推理链中断）。</div>
+  </div>
+
+  <div class="card">
+    <h2>工具链与关键二进制</h2>
+    <table>
+      <thead><tr><th>工具</th><th>状态/版本</th><th>真实路径</th></tr></thead>
+      <tbody>
+        <tr><td class="k">ffmpeg（真实二进制）</td><td><span class="tag ok">✓ 86 MB</span></td><td><code>F:\ldyun\ffmpeg.exe</code></td></tr>
+        <tr><td class="k">ffmpeg（Python 包装）</td><td><span class="tag ok">✓</span></td><td><code>F:\Python314\Scripts\ffmpeg.exe</code>（imageio-ffmpeg 静态体）</td></tr>
+        <tr><td class="k">Everything CLI（es.exe）</td><td><span class="tag ok">✓</span></td><td><code>G:\Everything-1.5.0.1418b.x64\es.exe</code>（另 /d/webcopier/bin/es.exe 副本）<br><span style="color:var(--sub)">注意：es.exe 不在 PATH，调用需写全路径</span></td></tr>
+        <tr><td class="k">pip 镜像</td><td><span class="tag ok">✓ 清华</span></td><td><code>https://pypi.tuna.tsinghua.edu.cn/simple</code>（timeout=60）</td></tr>
+        <tr><td class="k">PowerShell 7</td><td><span class="tag ok">✓</span></td><td><code>F:\PowerShell\7</code></td></tr>
+        <tr><td class="k">chocolatey</td><td><span class="tag ok">✓</span></td><td><code>C:\ProgramData\chocolatey\bin</code></td></tr>
+        <tr><td class="k">dotnet</td><td><span class="tag ok">✓</span></td><td><code>C:\Program Files\dotnet</code></td></tr>
+        <tr><td class="k">calibre</td><td><span class="tag ok">✓</span></td><td><code>F:\calibre</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>项目布局（G 盘）</h2>
+    <table>
+      <thead><tr><th>位置</th><th>数量</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="k"><code>G:\repos</code></td><td>107 个仓库</td><td>已推送/镜像项目区（Gitee 公开 + MIT）</td></tr>
+        <tr><td class="k"><code>G:\local</code></td><td>17 个项目</td><td>本地开发（尚未推送）</td></tr>
+        <tr><td class="k">其他根目录</td><td>—</td><td>allin（整仓根）、tools、venvs、notpython、platform、archive、workbuddy、job 等</td></tr>
+      </tbody>
+    </table>
+    <div class="oknote note">活跃核心：musickit / BloodMusic（音频·发布网易云）、an-engine（alloy 游戏引擎）、dict-scene-engine & players-unified（Cordis 文字冒险）、跑团模拟器、TRPG 规则书合集、胡适日记归档、NCM 转换器、Tkinter MD 阅读器、novel-down（免费章爬虫）。</div>
+  </div>
+
+  <div class="card">
+    <h2>WorkBuddy 技能</h2>
+    <table>
+      <thead><tr><th>范围</th><th>数量</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="k">用户级技能</td><td>34（含 1 迁移清单）</td><td><code>~\.workbuddy\skills</code></td></tr>
+        <tr><td class="k">本项目工作区技能</td><td>0</td><td>当前 workspace 无项目级技能</td></tr>
+      </tbody>
+    </table>
+    <div style="color:var(--sub);font-size:13px;margin-top:6px">代表技能：gitee-repo-and-release-flow、cordis-host-python-bridge、chinese-text-site-crawler、novel-site-rule-crawler、mingw-media-player-dev、windows-release-verification、repo-consistency-gates 等。</div>
+  </div>
+
+  <div class="card">
+    <h2>与历史 MEMORY 记录的偏差（实测为准）</h2>
+    <ul>
+      <li>托管 Python 实为 <b>3.13.14</b>（记忆记 3.13.12）；本机 Python 实为 <b>3.14.7</b>（记忆记 3.14.6）。</li>
+      <li>demucs 在记忆中用于 P0-3，但实测 <b>未安装</b>——可能随 2026-09-17 的 site-packages 清删事件丢失。</li>
+      <li>Ollama 记忆中配置可用，实测 <b>未安装</b>。</li>
+      <li>es.exe 记忆中「优先使用」，实测不在 PATH，需全路径调用。</li>
+      <li>C 盘快满规则仍成立：实测 76% 占用（29 GB 剩余）。</li>
+    </ul>
+  </div>
+
+  <footer>单文件离线报告 · 零三方依赖 · 数据来源：systeminfo / df / 运行时 --version / pip / 目录枚举（2026-09-24 实测）</footer>
+</div>
+</body>
+</html>
