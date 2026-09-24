@@ -68,13 +68,18 @@
   | 未登记 platform | ✅ 新增 `registry/projects/cordis-text-game.yaml`（`manual: true`、**不设 `port`**：它无常驻服务，`npm run web` 的 8080 是临时静态服务且该端口已登记给 audio-separator） |
 
   建仓后验证：**匿名克隆** 33 文件 / 0.092 MB，三件套齐备，`dist/` 与 `node_modules/` 均未入库。
-- **建仓事故与纪律（2026-09-24，必读）**：用 Gitee API 建仓时**请求体明确写了 `private: false`，但响应仍是 `private: true`** ——
-  即**该字段被静默忽略，仓被建成私有**（违反铁律 0）。处置：`PATCH /repos/{owner}/{repo}` 显式改回公开
-  （**坑：Gitee 的 PATCH 要求 body 里必须带 `name`，否则报 `name is missing` 400**）。
-  **纪律**：① 建仓后**不能只看创建响应**，必须用**匿名视角**复验（`Invoke-WebRequest https://gitee.com/<owner>/<repo>` 应 200；
-  `git ls-remote` 匿名应 exit 0；`GET /repos` 看 `private`/`public` 两个字段）；② `license_template: MIT` **会**让 Gitee
-  自动生成一个 `Initial commit`（含 LICENSE），因此建仓后远端非空，首次推送会遇到 unrelated histories ——
-  用 `git merge --allow-unrelated-histories` 而非 `force push`（后者会抹掉远端提交）。
+- **建仓流程与纪律（2026-09-24，Gitee API 实测）**：
+  **令牌建仓的结果必然私有，需手动转公开**（这是 Gitee 的既定行为 —— 建仓请求里写 `private: false` **不会生效**，
+  不是"字段被静默忽略"，也不是缺陷）。因此**建仓是两步**：
+  1. `POST /user/repos` 建仓（可带 `license_template: MIT` 一并设许可）；
+  2. `PATCH /repos/{owner}/{repo}` 显式转公开 —— **坑：PATCH 的 body 必须带 `name`，否则报 `name is missing` 400**。
+  **纪律**：建仓后**不能只看创建响应**，必须用**匿名视角**复验（`Invoke-WebRequest https://gitee.com/<owner>/<repo>` 应 200；
+  `git ls-remote` 匿名应 exit 0；`GET /repos` 看 `private`/`public` 两个字段）。
+  另一条：`license_template: MIT` **会**让 Gitee 自动生成一个 `Initial commit`（含 LICENSE），因此建仓后远端非空，
+  首次推送会遇到 unrelated histories —— 用 `git merge --allow-unrelated-histories` 而非 `force push`（后者会抹掉远端提交）。
+  > **我这次的判断失误（留档）**：观察到"请求写了 `private: false` 而响应是 `private: true`"，我**直接判定为 API 缺陷/事故**
+  > 并写进了本文档，**没有考虑"这是平台设计约定"这一可能**。用户指出后才纠正。**教训**：行为与预期不符时，
+  > 先问「这是不是该平台的既定语义」，再下"缺陷"结论。
 - **仓数订正**：`G:\repos` 现为 **108 仓 / 108 含 `.git`**；本文件另三处（许可分布、全域同步、新机挂载事实）原写 **107**，
   均因 `cordis-text-game` 当时未被计入 —— 以本节为准。
 - **引用消歧（重要）**：本文件有**两套「铁律」编号**，引用时必须带限定词 ——
