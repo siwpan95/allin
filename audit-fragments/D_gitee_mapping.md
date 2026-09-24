@@ -56,7 +56,7 @@
 
 来源目录：G:\repos、G:\platform、G:\allin、G:\local、G:\Temp\lic_km1787td、G:\Temp\tc3_fhj79sp6、G:\_job
 
-完整清单（type|路径|remote|分支|HEAD 前 8 位）已存 `G:\docs\audit-fragments\_local_repos.txt`。
+完整清单（type|路径|remote|分支|HEAD 前 8 位）已存 `G:\archive\docs-nondoc-20260924\audit-fragments\_local_repos.txt`。
 关键点：
 - G:\repos\particle\.venv312\...\taichi\assets\.git 为 **FILE 型**（vendored 产物，无 remote/HEAD），非真实仓库。
 - G:\repos\musickit 下嵌套 5 个无 remote 的备份/实验仓库（见 §6 悬空清单）。
@@ -254,4 +254,4 @@ music, mc-clone, backroom, photo, subtitle, renamer, audiotool, auto_clicker, pd
 - 但严格按「v1.0.0 类 tag」口径计 = **79**，与「81」差 2 —— 差在 station（v3.0.0）与 private-radio-stations（v4.0.0）两仓用了非 v1.0.0 版本号。
 - 未发布 5 仓（literary-legend/allin/test/calculator/mathematical-formula-renderer）与文档「剩余 5 个」完全吻合 ✅。
 
-（核验原始数据见 `G:\docs\audit-fragments\_verify_license_tags.txt`。）
+（核验原始数据见 `G:\archive\docs-nondoc-20260924\audit-fragments\_verify_license_tags.txt`。）

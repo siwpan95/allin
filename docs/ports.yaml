@@ -1,0 +1,73 @@
+# ports.yaml —— 端口分配表的机器可读版（平台/工具消费；人类可读版仍为 端口分配表.md）
+# 规则：新服务先查本表再选端口；占用 = 同时改本文件与 端口分配表.md；禁止口头约定。
+# 生成/更新：2026-08-25（平台立项 P0）；2026-08-27 目录重构更新 owner 路径 + 三仓编排 harness（probe 只读既有 9000，无新增端口）
+
+segments:
+  - range: 8000-8099
+    purpose: 用户面板/媒体服务
+    reserved: 8020-8099
+  - range: 8800-8999
+    purpose: 媒体子协议/本地代理
+    reserved: 8900-8999
+  - range: 9000-9099
+    purpose: 聚合门户/平台前台
+  - range: 9900-9999
+    purpose: 内部控制 API
+    reserved: 9900-9996
+
+ports:
+  - port: 8000
+    service: radio-panel
+    owner: G:\repos\private-radio-stations\apps\audio
+    paths: [/stream, /stream/64, /stream/320, /hls/*]
+    status: active
+  - port: 8010
+    service: mixer-stream
+    owner: G:\repos\musickit\remix\tools
+    entry: mixer_stream.py
+    status: active
+  - port: 8080
+    service: audio-separator-web
+    owner: G:\repos\audio-separator\web_server
+    note: --port 默认值，启动时需显式确认
+    status: active
+  - port: 8100
+    service: video-panel
+    owner: G:\repos\private-radio-stations\apps\video
+    status: active
+  - port: 8554
+    service: mediamtx-rtsp
+    owner: MediaMTX
+    status: active
+  - port: 8888
+    service: mediamtx-hls
+    owner: MediaMTX
+    status: active
+  - port: 8889
+    service: mediamtx-webrtc
+    owner: MediaMTX
+    status: active
+  - port: 8899
+    service: npm-mirror-proxy
+    owner: start-*.bat PROXY_PORT
+    note: 仅安装期
+    status: transient
+  - port: 9000
+    service: portal
+    owner: G:\platform\apps\portal（按需启动：start-platform.bat，默认 PORT=0 临时端口）
+    note: 2026-08-27 起不再常驻 9000——门户为独立网页应用按需启动（双击 start-platform.bat 自动打开浏览器，关闭即释放）；9000 仅作手动模式可选端口
+    status: retired
+  - port: 9997
+    service: mediamtx-api
+    owner: mediamtx
+    status: active
+
+change_log:
+  - date: 2026-08-24
+    change: 建表；登记门户 9000
+  - date: 2026-08-25
+    change: 机器可读版落地（平台立项 P0）；与 端口分配表.md 同步
+  - date: 2026-08-27
+    change: 目录重构后更新 owner 路径（repos/platform）
+  - date: 2026-08-27
+    change: portal 9000 退役——门户改为 DSH 插件版（临时端口，释放固定端口占用）
