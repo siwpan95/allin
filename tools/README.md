@@ -129,3 +129,37 @@ python watchdog.py --selfcheck
 
 > 开发中的 `G:\tools\gate\` 是同一批脚本的工作副本；**本目录（随仓分发）是给外部使用者的一份**。
 > 两份内容一致，修改时需同步。
+
+
+---
+
+## 新建仓收尾清单（2026-09-25 沉淀）
+
+> 来源：`docs/MEMORY.md` 调试铁律 52 —— 用一次性 URL 推送时踩到「凭据写进
+> `branch.<名>.remote`」这一最难发现的残留。建仓/推送后的收尾**逐项过**：
+
+```powershell
+$repo = 'G:\repos\<仓名>'
+
+# ① 凭据残留：必须扫 config **全文**，不能只看 remote 段
+#    （`git remote -v` 只显示 remote.origin.url，看不见 branch.*.remote）
+Select-String -Path "$repo\.git\config" -Pattern 'https://[^/\s]+:[0-9a-zA-Z]{20,}@'
+# 命中就修（两条都要改）：
+#   git remote set-url origin "https://gitee.com/<owner>/<repo>.git"
+#   git config --file "$repo\.git\config" branch.<branch>.remote origin
+
+# ② 远端 ref 与本地 HEAD 逐字符相等（最强证据）
+git -C $repo rev-parse HEAD
+git -C $repo ls-remote origin "refs/heads/$(git -C $repo rev-parse --abbrev-ref HEAD)"
+
+# ③ 新文件**字节级**在远端（比 blob sha，不比工作树大小 —— autocrlf 会让它不等）
+git -C $repo rev-parse "HEAD:<path>"
+git -C $repo cat-file -s <上面的 sha>
+# 对照匿名 API：https://gitee.com/api/v5/repos/<owner>/<repo>/contents/<path>?ref=<branch>
+
+# ④ 工作区干净
+git -C $repo status --short
+```
+
+**用一次性 URL 推送时不要加 `-u`**；若已加，务必执行 ① 的第二条修正。
+**`git config` 与文件读取一律用绝对路径** —— 相对路径会静默作用到会话 cwd（本机实测踩过）。

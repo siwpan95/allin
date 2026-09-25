@@ -415,3 +415,24 @@
       ```
     - **仍待处理**：`F:` **Dirty + Scan Needed** → `chkdsk F: /scan`（只读）；`D:` **Dirty + Full Repair Needed**（**exFAT 无日志，非正常拔插极易损坏**）→ `chkdsk D: /f`；3 个 `G:\repos\{novel,novel-down,ncmturnmp3}\.git-damaged` 损坏空壳 `rmdir` 也删不掉，需 `chkdsk /f`。以上**均需管理员**。
     - **教训**：外置盘上的 git 仓，在盘出现 IO 重试期间**不要做大批量写入**（本次 4 个仓就是在写入窗口内被改坏的）；**仓的权威副本必须在远端**，本地损坏才可无损恢复（本次 4 仓全部由重克隆恢复，工作树文件未丢）。
+
+52. **`git push -u <带令牌的 URL>` 会把凭据写进 `.git/config` 的 `branch.<名>.remote`——最难发现的一处凭据残留（2026-09-25 实测）**：
+    - **现象**：用一次性 URL 推送（`git push -u "https://user:<TOKEN>@gitee.com/..." main:main`）后，`remote.origin.url` 是干净的（因为没有 `set-url`），但 `.git/config` **仍然含令牌**。
+    - **藏身处**：不在 `[remote "origin"] url`，而在 **`[branch "main"] remote`** —— `-u` 把**带凭据的那个 URL** 直接记成了分支的上游：
+      ```ini
+      [remote "origin"]
+          url = https://gitee.com/siwpan/<repo>.git      # 干净
+      [branch "main"]
+          remote = https://siwpan:<TOKEN>@gitee.com/...  # ← 令牌在这
+      ```
+    - **为什么难查**：`git remote -v` 只显示 `remote.origin.url`（干净的），**看不见 branch 段**；只看 remote 就会误判"无残留"。本次即因此先误报了一次"已清理"。
+    - **正确排查与处置**：
+      ```powershell
+      # 排查：直接扫 config 全文，别只扫 remote 段
+      Select-String -Path .git\config -Pattern 'https://[^/\s]+:[0-9a-zA-Z]{20,}@'
+      # 处置
+      git remote set-url origin "https://gitee.com/<owner>/<repo>.git"
+      git config --file .git/config branch.<branch>.remote origin   # ← 关键这一条
+      ```
+    - **连带坑**：`git config` / `[IO.File]::ReadAllBytes` 用**相对路径**时会**静默作用到会话 cwd**（本次 PowerShell 里 cwd 仍是 `D:\local`，导致"改了却没生效"、读数也读错文件）。⇒ **一律用绝对路径**，或用 `git config --file <绝对路径>`。
+    - **纪律**：① 用一次性 URL 推送时**不要加 `-u`**（或推完立刻把 `branch.*.remote` 改回 `origin`）；② 凭据残留检查必须**扫 config 全文**并以「正则 `https://user:hex@` 是否命中」为准，不靠肉眼看 remote；③ 建仓后的收尾清单里，**必须包含这一项**。
