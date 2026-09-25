@@ -3,7 +3,7 @@
 > **这份文档写给谁**：接手 `G:\` 工作区的人（或另一个 AI 会话），以及想把同样一套治理搬到别处的人。
 > **一句话**：这是一套**为「一个人 + 多个 AI 协作者 + 上百个仓库」设计的、可执行、可审计、事故驱动**的工程治理模式——
 > 它的核心不是文档写得多漂亮，而是**每条规矩都有事故来源、每个断言都有可复跑的证据、每次改动都留下可追溯的账**。
-> **适用版本**：2026-09-24 现盘（`G:\repos` 107 仓 / `G:\platform` / `G:\allin` / `G:\allin\docs` / `G:\tools` / `G:\archive`）。
+> **适用版本**：2026-09-25 现盘（`G:\repos` 109 仓 / `G:\allin-platform` / `G:\allin` / `G:\allin\docs` / `G:\tools` / `G:\archive`）。
 > **本文位置**：`G:\allin\docs\allin治理模式_建设指南.md`（随文档枢纽一起公开）。
 
 ---
@@ -55,7 +55,7 @@
 | 路径 | 角色 | 规矩 |
 | --- | --- | --- |
 | `G:\repos\<项目>` | 一个项目一个独立 git 仓 | 仓内自洽：`README.md` + `LICENSE` + `.gitignore` + 门禁与测试；**不写死绝对路径** |
-| `G:\platform\` | 编排/平台层：注册表、端口表、启动器 | 端口与项目清单是**事实源**：`registry/projects/*.yaml`、`ports.yaml` |
+| `G:\allin-platform\` | 编排/平台层：注册表、端口表、启动器 | 端口与项目清单是**事实源**：`registry/projects/*.yaml`、`registry/ports.yaml`。**目录名 = 远端仓名**（2026-09-25 由 `G:\platform` 改名对齐） |
 | `G:\allin\` | 治理仓（公开，MIT-0）：目录索引 + 审计报告 + **文档枢纽 `docs/`** | 只放索引/文档，不放项目源码 |
 | `G:\allin\docs` → `G:\allin\docs\` | **文档枢纽**：活文档 + 历史文档树 | **只放文档**：脚本、CSV、二进制、第三方资料一律不放（见 §7） |
 | `G:\tools\gate\` | 可执行门禁与工具（`scan_hardcoded.ps1`、`check_undefined_names.py`、基线） | 工具也要有 README，默认路径写清 |

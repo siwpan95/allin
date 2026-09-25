@@ -68,7 +68,7 @@
 | 位置 | 是什么 | 为什么放在那里 |
 | --- | --- | --- |
 | `G:\repos\<项目>\README.md` | 107 个项目的门面文档 | 属于各仓，随仓公开；本枢纽只做汇总索引 |
-| `G:\platform\registry\projects\*.yaml` · `G:\platform\ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读） |
+| `G:\allin-platform\registry\projects\*.yaml` · `G:\allin-platform\registry\ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读）；**目录名已对齐远端仓名 `allin-platform`（2026-09-25 由 `G:\platform` 改名）** |
 | `G:\tools\gate\` | 可执行门禁：`scan_hardcoded.ps1`（死根路径门禁，含 `-SelfTest` 与基线棘轮）、`check_undefined_names.py`（AST 未定义名）、`audit/` 基线目录 | 工具不是文档，独立成区；用法见该目录 `README.md` |
 | `G:\allin\目录索引.txt` | **项目目录文档化索引**（2026-09-24 形态换代）：**118 个项目 / 32.55 KB**，每项目一条 = 标题 + 首段摘要 + README 链接 + 体量。**以各项目自己的 README 为唯一事实源，不复制正文**。生成器 `G:\tools\build_dir_index.py`（`--apply` 落盘，带体量缓存）。**改项目请改它的 README，勿手改索引**。旧「全盘文件快照」形态（48.53 MB / 555,220 行）已归档 `G:\archive\目录索引-全盘快照-20260828\` |
 | `G:\workbuddy\` | 另一套 AI 工作区（WorkBuddy）的**活跃记忆**，含 `CONSOLIDATED_MEMORY.md` | 由该应用写入，**不搬移**（搬走会破坏其运行），本枢纽只登记位置 |
