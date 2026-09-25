@@ -354,3 +354,64 @@
     - **⇒ 「某条命令能推」不等于「脚本能取令牌」**，二者是**两条独立链路**（git 凭据管理器 vs API 令牌），必须**分别**取得证据。
     - **反方向的坑同样存在**：开始我依据「无 store 文件 + GCM 无存储 + selector=`<no helper>`」推断**推送会失败** —— 这个推断是**错的**，只是我当时的检查手段（文件式枚举）看不见凭据管理器。**"我查不到" ≠ "不存在"**：凭据类事实必须以**实推探针**为准。
     - **纪律**：① 鉴权结论一律用**实推探针**（文档 §3.8 分支探针：建临时分支 → push → 删 → `ls-remote` 复核）取证据，不用文件存在性推断；② 探针必须**自清理**（本次 `__probe_cred` 推送后即刻删除，复核远端只剩 `main`）；③ 报「能用/不能用」时，明说**验的是哪条链**。
+    - **补充（2026-09-25 当日二次实测）**：**GCM 凭据缓存会「先成功后失败」** —— 同一次批量推送里，前 4 个仓 `git push` 成功，后 5 个立刻报 `fatal: could not read Username for 'https://gitee.com': terminal prompts disabled`（各仓 `credential.helper` 配置**完全相同**，非配置差异）。重试仍失败。**处置**：改用**一次性 URL**（`git -c credential.helper= push "https://siwpan:<TOKEN>@gitee.com/..."`，令牌取自 `G:\私人令牌.txt`），实测 5 仓全部推送成功且 `.git/config` 无凭据残留。⇒ **批量推送不要假设"第一个成功就都能成功"**，要么逐仓验证，要么直接走一次性 URL。
+
+---
+
+## Python 运行环境事实源（2026-09-25 实测，含一个 CPython 缺陷）
+
+> 本节是本机**唯一**的 Python 选型事实源。核心结论：**不要用 `F:\Python314`（3.14.7）**，它有会导致进程崩溃的 CPython 缺陷。
+
+48. **CPython 3.14.7 存在「包内失败的相对导入直接崩进程」缺陷，必须避开（2026-09-25 实测定位）**：
+    - **症状**：`import` 某个包时进程**直接消失**，`exit=-1073741819`（`0xC0000005` 访问违规），**无 traceback、无 stderr、连 `print` 都不输出**（崩在模块加载/编译期）。
+    - **最小复现**（20 行，与任何第三方包无关）：
+      ```python
+      # pkg/__init__.py
+      from .reader import go
+      # pkg/reader.py
+      try:
+          from ..missing import X        # 包内失败的相对导入（目标不存在）
+      except ImportError:
+          X = False
+      def go(): return X
+      ```
+      `python -c "import pkg"` → **崩**。把 `from ..missing` 换成**绝对**导入（`import definitely_missing_xyz`）→ **exit 0**。
+      ⇒ 触发条件 = **包内失败的相对导入（`from ..x import y`）**，与 try/except 无关。
+    - **已排除**：文件损坏（与 PyPI 官方 wheel 逐字节比对，190 文件 0 差异）、`.pyc` 缓存（移走全部 `__pycache__` 仍崩）、重装（stdlib 手工覆盖 195 文件仍崩）、site-packages 污染（`-S`/`-E` 无效）、numpy+lxml 组合（任意顺序均 OK）、磁盘（`Get-PhysicalDisk` 报 Healthy）、调试器（有无 `-X faulthandler` 均崩）。
+    - **官方对应**：gh-134100「use-after-free in `PyImport_ImportModuleLevelObject`」（[PR #134117](https://github.com/python/cpython/pull/134117)）。**3.14.8 预计 2026-10-06 才发布**（[Ubuntu FFe #2168150](https://bugs.launchpad.net/ubuntu/+source/python3.14/+bug/2168150)），Windows 当前最新即 3.14.7。
+    - **受害者实例**：`openpyxl/reader/excel.py:16` 的 `from ..tests import KEEP_VBA`（tests 目录不随 wheel 分发，**必走失败路径**）⇒ 本机所有 3.14.7 环境下 `import openpyxl` 必崩。
+    - **处置（按优先级）**：
+      1. **用 Python 3.13.14**（本机已有，见 49），**不要用 F:\Python314**；
+      2. 临时 workaround：把问题包的失败相对导入改成 `__import__('pkg.sub', fromlist=[...])`（openpyxl 已就地打补丁，备份 `excel.py.bak-20260925`）—— 但**重装包会丢补丁**，只能应急。
+    - **纪律**：遇到「进程无输出直接消失」，先跑最小复现判定是否本缺陷，再去查自己的代码；**不要**在无 traceback 的情况下盲目调试业务逻辑。
+
+49. **本机可用 Python 清单与选型（2026-09-25 实测）**：
+    | 解释器 | 实际版本 | 可用性 |
+    | --- | --- | --- |
+    | `G:\workbuddy\.workbuddy\binaries\python\versions\3.13.12\python.exe` | **3.13.14** | ✅ **推荐**（实测最小复现 exit 0）|
+    | `C:\Users\psw\.workbuddy\binaries\python\versions\3.13.12\python.exe` | **3.13.14** | ✅ 同上（同一份的副本）|
+    | `F:\Python314\python.exe` | 3.14.7 | ❌ **有 48 的缺陷，勿用** |
+    - **坑**：目录名写 `3.13.12`，**实际版本是 3.13.14** —— **判定版本一律用 `python -V`，不要信目录名**。
+    - **另一个真损坏**：`G:\workbuddy\.workbuddy\binaries\python\envs\default\Scripts\python.exe` 是 venv，其 `pyvenv.cfg` 指向 **`C:\Users\13122\...`（旧机路径，已不存在）**，运行报 `did not find executable ... exit 103`。**这些 WorkBuddy venv 在换机后已全部失效，需重建**（本机死根路径门禁报出的 `C:\Users\13122` 多由此而来）。
+    - **推荐用法**：给每个需要 Python 的项目建**项目级 `.venv`**：
+      `G:\workbuddy\.workbuddy\binaries\python\versions\3.13.12\python.exe -m venv <项目>\.venv`，
+      再 `\.venv\Scripts\python.exe -m pip install <依赖>`。
+      ⇒ 隔离依赖、钉住版本、不受系统 PATH 里那个坏解释器影响。**并记得把 `.venv/` 写进 `.gitignore`**（`cordis-table-app` 原本漏了，会把整个虚拟环境提交进仓）。
+
+50. **`python -c` 的多行代码不要用 PowerShell here-string 传（2026-09-25 反复踩，代价三轮误判）**：用 `@"... "@` 把多行 Python 喂给 `python -c` 时，**引号与换行会被破坏**，表现为「**什么都没执行就崩**」——极易误判成被测对象崩溃（本次据此错误推断过「大源码编译即崩」三次）。
+    - **纪律**：多行 Python 一律**落成 `.py` 文件再执行**；只有单行、无嵌套引号的场景才用 `-c`。
+    - 同族坑：`.cmd` 文件**不能存 UTF-8**（cmd 按 ANSI 解码，中文注释会让整条命令解析错乱，实测报 `'）' is not recognized`）—— 中文批处理要么存 ANSI，要么改用 pwsh。
+
+51. **盘健康：外置 USB 盘必须关掉「休眠/选择性暂停」，否则会静默损坏 git 仓（2026-09-25 事故 + 处置）**：
+    - **事故**：G: 盘（WD Game Drive，Disk 3，USB）全天持续 `disk 事件 153`（IO 重试，24h 内 190 次），19:07 触发 `Ntfs 事件 132`「**短时间内发生太多修复事件**」+ 9 次「卷 G: 上的文件系统结构现在已经修复」——**NTFS 在线自愈在写入过程中改坏了 git 对象**，造成 **4 个仓损坏**（`allin` 的 pack idx/commit-graph/index，`novel`/`novel-down`/`ncmturnmp3` 的 `.git\objects` 目录项损坏）。
+    - **⚠ SMART 会说谎**：`Get-PhysicalDisk` 全程报 `HealthStatus=Healthy`，而盘正在重试 IO。**判盘健康必须看事件日志**（`disk` id 153 计数 + `Ntfs` id 130/132），不能只看 SMART。
+    - **处置（已执行，可回滚）**：
+      ```powershell
+      powercfg /change disk-timeout-ac 0      # 硬盘永不关闭（原 0x4b0=1200s）
+      powercfg /change disk-timeout-dc 0      # 原 0x258=600s
+      powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0
+      powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0
+      powercfg /setactive SCHEME_CURRENT
+      ```
+    - **仍待处理**：`F:` **Dirty + Scan Needed** → `chkdsk F: /scan`（只读）；`D:` **Dirty + Full Repair Needed**（**exFAT 无日志，非正常拔插极易损坏**）→ `chkdsk D: /f`；3 个 `G:\repos\{novel,novel-down,ncmturnmp3}\.git-damaged` 损坏空壳 `rmdir` 也删不掉，需 `chkdsk /f`。以上**均需管理员**。
+    - **教训**：外置盘上的 git 仓，在盘出现 IO 重试期间**不要做大批量写入**（本次 4 个仓就是在写入窗口内被改坏的）；**仓的权威副本必须在远端**，本地损坏才可无损恢复（本次 4 仓全部由重克隆恢复，工作树文件未丢）。
