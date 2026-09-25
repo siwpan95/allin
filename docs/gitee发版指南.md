@@ -10,14 +10,16 @@
 
 | 项 | 现状 |
 |---|---|
-| 令牌来源 | `~/.git-credentials`（git **credential store**；全局已配 `credential.https://gitee.com.helper=store`）。`git push` 自动复用，无需手填 |
-| 给 API 脚本取令牌 | `gitee_release.py --token-file "$HOME/.git-credentials"`（脚本从中提取第一段 32/64 位 hex），或 `export GITEE_TOKEN=...` |
-| Python | `E:\Python314\python.exe`（3.14.7，带 tkinter）；纯逻辑可用托管 3.13.12 |
-| allin 远程 | `master` @ `31581683…`；默认分支 `master`；另有 `nothing` tag |
+| 令牌来源 | **Windows 凭据管理器（GCM）**，**无文件式凭据**（`~/.git-credentials` 不存在、`credential.https://gitee.com.helper=store` 未配）。`git push` 由 GCM 直接取用，实测不弹窗可推 |
+| 给 API 脚本取令牌 | 本机**没有** `~/.git-credentials` 可提取，故 `--token-file "$HOME/.git-credentials"` **会失败**。须显式提供 `--token <HEX>`、`GITEE_TOKEN` 或真正的凭据文件路径 |
+| Python | `F:\Python314\python.exe`（3.14.7，已在 PATH；含 openpyxl 3.1.5） |
+| allin 远程 | `master` @ `bd34ed0`；默认分支 `master`；另有 `nothing` tag |
+| git 身份 | **全局未配**；各仓按**仓库级**配 `user.name=siwpan` / `user.email=siwpan@users.noreply.gitee.com` |
 | 关联文档 | `docs/gitee推送流程_2026-09-25.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/gitee协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
 
-> ⚠ 旧路径 `G:\私人令牌.txt`、`F:/Python314`、`G:\local`、`G:\repos` **已全部失效**（F/G 盘已移除）。
-> 本机现仅 C / D / E 三卷，大文件/重工具落 D 或 E。skill 文档里这类旧路径已同步修正。
+> ⚠ 旧路径 `G:\私人令牌.txt`、`E:\Python314`、`C:\Users\13122\*` 在新机**均不存在**（新机是 `DESKTOP-8RSV60V` / 用户 `psw`）。
+> 本机现为 C / D / F / G 四卷：C 内置、D 外置 exFAT(save)、F 外置 NTFS(trash)、G 外置 NTFS(allin)。
+> 本表为**落点事实源**；跨机搬运后须按 §6 复核再照抄。
 
 ---
 
@@ -42,24 +44,27 @@
 > 每个子命令重复跑安全（已存在就 SKIP）。中断后直接重跑。
 
 ```bash
-# 0. 验令牌（最便宜的失败前置）
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" whoami
+# 0. 验令牌（最便宜的失败前置；须显式给令牌来源，本机无 store 文件可读）
+python tools/gitee_release.py --token "<HEX>" whoami
 #   → [OK] login=siwpan ...
 
 # 1. 打 tag（语义化版本，如 v1.2.0）—— 必须先有 tag 才能建 release
 git tag -a v1.2.0 -m "v1.2.0" && git push -f origin v1.2.0
 
 # 2. 建 release（API，见 §2 参数与坑）
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" \
+python tools/gitee_release.py --token "<HEX>" \
        release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
 
 # 3. 传附件（单附件 ≤100MB；压成一个 zip，附件名不带路径分隔符）
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" \
+python tools/gitee_release.py --token "<HEX>" \
        attach --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
 
 # 4.（如需）转公开：先私有后公开，避免半成品被看到
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" public
+python tools/gitee_release.py --token "<HEX>" public
 ```
+
+> 旧写法 `--token-file "$HOME/.git-credentials"` 在本机**必失败**（该文件不存在，凭据在 Windows 凭据管理器里）；
+> 台账里的 `****` 一律替换成 `--token "<HEX>"` 或先 `export GITEE_TOKEN=<HEX>`（再省掉 `--token`）。
 
 **写权限确认用分支探针**（不要 `--dry-run`，本地最新时它根本不走鉴权，会误判）：
 `git branch -f __probe master` → push 该分支 → `push --delete __probe` → `git ls-remote --heads` 确认远端只剩 master。
@@ -126,24 +131,15 @@ python tools/gitee_release.py --token-file "$HOME/.git-credentials" public
 ## 5. 一键速查
 
 ```bash
-# —— 取令牌（从 git store，避免手抄；路径按本机盘符调整，原 G:\ 已移除）——
-TOKEN=$(python - <<'PY'
-import re, os
-for line in open(os.path.expanduser('~/.git-credentials'), encoding='utf-8', errors='replace'):
-    if 'gitee.com' in line:
-        m = re.search(r':([0-9a-zA-Z]{32,64})@', line)
-        if m:
-            print(m.group(1)); break
-PY
-)
+# —— 取令牌：本机无 store 文件，须用真正的凭据文件路径或环境变量 ——
+# 旧写法 --token-file "$HOME/.git-credentials" 在本机必失败（该文件不存在）
+export GITEE_TOKEN=<HEX>          # 或不入环境，直接给 --token <HEX>
 
 # —— 发版（幂等，中断可重跑）——
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" whoami
+python tools/gitee_release.py whoami
 git tag -a v1.2.0 -m "v1.2.0" && git push -f origin v1.2.0
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" \
-       release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
-python tools/gitee_release.py --token-file "$HOME/.git-credentials" \
-       attach  --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
+python tools/gitee_release.py release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
+python tools/gitee_release.py attach  --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
 
 # —— 三层验收（前两层足够）——
 git rev-parse HEAD                                  # ① 本地 HEAD
@@ -155,3 +151,37 @@ git status --short                                  # ③ 须为空
 
 > 令牌打印前替换成 `<REDACTED>`：`... 2>&1 | sed -E "s/${TOKEN}/<REDACTED>/g"`。
 > 提交信息**落文件再 `-F`**，避免 Windows 路径被 bash 吃掉反斜杠。
+
+---
+
+## 6. 落点复核（照抄本文档前先跑一遍）
+
+**教训（2026-09-25 实测）**：本文档与推送篇原先写的是**原型机落点**（`E:\Python314`、
+`C:\Users\13122\.git-credentials`、`helper=store`、F/G 盘已移除）。换机后照抄**必失败**——
+`E:\` 卷不存在、`~/.git-credentials` 不存在、全局 git 身份为空。
+
+下面这段**只读**命令在任何机器上跑一遍，即可核出本文档哪些落点需要就地修正：
+
+```powershell
+"host=$env:COMPUTERNAME user=$env:USERNAME"
+"python = " + (Get-Command python -ErrorAction SilentlyContinue).Source
+& python -c "import sys;print('py',sys.version.split()[0]);print('stdio',sys.stdout.encoding)"
+"git identity: global=[" + (git config --global --get user.name) + "] local=[" + (git config --local --get user.name) + "]"
+"cred file  : " + (Test-Path "$env:USERPROFILE\.git-credentials")
+"cred helper: " + (git config --global --get credential.helper) + " selector=" + (git config --global --get credential.helperselector.selected)
+"drives     : " + ((Get-PSDrive -PSProvider FileSystem | Where-Object {$_.Name -match '^[C-Z]$'}).Name -join ',')
+git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git ls-remote origin "refs/heads/$(git rev-parse --abbrev-ref HEAD)"
+```
+
+判读要点：
+
+| 现象 | 含义 | 处置 |
+|---|---|---|
+| `python` 路径与本文档不符 | 文档落点基于别的机器 | 就地更正本文档，**并记账** |
+| `stdio=gbk` | 中文 Windows 默认编码 | 相关 Python 入口须 `reconfigure(encoding="utf-8")`，否则中文经 stdio 必乱码 |
+| `local=[]` 且 `global=[]` | 本仓无提交身份 | `git config --local user.name/user.email`（照同机其它仓对齐） |
+| `cred file=False` | 无文件式凭据 | 脚本取令牌须显式 `--token`/`GITEE_TOKEN`；但 `git push` 仍可能由凭据管理器正常取用 |
+| `ls-remote` 两串不等 | 本地与远端不同步 | 先对齐再发版 |
+
+> **通用纪律**：文档里的绝对路径都属于**某台机器**，不是"事实"。换机后先跑本节复核，
+> 再照抄后面的命令。
