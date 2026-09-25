@@ -57,3 +57,75 @@ python tools/gitee_release.py status   --name myproj
 
 > 该脚本亦随 `gitee-repo-and-release-flow` skill 提供（路径 `<skill>/tools/gitee_release.py`），
 > 两份内容一致；本仓库内以 `tools/gitee_release.py` 为准。
+
+---
+
+## 监工三件套（2026-09-25 新增）
+
+> **为什么有这一节**：用户提出「文档 + 门禁 + 看门狗」三件套 —— **图纸之外还要有监工**。
+> 起因是 2026-09-25 的真实事故：G: 盘 NTFS 在线自愈改坏了 4 个 git 仓
+> （`allin` / `novel` / `novel-down` / `ncmturnmp3`），**全程没有任何机制第一时间叫**，
+> 全靠事后人工开挖。文档再多，缺了监工照样一遍遍踩坑。
+
+三个脚本**零三方依赖**（仅 Python 3 标准库），**各自带 `--selfcheck`**：
+往临时目录造破坏用例，逐条断言门禁能抓住、且干净样例零误报 ——
+**没有 selfcheck 的门禁等于没有门禁**（无法证明它是活的）。
+
+### `repo_hygiene.py` — 仓库卫生门禁
+
+把 `docs/gitee推送流程_2026-09-25.md` §1 的「仓库卫生六项」从**文字**变成**退出码**
+（此前实测：6 项要求 → **0 项**有门禁）。另加两项本工作区沉淀：
+
+| 项 | 判据 |
+| --- | --- |
+| H1 LICENSE 唯一 | 判**路径**（`_ref/ThirdParty/LICENSE` 也要可见，只判 basename 会漏） |
+| H2 无第三方源码目录 | `_ref/ vendor/ node_modules/ third_party/` |
+| H3 无产物目录 | `output/ state/ cache/ dist/ build/ release/` |
+| H4 无归档/大文件 | `*.zip *.tar.gz *.7z`；单文件 > 5 MiB（**blob 口径**） |
+| H5 无凭据 | 令牌**本体子串**（从凭据文件读，不回显）+ 通用**形态** + URL 内嵌凭据 |
+| H6 文档一致性 | `docs/` 下借鉴记账须含「上游URL + 许可证 + 不入仓声明」 |
+| H7 仓名=目录名 | 本地目录名须等于 origin 仓名 |
+| H8 行尾一致性 | 「内容逐字节相同却被标 modified」的假改动检测 |
+
+```bash
+python repo_hygiene.py --repo <仓>              # 单仓
+python repo_hygiene.py --all                    # 全部（日常，基线棘轮）
+python repo_hygiene.py --all --no-baseline --list-all   # 普查全部存量
+python repo_hygiene.py --all --write-baseline   # 存量一次性上线
+python repo_hygiene.py --selfcheck              # 自证
+```
+
+### `check_ps1_bom.py` — PowerShell 编码门禁
+
+`G:\tools\README.md` 纪律 1「`.ps1` 必须存成 UTF-8 带 BOM」此前**只是文字**。
+本次当场踩中：编辑工具改脚本后 **BOM 被剥掉**，导致 `scan_hardcoded.ps1` 在
+PowerShell 5.1 下报假语法错误（`Unexpected token '}'`）——**该门禁在 PS 5.1 下完全不可用**。
+
+```bash
+python check_ps1_bom.py            # 扫默认根
+python check_ps1_bom.py --fix      # 就地补 BOM（默认干跑）
+python check_ps1_bom.py --selfcheck
+```
+
+判据：含非 ASCII 却无 BOM → 阻断；纯 ASCII 无 BOM → 合法；有 BOM 但非合法 UTF-8 → 阻断。
+
+### `watchdog.py` — 工作区看门狗
+
+| 职责 | 判据 |
+| --- | --- |
+| W1 盘健康 | 卷 dirty 位 / HealthStatus；**事件日志里的 IO 重试与 NTFS 自愈计数** |
+| W2 仓完整性 | `.git/objects` 可读性（**事故指纹**）、`HEAD^{commit}` 可解、fsck |
+| W3 同步漂移 | 本地 HEAD vs 远端 ref（**只信 `git ls-remote`**） |
+
+```bash
+python watchdog.py                # 全量巡检
+python watchdog.py --quick        # 跳过 fsck（快）
+python watchdog.py --selfcheck
+```
+
+**两条别改错的判据**：
+- **SMART 会报 `Healthy` 而盘正在重试 IO** —— 必须看事件日志（`disk` id 153 + `Ntfs` id 130/132），只看 SMART 会得出「全绿」的错误结论。
+- 仓完整性**必须用 `HEAD^{commit}`**：`rev-parse --verify HEAD` 只解析 ref 名、**不验证对象是否存在**，会把「objects 全删」「HEAD 写坏」判成 OK（自检当场抓出）。
+
+> 开发中的 `G:\tools\gate\` 是同一批脚本的工作副本；**本目录（随仓分发）是给外部使用者的一份**。
+> 两份内容一致，修改时需同步。
