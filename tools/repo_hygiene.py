@@ -79,8 +79,11 @@ BIG_FILE_LIMIT = 5 * MIB
 
 # H2 第三方源码目录（跟踪面内出现即阻断）
 THIRD_PARTY_DIRS = {"_ref", "vendor", "node_modules", "third_party"}
-# H3 产物目录
+# H3 产物目录（跟踪面内出现即阻断）
+# 含 *.egg-info / *.dist-info 这类**构建元数据**：它们是 setuptools 生成物，
+# 2026-09-26 实测因 `git add -A` 误入过 d20 仓（当时本表未覆盖，门禁没拦住）。
 ARTIFACT_DIRS = {"output", "state", "cache", "dist", "build", "release"}
+ARTIFACT_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg-link")
 # H4 归档后缀
 ARCHIVE_SUFFIXES = (".zip", ".tar.gz", ".tgz", ".7z", ".rar", ".tar.bz2")
 
@@ -252,10 +255,16 @@ def check_h3_artifacts(repo, tracked, ctx):
     f = []
     for t in tracked:
         parts = t.split("/")
+        hit = None
         for p in parts[:-1]:
             if p in ARTIFACT_DIRS:
-                f.append(Finding("H3", repo, t, "跟踪面含产物目录 '{}'（应 gitignore）".format(p)))
+                hit = "产物目录 '{}'".format(p)
                 break
+            if p.endswith(ARTIFACT_DIR_SUFFIXES):
+                hit = "构建元数据目录 '{}'（setuptools 生成物，勿入库）".format(p)
+                break
+        if hit:
+            f.append(Finding("H3", repo, t, "跟踪面含" + hit + "（应 gitignore）"))
     return f
 
 
