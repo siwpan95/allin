@@ -1,6 +1,6 @@
 # Gitee 发版指南（含优先级 + 联网核实）
 
-> 配套脚本：`gitee-repo-and-release-flow` skill 的 `tools/gitee_release.py`（零三方依赖，分步、可重入、幂等）。
+> 配套脚本：**本仓库 `tools/gitee_release.py`**（零三方依赖，分步、可重入、幂等），用法与平台坑见 `tools/README.md`；该脚本亦随 `gitee-repo-and-release-flow` skill 提供，两份内容一致。
 > 推送篇见同目录 `gitee推送流程_2026-09-25.md`；本篇只讲「发版 / 发行版」。
 > **令牌脱敏约定**：全文用 `<GITEE_TOKEN>` / `****` 表示，**绝不写进仓库、不回显**。
 
