@@ -14,7 +14,7 @@
 | 给 API 脚本取令牌 | `gitee_release.py --token-file "$HOME/.git-credentials"`（脚本从中提取第一段 32/64 位 hex），或 `export GITEE_TOKEN=...` |
 | Python | `E:\Python314\python.exe`（3.14.7，带 tkinter）；纯逻辑可用托管 3.13.12 |
 | allin 远程 | `master` @ `31581683…`；默认分支 `master`；另有 `nothing` tag |
-| 关联文档 | `docs/gitee推送流程_2026-09-25.md`（推送篇，含「绕过确认」9 手段 + 三层验收） |
+| 关联文档 | `docs/gitee推送流程_2026-09-25.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/gitee协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
 
 > ⚠ 旧路径 `G:\私人令牌.txt`、`F:/Python314`、`G:\local`、`G:\repos` **已全部失效**（F/G 盘已移除）。
 > 本机现仅 C / D / E 三卷，大文件/重工具落 D 或 E。skill 文档里这类旧路径已同步修正。
