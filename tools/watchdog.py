@@ -8,10 +8,10 @@
 19:07 触发 `Ntfs 事件 132`「短时间内发生太多修复事件」+ 9 次「卷 G: 上的文件系统
 结构现在已经修复」—— **NTFS 在线自愈在写入过程中改坏了 git 对象**，造成 4 个仓损坏：
 
-    G:\\allin               .git/index 坏签名 + pack .idx 非单调 + commit-graph 签名不符
-    G:\\repos\\novel        .git\\objects 目录项损坏（"文件或目录损坏且无法读取"）
-    G:\\repos\\novel-down   同上
-    G:\\repos\\ncmturnmp3   同上
+    /allin             .git/index 坏签名 + pack .idx 非单调 + commit-graph 签名不符
+    /repos/novel        .git/objects 目录项损坏（"文件或目录损坏且无法读取"）
+    /repos/novel-down   同上
+    /repos/ncmturnmp3   同上
 
 **全部是事后人工挖出来的，没有任何机制在"第一时间"叫。** 本脚本补上这个监工。
 
@@ -355,7 +355,7 @@ def selfcheck():
 def main():
     ap = argparse.ArgumentParser(description="工作区看门狗（盘健康·仓完整性·同步漂移）")
     ap.add_argument("--repos-root", action="append", default=None,
-                    help="仓根，可多次；默认 G:\\repos 与 G:\\allin")
+                    help="仓根，可多次；默认 = 环境变量 PROJECTS_ROOT，否则脚本所在仓根")
     ap.add_argument("--disk", default="C,D,F,G", help="要检查的卷（默认 C,D,F,G）")
     ap.add_argument("--quick", action="store_true", help="跳过 fsck（只做盘健康 + HEAD + 同步）")
     ap.add_argument("--no-sync", action="store_true", help="跳过 W3（离线时用）")
@@ -367,7 +367,9 @@ def main():
     if args.selfcheck:
         return selfcheck()
 
-    roots = args.repos_root or [r"G:\repos", r"G:\allin", r"G:\allin-platform"]
+    # 去符盘（铁律 5，2026-09-26）：默认仓根 = 环境变量 PROJECTS_ROOT，否则脚本所在仓根
+    roots = args.repos_root or [os.environ.get("PROJECTS_ROOT")
+                                or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]
     alerts = []
     summary = {}
 

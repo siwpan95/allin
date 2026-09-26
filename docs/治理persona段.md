@@ -9,7 +9,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 源文件 | `C:\deepseek-harness-master\packages\preset\agent-presets\presets\cordis\agent.cordis.yml` |
+| 源文件 | `/deepseek-harness-master/packages/preset/agent-presets/presets/cordis/agent.cordis.yml` |
 | 源文件大小 | `19609` B |
 | 源文件 SHA256 | `72133014678A9C9F0FA3BDC3AFED2CAEC8AB7AE69B94873D89AAFE69DBD95B0C` |
 | 治理段长度 | `1734` 字符（1 段，CRLF 行尾） |
@@ -18,7 +18,7 @@
 **校验方法**（升级前/后各跑一次，两边 SHA256 必须一致）：
 
 ```powershell
-$p   = 'C:\deepseek-harness-master\packages\preset\agent-presets\presets\cordis\agent.cordis.yml'
+$p   = '/deepseek-harness-master/packages/preset/agent-presets/presets/cordis/agent.cordis.yml'
 $raw = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)
 $seg = [regex]::Match($raw, '(?s)<!-- GOVERNANCE:BEGIN -->.*?<!-- GOVERNANCE:END -->').Value
 '段长     = ' + $seg.Length
@@ -34,11 +34,11 @@ $seg = [regex]::Match($raw, '(?s)<!-- GOVERNANCE:BEGIN -->.*?<!-- GOVERNANCE:END
 
 ```text
 <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区根是 `G:\`。**开卷必读**：在回应第一个请求之前，先读这四份（按序）——
-      `G:\allin\docs\MEMORY.md`（铁律 0/1/2、创新三原则、调试铁律，唯一事实源）、
-      `G:\allin\docs\协作工作流程约定_2026-08-28.md`（任务分档与五阶段放行口径）、
-      `G:\allin\docs\会话交接_2026-08-27.md`（逐轮事实流水，读最近几节）、
-      `G:\allin\docs\新机配置汇总_2026-09-24.md`（本机与原型机差异、路径事实源）。
-      有项目时（`G:\repos\<仓名>`，107 仓），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
+      `/allin/docs/MEMORY.md`（铁律 0/1/2、创新三原则、调试铁律，唯一事实源）、
+      `/allin/docs/协作工作流程约定_2026-08-28.md`（任务分档与五阶段放行口径）、
+      `/allin/docs/会话交接_2026-08-27.md`（逐轮事实流水，读最近几节）、
+      `/allin/docs/新机配置汇总_2026-09-24.md`（本机与原型机差异、路径事实源）。
+      有项目时（`/repos/<仓名>`，107 仓），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
 
       三条铁律（细节见 MEMORY.md）：
       0. **开源优先**：默认公开 + MIT；**私有仓即违规**。例外：发布物链接/随包 GPL/AGPL 上游时许可必须随上游。
@@ -51,20 +51,20 @@ $seg = [regex]::Match($raw, '(?s)<!-- GOVERNANCE:BEGIN -->.*?<!-- GOVERNANCE:END
       借鉴任何外部代码/配置/概念前先记录「来源 + 许可证 + 借用范围」。
 
       本机特有边界（易踩）：
-      - `G:\allin\docs\` **只放文档**；门禁脚本在 `G:\tools\gate\`，归档区 `G:\archive\`。
-      - 盘位：C:(内置NTFS) D:(外置exFAT) **F:(外置NTFS, 大依赖盘) G:(外置NTFS, 项目盘)**；pwsh 7 有 `D:\powershell\7\pwsh.exe` 与 `F:\PowerShell\7`（均不在 PATH）。
+      - `/allin/docs/` **只放文档**；门禁脚本在 `/tools/gate/`，归档区 `/archive/`。
+      - 盘位：C:(内置NTFS) D:(外置exFAT) **F:(外置NTFS, 大依赖盘) G:(外置NTFS, 项目盘)**；pwsh 7 有 `/powershell/7/pwsh.exe` 与 `/PowerShell/7`（均不在 PATH）。
       - `.ps1` 必须存成 **UTF-8 带 BOM**，否则 PowerShell 5.1 按 ANSI 解码中文、报一堆假语法错误（"一边绿一边红"是编码问题指纹）。
-      - **exFAT（D:）不支持硬链接与目录联接** → `write` 文件工具在 D: 上报 `EISDIR`；用 pwsh here-string 管道给 `python -c` 写盘并读回校验，或把工作区放 NTFS（C:/F:/G:）。
+      - **exFAT（D:）不支持硬链接与目录联接** → `write` 文件工具在 D: 上报 `EISDIR`；用 pwsh here-string 管道给 `python -c` 写盘并读回校验，或把工作区放 NTFS（/F:/G:）。
       - git 在本机报 `dubious ownership`，需 `git config --global --add safe.directory <路径>`。
       - PowerShell 会**枚举函数返回的集合**（HashSet 必须 `return ,$set`）；单引号里 `'\'` 是一个字符。
       - 中文 Windows 控制台默认 GBK：入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；JSON 读写显式 `encoding="utf-8"`。
-      - 工作区事实源：`G:\allin\docs\新机配置汇总_2026-09-24.md`。**本机与原型机是同一套工作区换硬件**（G:/F: 两块外置盘已在新机上）。
+      - 工作区事实源：`/allin/docs/新机配置汇总_2026-09-24.md`。**本机与原型机是同一套工作区换硬件**（G:/F: 两块外置盘已在新机上）。
       <!-- GOVERNANCE:END -->
 ```
 
 ## 三、它到底管什么（三句话）
 
-1. **开卷必读**：任何新会话在回应第一个请求前，先读 `G:\allin\docs\` 的四份事实源（MEMORY / 协作工作流程约定 / 会话交接 / 新机配置汇总）。
+1. **开卷必读**：任何新会话在回应第一个请求前，先读 `/allin/docs/` 的四份事实源（MEMORY / 协作工作流程约定 / 会话交接 / 新机配置汇总）。
 2. **三条铁律**：开源优先（默认公开 + MIT）、README 优先（动项目先读它自己的 README）、协作流程（先问→计划→review→执行→复盘，计划须明确放行）。
 3. **本机边界**：盘位/编码/exFAT 限制/`safe.directory` 等易踩坑项在此固化，避免每轮重新试错。
 

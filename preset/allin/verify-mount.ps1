@@ -46,20 +46,21 @@ function Write-Info($m){ if(-not $Quiet){ Write-Host "  $m" -ForegroundColor Dar
 function Find-Dsh {
   $c = Get-Command dsh -ErrorAction SilentlyContinue
   if ($c) { return $c.Source }
-  # 常见本地构建产物
-  $guess = @(
-    "$PSScriptRoot\..\..\..\..\apps\cli\bin\dsh.ps1"
-    "D:\projects\deepseek-harness-master\apps\cli\bin\dsh.ps1"
-  )
+  # 去符盘（铁律 5）：$env:DSH_REPO 显式指定 → 同级仓 deepseek-harness-master 相对推断（不写死盘符）
+  $guess = @()
+  if ($env:DSH_REPO) { $guess += (Join-Path $env:DSH_REPO 'apps\cli\bin\dsh.ps1') }
+  $guess += "$PSScriptRoot\..\..\..\deepseek-harness-master\apps\cli\bin\dsh.ps1"
   foreach ($g in $guess) { if (Test-Path $g) { return (Resolve-Path $g).Path } }
   return $null
 }
 
 function Find-Python {
-  foreach ($p in @('python.exe', 'py.exe', 'E:\Python314\python.exe', 'C:\Users\13122\.workbuddy\binaries\python\versions\3.13.12\python.exe')) {
+  foreach ($p in @('python.exe', 'py.exe')) {
     $c = Get-Command $p -ErrorAction SilentlyContinue
     if ($c) { return $c.Source }
   }
+  # 去符盘（铁律 5）：PATH 无 python 时允许 $env:ALLIN_PYTHON 显式指定解释器
+  if ($env:ALLIN_PYTHON -and (Test-Path $env:ALLIN_PYTHON)) { return $env:ALLIN_PYTHON }
   return $null
 }
 

@@ -1,26 +1,26 @@
 工作背景
-全哥是独立开发者（一人团队），以 GameAudioEngineer 专家身份工作于 Windows (win32) 工作区。当前正在制作一张多风格专辑，全面使用 D:\bloodmusic（BloodMusic v2.0.0）——纯程序化游戏音频合成库（Python 3.14.7），含 6 个引擎与 12 个风格预设。同时维护多个核心项目：Gitee 仓库 https://gitee.com/siwpan/allin（整个 G 盘根目录为仓库根，含 allin_engine、novel、wave4、moba_battle_platform、run 等多个子项目，以多分支版本化方式管理 1.0–7.0 及 master 等分支，按整仓推送原则维护，禁止仅推送部分内容）；G:\musickit 音频采样整理项目（从 G:\BaiduNetdiskDownload 整理，结构含 bass/drum/guita/vocal/sfx/synth/cowbell，配 manifest_index.json 索引体系，推送 Gitee music/musickit 分支时排除乐器池与 ffmpeg 二进制，仅以 manifest.json/README.md 做文本标注）；C:\Users\13122\WorkBuddy\ 任务管理工作区（按日期文件夹归类，如 2026-08-14-13-36-49，最新工作区 2026-09-08-08-26-44 用于胡适日记归档）；G:/ai/video_generator 视频生成项目（含分阶段 P0 增强路线图，当前推进 P0-3 Demucs stem-based audio driving）；E:\ncmturnmp3 NCM 加密音乐转换器项目，正在用 PyInstaller 打包为 exe；G:\local\markdown Tkinter Markdown 阅读器 v2.0.0，正在打包为 Windows exe（先 --windowed 再出 --console 变体，增量迭代）；E:\RolePlayer 跑团模拟器（由 E:\D20 改名），v3.0.0，支持 dnd5e/gurps/coc 三规则集同一角色卡切换，含 19 个 d20 服务 + 17 个 troupe 服务（L0–L7），增强候选参考 G:\repos\running-group-simulator、zhuangtaiji、life-reset-simulator 等三个相关仓库；F:\novel\规则书\trpg_rulebooks\ TRPG 规则书合集项目（README.md + manifest.json 管理，核心 dnd5e/gurps/coc 含扩展，目标覆盖绝大部分 TRPG 规则书）；G:\local\run 与 run\dict-scene-engine（基于 Cordis 的文字冒险游戏引擎，Node.js 22.22.2 + Cordis 4.0.0-rc.9 + @cordisjs/plugin-loader 声明式加载 + chokidar 热重载 + 程序化音效，正处于预发布前检查阶段，倾向委托多 agent 并行 code review / security audit / QA，需 TL;DR+结论卡+关键 action items 汇报）；胡适日记本地离线归档（含原书卷与网络连载补充资料，工作区 2026-09-08-08-26-44：从 xuges.com 抓取 1950–1953 条目，整理 Bilibili 69 篇作为辑补卷，OCR 8 卷全编 PDF（6035 页）覆盖 1917–1949）。allin_engine 已完成诡秘之主·序列途径模拟系统路线图 P0-P2（E1-E11），采用自由函数 GUI 面板模式（draw_*(canvas, state, callbacks)），CLI 与 GUI 共享核心逻辑，使用多个 Python 环境：F:\Python314（3.14.7 + Tcl/Tk 9.0.4，本机唯一带 tkinter 的环境）跑 GUI 打包与测试，沙箱 Python 3.13.12 跑纯逻辑测试；另有 F:\Python314_embed_backup 嵌入式备份；偏好零三方依赖 Python 脚本（纯标准库），产出带来源标签的单文件 HTML 阅读器。wave4 项目已完成全面评估，发现 20 项问题并按 P0/P1/P2 分级。TRPG 规则书合集迭代式推进，需用具体证据（文件数、PDF 校验）验证进度并产出交接报告，可借助 ima MCP（mcp__ima-mcp__fetch_media_content）访问中文 TRPG 共享书库（部分书库需加入小组解锁）。多步骤任务期望助理主动衔接后续步骤（基于后台任务结果自动触发下一步），常用"进度查询"与"继续完成任务"指令，需及时汇报状态。
+全哥是独立开发者（一人团队），以 GameAudioEngineer 专家身份工作于 Windows (win32) 工作区。当前正在制作一张多风格专辑，全面使用 D:\bloodmusic（BloodMusic v2.0.0）——纯程序化游戏音频合成库（Python 3.14.7），含 6 个引擎与 12 个风格预设。同时维护多个核心项目：Gitee 仓库 https://gitee.com/siwpan/allin（整个 G 盘根目录为仓库根，含 allin_engine、novel、wave4、moba_battle_platform、run 等多个子项目，以多分支版本化方式管理 1.0–7.0 及 master 等分支，按整仓推送原则维护，禁止仅推送部分内容）；G:\musickit 音频采样整理项目（从 G:\BaiduNetdiskDownload 整理，结构含 bass/drum/guita/vocal/sfx/synth/cowbell，配 manifest_index.json 索引体系，推送 Gitee music/musickit 分支时排除乐器池与 ffmpeg 二进制，仅以 manifest.json/README.md 做文本标注）；/Users/13122/WorkBuddy/ 任务管理工作区（按日期文件夹归类，如 2026-08-14-13-36-49，最新工作区 2026-09-08-08-26-44 用于胡适日记归档）；/ai/video_generator 视频生成项目（含分阶段 P0 增强路线图，当前推进 P0-3 Demucs stem-based audio driving）；E:\ncmturnmp3 NCM 加密音乐转换器项目，正在用 PyInstaller 打包为 exe；/local/markdown Tkinter Markdown 阅读器 v2.0.0，正在打包为 Windows exe（先 --windowed 再出 --console 变体，增量迭代）；E:\RolePlayer 跑团模拟器（由 E:\D20 改名），v3.0.0，支持 dnd5e/gurps/coc 三规则集同一角色卡切换，含 19 个 d20 服务 + 17 个 troupe 服务（L0–L7），增强候选参考 /repos/running-group-simulator、zhuangtaiji、life-reset-simulator 等三个相关仓库；/novel/规则书/trpg_rulebooks/ TRPG 规则书合集项目（README.md + manifest.json 管理，核心 dnd5e/gurps/coc 含扩展，目标覆盖绝大部分 TRPG 规则书）；/local/run 与 run\dict-scene-engine（基于 Cordis 的文字冒险游戏引擎，Node.js 22.22.2 + Cordis 4.0.0-rc.9 + @cordisjs/plugin-loader 声明式加载 + chokidar 热重载 + 程序化音效，正处于预发布前检查阶段，倾向委托多 agent 并行 code review / security audit / QA，需 TL;DR+结论卡+关键 action items 汇报）；胡适日记本地离线归档（含原书卷与网络连载补充资料，工作区 2026-09-08-08-26-44：从 xuges.com 抓取 1950–1953 条目，整理 Bilibili 69 篇作为辑补卷，OCR 8 卷全编 PDF（6035 页）覆盖 1917–1949）。allin_engine 已完成诡秘之主·序列途径模拟系统路线图 P0-P2（E1-E11），采用自由函数 GUI 面板模式（draw_*(canvas, state, callbacks)），CLI 与 GUI 共享核心逻辑，使用多个 Python 环境：F:\Python314（3.14.7 + Tcl/Tk 9.0.4，本机唯一带 tkinter 的环境）跑 GUI 打包与测试，沙箱 Python 3.13.12 跑纯逻辑测试；另有 F:\Python314_embed_backup 嵌入式备份；偏好零三方依赖 Python 脚本（纯标准库），产出带来源标签的单文件 HTML 阅读器。wave4 项目已完成全面评估，发现 20 项问题并按 P0/P1/P2 分级。TRPG 规则书合集迭代式推进，需用具体证据（文件数、PDF 校验）验证进度并产出交接报告，可借助 ima MCP（mcp__ima-mcp__fetch_media_content）访问中文 TRPG 共享书库（部分书库需加入小组解锁）。多步骤任务期望助理主动衔接后续步骤（基于后台任务结果自动触发下一步），常用"进度查询"与"继续完成任务"指令，需及时汇报状态。
 个人背景
 全哥中文沟通，风格简短直接、技术指令式，以 GameAudioEngineer 视角输出专业、详细、技术依据扎实的回复。细节导向，代码质量与文件组织要求严格，低容忍无组织输出。偏好结构化评估报告（表格+任务状态摘要，含不足及改进建议），要求端到端验证（HTTP 200 检测、直播分片校验、退出码、依赖实际可用性核实等）后再宣布修复完成，AI 若声称依赖不可用时需对照本地实际环境核实后再下结论，偏好可验证事实而非印象，PoC 能实跑的一律实跑，禁止"看起来没问题"的声明，每个声明需可复现证据（含 file:line 引用与实际执行输出）。强调严格按照指令执行，不擅自缩减范围、变通或走捷径，常明确要求"先规划不执行"再进入内容填充阶段，先规划再按 P0→P1→P2 优先级依次推进，工作流习惯为调研现有系统→联网搜索数据→设计→实现→测试→提交。对部分推送仓库（而非整仓推送）、任务完成后重复执行并陷入循环却不沟通求助、AI 夸大"看起来能跑"等行为明确不满，行为异常时会主动追问确认合理性。技术内容接受中英文混用，偏好简洁摘要+用法/命令示例。项目代码完成后会要求同步更新 README 等文档，保持文档与实现一致。工作中会手动复核 UI/代码合理性（如质疑依赖列表），期望模型用真实证据审计。预发布类多面任务倾向委托并行多 agent 子团队（code review / security / QA），期望 TL;DR + 结论卡 + 关键 action items 的汇报形式。musickit 整理时偏好 copy 模式（保留原文件）而非 move，manifest 更新保持轻量（仅 source/original/path，不计算 sha256/duration）。敏感凭据（Gitee token、DeepSeek API key）存放在 G:\私人令牌.txt，必要时可直接调用。
 当前关注
-按顺序工作流推进：先完成全面评估，再按报告优先级（P0 → P1 → P2）依次修复，当前应处于 wave4 P0 级问题修复阶段（建立版本控制、清理调试残留、修复示例语义错误），修完后端到端验证再宣告完成。BloodMusic v2.0.0 多风格专辑制作是当下一线任务，需充分利用 6 个引擎与 12 个风格预设产出全功能覆盖的曲目。G:/ai/video_generator 当前处于 P0-3 Demucs stem-based audio driving 推进阶段，需对照本地 Python 3.14 环境（含 F:\Python314_embed_backup 备份）核实依赖可用性后再下结论。诡秘之主序列途径模拟系统可能进入下一阶段开发，需保持 GUI 与 CLI 共享核心的一致性，并维护文档同步。E:\ncmturnmp3 与 G:\local\markdown 均处于 PyInstaller 打包为 exe 阶段，markdown 项目按增量策略先出 --windowed 再补 --console 变体，打包时须注意 F:\Python314 3.14.7+Tcl/Tk 9.0.4 是本机唯一带 tkinter 的环境，验证依赖与构建产物时优先在此环境进行。E:\RolePlayer 跑团模拟器（v3.0.0）按"调研→联网搜索数据→设计→实现→测试→提交"流程推进，重点强化 dnd5e/gurps/coc 三规则集切换与 d20/troupe 服务分层（L0–L7），可参考三个候选仓库做增强。F:\novel\规则书\trpg_rulebooks\ TRPG 规则书合集按迭代分阶段推进，使用 ima MCP 访问共享书库（必要时需加入小组解锁），每阶段需用具体证据验证并产出交接报告。G:\local\run / run\dict-scene-engine 正处于预发布前检查阶段，需以并行多 agent 子团队模式交付 code review / security audit / QA 报告，格式采用 TL;DR + 结论卡 + 关键 action items，技术栈关注 Cordis 4.0.0-rc.9 插件架构、@cordisjs/plugin-loader 声明式加载、chokidar 热重载与程序化音效。胡适日记本地离线归档（含原书卷与网络连载补充资料，工作区 2026-09-08-08-26-44）按需推进，三路并行：xuges.com 抓取 1950–1953、Bilibili 69 篇辑补卷、OCR 8 卷全编 PDF（6035 页）覆盖 1917–1949；产出带来源标签的单文件 HTML 阅读器，遵循零三方依赖原则。musickit 整理任务需按既定结构（bass/drum/guita/vocal/sfx/synth/cowbell）推进，无法分类文件统一归入 guita 音轨（旋律/杂项兜底），整合时采用 copy 模式保留原文件，manifest 更新保持轻量（仅 source/original/path，不计算 sha256/duration 等耗时字段）；musickit 推送 Gitee music/musickit 分支时需排除乐器池和 ffmpeg 二进制，仅以 manifest.json/README.md 做文本标注。allin 仓库维护遵循整仓推送原则，不可仅推送部分内容。
+按顺序工作流推进：先完成全面评估，再按报告优先级（P0 → P1 → P2）依次修复，当前应处于 wave4 P0 级问题修复阶段（建立版本控制、清理调试残留、修复示例语义错误），修完后端到端验证再宣告完成。BloodMusic v2.0.0 多风格专辑制作是当下一线任务，需充分利用 6 个引擎与 12 个风格预设产出全功能覆盖的曲目。/ai/video_generator 当前处于 P0-3 Demucs stem-based audio driving 推进阶段，需对照本地 Python 3.14 环境（含 F:\Python314_embed_backup 备份）核实依赖可用性后再下结论。诡秘之主序列途径模拟系统可能进入下一阶段开发，需保持 GUI 与 CLI 共享核心的一致性，并维护文档同步。E:\ncmturnmp3 与 /local/markdown 均处于 PyInstaller 打包为 exe 阶段，markdown 项目按增量策略先出 --windowed 再补 --console 变体，打包时须注意 F:\Python314 3.14.7+Tcl/Tk 9.0.4 是本机唯一带 tkinter 的环境，验证依赖与构建产物时优先在此环境进行。E:\RolePlayer 跑团模拟器（v3.0.0）按"调研→联网搜索数据→设计→实现→测试→提交"流程推进，重点强化 dnd5e/gurps/coc 三规则集切换与 d20/troupe 服务分层（L0–L7），可参考三个候选仓库做增强。/novel/规则书/trpg_rulebooks/ TRPG 规则书合集按迭代分阶段推进，使用 ima MCP 访问共享书库（必要时需加入小组解锁），每阶段需用具体证据验证并产出交接报告。/local/run / run\dict-scene-engine 正处于预发布前检查阶段，需以并行多 agent 子团队模式交付 code review / security audit / QA 报告，格式采用 TL;DR + 结论卡 + 关键 action items，技术栈关注 Cordis 4.0.0-rc.9 插件架构、@cordisjs/plugin-loader 声明式加载、chokidar 热重载与程序化音效。胡适日记本地离线归档（含原书卷与网络连载补充资料，工作区 2026-09-08-08-26-44）按需推进，三路并行：xuges.com 抓取 1950–1953、Bilibili 69 篇辑补卷、OCR 8 卷全编 PDF（6035 页）覆盖 1917–1949；产出带来源标签的单文件 HTML 阅读器，遵循零三方依赖原则。musickit 整理任务需按既定结构（bass/drum/guita/vocal/sfx/synth/cowbell）推进，无法分类文件统一归入 guita 音轨（旋律/杂项兜底），整合时采用 copy 模式保留原文件，manifest 更新保持轻量（仅 source/original/path，不计算 sha256/duration 等耗时字段）；musickit 推送 Gitee music/musickit 分支时需排除乐器池和 ffmpeg 二进制，仅以 manifest.json/README.md 做文本标注。allin 仓库维护遵循整仓推送原则，不可仅推送部分内容。
 近期动态
 - 启动胡适日记本地离线归档工程（工作区 2026-09-08-08-26-44），三路并行：从 xuges.com 抓取 1950–1953 条目、整理 Bilibili 69 篇作为辑补卷、OCR 8 卷全编 PDF（6035 页）覆盖 1917–1949，遵循零三方依赖 Python 脚本原则，产出带来源标签的单文件 HTML 阅读器。
-- 启动 F:\novel\规则书\trpg_rulebooks\ TRPG 规则书合集项目，以 README.md + manifest.json 管理，核心系统 dnd5e/gurps/coc 含扩展，目标覆盖绝大部分 TRPG 规则书；通过 ima MCP（mcp__ima-mcp__fetch_media_content）访问中文 TRPG 共享书库，部分书库需加入小组解锁。
-- 启动 E:\RolePlayer 跑团模拟器项目（原 E:\D20，v3.0.0），支持 dnd5e/gurps/coc 三规则集同一角色卡切换，含 19 个 d20 服务 + 17 个 troupe 服务（L0–L7），按"调研现有系统→联网搜索数据→设计→实现→测试→提交"流程推进，重点强化模拟对战与规则切换流程，候选参考仓库 G:\repos\running-group-simulator、zhuangtaiji、life-reset-simulator。
-- 启动 G:\local\run 与 run\dict-scene-engine（基于 Cordis 的文字冒险游戏引擎，Node.js 22.22.2 + Cordis 4.0.0-rc.9 + chokidar 热重载）预发布前检查流程，规划以并行多 agent 子团队模式交付 code review / security audit / QA 报告（TL;DR + 结论卡 + 关键 action items），要求每条声明配可复现证据。
+- 启动 /novel/规则书/trpg_rulebooks/ TRPG 规则书合集项目，以 README.md + manifest.json 管理，核心系统 dnd5e/gurps/coc 含扩展，目标覆盖绝大部分 TRPG 规则书；通过 ima MCP（mcp__ima-mcp__fetch_media_content）访问中文 TRPG 共享书库，部分书库需加入小组解锁。
+- 启动 E:\RolePlayer 跑团模拟器项目（原 E:\D20，v3.0.0），支持 dnd5e/gurps/coc 三规则集同一角色卡切换，含 19 个 d20 服务 + 17 个 troupe 服务（L0–L7），按"调研现有系统→联网搜索数据→设计→实现→测试→提交"流程推进，重点强化模拟对战与规则切换流程，候选参考仓库 /repos/running-group-simulator、zhuangtaiji、life-reset-simulator。
+- 启动 /local/run 与 run\dict-scene-engine（基于 Cordis 的文字冒险游戏引擎，Node.js 22.22.2 + Cordis 4.0.0-rc.9 + chokidar 热重载）预发布前检查流程，规划以并行多 agent 子团队模式交付 code review / security audit / QA 报告（TL;DR + 结论卡 + 关键 action items），要求每条声明配可复现证据。
 - 完成 wave4 项目全面评估，产出 20 项问题的结构化报告：P0 级 3 项（无版本控制、调试残留、示例语义错误）、P1 级 6 项、P2 级 11 项。
 - 确定 P0 级 3 项为最高优先级，依次推进修复，强调修复后必须端到端验证（HTTP 200、直播分片校验等）再宣告完成。
 - 完成诡秘之主序列途径模拟系统路线图 P0-P2 阶段（E1-E11），采用自由函数 GUI 面板模式，实现 CLI/GUI 共享核心，分环境（F:\Python314 跑 GUI，沙箱 Python 3.13.12 跑纯逻辑）验证。
 - 启动 D:\bloodmusic（BloodMusic v2.0.0）多风格专辑制作，目标充分利用 6 个引擎与 12 个风格预设的全功能覆盖。
-- 启动 G:/ai/video_generator 视频生成项目，推进 P0 增强路线图，当前聚焦 P0-3 Demucs stem-based audio driving。
+- 启动 /ai/video_generator 视频生成项目，推进 P0 增强路线图，当前聚焦 P0-3 Demucs stem-based audio driving。
 - 启动 G:\musickit 音频采样包整理项目，建立 bass/drum/guita/vocal/sfx/synth/cowbell 七音轨结构及 manifest_index.json 索引体系，整合采用 copy 模式保留原文件，未分类文件统一归入 guita。
 - 规划 musickit 推送 Gitee music/musickit 分支，排除乐器池和 ffmpeg 二进制，仅以 manifest.json/README.md 做文本标注。
 - 启动 E:\ncmturnmp3 NCM 加密音乐转换器 PyInstaller 打包为 exe 工程。
-- 启动 G:\local\markdown Tkinter Markdown 阅读器 v2.0.0 打包 Windows exe 工程，按增量策略先交付 --windowed 版本再补充 --console 变体，依赖 F:\Python314 3.14.7+Tcl/Tk 9.0.4（本机唯一带 tkinter 环境）。
-- 使用 C:\Users\13122\WorkBuddy\ 按日期文件夹（如 2026-08-14-13-36-49、2026-09-08-08-26-44）管理任务归档。
+- 启动 /local/markdown Tkinter Markdown 阅读器 v2.0.0 打包 Windows exe 工程，按增量策略先交付 --windowed 版本再补充 --console 变体，依赖 F:\Python314 3.14.7+Tcl/Tk 9.0.4（本机唯一带 tkinter 环境）。
+- 使用 /Users/13122/WorkBuddy/ 按日期文件夹（如 2026-08-14-13-36-49、2026-09-08-08-26-44）管理任务归档。
 - 同步维护 G:\radio 电台项目（含 cloudflared 隧道、HLS 直播流），使用本地 Python 3.14 环境。
-- 配置 F:\Python314_embed_backup\Scripts 作为 Python 3.14 内嵌备份环境，验证依赖可用性时须对照本地实际环境而非简单声明缺失。
+- 配置 /Python314_embed_backup/Scripts 作为 Python 3.14 内嵌备份环境，验证依赖可用性时须对照本地实际环境而非简单声明缺失。
 - 多步骤任务期望助理主动衔接后续步骤（基于后台任务结果自动触发下一步），期间通过"进度查询"核验进度，通过"继续完成任务"驱动后台 pipeline 继续推进。
 - 持续维护 Gitee allin 仓库（账户 siwpan），强调按指令整仓推送，避免遗漏子目录或子项目；同时避免任务完成后重复执行陷入循环而不沟通；对未实跑就声称 "看起来没问题" 的报告明确不满，所有结论必须配可复现证据（含 file:line 引用与实际执行输出）。
 
@@ -28,39 +28,39 @@
 
 ## 2026-09-11 ~ 2026-09-22 增量（2026-09-22 三线核对后回填）
 
-> 来源：`C:\Users\13122\WorkBuddy` + `C:\Users\13122\CodeBuddy` 下的 165 份 memory md；该 09-11~09-22 区间此前未进 G 盘，09-22 已增量复制 31 个文件到 `G:\workbuddy` / `G:\CodeBuddy`（哈希 31/31 一致、零覆盖）。
-> 完整版见 `G:\allin\docs\workbuddy工作记忆增量汇总_20260922.md`；本次核对见 `G:\allin\docs\gitee本地核对报告_2026-09-22.md`、`G:\allin\docs\文档与现盘核对报告_2026-09-22.md`。
+> 来源：`/Users/13122/WorkBuddy` + `/Users/13122/CodeBuddy` 下的 165 份 memory md；该 09-11~09-22 区间此前未进 G 盘，09-22 已增量复制 31 个文件到 `G:\workbuddy` / `G:\CodeBuddy`（哈希 31/31 一致、零覆盖）。
+> 完整版见 `/allin/docs/workbuddy工作记忆增量汇总_20260922.md`；本次核对见 `/allin/docs/gitee本地核对报告_2026-09-22.md`、`/allin/docs/文档与现盘核对报告_2026-09-22.md`。
 
 ### 一、本区间项目线（增量）
 
 | 项目 | 现行路径 | 进展与状态 |
 |---|---|---|
-| PluginPlayer | `G:\repos\pluginplayer`（siwpan，main） | C++ 内核 + JS host；全检 44 项修 42；libass 字幕 / HDR 色彩空间 / 画质插件；radio_bridge；v1.0.0。09-22 已对齐远端 `ec2cd9b` |
-| players-unified | `G:\repos\players-unified` | 三端物理合并 monorepo；Phase1-5，S5 Cordis 统一宿主；S5 双跑等价 116/116；tag v0.8.0 |
-| localplayer | `G:\repos\localplayer` | Chrome MV3 扩展；v1.3.0~v1.3.4（WebRTC 投送等）；master + develop |
-| daily_player | `G:\repos\daily_player` | Python3.14 + tkinter + python-vlc 桌面播放器；v1.0.0 |
-| 12test / cordis-host | `G:\local\12test` | Cordis「一切皆插件」重做；playthrough 穷举 4096 局、12/12 结局可达；Web :3210 |
-| an-engine（引擎） | `G:\repos\an-engine` | **alloy → allin_engine 改名**（`72c1d63`，173 文件/753 处）；字体移出发布包；双写差异补齐；**allin-engine 1.0.0 上正式 PyPI** |
-| bloodmusic | `G:\repos\audio-generation` | 命名空间包改造 + 字体可选化；**bloodmusic 2.0.0 上正式 PyPI** |
-| audio-generation | `G:\repos\audio-generation` | Cordis 重构 Phase A/B（pytest 583→0）；内容/QA 自动化（232 WAV / 543+16 passed） |
-| musickit remix | `G:\repos\musickit` | 每小时随机风格混音自动化三轮迭代（内置随机 → 提示词驱动跑偏被纠 → 回归 `--remix` 并叠加 `--mixer-style`/`--fusion`） |
-| foolproof-operation | `G:\repos\foolproof-operation` | 「自动发现」601 包归类：15→25 分类、761 条目；`shlex.split` 自适应；接入自研包 |
-| novel-down | `G:\repos\novel-down`（main，MIT） | v0.1.0 → **v0.8.40**；测试 353；规则 161（启用 146）；门禁 11 PASS + 自检 11/11；三个 release |
-| 综网废柴逆命（小说） | `G:\local\write\综网废柴逆命` | 第一卷 21 章 51,691 字冻结；第二卷《第 9 个》连载中（楔子 + 01~03 章） |
-| webcopier | `G:\repos\webcopier` | 修复的是 `F:\Python314` 环境损坏（**非项目代码问题**）：dist-info 残留 + 约 20 包缺失 + 依赖名写错 |
-| DSH 本地部署 | `G:\notpython\deepseek-harness-master` | npm arborist 空版本 bug → `--legacy-peer-deps`；重打 WinError 448 补丁；`start-dsh.bat` 直调 bin；Web :3080 |
+| PluginPlayer | `/repos/pluginplayer`（siwpan，main） | C++ 内核 + JS host；全检 44 项修 42；libass 字幕 / HDR 色彩空间 / 画质插件；radio_bridge；v1.0.0。09-22 已对齐远端 `ec2cd9b` |
+| players-unified | `/repos/players-unified` | 三端物理合并 monorepo；Phase1-5，S5 Cordis 统一宿主；S5 双跑等价 116/116；tag v0.8.0 |
+| localplayer | `/repos/localplayer` | Chrome MV3 扩展；v1.3.0~v1.3.4（WebRTC 投送等）；master + develop |
+| daily_player | `/repos/daily_player` | Python3.14 + tkinter + python-vlc 桌面播放器；v1.0.0 |
+| 12test / cordis-host | `/local/12test` | Cordis「一切皆插件」重做；playthrough 穷举 4096 局、12/12 结局可达；Web :3210 |
+| an-engine（引擎） | `/repos/an-engine` | **alloy → allin_engine 改名**（`72c1d63`，173 文件/753 处）；字体移出发布包；双写差异补齐；**allin-engine 1.0.0 上正式 PyPI** |
+| bloodmusic | `/repos/audio-generation` | 命名空间包改造 + 字体可选化；**bloodmusic 2.0.0 上正式 PyPI** |
+| audio-generation | `/repos/audio-generation` | Cordis 重构 Phase A/B（pytest 583→0）；内容/QA 自动化（232 WAV / 543+16 passed） |
+| musickit remix | `/repos/musickit` | 每小时随机风格混音自动化三轮迭代（内置随机 → 提示词驱动跑偏被纠 → 回归 `--remix` 并叠加 `--mixer-style`/`--fusion`） |
+| foolproof-operation | `/repos/foolproof-operation` | 「自动发现」601 包归类：15→25 分类、761 条目；`shlex.split` 自适应；接入自研包 |
+| novel-down | `/repos/novel-down`（main，MIT） | v0.1.0 → **v0.8.40**；测试 353；规则 161（启用 146）；门禁 11 PASS + 自检 11/11；三个 release |
+| 综网废柴逆命（小说） | `/local/write/综网废柴逆命` | 第一卷 21 章 51,691 字冻结；第二卷《第 9 个》连载中（楔子 + 01~03 章） |
+| webcopier | `/repos/webcopier` | 修复的是 `F:\Python314` 环境损坏（**非项目代码问题**）：dist-info 残留 + 约 20 包缺失 + 依赖名写错 |
+| DSH 本地部署 | `/notpython/deepseek-harness-master` | npm arborist 空版本 bug → `--legacy-peer-deps`；重打 WinError 448 补丁；`start-dsh.bat` 直调 bin；Web :3080 |
 | 环境/系统 | 本机 | Bash 工具 PATH 修复；wuauserv DACL 修复；Windows Terminal 报错弹窗定位；批量删除源排查（嫌疑=腾讯电脑管家） |
 
 ### 二、关键事实（可复用，节选）
 
-- PluginPlayer 控制通道 `127.0.0.1:7911`（换行分隔 JSON-RPC，auth 必须首条，token ≥16 字符）；RPC 往返 p50≈16.6ms（1 帧@60fps），UI 按 ≥100ms 节流；FFmpeg 9.0.1 + SDL3 3.4.16；g++ 在 `F:/mingw64/mingw64/bin`。
+- PluginPlayer 控制通道 `127.0.0.1:7911`（换行分隔 JSON-RPC，auth 必须首条，token ≥16 字符）；RPC 往返 p50≈16.6ms（1 帧@60fps），UI 按 ≥100ms 节流；FFmpeg 9.0.1 + SDL3 3.4.16；g++ 在 `/mingw64/mingw64/bin`。
 - 端口：DSH :3080、npm 本地镜像 :8899、players-unified launcher :7920 / host web :5000 / pluginplayer :7913、PluginPlayer 控制 :7911、12test :3210。
 - `F:\Python314` 仍是**唯一带 tkinter** 的环境；其 pip 写盘/解包/卸载会卡死 → 只做导入检测，不装包；pytest 须从 `Lib/site-packages`（junction）跑、禁 `--basetemp`。
 - 大包安装仍走本地镜像：`npm_config_registry=http://127.0.0.1:8899 npm install`（Node undici 直连大 tarball 不可靠）。
 - PyPI 名称永久占用：`alloy` 被 Elide 占用 → 改用 `allin-engine`。
 - novel-down：番茄字体反爬 362/362 码位覆盖，随仓索引 `sourcehan-sc-2.002.bin` 470171 字节；镜像覆盖 392 域；发行版 onedir 35MB/1.4s、onefile 18.6MB/47s。
 
-### 三、教训（本区间新增，已并入 G:\allin\docs MEMORY 调试铁律）
+### 三、教训（本区间新增，已并入 /allin/docs MEMORY 调试铁律）
 
 - Gitee 建 release 不带 `target_commitish` → 400；**附件上传漏 `/api/v5` → 404 HTML 静默失败**；`assets` 无 id，重传同名会并存 → 删整个 release 再重建。
 - 「测试全绿」≠「这条路能跑」；漏 import 曾连踩三次 → 补 `test_imports.py` 逐模块 import 烟雾。
@@ -81,19 +81,19 @@
 - foolproof-operation：`requirements.py` 已改 `.pyw`，当时未提交（09-22 复查仍在工作区）。
 - novel-down：`gen_family_rule` 的 `_reject_reason` 对英文域名/路径无效；出版读物 OCR VLM 路线搁置。
 - 系统：Windows 更新安装失败（0x80073D02 等）、QQPCTray SideBySide 兼容 bug、迅雷浏览器插件自启、Intel 核显驱动偏旧/TDR。
-- 三播放器整合两条线（`G:\local\players-unified` vs `G:\repos\players-unified`）口径待合并。
+- 三播放器整合两条线（`/local/players-unified` vs `/repos/players-unified`）口径待合并。
 
 ### 五、本档旧路径订正（以现行目录为准）
 
 | 本档（旧） | 现行 |
 |---|---|
-| `G:\radio` | `G:\repos\private-radio-stations` |
-| `G:\musickit` | `G:\repos\musickit` |
-| `G:\tools\audio_separator` / `G:\tools\bloodmusic` / `G:\tools\remix` | `G:\repos\audio-separator` / `G:\repos\audio-generation` / `G:\repos\remix` |
-| `G:\novel` | `G:\repos\novel` |
-| `G:\yuanbao` | `G:\repos\yuanbao` |
-| `G:\moba_battle_platform` | `G:\repos\moba_battle_platform` |
-| `D:\album_output` / `E:\ncmturnmp3` | 归档/迁移，以 `G:\repos\ncmturnmp3` 与 `G:\archive` 为准 |
-| `G:\` 整盘为 allin 仓根 | **allin 仓根已改为 `G:\allin`**（Gitee siwpan/allin）；一仓一目录于 `G:\repos\<仓名>` |
+| `G:\radio` | `/repos/private-radio-stations` |
+| `G:\musickit` | `/repos/musickit` |
+| `/tools/audio_separator` / `/tools/bloodmusic` / `/tools/remix` | `/repos/audio-separator` / `/repos/audio-generation` / `/repos/remix` |
+| `G:\novel` | `/repos/novel` |
+| `G:\yuanbao` | `/repos/yuanbao` |
+| `G:\moba_battle_platform` | `/repos/moba_battle_platform` |
+| `D:\album_output` / `E:\ncmturnmp3` | 归档/迁移，以 `/repos/ncmturnmp3` 与 `G:\archive` 为准 |
+| `G:\` 整盘为 allin 仓根 | **allin 仓根已改为 `G:\allin`**（Gitee siwpan/allin）；一仓一目录于 `/repos/<仓名>` |
 
-*回填时间：2026-09-22 ｜ 原件已备份至 `G:\archive\docs-baks-20260922\`。*
+*回填时间：2026-09-22 ｜ 原件已备份至 `/archive/docs-baks-20260922/`。*

@@ -12,12 +12,12 @@
 |---|---|
 | 令牌来源 | **Windows 凭据管理器（GCM）**，**无文件式凭据**（`~/.git-credentials` 不存在、`credential.https://gitee.com.helper=store` 未配）。`git push` 由 GCM 直接取用，实测不弹窗可推 |
 | 给 API 脚本取令牌 | 本机**没有** `~/.git-credentials` 可提取，故 `--token-file "$HOME/.git-credentials"` **会失败**。须显式提供 `--token <HEX>`、`GITEE_TOKEN` 或真正的凭据文件路径 |
-| Python | `F:\Python314\python.exe`（3.14.7，已在 PATH；含 openpyxl 3.1.5） |
+| Python | `/Python314/python.exe`（3.14.7，已在 PATH；含 openpyxl 3.1.5） |
 | allin 远程 | `master` @ `bd34ed0`；默认分支 `master`；另有 `nothing` tag |
 | git 身份 | **全局未配**；各仓按**仓库级**配 `user.name=siwpan` / `user.email=siwpan@users.noreply.gitee.com` |
 | 关联文档 | `docs/gitee推送流程_2026-09-25.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/gitee协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
 
-> ⚠ 旧路径 `G:\私人令牌.txt`、`E:\Python314`、`C:\Users\13122\*` 在新机**均不存在**（新机是 `DESKTOP-8RSV60V` / 用户 `psw`）。
+> ⚠ 旧路径 `G:\私人令牌.txt`、`E:\Python314`、`/Users/13122/*` 在新机**均不存在**（新机是 `DESKTOP-8RSV60V` / 用户 `psw`）。
 > 本机现为 C / D / F / G 四卷：C 内置、D 外置 exFAT(save)、F 外置 NTFS(trash)、G 外置 NTFS(allin)。
 > 本表为**落点事实源**；跨机搬运后须按 §6 复核再照抄。
 
@@ -157,7 +157,7 @@ git status --short                                  # ③ 须为空
 ## 6. 落点复核（照抄本文档前先跑一遍）
 
 **教训（2026-09-25 实测）**：本文档与推送篇原先写的是**原型机落点**（`E:\Python314`、
-`C:\Users\13122\.git-credentials`、`helper=store`、F/G 盘已移除）。换机后照抄**必失败**——
+`/Users/13122/.git-credentials`、`helper=store`、F/G 盘已移除）。换机后照抄**必失败**——
 `E:\` 卷不存在、`~/.git-credentials` 不存在、全局 git 身份为空。
 
 下面这段**只读**命令在任何机器上跑一遍，即可核出本文档哪些落点需要就地修正：

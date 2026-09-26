@@ -31,5 +31,5 @@ bin-release/
 /shurufa/
 
 # ===== 可重生成的索引产物（2026-09-25：不入库 —— 它曾因逐次提交把仓库撑到 10.5 GB）
-# 生成器：G:\tools\build_dir_index.py（--apply）；改项目请改它的 README，勿手改索引
+# 生成器：/tools/build_dir_index.py（--apply）；改项目请改它的 README，勿手改索引
 /目录索引.txt

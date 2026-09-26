@@ -4,15 +4,15 @@
 
 为什么存在
 ----------
-`G:\\tools\\README.md` 纪律 1 写着：「`.ps1` 必须存成 UTF-8 带 BOM —— 否则 PowerShell 5.1
+`/tools/README.md` 纪律 1 写着：「`.ps1` 必须存成 UTF-8 带 BOM —— 否则 PowerShell 5.1
 按 ANSI 解码中文，报一堆**假**语法错误」。
 
 但这条纪律此前**只是文字**。2026-09-25 实测当场踩中：用编辑工具改
-`G:\\tools\\fix-registry-acl.ps1` 后 **BOM 被剥掉**，而 PowerShell 5.1 下
+`/tools/fix-registry-acl.ps1` 后 **BOM 被剥掉**，而 PowerShell 5.1 下
 `scan_hardcoded.ps1`（无 BOM 且含中文）确实报出假语法错误：
 
     Unexpected token '}' in expression or statement.
-    At G:\\tools\\gate\\scan_hardcoded.ps1:122 char:60
+    At /tools/gate/scan_hardcoded.ps1:122 char:60
 
 **文字纪律挡不住工具链的默认行为**，所以把它变成退出码。
 
@@ -28,7 +28,7 @@
 用法
 ----
     python check_ps1_bom.py                      # 扫默认根
-    python check_ps1_bom.py --root G:\\tools --root G:\\allin
+    python check_ps1_bom.py --root /projects/allin_push --root /projects
     python check_ps1_bom.py --fix                # 就地补 BOM（**会写文件**，默认干跑）
     python check_ps1_bom.py --selfcheck          # 注入破坏用例自证
     python check_ps1_bom.py --json out.json
@@ -56,7 +56,9 @@ except Exception:
     pass
 
 BOM = b"\xef\xbb\xbf"
-DEFAULT_ROOTS = [r"G:\tools", r"G:\allin", r"G:\allin-platform", r"G:\repos"]
+# 去符盘（铁律 5，2026-09-26）：默认根 = 环境变量 PROJECTS_ROOT，否则脚本所在仓根（tools/ → 上级）
+DEFAULT_ROOTS = [os.environ.get("PROJECTS_ROOT")
+                 or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))]
 SKIP_DIRS = {
     ".git", "node_modules", "__pycache__", ".venv", "venv", "env",
     "site-packages", "dist", "build", ".deps", ".tox", ".mypy_cache",
@@ -157,8 +159,8 @@ def selfcheck():
     print("  --fix 补 BOM 后可合规: {}  [fixed={} result={}]".format("✔" if fixed and r is None else "✘", fixed, r or "None"))
     ok &= fixed and r is None
 
-    # ⑥ 真实回归：拿本机那个曾经丢 BOM 的脚本验证门禁判据（只读）
-    real = r"G:\tools\fix-registry-acl.ps1"
+    # ⑥ 真实回归：拿一个曾丢过 BOM 的真实脚本验证判据（只读；路径由环境变量给出，去符盘）
+    real = os.environ.get("BOM_REGRESSION_TARGET", "")
     if os.path.isfile(real):
         r = scan_file(real)
         print("  真实脚本 {}: {}  [{}]".format(os.path.basename(real),

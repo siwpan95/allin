@@ -698,10 +698,15 @@ def main():
     ap = argparse.ArgumentParser(description="仓库卫生门禁（六项 + 仓名/行尾）")
     ap.add_argument("--repo", help="单个仓路径")
     ap.add_argument("--all", action="store_true", help="扫描 --repos-root 下全部仓")
-    ap.add_argument("--repos-root", default=r"G:\repos", help="仓根（默认 G:\\repos）")
+    ap.add_argument("--repos-root",
+                    default=os.environ.get("PROJECTS_ROOT")
+                            or os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    help="仓根（默认 = 环境变量 PROJECTS_ROOT，否则脚本所在仓根）")
     ap.add_argument("--filter", help="只扫名字含该子串的仓")
     ap.add_argument("--worktree", action="store_true", help="追加未跟踪面扫描")
-    ap.add_argument("--baseline", default=r"G:\tools\gate\audit\hygiene_baseline.csv")
+    ap.add_argument("--baseline",
+                    default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                         "gate", "audit", "hygiene_baseline.csv"))
     ap.add_argument("--write-baseline", action="store_true", help="把当前命中断言为基线")
     ap.add_argument("--no-baseline", action="store_true", help="忽略基线，看全部存量")
     ap.add_argument("--list-all", action="store_true", help="打印全部命中明细")

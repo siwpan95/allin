@@ -15,7 +15,7 @@
 ```bash
 python tools/gitee_release.py whoami                                  # 验证令牌可用
 python tools/gitee_release.py create   --name myproj                  # 建私有仓（已存在则跳过）
-python tools/gitee_release.py remote   --name myproj --repo D:/local/myproj   # 配/改 origin
+python tools/gitee_release.py remote   --name myproj --repo /local/myproj   # 配/改 origin
 python tools/gitee_release.py public   --name myproj                  # 转公开（已公开则跳过）
 python tools/gitee_release.py release  --name myproj --tag v1.0.0 \
                                        --title "myproj v1.0.0" --notes-file notes.md
@@ -97,7 +97,7 @@ python repo_hygiene.py --selfcheck              # 自证
 
 ### `check_ps1_bom.py` — PowerShell 编码门禁
 
-`G:\tools\README.md` 纪律 1「`.ps1` 必须存成 UTF-8 带 BOM」此前**只是文字**。
+`/tools/README.md` 纪律 1「`.ps1` 必须存成 UTF-8 带 BOM」此前**只是文字**。
 本次当场踩中：编辑工具改脚本后 **BOM 被剥掉**，导致 `scan_hardcoded.ps1` 在
 PowerShell 5.1 下报假语法错误（`Unexpected token '}'`）——**该门禁在 PS 5.1 下完全不可用**。
 
@@ -127,7 +127,7 @@ python watchdog.py --selfcheck
 - **SMART 会报 `Healthy` 而盘正在重试 IO** —— 必须看事件日志（`disk` id 153 + `Ntfs` id 130/132），只看 SMART 会得出「全绿」的错误结论。
 - 仓完整性**必须用 `HEAD^{commit}`**：`rev-parse --verify HEAD` 只解析 ref 名、**不验证对象是否存在**，会把「objects 全删」「HEAD 写坏」判成 OK（自检当场抓出）。
 
-> 开发中的 `G:\tools\gate\` 是同一批脚本的工作副本；**本目录（随仓分发）是给外部使用者的一份**。
+> 开发中的 `/tools/gate/` 是同一批脚本的工作副本；**本目录（随仓分发）是给外部使用者的一份**。
 > 两份内容一致，修改时需同步。
 
 
@@ -139,7 +139,7 @@ python watchdog.py --selfcheck
 > `branch.<名>.remote`」这一最难发现的残留。建仓/推送后的收尾**逐项过**：
 
 ```powershell
-$repo = 'G:\repos\<仓名>'
+$repo = '/repos/<仓名>'
 
 # ① 凭据残留：必须扫 config **全文**，不能只看 remote 段
 #    （`git remote -v` 只显示 remote.origin.url，看不见 branch.*.remote）

@@ -9,8 +9,8 @@
 | gitee 仓库 | 说明 | G:\ 对应 |
 |---|---|---|
 | `siwpan/allin` | G:\ 的文档枢纽 + 全盘索引仓库（仓库根 = `G:\allin`，跟踪 `目录索引.txt` / `LICENSE` / `.gitignore` / `docs/` 等 262 个文件） | `G:\allin`（2026-09-24 用 `git rev-parse --show-toplevel` 核实；原记"整个 G:\ 是一个 git 工作树"已不成立，`G:\.git` 不存在） |
-| `siwpan/music`（分支 musickit） | musickit 项目仓库（历史提及，见 musickit/README.md） | `G:\music\musickit`（本地同步区 `G:\music\_gitee_push`） |
-| `siwpan/zhuangtaiji` | 多范式决策引擎 + 可视化工作台（Python 纯标准库内核 + React 编排编辑器，MIT）；登记端口 8011；已发布 v1.0.0 / v1.0.1（见下「已发布版本」） | `G:\repos\zhuangtaiji`（版本说明的权威副本见该仓 `CHANGELOG.md`） |
+| `siwpan/music`（分支 musickit） | musickit 项目仓库（历史提及，见 musickit/README.md） | `/music/musickit`（本地同步区 `/music/_gitee_push`） |
+| `siwpan/zhuangtaiji` | 多范式决策引擎 + 可视化工作台（Python 纯标准库内核 + React 编排编辑器，MIT）；登记端口 8011；已发布 v1.0.0 / v1.0.1（见下「已发布版本」） | `/repos/zhuangtaiji`（版本说明的权威副本见该仓 `CHANGELOG.md`） |
 
 其余项目请以 https://gitee.com/siwpan/projects 页面为准。
 

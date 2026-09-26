@@ -1,9 +1,9 @@
-# `G:\allin\docs` — 文档枢纽（Documentation Hub）
+# `/allin/docs` — 文档枢纽（Documentation Hub）
 
 > **这是什么**：整个 `G:\` 工作区的**唯一文档入口**。所有面向人（以及面向后续 AI 会话）的说明、记忆、计划、审计与复盘都汇总在这里，
 > 并随公开仓 [`siwpan/allin`](https://gitee.com/siwpan/allin) 一起发布 —— **开发过程对任何人透明可读、可复跑、可接手续做**。
 > **本目录的规矩**：**只放文档**。脚本、CSV、二进制、第三方 SDK、审计过程产物一律不放（见文末「边界」）。
-> **迁移记录**：本枢纽原为 `G:\allin\docs`，2026-09-24 整体迁入 `G:\allin\docs` 并推送（迁移与非文档内容去向见 `会话交接_2026-08-27.md` §74 与 `G:\archive\docs-nondoc-20260924\MANIFEST.md`）。
+> **迁移记录**：本枢纽原为 `/allin/docs`，2026-09-24 整体迁入 `/allin/docs` 并推送（迁移与非文档内容去向见 `会话交接_2026-08-27.md` §74 与 `/archive/docs-nondoc-20260924/MANIFEST.md`）。
 
 ---
 
@@ -67,18 +67,18 @@
 
 | 位置 | 是什么 | 为什么放在那里 |
 | --- | --- | --- |
-| `G:\repos\<项目>\README.md` | 107 个项目的门面文档 | 属于各仓，随仓公开；本枢纽只做汇总索引 |
-| `G:\allin-platform\registry\projects\*.yaml` · `G:\allin-platform\registry\ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读）；**目录名已对齐远端仓名 `allin-platform`（2026-09-25 由 `G:\platform` 改名）** |
-| `G:\tools\gate\` | 可执行门禁：`scan_hardcoded.ps1`（死根路径门禁，含 `-SelfTest` 与基线棘轮）、`check_undefined_names.py`（AST 未定义名）、`audit/` 基线目录 | 工具不是文档，独立成区；用法见该目录 `README.md` |
-| `G:\allin\目录索引.txt` | **项目目录文档化索引**（2026-09-24 形态换代）：**118 个项目 / 32.55 KB**，每项目一条 = 标题 + 首段摘要 + README 链接 + 体量。**以各项目自己的 README 为唯一事实源，不复制正文**。生成器 `G:\tools\build_dir_index.py`（`--apply` 落盘，带体量缓存）。**改项目请改它的 README，勿手改索引**。旧「全盘文件快照」形态（48.53 MB / 555,220 行）已归档 `G:\archive\目录索引-全盘快照-20260828\` |
-| `G:\workbuddy\` | 另一套 AI 工作区（WorkBuddy）的**活跃记忆**，含 `CONSOLIDATED_MEMORY.md` | 由该应用写入，**不搬移**（搬走会破坏其运行），本枢纽只登记位置 |
-| [`G:\allin\siwpan旧机配置汇总.html`](../siwpan旧机配置汇总.html) | **本机（旧机）配置汇总**：OS / 盘位容量 / 运行时 / 关键工具二进制 / Python 包可用性 / 与旧记忆的实测偏差（173 行单文件离线报告） | 在**仓根**而非枢纽内（枢纽只放 `.md/.txt/说明性 .yaml`）；作为《治理模式换机可迁移化方案》的**机器事实源**被引用，机器类事实只写这一份 |
-| `G:\archive\docs-nondoc-20260924\` | 从本枢纽迁出的非文档内容（审计产物、XJ380 SDK、GURPS 第三方规则文本）+ `MANIFEST.md` | 归档可逆，**永不入库**（含敏感串扫描产物与第三方版权内容） |
+| `/repos/<项目>\README.md` | 107 个项目的门面文档 | 属于各仓，随仓公开；本枢纽只做汇总索引 |
+| `/allin-platform/registry/projects/*.yaml` · `/allin-platform/registry/ports.yaml` | 项目注册表与端口清单 | 可执行的事实源（启动器/门禁直接读）；**目录名已对齐远端仓名 `allin-platform`（2026-09-25 由 `G:\platform` 改名）** |
+| `/tools/gate/` | 可执行门禁：`scan_hardcoded.ps1`（死根路径门禁，含 `-SelfTest` 与基线棘轮）、`check_undefined_names.py`（AST 未定义名）、`audit/` 基线目录 | 工具不是文档，独立成区；用法见该目录 `README.md` |
+| `/allin/目录索引.txt` | **项目目录文档化索引**（2026-09-24 形态换代）：**118 个项目 / 32.55 KB**，每项目一条 = 标题 + 首段摘要 + README 链接 + 体量。**以各项目自己的 README 为唯一事实源，不复制正文**。生成器 `/tools/build_dir_index.py`（`--apply` 落盘，带体量缓存）。**改项目请改它的 README，勿手改索引**。旧「全盘文件快照」形态（48.53 MB / 555,220 行）已归档 `/archive/目录索引-全盘快照-20260828/` |
+| `/workbuddy/` | 另一套 AI 工作区（WorkBuddy）的**活跃记忆**，含 `CONSOLIDATED_MEMORY.md` | 由该应用写入，**不搬移**（搬走会破坏其运行），本枢纽只登记位置 |
+| [`/allin/siwpan旧机配置汇总.html`](../siwpan旧机配置汇总.html) | **本机（旧机）配置汇总**：OS / 盘位容量 / 运行时 / 关键工具二进制 / Python 包可用性 / 与旧记忆的实测偏差（173 行单文件离线报告） | 在**仓根**而非枢纽内（枢纽只放 `.md/.txt/说明性 .yaml`）；作为《治理模式换机可迁移化方案》的**机器事实源**被引用，机器类事实只写这一份 |
+| `/archive/docs-nondoc-20260924/` | 从本枢纽迁出的非文档内容（审计产物、XJ380 SDK、GURPS 第三方规则文本）+ `MANIFEST.md` | 归档可逆，**永不入库**（含敏感串扫描产物与第三方版权内容） |
 
 ## 七、边界与维护约定
 
 **只在枢纽里放**：`.md` 文档、`.txt` 纯文本、说明性 `.yaml`（如端口表）。
-**不放**：脚本与工具（→ `G:\tools\`）、构建/审计产物（→ `G:\archive\`）、二进制与第三方资料（→ 归档或本项目目录）、任何令牌/密钥。
+**不放**：脚本与工具（→ `/tools/`）、构建/审计产物（→ `/archive/`）、二进制与第三方资料（→ 归档或本项目目录）、任何令牌/密钥。
 
 **维护三条**
 1. **单一事实源**：同一事实只写一份 —— 铁律与约定在 `MEMORY.md`，流程在协作约定，历史流水在会话交接；其他地方只放链接，**禁止复制第二份 MEMORY**。

@@ -20,7 +20,7 @@
 - 复制文件：**31 个**（WorkBuddy 25 + CodeBuddy 6）
 - 哈希校验：**31 / 31 一致**（复制前 C 侧 SHA-256 vs 复制后 G 侧 SHA-256）
 - 覆盖：**0**；删除：**0**；跳过（目标已存在）：**0**
-- 明细清单：`G:\tmp\w3_sync_log.json`（含套件/工作区/相对路径/字节数/哈希一致标记）
+- 明细清单：`/tmp/w3_sync_log.json`（含套件/工作区/相对路径/字节数/哈希一致标记）
 
 ### 落盘明细（按大小）
 
@@ -57,7 +57,7 @@
 |---|---|---|---|
 | 1 | WorkBuddy `Claw` 工作区未同步 | 该目录**无 `.workbuddy\memory\*` 文件**，按「只同步 memory 与轻量文档」口径无物可拷，故 G 侧未创建该目录 | 若需保全其产物，单独定口径（属「全量镜像」范畴，本轮未做） |
 | 2 | G 侧 `.workbuddy` / `.codebuddy`（工具级目录）未动 | 与工作区 memory 不同层，本轮未纳入 | 保持不动 |
-| 3 | **增量汇总稿** | 已产出 `G:\allin\docs\workbuddy工作记忆增量汇总_20260922.md`（**新文件**） | 是否并入 `G:\allin\docs\workbuddy工作记忆备份.txt`（09-16 快照，13 处路径已失效）与 `G:\workbuddy\CONSOLIDATED_MEMORY.md`（08-21，17.5KB）→ **等你拍板** |
+| 3 | **增量汇总稿** | 已产出 `/allin/docs/workbuddy工作记忆增量汇总_20260922.md`（**新文件**） | 是否并入 `/allin/docs/workbuddy工作记忆备份.txt`（09-16 快照，13 处路径已失效）与 `/workbuddy/CONSOLIDATED_MEMORY.md`（08-21，17.5KB）→ **等你拍板** |
 | 4 | 后续自动化 | 本次为一次性手工同步 | 可考虑「memory 目录 C→G 增量镜像」脚本 + 记录（属新工具，需另立项确认） |
 
 *报告生成：2026-09-22 ｜ 全部数字来自 `w3_diff.json` / `w3_sync_log.json` 实测，非估算。*

@@ -5,7 +5,7 @@
 .DESCRIPTION
   判死口径（2026-09-23 第 1 批去本地化固化，堵住三个历史盲点）：
     1) 对**全量命中**判死，不限于某个严重度子集（旧口径漏掉赋值型行）；
-    2) 分隔符容错 [\\/]{1,2}，兼容源码里 "D:\\allin\\not\\OK" 这类转义写法（旧口径把根折叠成 D:\ 而误判为活）；
+    2) 分隔符容错 [\\/]{1,2}，兼容源码里 "<盘>:\\allin\\not\\OK" 这类转义写法（旧口径把根折叠成盘符根而误判为活）；
     3) 判据 = 路径前 1~2 段在盘上不存在（系统路径白名单除外）；
     4) 命中分三类：CODE 有效行 / CODE 注释行 / DOC·CFG；**只有 CODE 有效行算阻断**。
 
@@ -29,7 +29,7 @@
   额外扫描的自定义根（可为非 git 目录）。
 
 .PARAMETER Baseline
-  基线 CSV（默认 G:\tools\gate\audit\hardcoded_gate_baseline.csv）。不存在时视为空基线。
+  基线 CSV（默认 <脚本目录>\audit\hardcoded_gate_baseline.csv，随仓走）。不存在时视为空基线。
 
 .PARAMETER WriteBaseline
   把本次全部阻断项写入基线文件（存量上线用），随后退出码恒为 0。
@@ -47,7 +47,7 @@
   打印全部命中（默认只打印新增/阻断项）。
 
 .PARAMETER OutCsv
-  本次命中明细落盘（默认 G:\tools\gate\audit\hardcoded_gate_<时间戳>.csv）。
+  本次命中明细落盘（默认 <脚本目录>\audit\hardcoded_gate_<时间戳>.csv）。
 
 .PARAMETER MaxPrint
   明细打印上限，默认 60。
@@ -59,20 +59,20 @@
   自测门禁本身（临时建仓验证：能抓死路径、不误报系统路径/URL/夹具/转义、基线棘轮生效）。
 
 .EXAMPLE
-  pwsh -File G:\tools\gate\scan_hardcoded.ps1 -WriteBaseline      # 存量上线：写入基线
+  pwsh -File tools/gate/scan_hardcoded.ps1 -WriteBaseline      # 存量上线：写入基线
 .EXAMPLE
-  pwsh -File G:\tools\gate\scan_hardcoded.ps1                    # 日常：只拦新增
+  pwsh -File tools/gate/scan_hardcoded.ps1                    # 日常：只拦新增
 .EXAMPLE
-  pwsh -File G:\tools\gate\scan_hardcoded.ps1 -NoBaseline -ListAll   # 普查：看全部存量
+  pwsh -File tools/gate/scan_hardcoded.ps1 -NoBaseline -ListAll   # 普查：看全部存量
 .EXAMPLE
-  pwsh -File G:\tools\gate\scan_hardcoded.ps1 -SelfTest
+  pwsh -File tools/gate/scan_hardcoded.ps1 -SelfTest
 #>
 [CmdletBinding()]
 param(
   [string[]]$Repos,
-  [string]$ReposRoot = 'G:\repos',
+  [string]$ReposRoot = '',
   [string[]]$Path,
-  [string]$Baseline = 'G:\tools\gate\audit\hardcoded_gate_baseline.csv',
+  [string]$Baseline = '',
   [switch]$WriteBaseline,
   [switch]$NoBaseline,
   [switch]$IncludeDocs,
@@ -91,6 +91,11 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
+
+# ── 去符盘默认（铁律 5，2026-09-26）：默认目标 = 脚本自身所在仓（tools/gate → 上两级 = 仓根，单目标）──
+if (-not $ReposRoot) { $Path = @($Path) + (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
+$script:AuditDir = Join-Path $PSScriptRoot 'audit'
+if (-not $Baseline) { $Baseline = Join-Path $script:AuditDir 'hardcoded_gate_baseline.csv' }
 
 $script:CodeExts = @('.py','.pyw','.js','.mjs','.cjs','.ts','.tsx','.jsx','.cpp','.cc','.cxx','.h','.hpp','.c','.cs','.go','.rs','.java','.kt','.php','.rb','.lua','.bat','.cmd','.ps1','.psm1','.sh','.bash','.zsh','.pl','.r','.m','.mm','.swift','.sql','.vb','.vbs','.iss','.spec','.gradle','.cmake','.mk')
 $script:SkipDirs = @('.git','node_modules','__pycache__','.venv','venv','env','dist','build','.next','.nuxt','target','out','.mypy_cache','.pytest_cache','.ruff_cache','.idea','.vs','.vscode')
@@ -112,7 +117,7 @@ $script:RxSpaceTail = [regex]'^\s+(Files( \(x86\))?|Setup\s+\d|and Settings|Sett
 $script:ExtCache = @{}
 $script:RxWhitelist = [regex]'^[A-Za-z]:\\?(Windows|Program Files|Program Files \(x86\)|ProgramData|PerfLogs|Recovery)(\\|$)'
 $script:WhitelistDirs = @("$env:WINDIR", "$env:ProgramFiles", "${env:ProgramFiles(x86)}", "$env:ProgramData")
-$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考'
+$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检'
 $script:RootCache = @{}
 $script:Stat = @{}
 
@@ -129,11 +134,11 @@ function Get-RepoList {
       if (Test-Path $p) { [void]$list.Add([pscustomobject]@{ Name = $r; Path = $p; Git = (Test-Path (Join-Path $p '.git')) }) }
       else { Write-Warning "仓不存在：$p（多个仓请用英文逗号分隔）" }
     }
-  } elseif (Test-Path $ReposRoot) {
+  } elseif ($ReposRoot -and (Test-Path $ReposRoot)) {
     foreach ($d in (Get-ChildItem $ReposRoot -Directory -Force -ErrorAction SilentlyContinue | Sort-Object Name)) {
       [void]$list.Add([pscustomobject]@{ Name = $d.Name; Path = $d.FullName; Git = (Test-Path (Join-Path $d.FullName '.git')) })
     }
-  } else { Write-Warning "仓根不存在：$ReposRoot" }
+  } elseif ($ReposRoot) { Write-Warning "仓根不存在：$ReposRoot" }
   if ($Path) {
     foreach ($p in $Path) {
       if (Test-Path $p) { [void]$list.Add([pscustomobject]@{ Name = (Split-Path $p -Leaf); Path = (Resolve-Path $p).Path; Git = (Test-Path (Join-Path $p '.git')) }) }
@@ -177,7 +182,13 @@ function Invoke-Scan {
     $lines = New-Object System.Collections.ArrayList
     if ($t.Git) {
       $fileCount += @(& git -C $t.Path ls-files 2>$null).Count
-      foreach ($l in (& git -C $t.Path grep -n -I -E '[A-Za-z]:[\\/]' -- . 2>$null)) {
+      # ⚠ 2026-09-26 修：PS 5.1 按 console 代码页(GBK)解码 git 输出，中文行文本变 mojibake，
+      #   导致「审计注记」等中文豁免规则在 git-grep 模式下整体失效。临时切 OutputEncoding 到 UTF-8。
+      $oldEnc = [Console]::OutputEncoding
+      [Console]::OutputEncoding = [Text.Encoding]::UTF8
+      try { $grepOut = @(& git -C $t.Path -c core.quotepath=false grep -n -I -E '[A-Za-z]:[\\/]' -- . 2>$null) }
+      finally { [Console]::OutputEncoding = $oldEnc }
+      foreach ($l in $grepOut) {
         if ($l -match '^([^:]+):(\d+):(.*)$') { [void]$lines.Add([pscustomobject]@{ File = $matches[1]; Line = [int]$matches[2]; Text = $matches[3] }) }
       }
     } else {
@@ -195,7 +206,11 @@ function Invoke-Scan {
     }
     foreach ($l in $lines) {
       $trim = $l.Text.TrimStart()
-      $ext = [IO.Path]::GetExtension($l.File).ToLower()
+      # ⚠ 2026-09-26 修：GetExtension 对 git quotepath 引号路径（"\346..." 中文形态）抛
+      #   「路径中具有非法字符」异常，$ext 会**残留上一个文件**的值 → 假阳性/假阴性。
+      #   改用正则取扩展名，保证每行必有赋值。
+      $fClean = $l.File.Trim('"')
+      $ext = if ($fClean -match '\.([A-Za-z0-9]+)$') { '.' + $matches[1].ToLower() } else { '' }
       $isCode = ($script:CodeExts -contains $ext)
       $isComment = ($trim -match '^(#|//|/\*|\*|;|rem\b|::|@REM|<!--)|^["''`]\s*#' )
       # 行尾注释里提到的路径按注释看待（如 `GAME_ROOT = ...  # D:\allin\dwarf_scrolls`）
@@ -290,12 +305,14 @@ if ($SelfTest) {
   $tmp = Join-Path ([IO.Path]::GetTempPath()) ("gate-selftest-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
   & git -C $tmp init -q 2>&1 | Out-Null
+  # 门禁自检：死路径运行期拼接注入 —— 源码里不出现字面盘符路径，否则门禁扫自身时自举命中
   $bad = @'
 """selftest：死路径应为阻断项"""
 import os
-DEAD = r"Q:\nope\engine\core.py"           # 有效代码行 → 阻断
+DEAD = r"@SELFTEST_DEAD_PATH@"           # 有效代码行 → 阻断
 GOOD = Path(__file__).resolve().parent      # 可推导 → 不阻断
 '@
+  $bad = $bad.Replace('@SELFTEST_DEAD_PATH@', 'Q' + ':\nope\engine\core.py')
   $ok = @'
 """selftest：系统路径 / URL / 夹具 / 转义 不应误报"""
 import os
@@ -316,8 +333,8 @@ except ImportError as e:
   $r = Invoke-Scan -Targets $target
   $blocking = @($r.Hits | Where-Object { $_.Blocking })
   $r2 = Invoke-Scan -Targets $target
-  $t1 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like 'Q:\nope*' }).Count -eq 1)
-  $t2 = (@($r2.Hits | Where-Object { $_.Path -like 'C:\Windows*' -or $_.Path -like 'http*' -or $_.Path -like 'G:\fake*' -or $_.Path -like '*\n' }).Count -eq 0)
+  $t1 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like 'Q:\nope*' }).Count -eq 1)   # 门禁自检
+  $t2 = (@($r2.Hits | Where-Object { $_.Path -like 'C:\Windows*' -or $_.Path -like 'http*' -or $_.Path -like 'G:\fake*' -or $_.Path -like '*\n' }).Count -eq 0)   # 门禁自检
   # 基线棘轮：把当前阻断写进基线后，同一目标不应再有「新增」
   $bl = Join-Path $tmp 'baseline.csv'
   $blocking | Export-Csv -LiteralPath $bl -NoTypeInformation -Encoding UTF8
@@ -354,7 +371,7 @@ if (-not $NoBaseline -and -not $WriteBaseline -and (Test-Path $Baseline)) {
 }
 $new = @($blocking | Where-Object { $known -notcontains $_.Identity })
 
-if (-not $OutCsv) { $OutCsv = "G:\tools\gate\audit\hardcoded_gate_{0:yyyyMMdd-HHmmss}.csv" -f (Get-Date) }
+if (-not $OutCsv) { $OutCsv = Join-Path $script:AuditDir ("hardcoded_gate_{0:yyyyMMdd-HHmmss}.csv" -f (Get-Date)) }
 if ($Quiet -and -not $PSBoundParameters.ContainsKey('OutCsv') -and -not $WriteBaseline) {
   $OutCsv = $null   # 静默模式（CI）默认不落盘，避免每次跑出一堆时间戳 CSV
 }
@@ -370,6 +387,7 @@ if ($OutCsv) {
 }
 
 if ($WriteBaseline) {
+  New-Item -ItemType Directory -Force -Path $script:AuditDir -ErrorAction SilentlyContinue | Out-Null
   $dead | Where-Object { $_.Blocking } | Export-Csv -LiteralPath $Baseline -NoTypeInformation -Encoding UTF8
   Write-Output ("基线已写入：{0}（阻断项 {1} 条）" -f $Baseline, $blocking.Count)
   if (-not $Quiet) { Write-Output ("明细：{0}" -f $OutCsv) }
