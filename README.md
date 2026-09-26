@@ -42,6 +42,7 @@
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
 - **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork，已推独立 gitee 仓 `siwpan/deepseek-harness`（见下）。
 - 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `RolePlayer` `music-master` `ncmturnmp3` `D20`。
+- 以上 12 个为本机已克隆的**成员子集**；全量 121 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
 
 ## DeepSeek-Harness 治理落地（2026-09-26）
 
@@ -65,6 +66,16 @@
   **唯一例外**：`pluginplayer` 随包分发 GPL v3 的 FFmpeg `full_build-shared` 与 MinGW 运行时，许可必须随上游走 **GPL-3.0-or-later**（改 MIT 才是违规）。
 - 2026-08-27 重建仓：集合仓退役改名 `*-legacy`，45 个分支项目拆为独立仓，版本分支转 tag。详见 `docs/md/allin主工作区/重建仓执行报告_2026-08-27.md`。
 
+## Gitee 项目组合全量索引（121 仓）
+
+全量 **121 个 Gitee 仓库**（公开 121 · 私有 0，2026-09-26 经 Gitee API 核实）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
+按仓库名排序，含语言 / Star / 简介 / 可见性。该文件由脚本从 Gitee API 自动生成，是**索引而非源码镜像**。
+
+**治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本地 `/projects/<仓名>`；
+不预先克隆全量 121 仓。本仓（allin_push）只承载治理说明、文档枢纽与 DSH preset 载体；
+其余 120 个仓库各自独立，按需克隆、独立演进、整仓推送（铁律 0/3）。
+`PORTFOLIO.md` 随远端变化而过期，需刷新时重跑生成脚本。
+
 ## 治理准则（2026-08-27 深度审核固化）
 
 > **创新 = 借鉴 + 调整 + 同步 + 记账；「推倒重来」只允许发生在结构层，资产与历史永远保全。**
@@ -84,4 +95,4 @@
 
 ---
 
-*最后更新：2026-09-26（盘位去符盘化 `/projects/...`、12 项目成员；`preset/` 改写为 0.1.7 声明式治理 + 三配套脚本 + 上游 §八 纪律；`make-bundle.ps1` 增 `-Check` CI 新鲜度门禁）*
+*最后更新：2026-09-26（盘位去符盘化 `/projects/...`、12 项目成员；`preset/` 改写为 0.1.7 声明式治理 + 三配套脚本 + 上游 §八 纪律；`make-bundle.ps1` 增 `-Check` CI 新鲜度门禁；新增 `PORTFOLIO.md` 全量 121 仓索引 + 源码懒拉取原则）*
