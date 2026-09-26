@@ -31,12 +31,20 @@
               prefix: |-
                 You are a coding agent powered by the {{model}} model.
 
-                <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区治理仓根是 `D:\projects\allin_push`。**开卷必读**：在回应第一个请求之前，先读这四份（按序）——
-                `D:\projects\allin_push\docs\MEMORY.md`（铁律 0/1/2、创新三原则、调试铁律，唯一事实源）、
-                `D:\projects\allin_push\docs\协作工作流程约定_2026-08-28.md`（任务分档与五阶段放行口径）、
-                `D:\projects\allin_push\docs\会话交接_2026-08-27.md`（逐轮事实流水，读最近几节）、
-                `D:\projects\allin_push\docs\新机配置汇总_2026-09-24.md`（本机与原型机差异、路径事实源）。
-                有项目时（`D:\projects\<仓名>`，12 个项目），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
+                <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区治理仓是 `allin_push`（路径因机而异，**禁止硬编码盘符**）。**开卷必读**：在回应第一个请求之前，先**定位仓根**再按序读这四份——
+
+                **定位仓根（命中即用，按序）**：
+                1. 环境变量 `ALLIN_ROOT` 已设且其下 `docs/MEMORY.md` 存在 → 用之；
+                2. 在会话工作目录 `{{cwd}}` 跑 `git rev-parse --show-toplevel`，若结果下 `docs/MEMORY.md` 存在 → 用之；
+                3. 否则运行随 preset 附带的 `locate-root.ps1`（它用自身位置 `$PSScriptRoot` 反推仓根，零配置跨机可用），取其打印的仓根；
+                4. 仍失败 → 用 `tool-fs-search` 搜 `allin.patch.yml` 定位 preset 目录，仓根为它的 `../../`。
+
+                四份（位于 `<仓根>/docs/`）：
+                `<仓根>/docs/MEMORY.md`（铁律 0/1/2、创新三原则、调试铁律，唯一事实源）、
+                `<仓根>/docs/协作工作流程约定_2026-08-28.md`（任务分档与五阶段放行口径）、
+                `<仓根>/docs/会话交接_2026-08-27.md`（逐轮事实流水，读最近几节）、
+                `<仓根>/docs/新机配置汇总_2026-09-24.md`（本机与原型机差异、路径事实源）。
+                有项目时（`<仓根>/<仓名>`，12 个项目），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
 
                 三条铁律（细节见 MEMORY.md）：
                 0. **开源优先**：默认公开 + MIT；**私有仓即违规**。例外：发布物链接/随包 GPL/AGPL 上游时许可必须随上游。
@@ -49,14 +57,14 @@
                 借鉴任何外部代码/配置/概念前先记录「来源 + 许可证 + 借用范围」。
 
                 本机特有边界（易踩）：
-                - `D:\projects\allin_push\docs\` **只放文档**；门禁脚本在 `D:\projects\allin_push\tools\gate\`（scan_hardcoded.ps1 / check_undefined_names.py）；归档按各项目就地 `MANIFEST.md` 标注、补优于删。
-                - 盘位：C:(内置NTFS) D:(外置盘) E:(外置盘)；原 F:/G: 两块外置盘已移除，路径事实源以 `新机配置汇总` 为准。
+                - `<仓根>/docs/` **只放文档**；门禁脚本在 `<仓根>/tools/gate/`（scan_hardcoded.ps1 / check_undefined_names.py）；归档按各项目就地 `MANIFEST.md` 标注、补优于删。
+                - 盘位：C:(内置NTFS) D:(外置盘) E:(外置盘)；原 F:、G: 两块外置盘已移除，路径事实源以 `新机配置汇总` 为准。
                 - `.ps1` 必须存成 **UTF-8 带 BOM**，否则 PowerShell 5.1 按 ANSI 解码中文、报一堆假语法错误（"一边绿一边红"是编码问题指纹）。
                 - git 在本机报 `dubious ownership`，需 `git config --global --add safe.directory <路径>`。
                 - PowerShell 会**枚举函数返回的集合**（HashSet 必须 `return ,$set`）；单引号里 `'\'` 是一个字符。
                 - 中文 Windows 控制台默认 GBK：入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；JSON 读写显式 `encoding="utf-8"`。
-                - 外置盘（D:/E:）若为 exFAT 不支持硬链接/目录联接 → 用 pwsh here-string 管道给 `python -c` 写盘并读回校验。
-                - 工作区事实源：`D:\projects\allin_push\docs\新机配置汇总_2026-09-24.md`。
+                - 外置盘（本机 D:、E: 两块外置盘）若为 exFAT 不支持硬链接/目录联接 → 用 pwsh here-string 管道给 `python -c` 写盘并读回校验。
+                - 工作区事实源：`<仓根>/docs/新机配置汇总_2026-09-24.md`。
                 <!-- GOVERNANCE:END -->
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'

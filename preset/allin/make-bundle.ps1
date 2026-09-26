@@ -61,6 +61,10 @@ if ($stale -and $Force) {
 New-Item -ItemType Directory -Path $BundleDir -Force | Out-Null
 Copy-Item $src $bundlePatch -Force
 
+# 一并打包 locate-root.ps1（治理段自发现引擎；agent 按 prefix 第 3 步调用，需随 bundle 走）
+$locateSrc = Join-Path $PSScriptRoot 'locate-root.ps1'
+if (Test-Path $locateSrc) { Copy-Item $locateSrc (Join-Path $BundleDir 'locate-root.ps1') -Force }
+
 $manifest = [ordered]@{
   name    = 'allin-agent-preset'
   version = '0.1.0'

@@ -56,7 +56,7 @@ function Find-Dsh {
 }
 
 function Find-Python {
-  foreach ($p in @('E:\Python314\python.exe', 'C:\Users\13122\.workbuddy\binaries\python\versions\3.13.12\python.exe', 'python.exe', 'py.exe')) {
+  foreach ($p in @('python.exe', 'py.exe', 'E:\Python314\python.exe', 'C:\Users\13122\.workbuddy\binaries\python\versions\3.13.12\python.exe')) {
     $c = Get-Command $p -ErrorAction SilentlyContinue
     if ($c) { return $c.Source }
   }
@@ -131,9 +131,13 @@ function Parse-Patch($filePath) {
   try {
     $json = & $PY $tmp $filePath 2>$null
     if ($LASTEXITCODE -eq 0 -and $json) {
-      $obj = $json | ConvertFrom-Json
-      Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-      return $obj
+      try { $obj = $json | ConvertFrom-Json } catch { $obj = $null }
+      # PyYAML 不可用 / YAML 解析失败 → 落到正则兜底（脚本设计如此），不要当致命错
+      if ($obj -and -not $obj.error) {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        return $obj
+      }
+      if ($obj -and $obj.error) { Write-Info "PyYAML/解析不可用（$($obj.error)），改用正则兜底。" }
     }
   } catch {}
   Remove-Item $tmp -Force -ErrorAction SilentlyContinue
@@ -258,6 +262,44 @@ if ($hasGov) {
   Write-Ok "治理段 GOVERNANCE:BEGIN/END 完好（persona.prefix 含治理铁律）。"
 } else {
   Write-Warn "治理段 GOVERNANCE:BEGIN/END 缺失：allin 已装但退化成「无治理的出厂 cordis」——该会话不受治理约束。需重装带治理段的 allin.patch.yml。"
+}
+
+# ---------- ② 续：治理段可移植性（铁律 5 去符盘）+ 仓根自发现（自愈校验） ----------
+Write-Step "② 续：治理段可移植性（铁律 5 去符盘）+ 仓根自发现"
+$portFail = $false
+if ($parsed.persona_prefix) {
+  $driveHits = [regex]::Matches($parsed.persona_prefix, '[A-Za-z]:[\\/]')
+  if ($driveHits.Count -gt 0) {
+    Write-Fail "治理段含 $($driveHits.Count) 处硬编码盘符路径（[A-Za-z]:[\\/]），违反铁律 5（去符盘）；换机后失效/误导，须改为仓根相对路径 + locate-root.ps1 自发现。"
+    $portFail = $true
+  } else {
+    Write-Ok "治理段无硬编码盘符路径（铁律 5 去符盘合规）。"
+  }
+} else {
+  Write-Warn "无 persona.prefix 可校验（解析失败？），跳过可移植性检查。"
+}
+# 仓根自发现（自愈）：跑同目录 locate-root.ps1，断言四事实源存在
+$locate = Join-Path $PSScriptRoot 'locate-root.ps1'
+if (Test-Path $locate) {
+  try {
+    $root = & $locate -ErrorAction SilentlyContinue
+    if ($LASTEXITCODE -eq 0 -and $root) {
+      Write-Ok "自发现仓根：$root"
+      $four = @('docs/MEMORY.md', 'docs/协作工作流程约定_2026-08-28.md', 'docs/会话交接_2026-08-27.md', 'docs/新机配置汇总_2026-09-24.md')
+      $missing = @()
+      foreach ($f in $four) { if (-not (Test-Path (Join-Path $root $f))) { $missing += $f } }
+      if ($missing.Count -eq 0) { Write-Ok "四份事实源在仓根齐全（agent 开卷必读可用）。" }
+      else { Write-Warn "仓根 $root 下缺失：$($missing -join ', ')（agent 开卷必读可能读不到；请确认仓完整或设 ALLIN_ROOT）。" }
+    } else {
+      Write-Warn "locate-root.ps1 未能自发现仓根（exit $LASTEXITCODE）；agent 运行时将靠 ALLIN_ROOT / git toplevel 兜底。"
+    }
+  } catch { Write-Warn "运行 locate-root.ps1 失败：$_" }
+} else {
+  Write-Info "locate-root.ps1 不存在（跳过仓根自发现校验）。"
+}
+if ($portFail) {
+  & Render-Remediation
+  exit 2
 }
 
 # ---------- ③ 漂移层（尽力而为） ----------
