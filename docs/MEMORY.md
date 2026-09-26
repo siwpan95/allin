@@ -481,3 +481,40 @@
       不看名字像不像（`data/` 可能是源码、`*.json` 可能是产物）。
     - **附**：门禁 H3 的 `ARTIFACT_DIRS` 当时**不含 `egg-info`**，故本次是"门禁没覆盖到"而非"门禁没拦住" ——
       已同步把 `*.egg-info/` 纳入判据（否则这条纪律没有机械保障）。
+
+55. **外置数据盘无法在线 `chkdsk /f`；"开机检查"的落点是 `BootExecute`，不是脏位、也不是 `Autochk` 键（2026-09-26 实测）**：
+    > 本条按**铁律 5（去符盘）**书写：盘符仅作"哪个卷"的标识，路径用去符盘形式。
+    - **背景**：两块外置数据盘（依 `新机配置汇总` 的盘位约定：`D:` 数据盘 exFAT 7.4TB、`F:` 依赖盘 NTFS 3.7TB）
+      双双 `Health=Warning`、脏位置位，需修复。
+    - **事实一：`/f` 需要独占卷，外置数据盘做不到**。`chkdsk <盘>: /f` 报
+      `Chkdsk cannot run because the volume is in use by another process.` 并抛出交互式提问
+      `Would you like to force a dismount on this volume? (Y/N)`。本机占用源很具体：
+      **依赖盘被当前 DSH 会话自己的 `python.exe` 占用**（它就是工作区的 Python 运行时，
+      解释器目录 `/Python314` 在该盘）；
+      **数据盘被每个工具调用所启动的 `pwsh.exe` 占用**（工具 shell 的镜像与工作目录都在该盘）
+      ⇒ **只要会话活着，数据盘就一直锁着**，只会得到 `Cannot lock current drive`。
+      **绝不选"强制卸除"** —— 它让该卷所有已打开句柄失效，等于自行制造数据损坏。
+    - **事实二：光有"脏位"不会触发开机检查**。本次重启后两盘**仍脏、开机什么都没跑**
+      （事件日志无任何 chkdsk 记录、无 `AUTOCHK*.pf`）。**必须显式排队**。
+    - **事实三（最关键 —— 我最初的判据找错了落点）**：排队的落点是 **`BootExecute`**，不是 `Autochk` 子键：
+      ```powershell
+      $k = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager'
+      (Get-ItemProperty $k -Name BootExecute).BootExecute   # REG_MULTI_SZ
+      # 形如：
+      #   autocheck autochk /p \??\F:      ← 对依赖盘做完整检查（chkdsk 交互确认 Y 后自己写入）
+      #   autocheck autochk *               ← 系统原有默认项，别删
+      ```
+      **`Autochk` 子键可以完全不存在**，开机照样会检查 —— 拿它当判据会得出错误结论（我犯过）。
+    - **事实四：exFAT 不支持"安排重启检查"这条退路**。同一操作在两卷上行为不同：
+      NTFS 卷拒绝卸除后**会继续问** `Would you like to schedule this volume to be checked
+      the next time the system restarts? (Y/N)`，答 `Y` 即入队；
+      exFAT 卷拒绝卸除后**直接 `Cannot lock the drive` 结束**，没有排队提问。
+    - **处置（本机已执行）**：给 `BootExecute` 追加 `autocheck autochk /p \??\D:`（数据盘）——
+      与 NTFS 卷**同机制、同写法**，只是 exFAT 走不了官方交互路径，改为等效手写。
+      回滚点存 `C:\allin-recovery-backup-20260925\bootexec-rollback.txt`（含完整恢复命令）。
+    - **纪律**：
+      ① 判"会不会开机检查"**只看 `BootExecute` 数组** —— 不看脏位、不看 `Autochk` 键；
+      ② 外置盘修 `chkdsk /f` **一律走开机检查**（或 WinRE / 挂到另一台机器），**永不选强制卸除**；
+      ③ 安排前先查**有没有正在跑的服务把该盘当依赖**（本机依赖盘就是工作区 Python 运行时盘，
+      卸它等于打断会话）；④ 开机检查期间该盘不可用、耗时可能很长（数据盘 7.4TB），**不要中途断电**；
+      ⑤ 反悔方式：清脏位 `fsutil dirty clear <盘>:`，或把 `BootExecute` 恢复原值。
