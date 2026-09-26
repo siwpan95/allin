@@ -71,7 +71,11 @@ $manifest = [ordered]@{
   private = $true
   dsh     = [ordered]@{ bundle = [ordered]@{ patch = 'cordis.patch.yml' } }
 } | ConvertTo-Json -Depth 4
-Set-Content -Path (Join-Path $BundleDir 'package.json') -Value $manifest -Encoding UTF8
+# ⚠ 2026-09-26 修：Set-Content -Encoding UTF8 在 PS 5.1 下写出**带 BOM** 的 JSON，
+#    dsh 校验 bundle 时 JSON.parse 对 BOM 直接抛 SyntaxError（"Unexpected token '﻿'"）。
+#    JSON/YAML 是给 Node/dsh 消费的，必须无 BOM（.ps1 才要求 BOM）。
+$pkgPath = Join-Path $BundleDir 'package.json'
+[IO.File]::WriteAllText($pkgPath, $manifest + "`n", (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host "bundle 已生成：$BundleDir" -ForegroundColor Green
 Write-Host ("  cordis.patch.yml = {0} B" -f (Get-Item $bundlePatch).Length)
