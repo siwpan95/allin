@@ -1,3 +1,6 @@
+# ⚠ OBSOLETE on 0.1.7+：0.1.7-rc.1 把 preset 改成声明式且移除 packages/preset/agent-presets/，
+#   注册表不扫目录，本 0.1.6 目录式副本不再被任何机制读取。0.1.7+ 请改用同目录 allin.patch.yml（声明式 bundle 补丁）。
+#   本文件仅作历史存档与「恒等式」对照源保留（逐字节 = 出厂 cordis + 治理段）。
 # TRUST: Plugin Manager installs persistent, profile-wide code that runs in the Host
 # process outside the workspace sandbox. Every call needs Full access or single-call
 # approval; granting a call does not change the session permission mode.
