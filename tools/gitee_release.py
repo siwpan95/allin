@@ -152,21 +152,54 @@ def cmd_whoami(args, token):
     return 0
 
 
+def derive_desc_from_readme(repo):
+    """从本地 README.md 首行标题（# ...）取仓库描述；无标题则取首行非空文本；都没有返回 ''。
+
+    用于建仓时自动按 README 填描述，避免错贴别的仓（如早先 --desc 硬编码成
+    PluginPlayer 描述，导致 d20-table-link 等被错贴）的描述。
+    """
+    for base in (repo, os.getcwd()):
+        p = os.path.join(base, "README.md")
+        if not os.path.isfile(p):
+            continue
+        try:
+            with open(p, encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    s = line.strip()
+                    if not s:
+                        continue
+                    if s.startswith("# "):
+                        return s[2:].strip()
+                    return s
+        except OSError:
+            continue
+    return ""
+
+
 def cmd_create(args, token):
     st, d = api("GET", repo_path(args), token)
     if st == 200:
         print("[SKIP] 仓库已存在: %s (private=%s default_branch=%s)"
               % (d.get("full_name"), d.get("private"), d.get("default_branch")))
         return 0
-    st, d = api("POST", "/user/repos", token, {
+    # 描述：显式 --desc 优先；否则从本地 README.md 首行标题自动取，避免错贴别的仓描述
+    desc = (args.desc or "").strip()
+    if not desc:
+        desc = derive_desc_from_readme(args.repo)
+        if desc:
+            print("[INFO] 未传 --desc，从 %s/README.md 首行标题取描述: %s"
+                  % (args.repo, desc))
+    payload = {
         "name": args.name,
-        "description": args.desc,
         "private": True,          # 先私有：推完再转公开，避免半成品被看到
         "auto_init": False,       # 不自动建 README（会多一个无关提交）
         "has_issues": True,
         "has_wiki": False,
         "can_comment": True,
-    })
+    }
+    if desc:
+        payload["description"] = desc
+    st, d = api("POST", "/user/repos", token, payload)
     if st in (200, 201):
         print("[OK] 已创建私有仓库: %s (id=%s)" % (d.get("full_name"), d.get("id")))
         return 0
@@ -347,8 +380,8 @@ def main():
     ap.add_argument("--owner", default="siwpan")
     ap.add_argument("--name", default="pluginplayer")
     ap.add_argument("--repo", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    ap.add_argument("--desc", default="PluginPlayer — 把一切功能做成插件的 Windows 播放器"
-                                      "（FFmpeg 9.0.1 + SDL3 + 自研 C ABI 插件宿主）")
+    ap.add_argument("--desc", default="",
+                    help="仓库描述；留空则自动从 --repo（或 cwd）下 README.md 首行标题取")
     ap.add_argument("--token", default="")
     ap.add_argument("--token-file", default="")
     sub = ap.add_subparsers(dest="cmd", required=True)

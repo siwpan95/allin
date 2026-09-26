@@ -33,7 +33,7 @@
 | [siwpan/cordis-text-game](https://gitee.com/siwpan/cordis-text-game.git) | — | 0 | 公开 | Cordis「一切皆插件」文字冒险引擎示例（迷雾地窖）：房间/物品/指令/渲染层/黑暗机制全是可装卸插件 |
 | [siwpan/crawl-hub](https://gitee.com/siwpan/crawl-hub.git) | — | 0 | 公开 | crawl_hub ???????(????? + ????) |
 | [siwpan/d20](https://gitee.com/siwpan/d20.git) | — | 0 | 公开 | D&D-GURPS 变体角色构建器（规则界面壳 v3.0；规则内核已并入 siwpan/an-engine 的 alloy.trpg，R2） |
-| [siwpan/d20-table-link](https://gitee.com/siwpan/d20-table-link.git) | — | 0 | 公开 | PluginPlayer — 把一切功能做成插件的 Windows 播放器（FFmpeg 9.0.1 + SDL3 + 自研 C ABI 插件宿主） |
+| [siwpan/d20-table-link](https://gitee.com/siwpan/d20-table-link.git) | — | 0 | 公开 | d20（TRPG 规则内核）× Cordis 表格应用（载体）联动适配器：连接 siwpan/d20 与 cordis-table-app，规则/表格双向互通 |
 | [siwpan/daily_player](https://gitee.com/siwpan/daily_player.git) | — | 0 | 公开 | 基于 libVLC 的日常视频播放器：字幕、播放列表、快捷键与托盘 |
 | [siwpan/darksouls](https://gitee.com/siwpan/darksouls.git) | Python | 0 | 公开 | 黑暗之魂 |
 | [siwpan/ddd2](https://gitee.com/siwpan/ddd2.git) | — | 0 | 公开 | ??????(G:\local ???? 4,2026-08-27) |
