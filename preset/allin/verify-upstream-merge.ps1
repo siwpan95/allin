@@ -12,7 +12,7 @@
 #
 # 用法：
 #   .\verify-upstream-merge.ps1 -UpstreamCordis <上游 cordis.patch.yml 路径>
-#   .\verify-upstream-merge.ps1 -UpstreamCordis D:\projects\deepseek-harness-master\packages\bundle\web-app\presets\cordis.patch.yml
+#   .\verify-upstream-merge.ps1 -UpstreamCordis /projects/deepseek-harness-master/packages/bundle/web-app/presets/cordis.patch.yml
 
 [CmdletBinding()]
 param(
