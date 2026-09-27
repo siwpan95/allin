@@ -19,7 +19,9 @@
 
 [CmdletBinding()]
 param(
-  [string]$BundleDir = (Join-Path $PSScriptRoot 'bundle'),
+  # 默认值留空，进函数体再推导：PowerShell 5.1 在 param 默认值求值阶段拿不到 $PSScriptRoot，
+  # 直接写 (Join-Path $PSScriptRoot 'bundle') 会报「Path 为空串」而整条门禁跑不起来。
+  [string]$BundleDir = '',
   [string]$Profile = 'web',
   [switch]$Install,
   [switch]$Check,
@@ -27,6 +29,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $BundleDir) {
+  $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+  $BundleDir = Join-Path $scriptDir 'bundle'
+}
 
 $src = Join-Path $PSScriptRoot 'allin.patch.yml'
 if (-not (Test-Path $src)) { Write-Error "找不到源文件：$src"; exit 2 }

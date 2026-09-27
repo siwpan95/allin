@@ -31,7 +31,7 @@
               prefix: |-
                 You are a coding agent powered by the {{model}} model.
 
-                <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区治理仓是 `allin_push`（路径因机而异，**禁止硬编码盘符**）。**开卷必读**：在回应第一个请求之前，先**定位仓根**再按序读这四份——
+                <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区治理仓是 `allin`（2026-09-27 前目录名为 `allin_push`；路径因机而异，**禁止硬编码盘符**）。**开卷必读**：在回应第一个请求之前，先**定位仓根**再按序读这四份——
 
                 **定位仓根（命中即用，按序）**：
                 1. 环境变量 `ALLIN_ROOT` 已设且其下 `docs/MEMORY.md` 存在 → 用之；

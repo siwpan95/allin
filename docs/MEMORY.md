@@ -106,7 +106,7 @@
 - **写法约定**：
   - 仓内文件用**仓根相对路径**（如 `preset/allin/allin.patch.yml`、`docs/MEMORY.md`）；
   - 跨仓 / 外部依赖用**约定变量或环境变量**（如 `$DSH_HOME`、`$PROJECTS_ROOT`），不要把绝对盘符路径烤进源码；
-  - 文档里若必须举例绝对路径，用**去符盘形式**（`D:/allin` → `/allin`、`D:\projects\allin_push` → `/projects/allin_push`）表示「仓根 / 约定父目录」，明确它不是本机真实路径。
+  - 文档里若必须举例绝对路径，用**去符盘形式**（`D:/allin` → `/allin`、`D:\projects\allin` → `/projects/allin`）表示「仓根 / 约定父目录」，明确它不是本机真实路径。
 - **门禁**：新增的盘符绝对路径应被 `tools/gate/scan_hardcoded.ps1`（死根路径门禁）拦截；若该脚本尚未覆盖盘符模式，补一条规则（正则 `[A-Za-z]:[\\/]`）。
 - **治理段已落自适应（先搁置例外已撤销）**：`allin.patch.yml` 治理段「开卷必读四事实源」已改为仓根相对路径 + `locate-root.ps1` 自发现（见 `preset/allin/安装说明.md`「一之一、治理段路径自适应」），换机克隆零配置可用，不再依赖本机盘符；`verify-mount.ps1` 运行期强制治理段无 `[A-Za-z]:[\\/]`。
 - **反模式**：在脚本 / 配置里硬编码 `D:\...`；把「本机当前盘符」当事实写进提交；文档里留 `G:\allin` 这类本机专属绝对路径。
