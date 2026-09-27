@@ -576,3 +576,60 @@
       ① 涉及盘位的动作前，用**真实文件读写**（而非仅 `Get-Volume`）验证目标卷可用；
       ② 记录盘位观测时同时记「时点 + 工具」；③ 下次盘位存疑时做 `Get-Volume` 与路径探测的
       **双工具 A/B 对照**（记账 56 的方法教训在此同样适用：先查前置假设，再怀疑世界）。
+
+59. **PowerShell 里对 UTF-8 无 BOM 的中文文件做 `Get-Content -Raw | Set-Content` 往返会烤坏文件（2026-09-27 沉淀，本次真实事故）**：
+    我对 `governance/RULES.md`（UTF-8 无 BOM、中文正文）跑了一次「读全文 → 字符串替换 → 写回」，
+    结果中文全部变成乱码、段落换行被吞——读取工具再打开时已认不出原文。**这与 35/38 同族**（编码默认值），
+    但更隐蔽：**文件仍在、字数看着也对，只有内容是坏的**。**纪律**：① 改文本一律用编辑工具或
+    **Python + 显式 `encoding="utf-8"`**；确要用 PowerShell 必须同时钉死读与写两侧编码
+    （`-Encoding UTF8` + `[IO.File]::WriteAllText(path, text, UTF8Encoding($false))`）；
+    ② 任何批量改写前先 `git status` 确认文件已被跟踪，**出事第一动作是 `git checkout -- <该文件>` 恢复**；
+    ③ 写完立刻用**独立解码器**复核（`python -c "open(p, encoding='utf-8').read()"`），不要只看控制台回显
+    ——本次乱码正是先由控制台回显暴露，而回显本身也可能是控制台编码造成的假象。
+
+60. **`git add <目录>` 会被仓根 `.gitignore` 的通用规则静默吞掉子目录，且 `git status` 对它保持沉默（2026-09-27 沉淀，代价一次残缺提交）**：
+    批 1 提交后用 `git ls-files governance` 核对，发现 `governance/lib/govlib.py` **根本没进提交通道**——
+    仓根 `.gitignore` 有 pnpm 构建产物规则 `lib/`（无前导斜杠，任意深度匹配），把 `governance/lib/` 整个吞了；
+    而 `git status --short` **不显示被忽略的文件**，所以我一路看着"干净"把残缺的树提交了。
+    **后果**：已提交的治理目录在**克隆副本里根本跑不起来**（门禁 import 失败），本地全绿是假象。
+    **纪律**：① 新增目录提交后，用 `git ls-files <目录>` 逐项核对**目录完整性**，别只信 `git status`；
+    ② 目录名避开仓根已有的通用忽略模式（本次改名 `governance/runtime/` 而不是去和 ignore 规则搏斗）；
+    ③ **验收必须在克隆副本里跑一遍**（`git clone . tmp/x` → 在副本里跑门禁），这是唯一能发现该类残缺的动作。
+
+61. **门禁的「自检」必须断言具体判定结果，否则抓不出方向判反这类隐形缺陷（2026-09-27 沉淀）**：
+    新写的推送实证门禁把 **`LOCAL_AHEAD` 与 `REMOTE_AHEAD` 判反了**（`merge-base --is-ancestor` 的两个方向搞混）：
+    代码跑得通、输出也"像那么回事"，肉眼审阅两遍没看出来；是自检里那条
+    「提交一次未推送的 commit → 必须报 local ahead」的用例把它抓出来的。
+    **纪律**：① 自检用例要**断言分类/字段值**（`state == "LOCAL_AHEAD"`），不要只断言「非空」「有输出」；
+    ② 有方向的判据（领先/落后、包含/被包含、前/后）每个方向都要有一条用例；
+    ③ 同类：本次还靠自检抓出「插件序列比对正则漏 `re.MULTILINE` → 漂移永不报警」——判据"看起来在跑"不等于在跑。
+
+## 分发版治理机械保障落地（2026-09-27，用户拍板「独立分发版」口径）
+
+> **口径**：`siwpan/deepseek-harness` 是**独立分发版**（上游 GitHub 官方仓仅作参考，不跟随其节奏）；
+> 本次把本仓 `docs/` 的规则从「文字」落成**随分发版交付的可执行门禁**，落点在 DSH 仓的 `governance/`。
+
+- **落点**：`/projects/deepseek-harness-master/governance/`
+  —— `registry.json`（门禁注册表）、`RULES.md`（**规则 → 门禁映射 + 引用契约**）、`README.md`（怎么跑/扩展/基线）、
+  `runtime/govlib.py`（共享运行时）、`gates/`（14 条门禁，每条自带 `--selfcheck`）、`baseline/`、`preset/`（治理 persona）。
+- **入口**：`pnpm run check:governance`（14 条）、`pnpm run governance:selfcheck`（自证）；
+  已接进 `scripts/run-gates.ts` 的 `governance` 聚合与 `check:all`。
+- **14 条门禁**：g00 契约自证 / g01 路径 / g03 凭据 / g04 推送实证 / g05 仓库卫生 / g06 编号契约 /
+  g07 事实源时效 / g08 删除证据 / g09 Python 编码转义 / g10 失败要响亮 / g11 未定义名 /
+  g12 对象库完整性 / g13 docs 只放文档 / g14 preset 结构。
+- **统一契约**：退出码 `0/1/2/3`；每条门禁必须支持 `--selfcheck`（含真实破坏用例）与基线棘轮四开关；
+  豁免与跳过**计数打印，不静默丢弃**；`g10` 反过来给每条门禁喂坏输入，**静默通过即判红**。
+- **规则侧不重复**：DSH 既有的 `verify-dsh-package-licenses`、`verify-translation-pairing`、`verify-md-links`、
+  `verify-doc-refs`、`verify-doc-budgets`、`verify-no-unknown-casts` 等一律只引用不重造（清单见 `RULES.md` §4.4）。
+- **门禁首日就抓到的真缺陷**（全部当场修掉，不是记账了事）：① `start-dsh-web.py` 写死本机 Python 路径；
+  ② `governance/lib/` 被 `.gitignore` 吞掉导致残缺提交；③ `g04` 同步方向判反；④ `g12` 对坏输入静默返回 0；
+  ⑤ 6 处 `open(..., "w")` 未指定编码；⑥ `.gitignore` 未覆盖 `*.pem`/`*.key`；⑦ `verify-concrete-terms` 存量红。
+- **文档侧**：新增 DSH 仓 `docs/user/guide/distribution.md`（中英配对）——当前版本使用说明；
+  本仓存中文单份 `docs/DSH当前版本使用说明_2026-09-27.md`。**顺带修掉两条存量红**：
+  `docs/DISTRIBUTION.md` 与 `docs/distribution-masterlist.md` 由中文单语补成中英配对，
+  全语料 1127 对转绿；`distribution-masterlist` 的 `verify-md-wrap` 两处红同批修掉。
+- **DSH 侧特有事实（供后续维护）**：配对契约要求**代码块两侧逐字相同**（代码不翻译，注释也不翻译）；
+  中文侧内部链接必须指向 `.zh.md` 兄弟文件；`governance/` 已登记进 `translation-pairing` 排除表
+  （中文主文档，不做双语）；`governance/*.md` 不在 `verify-md-wrap` 范围内（但本仓仍按一段一行写）。
+- **提交**：DSH 侧 6 笔本地提交（批 1~5 + 编码修复），**均未推送**；推送按铁律 3 报「推什么」等放行。
+

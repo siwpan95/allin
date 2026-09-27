@@ -165,3 +165,22 @@ python /tools/gate/watchdog.py --selfcheck    # 注入破坏用例自证
 **修改时两边都要同步**（本目录的存在正是为了让门禁能被外部复现）。
 落点差异说明：文档里若出现 `/tools/gate/...` 的默认路径，指的是**工作副本**；
 从本仓取用时请按自己机器调整，或用脚本参数覆盖。
+
+---
+
+## 与 `/projects/deepseek-harness-master/governance/` 的关系（2026-09-27 新增）
+
+治理规则现在有**两个落点**，判据同源、形态不同，别把两份当成重复建设：
+
+| 落点 | 形态 | 谁在用 |
+| --- | --- | --- |
+| 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区（`/projects`）的日常巡检 |
+| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发） | **一份 Python 门禁运行时 + 14 条门禁**（`g00`~`g14`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
+
+- **规则事实源仍是 `docs/MEMORY.md`**；`governance/RULES.md` 是「规则 → 门禁」的**映射表与引用契约**，
+  新增门禁时必须同步改它（`g00-meta` 会校验门禁 id 是否被收录）。
+- **判据同源、实现不同**：例如死根路径判据在本目录是 `scan_hardcoded.ps1`（只看盘符 + 多仓），
+  在 DSH 侧是 `g01-paths`（泛化到「绝对路径父目录是否存在」，跨平台）。**改一边时先看另一边是否也要改**。
+- 门禁契约（本仓侧的新要求）：每条门禁支持 `--selfcheck`（含**真实破坏用例**）与
+  `--baseline/--no-baseline/--write-baseline/--list-all` 四开关，豁免与跳过**计数打印不静默丢弃**；
+  DSH 侧由 `g10-failloud-probe` 反过来验证「拿到坏输入必须响亮报错」。
