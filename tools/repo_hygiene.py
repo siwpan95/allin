@@ -108,6 +108,16 @@ CRED_PATTERNS = [
     #  ② bytes 模式下 re 不认 \uXXXX（只认 \xNN）——「私人令牌」的 UTF-8 字节写死如下
     re.compile(b"private[\\s_-]?token|\\xe7\\xa7\\x81\\xe4\\xba\\xba\\xe4\\xbb\\xa4\\xe7\\x89\\x8c", re.I),
 ]
+#: 上面「令牌**文件名**」那条的下标（2026-09-27 误报治理）。只在附近真的出现密钥形态的值时才算命中。
+#: 实证：`docs/MEMORY.md`、`docs/gitee推送流程`、`docs/深度审核报告` 等 14 处文档被这条判红，
+#: 而它们说的都是「令牌放在哪 / **未打印** / 曾被内嵌」这类**关于凭据的记录**——
+#: 提及令牌文件名 ≠ 持有令牌；只有同一窗口里出现 32+ hex 才升级为发现。
+TOKEN_NAME_PATTERN_INDEX = 3
+assert CRED_PATTERNS[TOKEN_NAME_PATTERN_INDEX].pattern.startswith(b"private"), \
+    "CRED_PATTERNS 重排了：请把 TOKEN_NAME_PATTERN_INDEX 指到「令牌文件名」那条，否则豁免会静默失效"
+CONTEXT_REQUIRED = {
+    TOKEN_NAME_PATTERN_INDEX: re.compile(rb"[0-9a-fA-F]{32,}"),
+}
 # 值里出现这些词 = 是说明文字，不是密钥
 VALUE_STOPWORDS = re.compile(
     r"password|passwd|username|user_?name|your_?|example|placeholder|changeme|string|number|"
@@ -132,9 +142,18 @@ def _value_looks_secret(v):
     return (has_digit and has_alpha) or (len(v) >= 32 and has_alpha)
 
 # H6 借鉴记账三要素
-ATTR_URL = re.compile(r"https?://\S+")
+# 词形放宽（2026-09-27 误报治理，均由实证驱动）：
+#   · URL：台账里普遍写成裸主机路径（github.com/owner/repo），不带 https://；并接受
+#     「无公开链接/来源未留存/来源未注明/无上游」这类**显式的来源缺失声明**——记账的目的是
+#     「来源被记录过」，记成"查不到"也算记录。
+#   · 不入仓声明：等价说法很多（不公开发布/仅本地保留/禁止进入任何公开仓），原先只认一种写法。
+ATTR_URL = re.compile(
+    r"https?://\S+|(?:github|gitee|gitlab|bitbucket|sourceforge)\.(?:com|net|io)/\S+|"
+    r"无公开链接|来源未留存|来源未注明|无上游")
 ATTR_LICENSE = re.compile(r"(MIT|Apache[- ]?2|GPL|AGPL|BSD|CC[ -]?BY|MPL|Unlicense|许可|License)", re.I)
-ATTR_NOCOMMIT = re.compile(r"(不入仓|不入库|不随仓库分发|不随仓发布|不纳入版本|gitignore)")
+ATTR_NOCOMMIT = re.compile(
+    r"(不入仓|不入库|不随仓库分发|不随仓发布|不纳入版本|gitignore|不公开发布|不对外发布|"
+    r"仅本地保留|仅本地参考|禁止进入任何公开仓|不进公开仓|不进入公开仓)")
 
 
 class Finding:
@@ -341,6 +360,17 @@ def check_h5_credentials(repo, tracked, ctx):
             text = m.group(0)
             if CRED_PLACEHOLDER.search(text):
                 continue
+            # 同行注明「这是夹具」即豁免（2026-09-27）：门禁**必然**包含它要找的模式，
+            # 自检夹具更是刻意写出真实形态；但豁免只作用于**那一行**，真实值照旧检出。
+            line_start = data.rfind(b"\n", 0, m.start()) + 1
+            line_end = data.find(b"\n", m.end())
+            if b"repo-hygiene: allow" in data[line_start: line_end if line_end != -1 else len(data)]:
+                continue
+            index = CRED_PATTERNS.index(pat)
+            if index in CONTEXT_REQUIRED:
+                window = data[max(0, m.start() - 200):m.end() + 200]
+                if not CONTEXT_REQUIRED[index].search(window):
+                    continue
             # 形态①（键值对）需额外判定「值是否真像密钥」，避免把英文说明当凭据
             if "k" in pat.groupindex:
                 try:
@@ -373,13 +403,28 @@ def check_h6_attribution(repo, tracked, ctx):
         属于把通用词当关键词。改用 `\\breference\\b` 并去掉裸「参考」。
     """
     f = []
-    trigger = re.compile(r"借鉴|源码来源|上游|third[- ]party|\breference\b|\bupstream\b", re.I)
+    # 触发词收窄（2026-09-27 误报治理）：原先含裸「上游 / upstream / reference」，
+    # 而这三个是**通用技术词**——本仓几乎每篇文档都写「上游仓 / 上游快照 / 上游版本」，
+    # 于是把路线图、评估、历史流水统统拉进来判（21 条里 19 条是这么来的）。
+    # 现在只认**明确的借鉴声明**：借鉴 / 源码来源 / 第三方源码（或 code/asset/notice）/ borrowed。
+    trigger = re.compile(r"借鉴|源码来源|第三方(源码|代码|资产|组件)|"
+                         r"third[- ]party\s+(source|code|asset|notice)|borrowed", re.I)
+    # 判据范围收窄（同日第二次，按本函数自己的说明对齐）：**记账的载体是专档**——
+    # 只有「台账型」文档才要求三要素齐全，其余文档出现「借鉴」二字（规则原文、定位陈述）
+    # 不构成借鉴声明。原先扫全部 docs/，与上面的说明自相矛盾。
+    ledger = re.compile(r"来源|许可|reference|notice|attribution|资产", re.I)
     for t in tracked:
         low = t.lower()
         if not low.endswith((".md", ".txt")):
             continue
         # 只判 docs/ 下的专档（README 是门面，不是记账载体）
         if not low.startswith("docs/"):
+            continue
+        # 历史树只增不改（docs/md/ = 当时的判断依据），不做回溯改写，也就不判它
+        if low.startswith("docs/md/"):
+            continue
+        # 只判台账型文档（文件名即其职责）
+        if not ledger.search(os.path.basename(low)):
             continue
         p = os.path.join(repo, t.replace("/", os.sep))
         try:
@@ -606,7 +651,7 @@ def selfcheck():
         # H5：令牌本体子串 + 通用形态
         # 注意：测试值必须**自身像密钥**（含数字+字母、字符多样），否则会被
         # _value_looks_secret 正确拒绝——首版用 "0"*32 属单一字符重复，正是被拒的形态。
-        secret = "a1b2c3d4e5f67890abcdef1234567890"
+        secret = "a1b2c3d4e5f67890abcdef1234567890"  # repo-hygiene: allow
         def _cred(d):
             wr(d, "LICENSE", "MIT\n")
             wr(d, "cfg.py", 'api_key = "{}"\n'.format(secret))
@@ -642,6 +687,70 @@ def selfcheck():
         h6 = [x for x in scan_repo(r, {}) if x.check == "H6"]
         print("  H6 借鉴记账缺项被检出: {}  [{}]".format("✔" if h6 else "✘", len(h6)))
         ok &= bool(h6)
+
+        # H5 反例三：**提及令牌文件名**但附近没有密钥值（2026-09-27 误报治理，14 处实证形态）
+        def _cred_mention(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/令牌说明.md", "令牌取自 `私人令牌.txt`，**未打印**；该文件不入库。\n"
+                                       "曾发现 remote URL 内嵌 `siwpan:<token>@gitee.com`，已清理。\n")
+        r = _make_fixture(tmp, "cred_mention", _cred_mention)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 提及令牌文件名零误报: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        # H5 正例二：提及令牌文件名的**同一窗口里有 32+ hex** → 仍须检出（豁免不能吃掉真问题）
+        def _cred_mention_value(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/令牌说明.md", "私人令牌.txt 里第一行是 8f14e45fceea167a5a36dedd4bea2543（示例）。\n")  # repo-hygiene: allow
+        r = _make_fixture(tmp, "cred_mention_value", _cred_mention_value)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 文件名声明旁的密钥值被检出: {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        # H6 反例一：只提到「上游」这类通用技术词，不构成借鉴声明（19 处实证形态）
+        def _upstream_only(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/升级说明.md", "上游快照换了；上游仓只作参考，本仓不追上游版本。\n")
+        r = _make_fixture(tmp, "upstream_only", _upstream_only)
+        h6 = [x for x in scan_repo(r, {}) if x.check == "H6"]
+        print("  H6 仅提上游零误报:   {}  [{}]".format("✔" if not h6 else "✘", len(h6)))
+        ok &= not h6
+
+        # H6 反例二：历史树 docs/md/ 只增不改，不做回溯改写也就判它
+        def _history(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/md/old/2026-07-05.md", "借鉴了某上游实现。\n")
+        r = _make_fixture(tmp, "attr_history", _history)
+        h6 = [x for x in scan_repo(r, {}) if x.check == "H6"]
+        print("  H6 历史树不判:       {}  [{}]".format("✔" if not h6 else "✘", len(h6)))
+        ok &= not h6
+
+        # H6 反例三：三要素用等价写法（裸主机路径 + 仅本地保留）→ 不得误报
+        def _attr_equivalent(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/REFERENCE.md", "借鉴：来源 github.com/owner/repo，许可 MIT，仅本地保留。\n")
+        r = _make_fixture(tmp, "attr_equivalent", _attr_equivalent)
+        h6 = [x for x in scan_repo(r, {}) if x.check == "H6"]
+        print("  H6 等价写法零误报:   {}  [{}]".format("✔" if not h6 else "✘", len(h6)))
+        ok &= not h6
+
+        # H6 反例四：非台账文档出现「借鉴」二字（规则原文/定位陈述）→ 不是借鉴声明
+        def _attr_nonledger(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "docs/参赛梳理.md", "治理准则：创新 = 借鉴 + 调整 + 同步 + 记账。\n")
+        r = _make_fixture(tmp, "attr_nonledger", _attr_nonledger)
+        h6 = [x for x in scan_repo(r, {}) if x.check == "H6"]
+        print("  H6 非台账不判:       {}  [{}]".format("✔" if not h6 else "✘", len(h6)))
+        ok &= not h6
+
+        # H5 反例四：门禁自身必然包含它要找的模式 —— 同行注明「夹具」即豁免，但真实值仍须检出
+        def _cred_self_reference(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "tools/checker.py", 'secret = "a1b2c3d4e5f67890abcdef1234567890"  # repo-hygiene: allow\n')
+        r = _make_fixture(tmp, "cred_self", _cred_self_reference)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 同行注明夹具即豁免: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
 
         # H7：目录名 != origin 仓名（用本地 bare 仓做 origin）
         bare = os.path.join(tmp, "renamed-origin.git")
