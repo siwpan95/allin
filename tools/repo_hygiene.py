@@ -120,6 +120,23 @@ CRED_PATTERNS = [
     #  ① Python 3.12+ 禁止 bytes 字面量含非 ASCII 字符（rb"...私人令牌" → SyntaxError）
     #  ② bytes 模式下 re 不认 \uXXXX（只认 \xNN）——「私人令牌」的 UTF-8 字节写死如下
     re.compile(b"private[\\s_-]?token|\\xe7\\xa7\\x81\\xe4\\xba\\xba\\xe4\\xbb\\xa4\\xe7\\x89\\x8c", re.I),
+    # 形态④（2026-09-28 新增，补一个**盲区**）：**本机/内网 URL 的查询参数令牌**。
+    #
+    # 背景：形态①带 `(?<![&?/])`，把"跟在 ?/&// 后面的键名"一律排除 —— 因为那说明它是 URL 查询参数。
+    # 该排除是 2026-09-27 为 RolePlayer 加的，实证很清楚：`&token=651a3142…`
+    # 出现在 8 个规则书 HTML 里、**同一个令牌**、宿主全是 `www.beian.gov.cn`（公共政务站）
+    # ⇒ 是**分享链接参数，不是秘密**。
+    #
+    # 但 `http://127.0.0.1:3080/?token=<32 位>` 是**本地会话令牌**，那是**真凭据**
+    # （实证：DSH Web 把启动 URL 连同令牌写进 dsh-web-diagnose-*.log）。
+    # 两者形态完全相同，靠"值像不像密钥"分不开 —— **能分开的是宿主**：
+    #   · 公共站（beian.gov.cn / gitee.com / …）⇒ 分享链接，不判
+    #   · 环回/内网（127.0.0.1 / localhost / [::1] / 10. / 192.168. / 172.16-31.）⇒ 本机服务凭据，判
+    # 实测依据：RolePlayer 8 处查询参数令牌里，落在环回/内网的 = **0 处** ⇒ 该判别不会把它误伤。
+    #
+    # 实现上不在本模式里写宿主，而是交给 CONTEXT_REQUIRED（窗口内必须出现环回/内网 URL），
+    # 这样"宿主判别"是一处独立、可单独测试的规则。
+    re.compile(rb"""[?&](?P<k>access[_-]?token|api[_-]?key|auth[_-]?token|client[_-]?secret|secret[_-]?key|password|passwd|secret|token)=(?P<v>[0-9a-zA-Z_\-+/=.]{20,})""", re.I),
 ]
 #: 上面「令牌**文件名**」那条的下标（2026-09-27 误报治理）。只在附近真的出现密钥形态的值时才算命中。
 #: 实证：`docs/MEMORY.md`、`docs/gitee推送流程`、`docs/深度审核报告` 等 14 处文档被这条判红，
@@ -128,8 +145,21 @@ CRED_PATTERNS = [
 TOKEN_NAME_PATTERN_INDEX = 3
 assert CRED_PATTERNS[TOKEN_NAME_PATTERN_INDEX].pattern.startswith(b"private"), \
     "CRED_PATTERNS 重排了：请把 TOKEN_NAME_PATTERN_INDEX 指到「令牌文件名」那条，否则豁免会静默失效"
+#: 「URL 查询参数令牌」那条的下标（形态④）。只有**窗口内出现环回/内网 URL**时才算命中。
+URL_QUERY_TOKEN_INDEX = 4
+assert CRED_PATTERNS[URL_QUERY_TOKEN_INDEX].pattern.startswith(b"[?&]"), \
+    "CRED_PATTERNS 重排了：请把 URL_QUERY_TOKEN_INDEX 指到「URL 查询参数」那条，否则宿主判别会静默失效"
+
+#: 环回 / 私网地址（RFC 1122/1918 + IPv6 环回）。用于形态④的宿主判别：
+#: 令牌挂在**本机或内网**服务上 ⇒ 是本机会话凭据，判；挂在公共站上 ⇒ 多为分享链接，不判。
+LOOPBACK_OR_PRIVATE = re.compile(
+    rb"https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\]|"
+    rb"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|"
+    rb"172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(?::\d+)?",
+    re.I)
 CONTEXT_REQUIRED = {
     TOKEN_NAME_PATTERN_INDEX: re.compile(rb"[0-9a-fA-F]{32,}"),
+    URL_QUERY_TOKEN_INDEX: LOOPBACK_OR_PRIVATE,
 }
 # 值里出现这些词 = 是说明文字，不是密钥
 # 2026-09-28 追加（DSH 10 条实证）：**自证是夹具**的词。真实凭据不会自称
@@ -1046,6 +1076,37 @@ def selfcheck():
         print("  H5 未跟踪面(关)不抓: {}  [{}]".format("✔" if not h5_off else "✘", len(h5_off)))
         print("  H5 未跟踪面(开)抓:   {}  [{}]".format("✔" if h5_on else "✘", len(h5_on)))
         ok &= not h5_off and bool(h5_on)
+
+        # H5 反例十一（2026-09-28）：**URL 查询参数令牌按宿主分流**。
+        # 环回/内网 ⇒ 本机服务凭据，判；公共站 ⇒ 分享链接，不判（RolePlayer 8 处实证）。
+        # 两个方向都要测：只测一边等于把规则改废或把盲区留着。
+        def _cred_loopback(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/g.log", "dsh web: http://127.0.0.1:3080/?token=a1b2c3d4e5f67890abcdef1234567890\n")
+        r = _make_fixture(tmp, "cred_lo", _cred_loopback)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 环回URL令牌判:    {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        def _cred_localhost_lan(d):
+            # 注意：H5 每文件**最多产出一条** finding（`pat.search` 命中即 break），
+            # 所以两种宿主形态要分放两个文件，否则只验得到一条。
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/h.log", "u=http://localhost:8000/&api_key=a1b2c3d4e5f67890abcdef1234567890\n")
+            wr(d, "t/i.log", "v=http://192.168.1.7:9000/?token=b2c3d4e5f67890abcdef1234567890ab\n")
+        r = _make_fixture(tmp, "cred_lan", _cred_localhost_lan)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 localhost/内网判: {}  [{}]".format("✔" if len(h5) >= 2 else "✘", len(h5)))
+        ok &= len(h5) >= 2
+
+        def _cred_public_link(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "rules.html",
+               'x <a href="https://www.beian.gov.cn/portal/x?&token=651a3142deadbeefdeadbeefdeadbeef1234">y</a>\n')
+        r = _make_fixture(tmp, "cred_pub", _cred_public_link)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 公共站分享链接不判: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
 
         # H7：目录名 != origin 仓名（用本地 bare 仓做 origin）
         bare = os.path.join(tmp, "renamed-origin.git")
