@@ -43,3 +43,8 @@ bin-release/
 /docs/facts/
 /docs/records/
 /docs/历史/
+
+# ===== 门禁运行产物与基线（2026-09-28）=====
+# scan_hardcoded.ps1 每次非静默运行都会落 300 KB 级明细 CSV；基线文件「不存在=空基线」。
+# 两者都是可重生成的产物，不入库（工作副本的基线在 /tools/gate/audit/，另有归属）。
+/tools/gate/audit/
