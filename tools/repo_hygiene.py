@@ -223,6 +223,22 @@ def tracked_files(repo):
     return [f for f in out.split("\0") if f]
 
 
+def untracked_unignored(repo):
+    """**未跟踪且未被忽略**的文件（`--exclude-standard` 已排除 .gitignore 命中的）。
+
+    为什么要单独要这一面（2026-09-28 实证）：`dsh web` 把会话令牌写进
+    **未跟踪**的 `dsh-web-diagnose-<ts>.log` 落在仓根。未跟踪文件在 H5 的视野之外
+    （H5 只拿 `tracked`），而**未跟踪且未被忽略**恰是最危险的窗口 ——
+    它还没被 .gitignore 挡住，**一次 `git add -A` 就会把令牌提交进索引**。
+    （同类前科：`*.egg-info` 经 `git add -A` 误入过 d20 仓，见 H3 注释。）
+    """
+    rc, out = run_git(repo, "-c", "core.quotepath=false",
+                      "ls-files", "--others", "--exclude-standard", "-z")
+    if rc != 0:
+        return []
+    return [f for f in out.split("\0") if f]
+
+
 def blob_sizes(repo):
     """一次取回跟踪面全部文件的入库体量。
 
@@ -619,10 +635,16 @@ def scan_repo(repo, ctx):
     # 体量一次取全，供 H4 用（避免逐文件 spawn：见 blob_sizes 的性能纪律）
     ctx = dict(ctx)
     ctx["_blob_sizes"] = blob_sizes(repo)
+    # --worktree：把「未跟踪且未被忽略」的文件**额外**交给 H5（凭据）扫。
+    # 依据见 untracked_unignored() 的说明：那个窗口一次 `git add -A` 就会把令牌入库。
+    # 只扩 H5，不扩其它检查 —— 未跟踪的产物目录/大文件是 H4 的既有职责（见 --worktree 分支），
+    # 把 H2/H3/H6 也铺到未跟踪面会让结果语义变浑（"跟踪面含…"的措辞就不成立了）。
+    h5_extra = untracked_unignored(repo) if ctx.get("worktree") else []
     out = []
     for _cid, fn, _desc in CHECKS:
         try:
-            out.extend(fn(repo, tracked, ctx))
+            arg = tracked + h5_extra if _cid == "H5" else tracked
+            out.extend(fn(repo, arg, ctx))
         except Exception as e:
             out.append(Finding("ENV", repo, "-", "检查 {} 异常: {}".format(_cid, e)))
     return out
@@ -1006,6 +1028,24 @@ def selfcheck():
         print("  豁免表缺理由不生效:   {}  [{}]".format("✔" if not act2 and inv2 and left2 else "✘",
                                                     "%d生效/%d剩余/%d无效" % (len(act2), len(left2), len(inv2))))
         ok &= not act2 and bool(inv2) and bool(left2)
+
+        # H5 反例十（2026-09-28，DSH 实证）：**未跟踪且未被忽略**的文件里若有令牌，
+        # `--worktree` 必须抓到它 —— 那是最危险的窗口（一次 git add -A 就入库）。
+        # 同时验证 **--worktree 关闭时不抓**（否则等于把未跟踪面静默并入常规扫描）。
+        #
+        # ⚠ 注意探针要选 H5 **真能抓**的形态：形态①有前置否定 `(?<![&?/])`，
+        #   所以 URL 查询参数形态 `?token=<值>` 是**刻意排除**的（RolePlayer 的 gitee 公开链接实证）。
+        #   ⇒ DSH 那个 `?token=…` 的诊断日志，**即使进了未跟踪面 H5 也抓不到** ——
+        #   这也正是当时改用 .gitignore 规则兜住它的原因，两者是互补而非重复。
+        def _cred_untracked(d):
+            wr(d, "LICENSE", "MIT\n")
+        r = _make_fixture(tmp, "cred_untracked", _cred_untracked)
+        wr(r, "diagnose-run.log", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")
+        h5_off = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        h5_on = [x for x in scan_repo(r, {"worktree": True}) if x.check == "H5"]
+        print("  H5 未跟踪面(关)不抓: {}  [{}]".format("✔" if not h5_off else "✘", len(h5_off)))
+        print("  H5 未跟踪面(开)抓:   {}  [{}]".format("✔" if h5_on else "✘", len(h5_on)))
+        ok &= not h5_off and bool(h5_on)
 
         # H7：目录名 != origin 仓名（用本地 bare 仓做 origin）
         bare = os.path.join(tmp, "renamed-origin.git")
