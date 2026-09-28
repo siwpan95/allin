@@ -786,6 +786,22 @@ def selfcheck():
 
 # ---------------------------------------------------------------- main
 
+def _default_repos_root():
+    """仓根的默认落点：**装着各仓的那个目录**。
+
+    本脚本有两份落点：`<仓根>/tools/`（分发副本）与工作区的 `/tools/`（工作副本）。
+    两者都满足「上溯两级（或一级）= 工作区根，其下的 `repos` 就是仓根」，故用**同级 repos**
+    而不是脚本自身仓根 —— 后者会让 `--all` 恒得 0 个仓（2026-09-28 实测踩到）。
+    全程不出现盘符（铁律 5），换机/换盘自适应。
+    """
+    here = os.path.dirname(os.path.abspath(__file__))          # .../tools
+    for cand_root in (os.path.dirname(here), os.path.dirname(os.path.dirname(here))):
+        sib = os.path.join(cand_root, "repos")
+        if os.path.isdir(sib):
+            return sib
+    return os.path.dirname(here)                               # 兜底：脚本自身仓根
+
+
 def collect_repos(args):
     if args.repo:
         return [os.path.abspath(args.repo)]
@@ -809,8 +825,9 @@ def main():
     ap.add_argument("--all", action="store_true", help="扫描 --repos-root 下全部仓")
     ap.add_argument("--repos-root",
                     default=os.environ.get("PROJECTS_ROOT")
-                            or os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    help="仓根（默认 = 环境变量 PROJECTS_ROOT，否则脚本所在仓根）")
+                            or _default_repos_root(),
+                    help="仓根 = **装着各仓的那个目录**（默认 = 环境变量 PROJECTS_ROOT，"
+                         "否则脚本所在仓的**同级 `repos` 目录**，再否则脚本所在仓根）")
     ap.add_argument("--filter", help="只扫名字含该子串的仓")
     ap.add_argument("--worktree", action="store_true", help="追加未跟踪面扫描")
     ap.add_argument("--baseline",
@@ -847,8 +864,13 @@ def main():
     if repos is None:
         return 3
     if not repos:
-        print("[WARN] 没有找到任何 git 仓", file=sys.stderr)
-        return 0
+        # 门禁契约（OPS-E1/E2）：拿到不可用的输入必须**响亮报错**，不能静默返回 0。
+        # 原实现打印一行 WARN 就 exit 0 —— 实测后果：`--all` 因 --repos-root 默认落成
+        # 脚本自身仓根（其子目录都不是 git 仓）而恒得 0 个仓，被误读成"扫描通过"。
+        print("[ERR] --repos-root={} 下没有找到任何 git 仓；"
+              "请用 --repos-root 指定仓根（或设 PROJECTS_ROOT）".format(args.repos_root),
+              file=sys.stderr)
+        return 3
 
     if not args.quiet:
         print("== 仓库卫生门禁 ==")
