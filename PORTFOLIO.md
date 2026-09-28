@@ -1,18 +1,22 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由脚本从 Gitee API 自动生成（生成于 2026-09-26），是**索引**而非源码镜像。
-> **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/projects/<仓名>`；
-> 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑生成脚本。
+> 本文件是**索引**而非源码镜像。
+> **数据来源与时效**：字段数据抓取自 Gitee API **2026-09-26**；**2026-09-28 本机订正** ——
+> 剔除了已删除的 5 个 `*-legacy` 仓（`ai-collection` / `game-collection` / `media-collection` /
+> `music` / `tools-collection`，先镜像归档到数据盘 `/archive/legacy-mirrors-20260928/` 再删远端），
+> 口径由 121 改为 116。**字段数据（语言/Star/简介）仍是 09-26 的**。
+> 下次请用生成器全量刷新：`python tools/build_portfolio.py --apply`（本脚本生成于 2026-09-28 补入仓 —— 此前 README 声称「由脚本生成」但脚本从未入库）。
+> **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
+> 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑 `tools/build_portfolio.py`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 121 个仓库**（公开 121 · 私有 0）。
+**共 116 个仓库**（公开 116 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
 | 仓库 | 语言 | Star | 可见性 | 简介 |
 |---|---|---|---|---|
 | [siwpan/adventurelog](https://gitee.com/siwpan/adventurelog.git) | Python | 0 | 公开 | 探险日志 |
-| [siwpan/ai-collection-legacy](https://gitee.com/siwpan/ai-collection-legacy.git) | — | 0 | 公开 | ai ?????(??=??) |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
 | [siwpan/allin-platform](https://gitee.com/siwpan/allin-platform.git) | — | 0 | 公开 | Steam 式全项目集成平台：库 + 创意工坊 + 引擎视图（聚合不融合） |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
@@ -44,7 +48,6 @@
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
 | [siwpan/easy-ai](https://gitee.com/siwpan/easy-ai.git) | — | 0 | 公开 | 零硬编码、配置驱动的可嵌入 AI 核心 + 叙事引擎 + TRPG 训练场 |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
-| [siwpan/game-collection-legacy](https://gitee.com/siwpan/game-collection-legacy.git) | Python | 0 | 公开 | 一个用于存放测试游戏的 |
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
 | [siwpan/haha](https://gitee.com/siwpan/haha.git) | — | 0 | 公开 | ??????(G:\local ???? 1,2026-08-27) |
 | [siwpan/hell-below](https://gitee.com/siwpan/hell-below.git) | — | 0 | 公开 | ??????(G:\local ???? 4,2026-08-27) |
@@ -63,12 +66,10 @@
 | [siwpan/mahjong](https://gitee.com/siwpan/mahjong.git) | — | 0 | 公开 | mahjong（自 game-collection 拆分） |
 | [siwpan/math](https://gitee.com/siwpan/math.git) | — | 0 | 公开 | ??????(G:\local ???? 4,2026-08-27) |
 | [siwpan/mc-clone](https://gitee.com/siwpan/mc-clone.git) | — | 0 | 公开 | MCclone（自 game-collection 拆分） |
-| [siwpan/media-collection-legacy](https://gitee.com/siwpan/media-collection-legacy.git) | — | 0 | 公开 | media ?????(??=??) |
 | [siwpan/midi](https://gitee.com/siwpan/midi.git) | — | 0 | 公开 | midi（自 media-collection 拆分） |
 | [siwpan/midjourney_video](https://gitee.com/siwpan/midjourney_video.git) | — | 0 | 公开 | Midjourney Explore 视频抓取下载工具（Playwright），CLI + GUI 双入口 |
 | [siwpan/moba_battle_platform](https://gitee.com/siwpan/moba_battle_platform.git) | Python | 0 | 公开 | moba_battle_platform |
 | [siwpan/mp](https://gitee.com/siwpan/mp.git) | — | 0 | 公开 | mp（自 media-collection 拆分） |
-| [siwpan/music-legacy](https://gitee.com/siwpan/music-legacy.git) | Python | 0 | 公开 | AI音乐提示词生成器通用版 |
 | [siwpan/music-prompt-generator](https://gitee.com/siwpan/music-prompt-generator.git) | — | 0 | 公开 | 音乐提示词生成器（自 music#master 拆分） |
 | [siwpan/musickit](https://gitee.com/siwpan/musickit.git) | — | 0 | 公开 | phonk 混音工程：真实采样 + 本地混音引擎（24 位混音师签名链）+ 授权分层治理 |
 | [siwpan/ncmturnmp3](https://gitee.com/siwpan/ncmturnmp3.git) | — | 0 | 公开 | 加密音乐格式转换：ncm / qmc / kgm 等解密并转码 mp3 / flac / wav / ogg / m4a，纯本地运行 |
@@ -109,7 +110,6 @@
 | [siwpan/tavern-rogue](https://gitee.com/siwpan/tavern-rogue.git) | — | 0 | 公开 | ??????(G:\local ???? 4,2026-08-27) |
 | [siwpan/text-adventure](https://gitee.com/siwpan/text-adventure.git) | — | 0 | 公开 | ??????(G:\local ???? 1,2026-08-27) |
 | [siwpan/text-fps](https://gitee.com/siwpan/text-fps.git) | — | 0 | 公开 | ??????(G:\local ???? 2,2026-08-27) |
-| [siwpan/tools-collection-legacy](https://gitee.com/siwpan/tools-collection-legacy.git) | — | 0 | 公开 | tools ??????(??=??) |
 | [siwpan/video-generator](https://gitee.com/siwpan/video-generator.git) | — | 0 | 公开 | 程序化 / 生成式视频生成器：9685 效果预设 + 音频驱动视觉 + LLM 语义组合 + 扩散层，CLI 与 Gradio 双入口 |
 | [siwpan/wav_music_gen](https://gitee.com/siwpan/wav_music_gen.git) | — | 0 | 公开 | 零依赖 WAV 音乐生成器：12 调式 / 13 和弦进行 / 加权马尔可夫旋律，纯标准库实现 |
 | [siwpan/wave4](https://gitee.com/siwpan/wave4.git) | — | 0 | 公开 | ??????(G:\local ???? 3,2026-08-27) |
