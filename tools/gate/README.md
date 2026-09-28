@@ -149,8 +149,51 @@ python /tools/gate/watchdog.py --selfcheck    # 注入破坏用例自证
 
 ## 7. 与文档枢纽的关系
 
-- 用法与口径的中文说明、以及「门禁化」在整个治理模式里的位置：见 `/allin/docs/allin治理模式_建设指南.md` §S5、§4.1、§4.2。
+- 用法与口径的中文说明、以及「门禁化」在整个治理模式里的位置：见 `/allin/docs/规范/SPEC-105-治理模式建设指南.md` §S5、§4.1、§4.2。
 - 本目录**不进**文档枢纽（那里只放文档）；门禁自身也遵守「默认值可被参数/环境变量覆盖」的约定。
+
+---
+
+## 8. `docs_index.py` — 文档枢纽「索引契约」门禁（2026-09-28 新增）
+
+把 [`SPEC-005 文档枢纽契约`](/allin/docs/规范/SPEC-005-文档枢纽契约.md) 从**文字**变成**退出码**。
+此前 `docs/` 的规矩（文档要登记、规范要有编号与效力头、记录要带日期）**一条门禁都没有** —— 这正是"指导性文档被当成产物"的机制性原因。
+
+| 判据 | 拦什么 |
+| --- | --- |
+| **D1 登记完整** | `docs/` 下的文档没在 `INDEX.md` 里登记 |
+| **D2 索引有效** | `INDEX.md` 登记了**不存在**的文件（分类导航用的目录链接不计） |
+| **D3 规范头部** | `规范/SPEC-*.md` 缺八项字段之一（编号 / 效力 / 状态 / 生效 / 最后修订 / 适用面 / 承载体 / 引用格式） |
+| **D4 命名规则** | 规范文件名**带日期**；记录文件名**没日期**且不是按月卷 |
+| **D5 分类一致** | 文件所在目录与 `INDEX` 声明的类别不符 |
+| **D6 ASCII 别名** | `spec/ facts/ records/ 历史/` 四个别名缺失或指向错误 |
+| **D7 卷号连续** | `记录/交接/<YYYY-MM>.md` 有空洞，或某卷缺「覆盖区间」声明 |
+
+```powershell
+python /tools/gate/docs_index.py --no-baseline --list-all   # 普查（新规则上线时确认存量真的为 0）
+python /tools/gate/docs_index.py                            # 日常（基线棘轮）
+python /tools/gate/docs_index.py --selfcheck                # 自证：8 个真实破坏用例 + 1 个干净用例
+python /tools/gate/docs_index.py --root <仓根> --no-aliases  # 指向别的仓 / 跳过 D6
+```
+
+**退出码**：`0` 干净 · `1` 基线外新增阻断 · `2` 用法错误 · `3` 环境错误。
+**纪律**：`blocking` / `baseline` / `new` / `reported` / `skipped` 与**每类豁免计数**每次运行都打印，不静默丢弃；
+豁免只在**判据上确实不适用**时添加，且必须配对应的反例用例（调试铁律 53）。
+
+---
+
+## 9. `make_doc_aliases.ps1` — 文档枢纽 ASCII 别名（2026-09-28 新增）
+
+文档枢纽同时提供**中文目录真身**与 **ASCII 别名**（`规范/`↔`spec/`、`事实源/`↔`facts/`、`记录/`↔`records/`、`md/`↔`历史/`）。
+内容**只存一份**；别名是 junction、**不入库**（入库即等于把同一份内容存两遍，违反「单一事实源」）。
+
+```powershell
+pwsh -File /tools/gate/make_doc_aliases.ps1          # 创建 / 修复（幂等）
+pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名就位且指向正确才 exit 0
+```
+
+**为什么必须能重建**：junction 不进 git —— **换机 / 克隆 / 目录改名后必须重跑**。
+`docs_index.py` 的 D6 会在别名缺失时报红，所以"忘了重建"不会静默通过。`.gitignore` 已显式忽略这四个别名目录。
 
 ---
 
@@ -168,19 +211,25 @@ python /tools/gate/watchdog.py --selfcheck    # 注入破坏用例自证
 
 ---
 
-## 与 `/projects/deepseek-harness-master/governance/` 的关系（2026-09-27 新增）
+## 与 DSH 仓 `governance/` 的关系（2026-09-27 新增，2026-09-28 订正落点）
 
 治理规则现在有**两个落点**，判据同源、形态不同，别把两份当成重复建设：
 
 | 落点 | 形态 | 谁在用 |
 | --- | --- | --- |
-| 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区（`/projects`）的日常巡检 |
-| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发） | **一份 Python 门禁运行时 + 14 条门禁**（`g00`~`g14`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
+| 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区的日常巡检 |
+| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发，本机检出 `/repos/deepseek-harness`） | **一份 Python 门禁运行时 + 15 条门禁**（`g00`~`g15`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
 
-- **规则事实源仍是 `docs/MEMORY.md`**；`governance/RULES.md` 是「规则 → 门禁」的**映射表与引用契约**，
-  新增门禁时必须同步改它（`g00-meta` 会校验门禁 id 是否被收录）。
-- **判据同源、实现不同**：例如死根路径判据在本目录是 `scan_hardcoded.ps1`（只看盘符 + 多仓），
-  在 DSH 侧是 `g01-paths`（泛化到「绝对路径父目录是否存在」，跨平台）。**改一边时先看另一边是否也要改**。
+> ⚠ **落点订正（2026-09-28 实测）**：本节原写 `/projects/deepseek-harness-master/governance/` —— **该路径不存在**。
+> DSH 检出实测在 `/repos/deepseek-harness`（去符盘形式）。同类的 `/projects/` 写法一律以
+> [`/allin/docs/事实源/本机事实.md`](/allin/docs/事实源/本机事实.md) §2 的实测值为准。
+
+- **规则事实源是本仓 `docs/规范/`**（2026-09-28 前写 `docs/MEMORY.md`，该文件现已降为路由页）：
+  铁律 → `SPEC-001`，调试铁律 → `SPEC-004`，治理准则 → `SPEC-003`，文档枢纽契约 → `SPEC-005`。
+  `governance/RULES.md` 是「规则 → 门禁」的**映射表与引用契约**，新增门禁时必须同步改它（`g00-meta` 会校验门禁 id 是否被收录）。
+- **判据同源、实现不同**：如死根路径判据在本目录是 `scan_hardcoded.ps1`（只看盘符 + 多仓），
+  在 DSH 侧是 `g01-paths`（泛化到「绝对路径父目录是否存在」，跨平台）；
+  文档索引契约在本目录是 `docs_index.py`，在 DSH 侧是 `g15-docs-contract`。**改一边时先看另一边是否也要改**。
 - 门禁契约（本仓侧的新要求）：每条门禁支持 `--selfcheck`（含**真实破坏用例**）与
   `--baseline/--no-baseline/--write-baseline/--list-all` 四开关，豁免与跳过**计数打印不静默丢弃**；
   DSH 侧由 `g10-failloud-probe` 反过来验证「拿到坏输入必须响亮报错」。

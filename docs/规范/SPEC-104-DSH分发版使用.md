@@ -37,7 +37,7 @@ python start-dsh-web.py --diagnose   # 启动并把服务端输出全部落到�
 规则来源是**本仓**（`allin/docs/`，2026-09-27 前目录名为 `allin_push`），落地形态是 **DSH 仓内的 `governance/` 目录** —— 克隆即得，不依赖本机路径。
 
 ```powershell
-pnpm run check:governance            # 全部 14 条门禁
+pnpm run check:governance            # 全部 15 条门禁
 pnpm run governance:selfcheck        # 证明每条门禁仍能抓到注入的缺陷
 pnpm exec tsx governance/run.ts --list            # 列出 id / 档位 / 覆盖的规则
 pnpm exec tsx governance/run.ts --only g01-paths  # 只跑其中几条
@@ -62,6 +62,7 @@ pnpm exec tsx governance/run.ts --only g01-paths  # 只跑其中几条
 | `g12-integrity` | 调试铁律 51 / 58 | 对象库不可读、`HEAD^{commit}` 解不出（盘自愈改坏 git 对象那一类） |
 | `g13-docs-only` | OPS-D1 / G8 | `docs/` 下的脚本、归档、可执行位 |
 | `g14-preset` | 铁律 5、调试铁律 42 | 治理 preset 与出厂件漂移、治理段里写了盘符 |
+| `g15-docs-contract` | **`SPEC-005` 全部**、OPS-D6 / D7、调试铁律 45 | 文档枢纽索引契约（**选用制**）：文档没登记 / 索引指向不存在的文件 / 规范缺头部 / 规范名带日期或记录名无日期 / 分类错位 / ASCII 别名缺失 / 交接卷断号。本仓无 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` |
 
 **规则 → 门禁的逐条映射、引用契约、维护约定**在 DSH 仓的 `governance/RULES.md`（该目录已登记进 `translation-pairing` 排除表：它是中文主文档，不做双语配对）。
 
@@ -84,7 +85,7 @@ dsh web --patch governance/preset/allin.patch.yml   # 临时：单次启动的 o
 
 - DSH 仓内配对版：[`docs/user/guide/distribution.md`](https://gitee.com/siwpan/deepseek-harness)（英文）+ `distribution.zh.md`（中文）。
 - 参考：[Cordis 教程](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/)（底层插件框架怎么工作）、DSH 仓 `governance/README.md`（门禁怎么跑/扩展/重建基线）。
-- 规则事实源仍在**本仓**：`docs/MEMORY.md`（铁律与调试铁律）、`docs/docs/规范/SPEC-105-治理模式建设指南.md`（复刻 playbook）。
+- 规则事实源仍在**本仓**：`docs/规范/SPEC-001-铁律.md`（铁律与准则）、`docs/规范/SPEC-004-调试铁律.md`（调试铁律 1–62）、`docs/规范/SPEC-105-治理模式建设指南.md`（复刻 playbook）。
 
 ---
 
