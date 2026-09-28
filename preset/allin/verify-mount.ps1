@@ -286,7 +286,7 @@ if (Test-Path $locate) {
     $root = & $locate -ErrorAction SilentlyContinue
     if ($LASTEXITCODE -eq 0 -and $root) {
       Write-Ok "自发现仓根：$root"
-      $four = @('docs/MEMORY.md', 'docs/协作工作流程约定_2026-08-28.md', 'docs/会话交接_2026-08-27.md', 'docs/新机配置汇总_2026-09-24.md')
+      $four = @('docs/INDEX.md', 'docs/规范/SPEC-001-铁律.md', 'docs/规范/SPEC-002-协作工作流程.md', 'docs/事实源/本机事实.md')
       $missing = @()
       foreach ($f in $four) { if (-not (Test-Path (Join-Path $root $f))) { $missing += $f } }
       if ($missing.Count -eq 0) { Write-Ok "四份事实源在仓根齐全（agent 开卷必读可用）。" }
@@ -307,7 +307,7 @@ if ($portFail) {
 Write-Step "③ 漂移层：比对随包 cordis preset 的 capability 集合"
 $shippedPaths = @(
   "$webProfile\node_modules\@deepseek-ai\dsh-web-app\presets\cordis.patch.yml",
-  'D:\projects\deepseek-harness-master\packages\bundle\web-app\presets\cordis.patch.yml',
+  "$env:DSH_HOME\packages\bundle\web-app\presets\cordis.patch.yml",   # 由 DSH_HOME 指到检出（无盘符，2026-09-28 替换原写死盘符路径）
   "$PSScriptRoot\..\..\..\..\packages\bundle\web-app\presets\cordis.patch.yml"
 )
 $shipped = $null

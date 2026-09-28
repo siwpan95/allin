@@ -33,3 +33,13 @@ bin-release/
 # ===== 可重生成的索引产物（2026-09-25：不入库 —— 它曾因逐次提交把仓库撑到 10.5 GB）
 # 生成器：/tools/build_dir_index.py（--apply）；改项目请改它的 README，勿手改索引
 /目录索引.txt
+
+# ===== 文档枢纽的 ASCII 别名（2026-09-28，SPEC-005 §3.2）=====
+# docs/ 同时提供中文真身与 ASCII 别名；别名是同内容的 junction，**内容只存一份**，
+# 因此别名不入库（入库即等于把同一份内容存两遍，违反「单一事实源」）。
+# 换机/克隆后重建：pwsh -File tools/gate/make_doc_aliases.ps1
+# 校验（门禁用）：  pwsh -File tools/gate/make_doc_aliases.ps1 -Check
+/docs/spec/
+/docs/facts/
+/docs/records/
+/docs/历史/
