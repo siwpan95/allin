@@ -29,8 +29,8 @@ function Write-Warn($m) { Write-Host "  [WARN] $m" -ForegroundColor DarkYellow }
 function Write-Fail($m) { Write-Host "  [FAIL] $m" -ForegroundColor DarkRed }
 
 $PY = Get-Command python.exe -ErrorAction SilentlyContinue
-if (-not $PY) { $PY = Get-Command 'E:\Python314\python.exe' -ErrorAction SilentlyContinue }
-if (-not $PY) { Write-Error '找不到 python（需 PyYAML 解析 patch）'; exit 2 }
+if (-not $PY -and $env:PYTHON) { $PY = Get-Command $env:PYTHON -ErrorAction SilentlyContinue }
+if (-not $PY) { Write-Error '找不到 python（需 PyYAML 解析 patch）；可用 $env:PYTHON 指定解释器'; exit 2 }
 
 if (-not (Test-Path $UpstreamCordis)) { Write-Error "找不到上游文件：$UpstreamCordis"; exit 2 }
 if (-not (Test-Path $Allin)) { Write-Error "找不到 allin：$Allin"; exit 2 }
