@@ -1,5 +1,10 @@
 # Gitee 本地推送流程（含「绕过确认」全解）
 
+> **编号** SPEC-101 ｜ **效力** 操作规范 ｜ **状态** 生效
+> **生效** 2026-09-25 ｜ **最后修订** 2026-09-28 ｜ **适用面** 向 gitee 推送任何仓时的操作流程（本地 runbook）
+> **承载体** `g04-push-evidence`（同步只信 `ls-remote`、凭据残留、分叉检测）、`repo_hygiene.py` H5/H8
+> **引用格式** SPEC-101 §3
+
 > 维护时间：2026-09-25｜适用账户：`siwpan`｜适用仓库：`gitee.com/siwpan/*`
 > 本文是**本地推送 runbook**，重点讲「如何让推送全程不弹确认框、不手工点网页、不肉眼核对密钥」——
 > 即「绕过确认」的 9 个手段（见 §3）。配套自动化工单在 `gitee-repo-and-release-flow` skill 的 `tools/gitee_release.py`（零三方依赖）。

@@ -1,7 +1,12 @@
 # Gitee 发版指南（含优先级 + 联网核实）
 
+> **编号** SPEC-102 ｜ **效力** 操作规范 ｜ **状态** 生效
+> **生效** 2026-09-25 ｜ **最后修订** 2026-09-28 ｜ **适用面** 发行版（tag / release / 附件）的发布动作
+> **承载体** `tools/gitee_release.py`（分步、可重入、幂等）；发版门禁随 DSH 门禁聚合运行
+> **引用格式** SPEC-102 §一
+
 > 配套脚本：**本仓库 `tools/gitee_release.py`**（零三方依赖，分步、可重入、幂等），用法与平台坑见 `tools/README.md`；该脚本亦随 `gitee-repo-and-release-flow` skill 提供，两份内容一致。
-> 推送篇见同目录 `gitee推送流程_2026-09-25.md`；本篇只讲「发版 / 发行版」。
+> 推送篇见同目录 `docs/规范/SPEC-101-推送流程.md`；本篇只讲「发版 / 发行版」。
 > **令牌脱敏约定**：全文用 `<GITEE_TOKEN>` / `****` 表示，**绝不写进仓库、不回显**。
 
 ---
@@ -15,7 +20,7 @@
 | Python | `/Python314/python.exe`（3.14.7，已在 PATH；含 openpyxl 3.1.5） |
 | allin 远程 | `master` @ `bd34ed0`；默认分支 `master`；另有 `nothing` tag |
 | git 身份 | **全局未配**；各仓按**仓库级**配 `user.name=siwpan` / `user.email=siwpan@users.noreply.gitee.com` |
-| 关联文档 | `docs/gitee推送流程_2026-09-25.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/gitee协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
+| 关联文档 | `docs/规范/SPEC-101-推送流程.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/规范/SPEC-103-社区协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
 
 > ⚠ 旧路径 `G:\私人令牌.txt`、`E:\Python314`、`/Users/13122/*` 在新机**均不存在**（新机是 `DESKTOP-8RSV60V` / 用户 `psw`）。
 > 本机现为 C / D / F / G 四卷：C 内置、D 外置 exFAT(save)、F 外置 NTFS(trash)、G 外置 NTFS(allin)。
@@ -100,7 +105,7 @@ python tools/gitee_release.py --token "<HEX>" public
 
 ## 3. 平台坑速查（发版相关，均实测）
 
-完整坑表见 `gitee推送流程_2026-09-25.md`「平台坑」。聚焦发版：
+完整坑表见 `docs/规范/SPEC-101-推送流程.md`「平台坑」。聚焦发版：
 
 | 坑 | 现象 | 应对 |
 |---|---|---|
@@ -144,8 +149,8 @@ python tools/gitee_release.py attach  --tag v1.2.0 --file dist.zip --file SHA256
 # —— 三层验收（前两层足够）——
 git rev-parse HEAD                                  # ① 本地 HEAD
 git ls-remote origin refs/heads/master              # ① 远端 ref 须逐字符相等
-git rev-parse HEAD:docs/gitee发版指南.md            # ② 本地 blob sha
-# ② 匿名比对：curl "https://gitee.com/api/v5/repos/siwpan/<repo>/contents/docs/gitee发版指南.md?ref=master"
+git rev-parse HEAD:docs/规范/SPEC-102-发版指南.md            # ② 本地 blob sha
+# ② 匿名比对：curl "https://gitee.com/api/v5/repos/siwpan/<repo>/contents/docs/规范/SPEC-102-发版指南.md?ref=master"
 git status --short                                  # ③ 须为空
 ```
 

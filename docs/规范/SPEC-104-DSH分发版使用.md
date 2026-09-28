@@ -1,5 +1,10 @@
 # DSH 分发版当前版本使用说明（0.1.7-rc.1）
 
+> **编号** SPEC-104 ｜ **效力** 操作规范 ｜ **状态** 生效
+> **生效** 2026-09-27 ｜ **最后修订** 2026-09-28 ｜ **适用面** siwpan/deepseek-harness 分发版的使用者与维护者
+> **承载体** `g00`–`g15`（随分发版交付的 15 条治理门禁）；本文件是它们在 allin 侧的说明
+> **引用格式** SPEC-104 §三
+
 > **这是什么**：`siwpan/deepseek-harness`（**独立分发版**，上游 GitHub 官方仓仅作参考）的使用说明。
 > 本文件是**在 allin 侧的存档副本**；DSH 仓内的中英配对版在 `docs/user/guide/distribution.md` 与 `distribution.zh.md`。
 > **口径（2026-09-27 用户拍板）**：本分发版按自己的节奏演进，不再「对齐上游」；上游只用于形态比对。
@@ -79,7 +84,7 @@ dsh web --patch governance/preset/allin.patch.yml   # 临时：单次启动的 o
 
 - DSH 仓内配对版：[`docs/user/guide/distribution.md`](https://gitee.com/siwpan/deepseek-harness)（英文）+ `distribution.zh.md`（中文）。
 - 参考：[Cordis 教程](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/)（底层插件框架怎么工作）、DSH 仓 `governance/README.md`（门禁怎么跑/扩展/重建基线）。
-- 规则事实源仍在**本仓**：`docs/MEMORY.md`（铁律与调试铁律）、`docs/allin治理模式_建设指南.md`（复刻 playbook）。
+- 规则事实源仍在**本仓**：`docs/MEMORY.md`（铁律与调试铁律）、`docs/docs/规范/SPEC-105-治理模式建设指南.md`（复刻 playbook）。
 
 ---
 
