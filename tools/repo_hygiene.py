@@ -14,7 +14,9 @@
   H1 LICENSE 唯一      —— 判**路径**：仓根须有 LICENSE；`_ref/ThirdParty/LICENSE` 之类
                           的 basename 同样是 LICENSE，只判文件名会漏（文档 §1 明确此坑）
   H2 无第三方源码目录  —— `_ref/ vendor/ node_modules/ third_party/`（跟踪面内）
-  H3 无产物目录        —— `output/ state/ cache/ dist/ build/ release/`（跟踪面内）
+  H3 无产物目录        —— `output/ state/ cache/ dist/ build/`（任意层级）
+                          ＋ `release/`（**仅仓根**：release 是极常见的源码目录名，
+                          见 ARTIFACT_DIRS_ROOT_ONLY 的 2026-09-28 实证说明）
   H4 无归档、无大文件  —— `*.zip *.tar.gz *.7z`；单文件 > 5 MiB
   H5 无凭据            —— ①令牌**本体子串**匹配（从凭据文件读，不回显）
                           ②通用形态匹配（键名在前，避免 sha256 误报）
@@ -82,7 +84,14 @@ THIRD_PARTY_DIRS = {"_ref", "vendor", "node_modules", "third_party"}
 # H3 产物目录（跟踪面内出现即阻断）
 # 含 *.egg-info / *.dist-info 这类**构建元数据**：它们是 setuptools 生成物，
 # 2026-09-26 实测因 `git add -A` 误入过 d20 仓（当时本表未覆盖，门禁没拦住）。
-ARTIFACT_DIRS = {"output", "state", "cache", "dist", "build", "release"}
+# 分层（2026-09-28 误报治理，DSH 12 条实证）：
+#   · 任意层级都算 `ARTIFACT_DIRS`：这几个名字在源码树里几乎不会作为**源码目录**出现。
+#   · **只在仓根**才算 `ARTIFACT_DIRS_ROOT_ONLY`：`release` 是极常见的**源码目录名**
+#     （发布工具 / 发布脚本 / 发版说明常叫 release）。实证：DSH 的 `scripts/release/*.ts`
+#     是**发布工具的源码**，被原先"任意层级裸匹配"整目录误伤 12 条。
+#     而**仓根**的 `release/` 通常确实是产物输出位置，故保留根级判定。
+ARTIFACT_DIRS = {"output", "state", "cache", "dist", "build"}
+ARTIFACT_DIRS_ROOT_ONLY = {"release"}
 ARTIFACT_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg-link")
 # H4 归档后缀
 ARCHIVE_SUFFIXES = (".zip", ".tar.gz", ".tgz", ".7z", ".rar", ".tar.bz2")
@@ -275,9 +284,15 @@ def check_h3_artifacts(repo, tracked, ctx):
     for t in tracked:
         parts = t.split("/")
         hit = None
-        for p in parts[:-1]:
+        for i, p in enumerate(parts[:-1]):
+            # 任意层级：无歧义的产物目录名
             if p in ARTIFACT_DIRS:
                 hit = "产物目录 '{}'".format(p)
+                break
+            # 仅仓根（i == 0）：`release` 作为源码目录名极为常见，非根级不判
+            # （2026-09-28：DSH 的 scripts/release/ 是发布工具源码，12 条误报由此而来）
+            if i == 0 and p in ARTIFACT_DIRS_ROOT_ONLY:
+                hit = "仓根产物目录 '{}'".format(p)
                 break
             if p.endswith(ARTIFACT_DIR_SUFFIXES):
                 hit = "构建元数据目录 '{}'（setuptools 生成物，勿入库）".format(p)
@@ -637,6 +652,26 @@ def selfcheck():
         print("  H2 第三方目录被检出: {}  [{}]".format("✔" if h2 else "✘", len(h2)))
         print("  H3 产物目录被检出:   {}  [{}]".format("✔" if h3 else "✘", len(h3)))
         ok &= bool(h2) and bool(h3)
+
+        # H3 反例（2026-09-28 新增，DSH 12 条误报实证）：
+        #   `release` 只认**仓根**。`scripts/release/*.ts` 是发布工具源码，不得判；
+        #   而仓根的 `release/` 仍须判（否则把这条规则改废了）。
+        def _h3rel(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "scripts/release/bump.ts", "export const x = 1\n")
+            wr(d, "tools/release/notes.py", "print(1)\n")
+        r = _make_fixture(tmp, "h3rel", _h3rel)
+        h3 = [x for x in scan_repo(r, {}) if x.check == "H3"]
+        print("  H3 非根级 release 不判: {}  [{}]".format("✔" if not h3 else "✘", len(h3)))
+        ok &= not h3
+
+        def _h3relroot(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "release/app.bin", "x\n")
+        r = _make_fixture(tmp, "h3relroot", _h3relroot)
+        h3 = [x for x in scan_repo(r, {}) if x.check == "H3"]
+        print("  H3 仓根 release 仍判:   {}  [{}]".format("✔" if h3 else "✘", len(h3)))
+        ok &= bool(h3)
 
         # H4：归档 + 大文件
         def _arch(d):
