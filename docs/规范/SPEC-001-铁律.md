@@ -58,12 +58,16 @@
   → `git reflog expire --expire=now --all` → `git gc --prune=now`（本例 10.7 GB → **14 MB**）。
   **完整执行链 + 两个坑 + 反直觉认知**写在先例脚本 `/tools/filter-drop-dir-index.sh` 头部注释里；
   本次全过程见 `docs/记录/专题/冗余清理与盘位归位_2026-09-24.md` §十二。
-- **凡按中文路径过滤 git 输出，必须带 `-c core.quotepath=false`**（2026-09-25 沉淀，**已犯两次**）：
+- **凡按中文路径过滤 git 输出，必须带 `-c core.quotepath=false`**（2026-09-25 沉淀，**已犯三次**）：
   git 默认把非 ASCII 文件名转义成 `"\347\233\256\345\275\225…"` 并加引号，于是
   `git ls-tree … | Where-Object { $_ -eq '目录索引.txt' }` **恒假** → 会误判「文件不在仓库里」。
-  两次实证：① 排查 `radio-stations-source.js` 时误判"git 历史里从未存在"；
-  ② 剔除 `目录索引.txt` 前误判"它不在 HEAD"（实际在，只差这个参数）。**同类**：
-  `git status`/`git diff --stat` 的中文路径同样会被转义，按名字过滤一律加此参数。
+  三次实证：① 排查 `radio-stations-source.js` 时误判"git 历史里从未存在"；
+  ② 剔除 `目录索引.txt` 前误判"它不在 HEAD"（实际在，只差这个参数）；
+  ③ **2026-09-28**：判 `深度评估_20260817.md` 是否在 HEAD 时，把 `git diff --name-only --diff-filter=D`
+  的输出（被转义成 `\346\267\261...`）喂给 `git cat-file -e HEAD:<path>` ⇒ 恒失败
+  ⇒ 得出「**它不在 HEAD、恢复不了**」的错误结论；加参数后实测 **17/17 全在 HEAD**。
+  **这次差点让我放弃恢复一个本来可恢复的文件** —— 与前两次同源，说明这条还没变成手上的默认动作。
+  **同类**：`git status`/`git diff --stat` 的中文路径同样会被转义，按名字过滤一律加此参数。
 
 ## 铁律 4：建仓三件套（README + LICENSE + .gitignore）（2026-09-24 用户拍板）
 
