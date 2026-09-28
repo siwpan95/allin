@@ -109,7 +109,11 @@ CRED_PATTERNS = [
     # 前置负向断言：键名不得紧跟在 `&`/`?`/`/` 后面 —— 那说明它是 **URL 查询参数**
     # （实证：RolePlayer 规则书 HTML 里的 `...&token=<uuid>` 是 gitee 公开链接参数，
     #  值确实像 UUID 密钥，纯靠"值像不像密钥"判不出来，必须看上下文）
-    re.compile(rb"""(?<![&?/])(?P<k>["']?(?:access[_-]?token|api[_-]?key|auth[_-]?token|client[_-]?secret|secret[_-]?key|password|passwd|secret|token)["']?)\s*[=:]\s*["']?(?P<v>[0-9a-zA-Z_\-+/=.]{20,})["']?""", re.I),
+    # 第二个前置负向断言（2026-09-28 补，DSH 实证）：键名**左边不能是字母/数字/下划线** ——
+    # 否则 `const LONG_TOKEN = '...'` 会因为**名字里含 token** 而被当成凭据键命中。
+    # 实证：`LONG_TOKEN`（宽表格渲染测试里的长路径串）、`BROWSER_FIXTURE_TOKEN` 都是这么中招的。
+    # 这属于**子串误匹配**，与"值像不像密钥"无关，必须在模式层修掉。
+    re.compile(rb"""(?<![&?/])(?<![A-Za-z0-9_])(?P<k>["']?(?:access[_-]?token|api[_-]?key|auth[_-]?token|client[_-]?secret|secret[_-]?key|password|passwd|secret|token)["']?)\s*[=:]\s*["']?(?P<v>[0-9a-zA-Z_\-+/=.]{20,})["']?""", re.I),
     re.compile(rb"https://[^/\s]+:[0-9a-fA-F]{20,}@"),
     re.compile(rb"sk-[0-9a-zA-Z]{20,}"),
     # 注意两个坑（首版各踩一次）：
@@ -128,9 +132,12 @@ CONTEXT_REQUIRED = {
     TOKEN_NAME_PATTERN_INDEX: re.compile(rb"[0-9a-fA-F]{32,}"),
 }
 # 值里出现这些词 = 是说明文字，不是密钥
+# 2026-09-28 追加（DSH 10 条实证）：**自证是夹具**的词。真实凭据不会自称
+# "NOT_A_REAL_CREDENTIAL" / "DO-NOT-LOG" / "fixture"——出现这些词即夹具，属结构判定。
 VALUE_STOPWORDS = re.compile(
     r"password|passwd|username|user_?name|your_?|example|placeholder|changeme|string|number|"
-    r"function|return|object|boolean|undefined|null|true|false|description|required|optional",
+    r"function|return|object|boolean|undefined|null|true|false|description|required|optional|"
+    r"fixture|dummy|sample|fake|synthetic|not[_-]?a[_-]?real|do[_-]?not[_-]?log|redact",
     re.I)
 # 允许的占位写法（脱敏约定：一律 <TOKEN> / **** / <HEX>）
 CRED_PLACEHOLDER = re.compile(rb"<[A-Z_]{3,}>|\*{4,}|<HEX>|<REDACTED>|\.\.\.|^\$|\{\{|%[A-Z_]+%|xxxx", re.I)
@@ -142,8 +149,21 @@ def _value_looks_secret(v):
         return False
     if VALUE_STOPWORDS.search(v):
         return False
+    # 值是**成员/环境引用**（纯点分标识符路径）⇒ 它不是字面量。
+    # 结构判定（2026-09-28，DSH 实证）：`environment.DOWNLOAD_TEST_COS_SECRET_KEY`、
+    # `process.env.DSH_WORKSPACE_UPDATE_TOKEN`、`RELEASE_ENVIRONMENT.APPLE_API_KEY` 都是**引用**——
+    # 引用指向别处，真正的值若存在会在其**定义处**被本门禁另行检出，所以跳过引用不降低检出能力。
+    if re.fullmatch(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+", v):
+        return False
     # 单一字符重复（aaaa…/0000…）不是密钥
     if len(set(v)) <= 3:
+        return False
+    # 长**描述性 slug** 不是密钥（2026-09-28，DSH 实证：`github-webhook-real-e2e-secret`）。
+    # 结构判据：全长小写、只由 `[a-z0-9-_]` 组成、且**含 a-f 之外的字母**。
+    #   · 全小写 + 含 g-z ⇒ 是英文词组，不是随机串；
+    #   · 而**全字母的长 hex**（只用 a-f，如 abcdefabcdef…）仍判为密钥 —— 这条不能误伤。
+    # 注意：**不可**直接把 `e2e` 之类加进停用词 —— 十六进制令牌里 `e2e` 是常见子串，那样会真漏。
+    if len(v) >= 32 and re.fullmatch(r"[a-z0-9\-_]+", v) and re.search(r"[g-z]", v):
         return False
     # 至少要有一定字符多样性：数字+字母混合，或长 hex
     has_digit = any(c.isdigit() for c in v)
@@ -377,11 +397,27 @@ def check_h5_credentials(repo, tracked, ctx):
                 continue
             # 同行注明「这是夹具」即豁免（2026-09-27）：门禁**必然**包含它要找的模式，
             # 自检夹具更是刻意写出真实形态；但豁免只作用于**那一行**，真实值照旧检出。
+            # 2026-09-28 补：同时认**兄弟门禁自己的标记** `gov-credentials: allow`。
+            #   实证：DSH 的 governance/gates/g03_credentials.py、g04_push_evidence.py 里
+            #   刻意写出真实密钥形态做自检，并且**已经**用 `# gov-credentials: allow` 标注，
+            #   但本工具原先只认 `repo-hygiene: allow` ⇒ 两套标记不互通 ⇒ 那 5 条被反复判红。
+            #   标记名不同不代表豁免意图不同，**认它**；但同样只作用于那一行。
             line_start = data.rfind(b"\n", 0, m.start()) + 1
             line_end = data.find(b"\n", m.end())
-            if b"repo-hygiene: allow" in data[line_start: line_end if line_end != -1 else len(data)]:
+            line = data[line_start: line_end if line_end != -1 else len(data)]
+            if b"repo-hygiene: allow" in line or b"gov-credentials: allow" in line:
                 continue
             index = CRED_PATTERNS.index(pat)
+            # 形态②（URL 内嵌凭据）：**主机名**若是 RFC 2606/6761 保留域，则必然不是真实服务。
+            # 结构判定（2026-09-28，DSH 实证）：g04_push_evidence.py 的自检夹具写的是
+            # `https://svc:8f14e45f…@host.invalid/x.git` —— `.invalid` 是保留的无效 TLD，
+            # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。
+            # 用户名:口令 的形态在这里无法靠"值像不像"判，但**主机名能**。
+            if index == 1:
+                tail = data[m.end(): m.end() + 96]
+                hm = re.match(rb"[^/\s\"'`]+", tail)
+                if hm and re.search(rb"\.(?:invalid|test|example|localhost)(?=[/:]|$)", hm.group(0), re.I):
+                    continue
             if index in CONTEXT_REQUIRED:
                 window = data[max(0, m.start() - 200):m.end() + 200]
                 if not CONTEXT_REQUIRED[index].search(window):
@@ -393,6 +429,14 @@ def check_h5_credentials(repo, tracked, ctx):
                 except Exception:
                     val = ""
                 if not _value_looks_secret(val):
+                    continue
+            else:
+                # 形态②③（URL 内嵌凭据 / sk- 密钥）**没有 k 组**，原先完全绕过值判定。
+                # 2026-09-28 补（DSH 实证）：命中文本本身若含"自证是夹具"的词，即为夹具 ——
+                #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、
+                #   `'prove telemetry with key sk-e2efixture1234567890'`。
+                #   真实凭据不会自称 fixture。只对**命中文本本身**判，不扩大窗口。
+                if VALUE_STOPWORDS.search(m.group(0).decode("ascii", "replace")):
                     continue
             f.append(Finding("H5", repo, t, "疑似凭据形态：{}".format(pat.pattern[:40])))
             break
@@ -548,6 +592,24 @@ CHECKS = [
 ]
 
 
+def _default_audit_file(name):
+    """审计文件的默认位置：**兼容两份落点**（2026-09-28 修）。
+
+    · 分发副本：`<仓根>/tools/repo_hygiene.py` → `<仓根>/tools/gate/audit/<name>`
+    · 工作副本：`/tools/gate/repo_hygiene.py`   → `/tools/gate/audit/<name>`
+
+    原先写死第一种，于是工作副本会去找 `/tools/gate/gate/audit/…`（不存在）⇒
+    **基线/豁免表静默落空**（与 `--repos-root` 的默认值同一类缺陷）。
+    取**第一个已存在**的；都不存在时返回分发形态的路径（保持原行为，且能给出可读的路径）。
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    cands = [os.path.join(here, "gate", "audit", name), os.path.join(here, "audit", name)]
+    for c in cands:
+        if os.path.isfile(c):
+            return c
+    return cands[0]
+
+
 def scan_repo(repo, ctx):
     if not is_git_repo(repo):
         return [Finding("ENV", repo, "-", "不是 git 仓（无 .git）")]
@@ -577,6 +639,48 @@ def load_baseline(path):
         except Exception:
             pass
     return keys
+
+
+def load_exemptions(path):
+    """读仓级豁免表：`check,repo,path,reason,recorded_at`。
+
+    **`reason` 为空的行一律不生效**，并原样返回给调用方报出来 —— 例外也要记账。
+    `path` 支持两种写法：精确匹配；或以 `*` 结尾表示**前缀匹配**（如 `vendor/*`）。
+    返回 (生效项, 缺理由项)。
+    """
+    active, invalid = [], []
+    if not path or not os.path.isfile(path):
+        return active, invalid
+    try:
+        with io.open(path, encoding="utf-8-sig", newline="") as fh:
+            for row in csv.DictReader(fh):
+                chk = (row.get("check") or "").strip()
+                repo = (row.get("repo") or "").strip()
+                pth = (row.get("path") or "").strip()
+                reason = (row.get("reason") or "").strip()
+                if not (chk and repo and pth):
+                    continue
+                if not reason:
+                    invalid.append("{} {} {}".format(chk, os.path.basename(repo.rstrip("/\\")), pth))
+                    continue
+                active.append((chk, os.path.normcase(repo.rstrip("/\\")), pth))
+    except Exception as e:  # noqa: BLE001
+        print("  ⚠ 豁免表读取失败（{}）：{}".format(path, e))
+    return active, invalid
+
+
+def is_exempted(finding, active):
+    """命中是否落在豁免表内（仓路径与检查项都要对上，path 支持 `*` 前缀）。"""
+    repo = os.path.normcase(finding.repo.rstrip("/\\"))
+    for chk, ex_repo, pth in active:
+        if finding.check != chk or repo != ex_repo:
+            continue
+        if pth.endswith("*"):
+            if finding.path.startswith(pth[:-1]):
+                return True
+        elif finding.path == pth:
+            return True
+    return False
 
 
 def save_baseline(path, findings):
@@ -787,6 +891,122 @@ def selfcheck():
         print("  H5 同行注明夹具即豁免: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
         ok &= not h5
 
+        # H5 反例五（2026-09-28，DSH 实证）：**兄弟门禁自己的标记**也要认。
+        # DSH 的 g03_credentials.py / g04_push_evidence.py 刻意写出真实密钥形态做自检，
+        # 且已用 `# gov-credentials: allow` 标注；本工具原先只认 repo-hygiene: allow ⇒ 反复误报。
+        def _cred_sibling_marker(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "governance/gates/g03.py",
+               'sandbox.write("k.ts", "const apiKey = \'a8f3d9e2b7c4a1f6d0e5b8c3a9f2d7e4\'\\n")  # gov-credentials: allow\n')
+        r = _make_fixture(tmp, "cred_sib", _cred_sibling_marker)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 兄弟门禁标记也认: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        # H5 反例六（2026-09-28，DSH 实证）：键名**左边**是字母/数字/下划线 ⇒ 是子串，不是凭据键。
+        # `const LONG_TOKEN = '<32 字符>'` 曾因名字含 token 被命中（LONG_TOKEN 是宽表格测试的长路径串）。
+        # 同时**必须**证明真键名仍被检出，否则等于把规则改废。
+        def _cred_substring_key(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "apps/web/tests/wide.e2e.ts",
+               "const LONG_TOKEN = 'workspace/packages/client/ui/render.tsx/'.repeat(2)\n")
+        r = _make_fixture(tmp, "cred_sub", _cred_substring_key)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 键名子串不判:     {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        def _cred_real_key(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "src/a.ts", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")
+        r = _make_fixture(tmp, "cred_real", _cred_real_key)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 真键名仍判:       {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        # H5 反例七（2026-09-28，DSH 实证）：**长描述性 slug** 不是密钥，
+        # 但**全字母的长 hex**（只用 a-f）必须仍然算 —— 这条不能误伤。
+        def _cred_slug(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/a.ts", "const SECRET = 'github-webhook-real-e2e-secret-longer'\n")
+        r = _make_fixture(tmp, "cred_slug", _cred_slug)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 描述性 slug 不判: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        def _cred_hexalpha(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/b.ts", "const accessToken = 'abcdefabcdefabcdefabcdefabcdefab'\n")
+        r = _make_fixture(tmp, "cred_hexa", _cred_hexalpha)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 全字母长hex仍判:  {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        # H5 反例八：形态③（sk-）没有 k 组，原先**完全绕过值判定** ⇒ 夹具被反复判红。
+        # 命中文本自带 fixture 字样即夹具；但真实的 sk- 形态仍须检出。
+        def _cred_skfix(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/c.ts", "const FIXTURE_SECRET = 'sk-e2efixture1234567890'\n")
+        r = _make_fixture(tmp, "cred_skfix", _cred_skfix)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 sk-夹具字样不判:  {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        def _cred_skreal(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/d.ts", "const k = 'sk-a1b2c3d4e5f67890abcdef1234567890'\n")
+        r = _make_fixture(tmp, "cred_skreal", _cred_skreal)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 真 sk- 仍判:      {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        # H5 反例九：URL 内嵌凭据若主机是 RFC 2606 保留域（.invalid/.test/.example/.localhost），
+        # 必然不是真实服务；但真实主机仍须检出。
+        def _cred_reserved(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/e.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git"\n')
+        r = _make_fixture(tmp, "cred_res", _cred_reserved)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 保留域主机不判:   {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
+        ok &= not h5
+
+        def _cred_realhost(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/f.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@gitee.com/o/n.git"\n')
+        r = _make_fixture(tmp, "cred_realh", _cred_realhost)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 真实主机仍判:     {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
+        # 仓级豁免（2026-09-28）：**有理由才生效，缺理由不生效**。
+        # 这条是「例外也要记账」的机械保障 —— 否则豁免表会退化成第二份基线。
+        def _ex_fixture(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "vendor/lib.c", "x\n")
+            wr(d, "output/r.xlsx", "x\n")
+        r = _make_fixture(tmp, "exempt", _ex_fixture)
+        res = [x for x in scan_repo(r, {}) if x.check == "H2"]
+        exf = os.path.join(tmp, "ex.csv")
+        with io.open(exf, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["check", "repo", "path", "reason", "recorded_at"])
+            w.writerow(["H2", r, "vendor/*", "有意 vendor，见 vendor/README.md 的 manifest", "2026-09-28"])
+        act, inv = load_exemptions(exf)
+        left = [x for x in res if not is_exempted(x, act)]
+        print("  豁免表有理由即生效:   {}  [{}]".format("✔" if len(act) == 1 and not left and not inv else "✘",
+                                                    "%d生效/%d剩余/%d无效" % (len(act), len(left), len(inv))))
+        ok &= len(act) == 1 and not left and not inv
+
+        exf2 = os.path.join(tmp, "ex_noreason.csv")
+        with io.open(exf2, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["check", "repo", "path", "reason", "recorded_at"])
+            w.writerow(["H2", r, "vendor/*", "", "2026-09-28"])
+        act2, inv2 = load_exemptions(exf2)
+        left2 = [x for x in res if not is_exempted(x, act2)]
+        print("  豁免表缺理由不生效:   {}  [{}]".format("✔" if not act2 and inv2 and left2 else "✘",
+                                                    "%d生效/%d剩余/%d无效" % (len(act2), len(left2), len(inv2))))
+        ok &= not act2 and bool(inv2) and bool(left2)
+
         # H7：目录名 != origin 仓名（用本地 bare 仓做 origin）
         bare = os.path.join(tmp, "renamed-origin.git")
         subprocess.run(["git", "init", "-q", "--bare", bare], capture_output=True)
@@ -866,10 +1086,12 @@ def main():
     ap.add_argument("--filter", help="只扫名字含该子串的仓")
     ap.add_argument("--worktree", action="store_true", help="追加未跟踪面扫描")
     ap.add_argument("--baseline",
-                    default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                         "gate", "audit", "hygiene_baseline.csv"))
+                    default=_default_audit_file("hygiene_baseline.csv"))
     ap.add_argument("--write-baseline", action="store_true", help="把当前命中断言为基线")
     ap.add_argument("--no-baseline", action="store_true", help="忽略基线，看全部存量")
+    ap.add_argument("--exemptions",
+                    default=_default_audit_file("repo_hygiene_exemptions.csv"),
+                    help="仓级豁免表（check,repo,path,reason,recorded_at）；**reason 为空的行不生效**")
     ap.add_argument("--list-all", action="store_true", help="打印全部命中明细")
     ap.add_argument("--token-file", help="凭据文件（读令牌本体做子串匹配；不回显）")
     ap.add_argument("--json", help="把结果写入该 JSON 文件")
@@ -914,6 +1136,23 @@ def main():
     findings = []
     for r in repos:
         findings.extend(scan_repo(r, ctx))
+
+    # ---------- 仓级豁免（2026-09-28 新增）----------
+    # 与「基线」的本质区别（这正是要单做一套的原因）：
+    #   · **基线** = 「这些命中我已知、暂不处理」的**时间棘轮** —— 不解释理由，且随新增而漂移；
+    #   · **豁免** = 「这一条**不是问题**，因为……（理由）」的**显式判定** —— **理由必填**，缺理由不生效。
+    # 规划里明写「把误报入基线等于把噪声合法化」，所以需要这条**要写理由**的通道。
+    # 典型用途：DSH 的 `vendor/` 是**有意 vendor**（带 manifest、上游 commit、MIT LICENSE），
+    # 不是"把第三方源码倒进仓"——这类"规则本身没错、但对本仓是有意例外"的情形走豁免。
+    active_ex, invalid_ex = load_exemptions(args.exemptions)
+    if invalid_ex and not args.quiet:
+        print("  ⚠ 豁免表有 {} 行**缺理由**，已忽略（例外也要记账）：{}".format(
+            len(invalid_ex), "；".join(invalid_ex[:3])))
+    if active_ex:
+        before_n = len(findings)
+        findings = [f for f in findings if not is_exempted(f, active_ex)]
+        if not args.quiet:
+            print("  已应用仓级豁免：豁免掉 {} 条（表内 {} 行生效）".format(before_n - len(findings), len(active_ex)))
 
     baseline = set() if args.no_baseline else load_baseline(args.baseline)
     if args.write_baseline:

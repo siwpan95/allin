@@ -1,0 +1,2 @@
+check,repo,path,reason,recorded_at
+H2,G:\repos\deepseek-harness,vendor/*,有意 vendor，不是「把第三方源码倒进仓」。vendor/README.md 载明：这是 Cordis 框架及其基础库的**源码 vendor 副本**，刻意不用 npm 依赖，以便 harness 完整拥有框架层（可审计 / 可打补丁 / 可钉版本）；并带 manifest 表逐包记录上游 repo URL 与精确 commit（如 cosmokit 1.8.1 ← https://github.com/deepseek-harness/cosmokit @ 16f6fc058ade66e8ac5da0033d35a8d0f279f544），各包保留上游 MIT LICENSE。2026-09-28 核实：被跟踪 76 个文件全为 .ts/.json/.md 源码（构建物 .map/.tsbuildinfo 未被跟踪）；该仓 .gitignore 无 vendor 规则（本就有意跟踪）。⇒ 若按 H2 把它 gitignore 并 git rm --cached，等于拆掉该项目「完全拥有框架层」的核心设计。,2026-09-28
