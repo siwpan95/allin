@@ -14,8 +14,8 @@
 
 ## 命名约定（重要）
 
-- **allin** = 本仓（索引 + 治理说明 + 深度审核报告 `深度审核报告_20260827.md` + 审核证据 `audit-fragments/`），单独挂载于 `/projects/allin`（原 `/allin`，2026-09-27 前名为 `allin_push`）。
-- **一仓一目录**：每个 gitee 仓库对应 `/projects/<仓名>` 一个目录，仓名 = 目录名。
+- **allin** = 本仓（索引 + 治理说明 + [文档枢纽 `docs/`](docs/README.md) + 审核证据 `audit-fragments/`），本机检出在 `/allin`（原 `/projects/allin`；2026-09-27 前名为 `allin_push`）。
+- **一仓一目录**：每个 gitee 仓库对应 `<项目盘>/<仓名>` 一个目录，仓名 = 目录名。
 - **alloy** = 统一游戏引擎（原 allin_engine，2026-08-23 改名；仓库 siwpan/an-engine）。
 - **复制优于共享**：项目内联引擎/字体/资源副本是**有意为之**，不算冗余；缓存（__pycache__/.venv/node_modules/build/dist）不算重复。
 
@@ -25,11 +25,10 @@
 |---|---|
 | `README.md` | 本文件（仓门面） |
 | `LICENSE` / `.gitignore` | MIT 许可 + 忽略规则（密钥/构建物一律不入库） |
-| `docs/` | **文档枢纽**：活跃事实源（MEMORY / 会话交接 / 协作约定 / ports.yaml / 文档地图 README / 治理模式建设指南），历史文档树在 `docs/md/`；DeepSeek-Harness 升级与治理专档见 `docs/DSH升级与插件不兼容_2026-09-24.md` |
+| `docs/` | **文档枢纽**：[总目录 `INDEX.md`](docs/INDEX.md) + 四分类（[`规范/`](docs/规范/) 约束 · [`事实源/`](docs/事实源/) 活台账 · [`记录/`](docs/记录/) 证据流水 · `md/` 历史树）。接手从 [`docs/README.md`](docs/README.md) 进 |
 | `preset/` | **治理模式的载体**：`preset/allin/` = DSH agent preset「工作区治理」的 0.1.7+ 声明式可重装副本（见下节与 [`preset/allin/安装说明.md`](preset/allin/安装说明.md)） |
-| `tools/` | 工作区门禁与工具（死根路径门禁 + AST 未定义名检查，见其 README） |
-| `audit-fragments/` | 深度审核的过程证据（与 `深度审核报告_20260827.md` 配套） |
-| `深度审核报告_20260827.md` | 治理准则首次成文（R0–R11 处置清单） |
+| `tools/` | 工作区门禁与工具（死根路径 + AST 未定义名 + **文档索引契约** + 别名重建，见其 README） |
+| `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
 
 > 历史 README 还列过 `repos/ platform/ local/ assets/ archive/ notpython/` 等目录 —— 那是 `/` 整盘时期的形态；
@@ -85,14 +84,15 @@
 3. **结构可重建、资产与历史永不推倒**：合并优于双仓并存；补优于删；还原优于分支（上游修复后弃用自维护补丁）。
 
 - **敏感信息红线**：API Key / 令牌 / cookie 真实值绝不进代码、配置与仓库（一律 example 化 + .gitignore）。
-- 全量审核（对照 deepseek-harness 与 gitee 全量仓）与逐项处置清单 R0–R11：见本仓 `深度审核报告_20260827.md`；本地推进详情：`docs/MEMORY.md`。
+- 全量审核（对照 deepseek-harness 与 gitee 全量仓）与逐项处置清单 R0–R11：见 [`docs/记录/审计/深度审核报告_2026-08-27.md`](docs/记录/审计/深度审核报告_2026-08-27.md)（＋同目录 [`审核遗留处置_R0-R11_2026-08-27.md`](docs/记录/审计/审核遗留处置_R0-R11_2026-08-27.md)）；本地推进详情见 [`docs/记录/交接/`](docs/记录/交接/)。
 
 ## 治理文档
 
-**文档枢纽 = `docs/`**（入口 [`docs/README.md`](docs/README.md)），含活跃事实源（MEMORY / 会话交接 / 协作约定 / ports.yaml）、
-审计与核对报告、历史文档树 `docs/md/`，以及《allin 治理模式 · 建设指南》。
-深度审核报告随本仓发布：`深度审核报告_20260827.md`。
+**文档枢纽 = [`docs/`](docs/README.md)**：入口是**总目录** [`docs/INDEX.md`](docs/INDEX.md)，下分四类 ——
+[`规范/`](docs/规范/)（约束，带 `SPEC-NNN` 与效力声明头）、[`事实源/`](docs/事实源/)（活台账，带时点）、
+[`记录/`](docs/记录/)（证据流水，只增不改）、`docs/md/`（历史树，冻结）。
+深度审核报告随本仓发布：见 [`docs/记录/审计/深度审核报告_2026-08-27.md`](docs/记录/审计/深度审核报告_2026-08-27.md)。
 
 ---
 
-*最后更新：2026-09-26（盘位去符盘化 `/projects/...`、12 项目成员；`preset/` 改写为 0.1.7 声明式治理 + 三配套脚本 + 上游 §八 纪律；`make-bundle.ps1` 增 `-Check` CI 新鲜度门禁；新增 `PORTFOLIO.md` 全量 121 仓索引 + 源码懒拉取原则）*
+*最后更新：2026-09-28（文档枢纽大修：四分类 + 总目录 `INDEX.md` + 规范编号化 + 索引契约门禁；仓根重复的审核报告已并入 `docs/记录/审计/`）*
