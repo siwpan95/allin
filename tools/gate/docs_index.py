@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """docs_index.py —— 文档枢纽「索引契约」门禁（SPEC-005 的机械保障）。
 
-判据（D1–D7）：
+判据（D1–D8）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -10,6 +10,8 @@
   D5 分类一致 —— 文件所在目录与 INDEX 声明的类别一致
   D6 ASCII 别名 —— 四个别名目录存在且指向正确（Windows 用 junction；非 Windows 可 ln -s）
   D7 卷号连续 —— 记录/交接/<YYYY-MM>.md 无空洞，且每卷首行声明覆盖区间
+  D8 自述一致 —— INDEX.md 头部那行「**覆盖** 根 N + 规范 N + 事实源 N + 记录 N = **M 份**」逐项与实际相符
+                  （2026-09-28 曾出现「头部写 51 ／ 实际 49」这类只有人眼能发现的漂移）
 
 契约（与本仓其它门禁一致）：
   退出码 0 干净 / 1 基线之外的新阻断 / 2 用法错误 / 3 环境错误
@@ -215,6 +217,43 @@ def check_d6(docs: str, rep: Report, enabled: bool) -> None:
             rep.exempt("D6-ok")
 
 
+COUNT_LINE = re.compile(
+    r"覆盖\*\*[^\n]*?根\s*(\d+)[^\d\n]+规范\s*(\d+)[^\d\n]+事实源\s*(\d+)[^\d\n]+记录\s*(\d+)"
+    r"\s*=\s*\*\*(\d+)\s*份\*\*")
+
+
+def check_d8(docs: str, files: list[str], rep: Report) -> None:
+    """INDEX 头部自述份数必须与实际一致 —— 这类漂移只有人眼能发现，值得机械化。"""
+    idx = os.path.join(docs, "INDEX.md")
+    if not os.path.isfile(idx):
+        rep.block("D8", "INDEX.md 不存在，无法核对自述份数")
+        return
+    head = "\n".join(read_text(idx).splitlines()[:20])
+    m = COUNT_LINE.search(head)
+    if not m:
+        rep.block("D8", "INDEX.md 头部缺自述份数行（形如：**覆盖** 根 N + 规范 N + 事实源 N + 记录 N = **M 份**）")
+        return
+    said_root, said_spec, said_fact, said_rec, said_total = (int(x) for x in m.groups())
+    actual = {"root": 0, "规范": 0, "事实源": 0, "记录": 0}
+    for f in files:
+        head_seg = f.split("/")[0]
+        if "/" not in f:
+            actual["root"] += 1
+        elif head_seg in actual:
+            actual[head_seg] += 1
+    pairs = [("根", said_root, actual["root"]),
+             ("规范", said_spec, actual["规范"]),
+             ("事实源", said_fact, actual["事实源"]),
+             ("记录", said_rec, actual["记录"])]
+    bad = ["%s 自述 %d / 实际 %d" % (n, s, a) for n, s, a in pairs if s != a]
+    if sum(a for _, _, a in pairs) != said_total:
+        bad.append("合计自述 %d / 实际 %d" % (said_total, sum(a for _, _, a in pairs)))
+    if bad:
+        rep.block("D8", "INDEX.md 自述份数与实际不符：" + "；".join(bad))
+    else:
+        rep.exempt("D8-counts-agree")
+
+
 def check_d7(docs: str, rep: Report) -> None:
     d = os.path.join(docs, "记录", "交接")
     if not os.path.isdir(d):
@@ -256,6 +295,7 @@ def run(root: str, args) -> Report:
     check_d5(files, reg, rep)
     check_d6(docs, rep, enabled=not args.no_aliases)
     check_d7(docs, rep)
+    check_d8(docs, files, rep)
     return rep
 
 
@@ -314,6 +354,7 @@ SELFCHECK_CASES = [
     ("category-mismatch", "分类与所在目录不一致", False),
     ("volume-gap", "交接卷号有空洞", False),
     ("volume-no-range", "交接卷缺覆盖区间", False),
+    ("count-drift", "INDEX 头部自述份数与实际不符", False),
 ]
 
 
@@ -356,7 +397,15 @@ def build_fixture(kind: str, base: str) -> str:
             f.write("# 门面\n")
     os.makedirs(os.path.join(docs, "md"), exist_ok=True)   # 历史树真身（D6 需要）
 
-    lines = ["# INDEX", "", "| 编号 | 文件 |", "| --- | --- |",
+    # 自述份数行（D8）：夹具实际为 根 2 + 规范 1 + 事实源 1 + 记录 3 = 7
+    c_root, c_spec, c_fact, c_rec = 2, 1, 1, 3
+    if kind == "count-drift":
+        c_root += 1          # 故意写错一项
+    c_total = c_root + c_spec + c_fact + c_rec
+    count_line = ("> **覆盖** 根 %d + 规范 %d + 事实源 %d + 记录 %d = **%d 份**"
+                  % (c_root, c_spec, c_fact, c_rec, c_total))
+
+    lines = ["# INDEX", "", count_line, "", "| 编号 | 文件 |", "| --- | --- |",
              "| HUB-01 | [README.md](README.md) |",
              "| HUB-02 | [INDEX.md](INDEX.md) |",
              "| SPEC-001 | [铁律](规范/%s) |" % spec_name,
