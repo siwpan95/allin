@@ -40,7 +40,7 @@
 - **private-radio-stations**：Node.js + Cordis 插件式转播站（radio/video/portal 三簇）。
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
 - **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork，已推独立 gitee 仓 `siwpan/deepseek-harness`（见下）。
-- 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `RolePlayer` `music-master` `ncmturnmp3` `D20`。
+- 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `roleplayer` `music-master` `ncmturnmp3` `D20`。
 - 以上 12 个为本机已克隆的**成员子集**；全量 121 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
 
 ## DeepSeek-Harness 治理落地（2026-09-26）
