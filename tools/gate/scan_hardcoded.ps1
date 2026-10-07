@@ -105,6 +105,12 @@ $script:RxTestFile = [regex]'(^|[\\/])(tests?|__tests__|spec|specs)[\\/]|(^|[._-
 $script:RxFixtureSeg = [regex]'^(fake|nonexistent|dummy|nope|temp|tmp|test|tests?|example|examples?|foo|bar|baz|sample|samples|some|where|x|y|z|\d)$'
 $script:RxEscapeSeg = [regex]'^[ntrsdwxaefvb0]$'
 $script:RxPlaceholder = [regex]'[{}$%<>]'
+# 「占位盘符」：单个字母 + 可选的冒号（`X:` / `X`）。
+# 2026-10-06 补（用户拍板「改门禁自身正则」）：`X:\foo` 这类**示意写法**被判红 4 处 ——
+# 实证 `tools/build_portfolio.py:52` 的 docstring「去符盘：X:\foo / X:/foo -> /foo（铁律 5）」。
+# 它与真死根（如 `E:\D20`）的**分界不在盘符、在末段名字**：`foo` 在 RxFixtureSeg 占位表里，
+# `D20` 是项目名不在表里 —— 所以本条只对「盘符 + 单个通用占位段」生效，不碰真死根。
+$script:RxPlaceholderDrive = [regex]'^[A-Za-z]:?$'
 # 正则转义伪影（如文本里的 \d \w \s）。
 # ⚠ 2026-09-26 修：原式为 '[\(\)\[\]\+]|\\(w|d|s|W|D|S)(?![A-Za-z])'，会把**盘符路径**误判为转义伪影 ——
 #   例 `E:\D20`（E: 在本机不存在，是真死根）因 `\D` 后跟 `2` 命中而整条被排除，
@@ -255,6 +261,7 @@ function Invoke-Scan {
         if ($leaf -match '^[ntrs]$') { Add-Stat '排除·转义伪影(末段)'; continue }
         if ($script:RxRegexArtifact.IsMatch($norm) -and $segs.Count -le 3) { Add-Stat '排除·正则伪影'; continue }
         if ($segs.Count -eq 2 -and $firstSeg.Length -le 1) { Add-Stat '排除·过浅(单字符段)'; continue }
+        if ($segs.Count -eq 2 -and $script:RxPlaceholderDrive.IsMatch($segs[0]) -and $script:RxFixtureSeg.IsMatch($firstSeg)) { Add-Stat '排除·占位盘符+通用段'; continue }
         if ($norm -match '\s' -and $norm -notmatch '\\Program Files' -and $norm -notmatch '\\Inno Setup') { Add-Stat '排除·散文提及'; continue }
         $root = if ($segs.Count -ge 3) { "$($segs[0])\$($segs[1])\$($segs[2])" } else { "$($segs[0])\$($segs[1])" }
         $deepMiss = $false
@@ -310,9 +317,11 @@ if ($SelfTest) {
 """selftest：死路径应为阻断项"""
 import os
 DEAD = r"@SELFTEST_DEAD_PATH@"           # 有效代码行 → 阻断
+PLACEHOLDER = r"@SELFTEST_PLACEHOLDER@"  # 占位盘符 + 通用段 → **不**阻断（2026-10-06 补）
 GOOD = Path(__file__).resolve().parent      # 可推导 → 不阻断
 '@
   $bad = $bad.Replace('@SELFTEST_DEAD_PATH@', 'Q' + ':\nope\engine\core.py')
+  $bad = $bad.Replace('@SELFTEST_PLACEHOLDER@', 'X' + ':\foo')
   $ok = @'
 """selftest：系统路径 / URL / 夹具 / 转义 不应误报"""
 import os
@@ -342,12 +351,17 @@ except ImportError as e:
   $r3 = Invoke-Scan -Targets $target
   $newAfterBaseline = @($r3.Hits | Where-Object { $_.Blocking -and ($known -notcontains $_.Identity) })
   $t3 = (@($newAfterBaseline).Count -eq 0)
+  # 占位盘符（X:\foo）不得阻断，同时真死根仍须阻断 —— **两个方向各一条断言**（调试铁律 61）
+  # ⚠ 断言的**字面路径必须拼接**（`'X' + ':\foo*'`）：源码里写字面盘符路径会被门禁扫自身时自举命中
+  #   —— 与文件上方夹具同一条纪律（2026-10-06 实测：直写时这条断言自己变成 2 条阻断项）。
+  $t4 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like ('X' + ':\foo*') }).Count -eq 0) -and $t1
   Write-Output '== 门禁自测 =='
   Write-Output ("  死路径被检出（期望 1）: {0}  [实际 {1}]" -f $(if ($t1) { '✔' } else { '✗' }), @($blocking).Count)
   Write-Output ("  系统路径/URL/夹具/转义 零误报: {0}" -f $(if ($t2) { '✔' } else { '✗' }))
   Write-Output ("  基线棘轮生效（写入基线后新增 = 0）: {0}  [实际新增 {1}]" -f $(if ($t3) { '✔' } else { '✗' }), @($newAfterBaseline).Count)
+  Write-Output ("  占位盘符不误报（X:\foo）且真死根仍判: {0}" -f $(if ($t4) { '✔' } else { '✗' }))
   Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
-  if ($t1 -and $t2 -and $t3) { Write-Output '  自测通过'; exit 0 } else { Write-Output '  自测失败'; exit 3 }
+  if ($t1 -and $t2 -and $t3 -and $t4) { Write-Output '  自测通过'; exit 0 } else { Write-Output '  自测失败'; exit 3 }
 }
 
 # ───────────────────────── 主流程 ─────────────────────────

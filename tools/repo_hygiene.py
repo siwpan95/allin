@@ -172,12 +172,33 @@ VALUE_STOPWORDS = re.compile(
 # 允许的占位写法（脱敏约定：一律 <TOKEN> / **** / <HEX>）
 CRED_PLACEHOLDER = re.compile(rb"<[A-Z_]{3,}>|\*{4,}|<HEX>|<REDACTED>|\.\.\.|^\$|\{\{|%[A-Z_]+%|xxxx", re.I)
 
+#: 「顺序串」合成标记（2026-10-06 补，用户拍板「改门禁自身正则」）。
+#: 实证：`docs/记录/交接/2026-09.md:1440` 的 `sk-abcdefghijklmnop1234567890abcd` 被判红 ——
+#: 它是**文档里的合成示例**，但不含 fixture/example 这类自称词，故 VALUE_STOPWORDS 认不出。
+#: **阈值怎么定的（第一版过宽，被自检当场拦下）**：首版连 `1234567890` 一起拒，
+#: 结果把门禁**自己的正例夹具**（`a1b2c3d4e5f67890abcdef1234567890`）也拒了 —— 一次挂掉 5 条自检用例
+#: （真键名仍判 / 真 sk- 仍判 / 未跟踪面 / 环回 URL / localhost）。
+#: 收紧为「**≥8 位连续升序字母**」：真 hex 令牌里最多出现 `abcdef`（6 位），8 位升序字母出现概率可忽略；
+#: 而 `abcdefghijklmnop`（16 位）这种只有手敲示例才有。**自检既是保险，也是判据的标尺。**
+VALUE_SYNTHETIC = re.compile(rb"abcdefgh|ABCDEFGH")
+
+#: 「模式定义文本」守卫（2026-10-06 补，同一轮）。
+#: 门禁**必然**包含它要找的模式（正则字面串），而它们的**字符集**与凭据不同：
+#: 真实凭据是 [0-9a-zA-Z_-+/=.] 这一族，不含方括号/圆括号/花括号/问号/星号/竖线/脱字符/美元/反斜杠/尖括号。
+#: 实证：`tools/repo_hygiene.py:139` 的 URL 查询参数正则字面串本身就是候选命中；本轮它恰好
+#: 被「夹具缺标记」那条挡下，但**这一类此前没有判据兜底**（改一行源码就可能自命中）。
+#: 调试铁律 53：发现一处漏检要反推**整类**影响面，不能只修当前这一例。
+CRED_PATTERN_TEXT = re.compile(rb"[\[\](){}?*+|^$\\<>]")
+
 
 def _value_looks_secret(v):
     """判断匹配到的『值』是否真像密钥（而非英文说明文字/标识符）。"""
     if len(v) < 20:
         return False
     if VALUE_STOPWORDS.search(v):
+        return False
+    # 顺序串（abcdefgh…/1234567890…）是手敲的合成示例，不是随机令牌（2026-10-06 补）
+    if VALUE_SYNTHETIC.search(v.encode("ascii", "replace")):
         return False
     # 值是**成员/环境引用**（纯点分标识符路径）⇒ 它不是字面量。
     # 结构判定（2026-09-28，DSH 实证）：`environment.DOWNLOAD_TEST_COS_SECRET_KEY`、
@@ -482,7 +503,14 @@ def check_h5_credentials(repo, tracked, ctx):
                 #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、
                 #   `'prove telemetry with key sk-e2efixture1234567890'`。
                 #   真实凭据不会自称 fixture。只对**命中文本本身**判，不扩大窗口。
-                if VALUE_STOPWORDS.search(m.group(0).decode("ascii", "replace")):
+                mt = m.group(0)
+                if VALUE_STOPWORDS.search(mt.decode("ascii", "replace")):
+                    continue
+                # 2026-10-06 补两条（同族：命中文本**自称 / 看着**就是合成物，不是凭据）
+                if VALUE_SYNTHETIC.search(mt):
+                    continue
+                if CRED_PATTERN_TEXT.search(mt):
+                    continue
                     continue
             f.append(Finding("H5", repo, t, "疑似凭据形态：{}".format(pat.pattern[:40])))
             break
@@ -1082,7 +1110,11 @@ def selfcheck():
         # 两个方向都要测：只测一边等于把规则改废或把盲区留着。
         def _cred_loopback(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/g.log", "dsh web: http://127.0.0.1:3080/?token=a1b2c3d4e5f67890abcdef1234567890\n")
+            # 夹具必须**自带 allow 标记，且标记要在同一源码行**：本门禁的扫描面包含它自己的源码，
+            # 不带标记就会被自己判红（2026-10-06 实测：H5 两条存量红之一即此）。
+            # ⚠ 标记只能放在**源码行尾注释**里、不能写进字符串内容 —— 写进内容就进了夹具文件，
+            #   该夹具是"必须被判红"的正例（H5 环回URL令牌判），那样会把正例测废。
+            wr(d, "t/g.log", "dsh web: http://127.0.0.1:3080/?token=a1b2c3d4e5f67890abcdef1234567890\n")  # repo-hygiene: allow
         r = _make_fixture(tmp, "cred_lo", _cred_loopback)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 环回URL令牌判:    {}  [{}]".format("✔" if h5 else "✘", len(h5)))

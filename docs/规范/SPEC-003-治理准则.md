@@ -1,7 +1,7 @@
 # SPEC-003 · 治理准则
 
 > **编号** SPEC-003 ｜ **效力** 准则（事故驱动固化，铁律级） ｜ **状态** 生效
-> **生效** 2026-08-27 ｜ **最后修订** 2026-09-28 ｜ **适用面** 借鉴/复制/调整/退役/敏感信息/插件化选型/外部文档落点
+> **生效** 2026-08-27 ｜ **最后修订** 2026-10-06 ｜ **适用面** 借鉴/复制/调整/退役/敏感信息/插件化选型/外部文档落点
 > **承载体** `g03-credentials`（敏感信息）、`g08-deletion-evidence`（冗余三查）、`repo_hygiene.py` H1–H8；「借鉴必记账」由 DSH `verify-third-party-notices` 部分覆盖
 > **引用格式** SPEC-003 §创新三原则 1
 
@@ -29,10 +29,25 @@
 ### 敏感信息检查（借鉴/调整/打包前必过）
 - API Key / 令牌 / cookie：真实值绝不进代码、配置、仓库——一律 example 化 + .gitignore（2026-08-27 事故：活跃 DeepSeek Key 明文提交公开仓，见 R0）。
 - 复制/打包目录前：排除 .git、node_modules、.venv、__pycache__、build/dist、日志；打安装包前复核 .iss 清单不含 .git 与凭据。
-- **remote URL 明文凭据面（2026-09-22 实测记账，用户拍板维持现状）**：4 个 `.git/config` 的 origin 内含 `siwpan:<token>@gitee.com` —— `G:\platform`、`/repos/bee`、`/repos/particle`、`/archive/arcade2-collection-model-retired-20260827`（R1 时记为 16 处，09-22 实测 4 处）。凭据源 = `G:\私人令牌.txt`，属已知现状，**只记账不清理**；日后若轮换令牌，这 4 处需同步更新。
-- **`G:\私人令牌.txt` 凭据清单（2026-09-22 盘点，只记种类不记值）**：① gitee token（32-hex）② DeepSeek key（`sk-…`）③ Tavily（`tvly-dev-…` + MCP URL）④ TestPyPI / PyPI 令牌各 1（`pypi-AgE…`）⑤ **unsplash**（Application ID / Access Key / Secret key，2026-09-22 从 `/Users/13122/Downloads/key.txt` 并入）⑥ **pexels** API Key（同上并入）。
-  - **取用方式（image-scraper）**：`CLI/GUI 参数 → 环境变量 <NAME>_KEY（UNSPLASH_KEY / PEXELS_KEY） → config.json 的 keys`；**该仓 `config.json` 是已跟踪文件，密钥绝不写进去**（key 位保持空串占位）。
-  - 令牌文件位于 `G:\` 根，而 `G:\` 根**不是任何 git 仓**（allin 仓根已迁 `G:\allin`，其 `.gitignore` 仍声明 `私人令牌.txt`）——即不入库；每次改动前先备份到 `/archive/私人令牌-bak-<时间戳>.txt`。
+- **⚠ 凭据取值一律以「Windows 凭据管理器」为准（2026-10-06 用户拍板）**；本节其余两段的**具体清单已过期**，
+  仅保留作沿革。取用纪律见 [`SPEC-101 §0/§2`](SPEC-101-推送流程.md)；**两条链独立**（GCM 供 `git push`；
+  `gitee_release.py` 必须显式 `--token` / `--token-file` / `GITEE_TOKEN`，三者皆无则直接报错）。
+- **remote URL 明文凭据面（2026-09-22 记账 → 2026-10-06 复测结清）**：原记「4 处 `.git/config` 的 origin 内含
+  `siwpan:<token>@gitee.com`」——`G:\platform`、`/repos/bee`、`/repos/particle`、
+  `/archive/arcade2-collection-model-retired-20260827`（R1 时记 16 处，09-22 实测 4 处），当时用户拍板**只记账不清理**。
+  **2026-10-06 按 `调试铁律 52` 的权威判据复测**（正则 `https://[^/\s]+:[0-9a-zA-Z]{20,}@` **扫 config 全文**，
+  含 `[branch]` 段，而不只是 `remote` 段）：`bee`、`particle` **均已清**（09-23 已 `set-url` 为无令牌 URL），
+  `platform` 目录已不存在（09-28 归位并入 `/repos/allin-platform`），**`/repos` 全 116 仓 0 命中**
+  ⇒ **本项结清**（唯一未复测的是 archive 那处，已不在 `/repos` 扫描面内）。
+- **原 `G:\私人令牌.txt` 清单（2026-09-22 盘点，只记种类不记值）—— ⚠ 该文件已不存在，本清单作废留档**：
+  ① gitee token（32-hex）② DeepSeek key（`sk-…`）③ Tavily（`tvly-dev-…` + MCP URL）
+  ④ TestPyPI / PyPI 令牌各 1（`pypi-AgE…`）⑤ unsplash（Application ID / Access Key / Secret key）
+  ⑥ pexels API Key。**2026-10-06 复测**：`G:\私人令牌.txt`、`G:\allin\私人令牌.txt`、`G:\platform\私人令牌.txt`
+  **三处均不存在** ⇒ 现行凭据只在 **Windows 凭据管理器**内（`git:https://gitee.com` / `git:https://oauth2@gitee.com`）。
+  - **仍然有效的纪律**（与文件在不在无关）：① 真实值绝不进代码/配置/仓库，一律 example 化 + `.gitignore`；
+    ② 取用走「CLI 参数 → 环境变量 `<NAME>_KEY` → config」，**已跟踪的 `config.json` 里只留空串占位**；
+    ③ 轮换令牌后要回头检查历史遗留点（本条即为此类）；④ 查残留**扫 config 全文**并认 `[branch "<名>"] remote`
+    —— `git push -u <带令牌URL>` 会把凭据记在那儿（`调试铁律 52`）。
 
 ### 插件化选型（2026-08-27 用户拍板）
 - **爬虫类适合插件化**（crawl-hub 模式：多站点 worker = 多插件、频繁增删、子进程隔离）；**单机 GUI 小游戏不适合**（D20 的 E:\D20 整体插件化/网页插件版实验已证明不划算，勿再尝试）。
@@ -60,5 +75,19 @@
 | 全局已配 `user.name` / `user.email` | **全局为空**；各仓靠**仓库级**配置（`siwpan` / `siwpan@users.noreply.gitee.com`） | 新 clone 的仓 `commit` 报 `Author identity unknown` |
 | 「F/G 盘已移除，仅 C/D/E 三卷」 | F:/G: **都在**（原型机的外置盘已接到新机） | 结论方向相反 |
 
-**两条纪律（本次实证）**：
+**两条纪律（本次实证）**：正文见 [`SPEC-004 §调试铁律 46`](SPEC-004-调试铁律.md)（同一批文档、同一次实测）。
+
+> ⚠ **2026-10-06 补记**：本节原以"两条纪律（本次实证）："结尾且**后面没有正文**（断句缺陷，2026-10-06 发现）。
+> 不臆造内容，改指向已含该内容的 `SPEC-004 §调试铁律 46`。
+
+---
+
+## 修订记录
+
+| 日期 | 版本 | 改动 | 依据 |
+| --- | --- | --- | --- |
+| 2026-08-27 | v1.0 | 首版：创新三原则、冗余三查、敏感信息检查、插件化选型 | 深度审核报告固化 |
+| 2026-09-25 | v1.0.1 | 增「借用外部文档的落点纪律」 | gitee 三篇外部文档落点实测 |
+| 2026-09-28 | v1.0.2 | 头部补齐 `承载体`/`引用格式`；路径改 `docs/` 中文真身 | 文档枢纽大修（`SPEC-005`） |
+| 2026-10-06 | v1.1 | **凭据取值一律以 Windows 凭据管理器为准**；两处过期清单（4 处带凭据 remote / `私人令牌.txt` 六类清单）按复测结清并留档；补正文断句 | 用户拍板「凭据以凭据管理器为准，其余均登记过期，趁热核一下」；复测见 `记录/交接/2026-10.md` §一百零三 |
 
