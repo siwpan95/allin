@@ -85,7 +85,7 @@ dsh web --patch governance/preset/allin.patch.yml   # 临时：单次启动的 o
 
 - DSH 仓内配对版：[`docs/user/guide/distribution.md`](https://gitee.com/siwpan/deepseek-harness)（英文）+ `distribution.zh.md`（中文）。
 - 参考：[Cordis 教程](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/)（底层插件框架怎么工作）、DSH 仓 `governance/README.md`（门禁怎么跑/扩展/重建基线）。
-- 规则事实源仍在**本仓**：`docs/规范/SPEC-001-铁律.md`（铁律与准则）、`docs/规范/SPEC-004-调试铁律.md`（调试铁律 1–62）、`docs/规范/SPEC-105-治理模式建设指南.md`（复刻 playbook）。
+- 规则事实源仍在**本仓**：`docs/规范/SPEC-001-铁律.md`（铁律与准则）、`docs/规范/SPEC-004-调试铁律.md`（调试铁律 1–66）、`docs/规范/SPEC-105-治理模式建设指南.md`（复刻 playbook）。
 
 ---
 

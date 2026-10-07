@@ -233,3 +233,25 @@ pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名�
 - 门禁契约（本仓侧的新要求）：每条门禁支持 `--selfcheck`（含**真实破坏用例**）与
   `--baseline/--no-baseline/--write-baseline/--list-all` 四开关，豁免与跳过**计数打印不静默丢弃**；
   DSH 侧由 `g10-failloud-probe` 反过来验证「拿到坏输入必须响亮报错」。
+
+## 9. `check_gate_drift.py` — 门禁双落点漂移检查（2026-10-06 新增）
+
+**为什么存在**：同一个门禁在两个落点（`/allin/tools/gate` 与 `/tools/gate`）会**各自演化**。
+`SPEC-004 §调试铁律 64` 记过一次因漂移差点丢东西；2026-10-06 又实测到 `scan_hardcoded.ps1`
+**互补漂移**（仓内版已修 `core.quotepath=false` / PS 5.1 GBK 中文豁免失效 / `GetExtension` 抛异常三处，
+工作副本还写死 `G:\tools\gate` 且 selftest 是旧变体）——两份**都能跑、都"看着对"**，
+只有人工 diff 才看得见（而且第一遍还把方向看反了）。**纪律不如门禁。**
+
+```powershell
+python /tools/gate/check_gate_drift.py              # 日常：两侧逐个比对，不一致即 exit 1
+python /tools/gate/check_gate_drift.py --selfcheck  # 自证：EOL 差异判绿 / 真漂移判红 / 缺对端 SKIPPED
+                                                    #      / 单侧存在判"归属差异" / 同目录守卫
+```
+
+判据（严格照 `调试铁律 12`）：**先归一化 EOL，再逐字节比** —— 跨副本比对不归一化换行符会得出假差异
+（实测差 438 字节全是 CRLF/LF）。只在单侧存在的文件记"**归属差异**"（不算漂移，需人判断）；
+对端目录不存在记 `SKIPPED (not a pass)`（换机后没建工作副本时**不许假绿**）；
+两侧解析到**同一目录**则**响亮失败**（exit 2）——第一版就是这样"自己跟自己比"而**恒报一致**的
+（`调试铁律 65`：恒返回同一值的判据不构成证据，**门禁自己也会犯**）。
+
+> 新增门禁脚本时**必须把文件名加进 `TRACKED`**，否则它会静默漏检。

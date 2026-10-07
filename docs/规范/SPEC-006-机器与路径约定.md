@@ -46,6 +46,7 @@
 | --- | --- | --- |
 | `.md` / `.txt` | **UTF-8 无 BOM** | 往返改写烤坏中文（`SPEC-004 §调试铁律 59`） |
 | `.ps1` | **UTF-8 带 BOM** | PowerShell 5.1 按 ANSI 解码，报一堆假语法错误 |
+| **编辑 `.ps1` 之后** | **复核首三字节** `239,187,191`（`[IO.File]::ReadAllBytes($f)[0..2]`）；要补 BOM 走**字节级**前插 | 编辑工具会**静默剥掉 BOM**（`pwsh` 下看不出，PS 5.1 必炸）——见 `SPEC-004 §调试铁律 66`；机器兜底 `tools/gate/check_ps1_bom.py`（随仓分发） |
 | `.cmd` | 不允许存 UTF-8 | cmd 按 ANSI 解码，中文注释让整条命令解析错乱 |
 | Python 文本 I/O | 一律显式 `encoding="utf-8"` | 默认 GBK，读崩或**静默写出 GBK 文件** |
 | Python 入口脚本 | `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` | 带 `✓`/emoji 的输出在默认控制台 `UnicodeEncodeError` |
