@@ -255,3 +255,21 @@ python /tools/gate/check_gate_drift.py --selfcheck  # 自证：EOL 差异判绿 
 （`调试铁律 65`：恒返回同一值的判据不构成证据，**门禁自己也会犯**）。
 
 > 新增门禁脚本时**必须把文件名加进 `TRACKED`**，否则它会静默漏检。
+
+## 10. 提交前钩子（`hooks/pre-commit`，2026-10-06 新增）
+
+**为什么存在**：`SPEC-004 §调试铁律 66` —— **编辑工具会静默剥掉 `.ps1` 的 UTF-8 BOM**，
+`pwsh` 下看不出、**PowerShell 5.1 必炸**（中文乱码 + 假语法错误）。`check_ps1_bom.py` 只能事后扫存量，
+本钩子把它提前到**提交前拦住**（该坑三天内被踩三次，含 agent 自己）。
+
+```powershell
+# 每台机器/每个 clone 启用一次（core.hooksPath 是仓库本地配置，不入库）
+git config core.hooksPath tools/gate/hooks
+```
+
+行为：**仅当暂存面含 `.ps1`** 时跑 `check_ps1_bom.py --root .`；不含则秒过（不白等）。
+不合规 ⇒ 拒绝提交并打印补 BOM 的**字节级**命令；门禁脚本缺失或跑不起来 ⇒ **明确 FAIL**（不许假绿）。
+
+> 双向实测（2026-10-06）：暂存只有 `.txt` ⇒ 放行；暂存"缺 BOM 的中文 `.ps1`" ⇒ `[pre-commit] FAIL` 且**提交未发生**。
+> 顺带实证：**`pathlib` 的 `Read/WriteText(encoding="utf-8")` 往返会保留 BOM**，而编辑工具会剥掉
+> ⇒ 批量改 `.ps1` 能用脚本就用脚本。

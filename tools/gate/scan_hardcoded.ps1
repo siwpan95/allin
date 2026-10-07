@@ -129,7 +129,7 @@ $script:WhitelistDirs = @("$env:WINDIR", "$env:ProgramFiles", "${env:ProgramFile
 # （故意指向不存在的路径来测门禁）**已经带** `# gov-paths: allow`，那是 DSH 那套门禁的既定豁免写法，
 # 但本门禁原先不认 ⇒ 11 条夹具被反复判红。**标记名不同不代表豁免意图不同，认它**
 # （与 repo_hygiene 当年认 `gov-credentials: allow` 同一处理）。豁免**只作用于该行**。
-$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检|gov-paths: allow|repo-hygiene: allow|gov-credentials: allow'
+$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检|gov-paths: allow|gov-python: allow|repo-hygiene: allow|gov-credentials: allow'
 $script:RootCache = @{}
 $script:Stat = @{}
 

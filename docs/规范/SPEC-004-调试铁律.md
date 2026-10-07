@@ -447,4 +447,12 @@
       git diff 默认也不显眼）；② 补 BOM 一律走**字节级**操作，不要用 `Get-Content | Set-Content` 往返；
       ③ 机器兜底用 `check_ps1_bom.py`（**已随仓分发**，不再是工作副本专属）；
       ④ 新写的仓级纪律，**先问"新会话读得到吗"**，读不到就等于没写（本条的核心归因）。
+    - **流程内固定动作（2026-10-06 补，本条落地的机械保障）**：`/allin` 仓已启用**提交前钩子**
+      （`core.hooksPath=tools/gate/hooks`，脚本 `tools/gate/hooks/pre-commit`）——
+      **暂存面含 `.ps1` 时自动跑 `check_ps1_bom.py --root .`，不合规直接拒绝提交**；
+      暂存面不含 `.ps1` 时**秒过**（不白等）。钩子缺失/跑不起来时**明确 FAIL**（不许假绿）。
+      换机/新 clone 后启用一次：`git config core.hooksPath tools/gate/hooks`。
+      双证：① 暂存无 `.ps1` ⇒ 放行；② 暂存一个"缺 BOM 的中文 `.ps1`" ⇒ **被拦、提交未发生**（实测）。
+    - **一条同轮实证**：用 **`pathlib.Read/WriteText(encoding="utf-8")`** 往返**会保留 BOM**
+      （`\ufeff` 被当普通字符读回再写出），而**编辑工具会剥掉** ⇒ 批量改能用脚本就用脚本。
 

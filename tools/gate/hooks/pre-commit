@@ -1,0 +1,44 @@
+#!/bin/sh
+# allin 仓提交前钩子 —— PowerShell 编码门禁（BOM）
+#
+# 为什么存在（SPEC-004 §调试铁律 66）
+# ----------------------------------
+# **编辑动作会静默剥掉 `.ps1` 的 UTF-8 BOM**：2026-09-25 首踩、2026-10-06 又踩两次
+# （含我自己：改 `scan_hardcoded.ps1` 后首三字节从 `EF BB BF` 变成 `60 23 0D`）。
+# 后果：`pwsh` 下看不出，**PowerShell 5.1 按 ANSI 解码 ⇒ 中文注释乱码 + 一堆假语法错误**。
+# `check_ps1_bom.py` 只能事后扫存量 —— 本钩子把"事后发现"提前到"提交前拦住"。
+#
+# 设计纪律
+# --------
+# · **只在暂存面真的含 `.ps1` 时跑**（否则每次提交都白等几百毫秒）；
+# · **不许假绿**：门禁脚本缺失/跑不起来 ⇒ 明确 FAIL 退出（`g10-failloud-probe` 口径）；
+# · 只做"拦"，不自动改 —— 补 BOM 是**字节级**操作，交给人/agent 明确执行（铁律 66 给了命令）。
+set -e
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+# 暂存面（含新增）里有没有 .ps1
+staged_ps1=$(git diff --cached --name-only --diff-filter=ACMR | grep -i '\.ps1$' || true)
+if [ -z "$staged_ps1" ]; then
+    exit 0
+fi
+
+gate="tools/gate/check_ps1_bom.py"
+if [ ! -f "$gate" ]; then
+    echo "[pre-commit] FAIL: 找不到 $gate —— 提交面含 .ps1，但编码门禁缺失，拒绝放行" >&2
+    exit 1
+fi
+
+py=python
+command -v python >/dev/null 2>&1 || py=python3
+
+echo "[pre-commit] 提交面含 .ps1，跑编码门禁：$staged_ps1"
+if ! "$py" "$gate" --root . ; then
+    echo "[pre-commit] FAIL: .ps1 编码不合规（见上）。补 BOM 用字节级操作：" >&2
+    echo "  \$b=[IO.File]::ReadAllBytes(\$f); if(\$b[0] -ne 0xEF){ \$n=New-Object byte[] (\$b.Length+3);" >&2
+    echo "    [Array]::Copy([byte[]](0xEF,0xBB,0xBF),0,\$n,0,3); [Array]::Copy(\$b,0,\$n,3,\$b.Length);" >&2
+    echo "    [IO.File]::WriteAllBytes(\$f,\$n) }" >&2
+    exit 1
+fi
+exit 0
