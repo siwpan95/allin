@@ -123,7 +123,13 @@ $script:RxSpaceTail = [regex]'^\s+(Files( \(x86\))?|Setup\s+\d|and Settings|Sett
 $script:ExtCache = @{}
 $script:RxWhitelist = [regex]'^[A-Za-z]:\\?(Windows|Program Files|Program Files \(x86\)|ProgramData|PerfLogs|Recovery)(\\|$)'
 $script:WhitelistDirs = @("$env:WINDIR", "$env:ProgramFiles", "${env:ProgramFiles(x86)}", "$env:ProgramData")
-$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检'
+# 「审计注记」豁免（行内关键词）。
+# 2026-10-06 扩：认**兄弟门禁的行内标记** —— `gov-paths: allow` / `repo-hygiene: allow` /
+# `gov-credentials: allow`。实证：`deepseek-harness/governance/gates/g01_paths.py` 的自检夹具
+# （故意指向不存在的路径来测门禁）**已经带** `# gov-paths: allow`，那是 DSH 那套门禁的既定豁免写法，
+# 但本门禁原先不认 ⇒ 11 条夹具被反复判红。**标记名不同不代表豁免意图不同，认它**
+# （与 repo_hygiene 当年认 `gov-credentials: allow` 同一处理）。豁免**只作用于该行**。
+$script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检|gov-paths: allow|repo-hygiene: allow|gov-credentials: allow'
 $script:RootCache = @{}
 $script:Stat = @{}
 
@@ -318,10 +324,13 @@ if ($SelfTest) {
 import os
 DEAD = r"@SELFTEST_DEAD_PATH@"           # 有效代码行 → 阻断
 PLACEHOLDER = r"@SELFTEST_PLACEHOLDER@"  # 占位盘符 + 通用段 → **不**阻断（2026-10-06 补）
+MARKED = r"@SELFTEST_MARKED@"            # 带兄弟门禁行内标记 gov-paths: allow → **不**阻断
 GOOD = Path(__file__).resolve().parent      # 可推导 → 不阻断
 '@
   $bad = $bad.Replace('@SELFTEST_DEAD_PATH@', 'Q' + ':\nope\engine\core.py')
   $bad = $bad.Replace('@SELFTEST_PLACEHOLDER@', 'X' + ':\foo')
+  # 标记必须在**同一行**（与 DSH 门禁的既定语义一致）—— 拼 `# gov-paths: allow`
+  $bad = $bad.Replace('@SELFTEST_MARKED@', 'W' + ':\marked\dead\path') + '  # gov-paths: allow' + "`n"
   $ok = @'
 """selftest：系统路径 / URL / 夹具 / 转义 不应误报"""
 import os
@@ -355,13 +364,16 @@ except ImportError as e:
   # ⚠ 断言的**字面路径必须拼接**（`'X' + ':\foo*'`）：源码里写字面盘符路径会被门禁扫自身时自举命中
   #   —— 与文件上方夹具同一条纪律（2026-10-06 实测：直写时这条断言自己变成 2 条阻断项）。
   $t4 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like ('X' + ':\foo*') }).Count -eq 0) -and $t1
+  # 兄弟门禁标记（gov-paths: allow）同行即豁免，且不带标记的仍须判 —— 又是两个方向（调试铁律 61）
+  $t5 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like ('W' + ':\marked*') }).Count -eq 0) -and $t1
   Write-Output '== 门禁自测 =='
   Write-Output ("  死路径被检出（期望 1）: {0}  [实际 {1}]" -f $(if ($t1) { '✔' } else { '✗' }), @($blocking).Count)
   Write-Output ("  系统路径/URL/夹具/转义 零误报: {0}" -f $(if ($t2) { '✔' } else { '✗' }))
   Write-Output ("  基线棘轮生效（写入基线后新增 = 0）: {0}  [实际新增 {1}]" -f $(if ($t3) { '✔' } else { '✗' }), @($newAfterBaseline).Count)
   Write-Output ("  占位盘符不误报（X:\foo）且真死根仍判: {0}" -f $(if ($t4) { '✔' } else { '✗' }))
+  Write-Output ("  兄弟门禁标记（gov-paths: allow）同行豁免: {0}" -f $(if ($t5) { '✔' } else { '✗' }))
   Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
-  if ($t1 -and $t2 -and $t3 -and $t4) { Write-Output '  自测通过'; exit 0 } else { Write-Output '  自测失败'; exit 3 }
+  if ($t1 -and $t2 -and $t3 -and $t4 -and $t5) { Write-Output '  自测通过'; exit 0 } else { Write-Output '  自测失败'; exit 3 }
 }
 
 # ───────────────────────── 主流程 ─────────────────────────

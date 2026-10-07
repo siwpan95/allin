@@ -329,12 +329,30 @@ def blob_size(repo, path, cache=None):
 
 
 def origin_repo_name(repo):
+    """从 `remote.origin.url` 解析**仓名**。
+
+    支持四类形态（2026-10-06 扩容；旧实现只认前两类的一半）：
+      · `https://host/owner/repo.git`
+      · `git@host:owner/repo.git`（SSH 简写，用 `:` 分隔 owner/repo）
+      · `file:///path/to/repo.git`
+      · **本地/相对路径**（`<盘>:\\path\\to\\repo`、`/path/to/repo`）—— `git clone <本地路径>` 后就是这种
+
+    ⚠ 旧实现 `re.search(r"[:/]([^/:]+?)(?:\\.git)?$", url)` 对 `G:\\allin` 会取到 **`\\allin`**（含反斜杠：
+    因为 `[^/:]` 不排除 `\\`），于是 H7 在"克隆自本地路径"时**误报**
+    `目录名 'allin' != origin 仓名 '\\allin'`。实证与判据验证见 `记录/交接/2026-10.md` §104.6：
+    把副本 origin 改回真实 URL 后同一副本 `RESULT: 通过` ⇒ 确认是解析缺陷，不是仓名真不一致。
+    """
     rc, out = run_git(repo, "config", "--get", "remote.origin.url")
     if rc != 0 or not out.strip():
         return None
-    url = out.strip()
-    m = re.search(r"[:/]([^/:]+?)(?:\.git)?$", url)
-    return m.group(1) if m else None
+    url = out.strip().replace("\\", "/").rstrip("/")     # 反斜杠统一（Windows 本地路径）
+    if url.endswith(".git"):
+        url = url[:-4]
+    name = url.rsplit("/", 1)[-1]                        # 取最后一段
+    if ":" in name:                                      # `host:repo`（SSH 无 owner）兜底
+        name = name.rsplit(":", 1)[-1]
+    name = name.strip()
+    return name or None
 
 
 # ---------------------------------------------------------------- 各检查项
@@ -586,6 +604,12 @@ def check_h6_attribution(repo, tracked, ctx):
 def check_h7_naming(repo, tracked, ctx):
     name = origin_repo_name(repo)
     if not name:
+        # 有 origin 却解析不出仓名 ⇒ **不许静默通过**（`g10-failloud-probe`：拿不到输入要响亮说明）。
+        # 完全**没有** origin 的仓不属本项（H7 判的是"目录名 vs 仓名"的一致性）。
+        rc, out = run_git(repo, "config", "--get", "remote.origin.url")
+        if rc == 0 and out.strip():
+            return [Finding("H7", repo, "(仓名)",
+                            "SKIPPED (not a pass)：origin 存在但解析不出仓名（{}）".format(out.strip()))]
         return []
     dirname = os.path.basename(os.path.abspath(repo))
     if dirname != name:
@@ -1155,6 +1179,29 @@ def selfcheck():
         h7 = [x for x in scan_repo(d, {}) if x.check == "H7"]
         print("  H7 目录名≠仓名被检出: {}  [{}]".format("✔" if h7 else "✘", len(h7)))
         ok &= bool(h7)
+
+        # H7 反例一（2026-10-06 修）：**本地路径 remote**（`git clone <本地路径>` 后的形态）不得误报。
+        # 旧实现的正则对 `G:\allin` 取到 `\allin`（含反斜杠），于是"克隆到本地路径"必然误报。
+        local = os.path.join(tmp, "localclone", "allin")
+        os.makedirs(local, exist_ok=True)
+        subprocess.run(["git", "init", "-q", local], capture_output=True)
+        subprocess.run(["git", "-C", local, "remote", "add", "origin",
+                        os.path.join(tmp, "src", "allin")], capture_output=True)
+        h7 = [x for x in scan_repo(local, {}) if x.check == "H7"]
+        print("  H7 本地路径 remote 不误报: {}  [{}]".format("✔" if not h7 else "✘", len(h7)))
+        ok &= not h7
+
+        # H7 反例二（同轮）：origin **存在但解析不出仓名** ⇒ 报 SKIPPED，不许静默通过
+        # （`g10-failloud-probe`：拿不到输入要响亮说明；"完全没 origin"仍不属本项）
+        weird = os.path.join(tmp, "weirdorigin")
+        os.makedirs(weird, exist_ok=True)
+        subprocess.run(["git", "init", "-q", weird], capture_output=True)
+        subprocess.run(["git", "-C", weird, "remote", "add", "origin", "https://"],
+                       capture_output=True)
+        h7 = [x for x in scan_repo(weird, {}) if x.check == "H7"]
+        good = bool(h7) and "SKIPPED" in h7[0].detail
+        print("  H7 解析不出仓名 ⇒ SKIPPED: {}  [{}]".format("✔" if good else "✘", len(h7)))
+        ok &= good
 
         # 法务：证明基线棘轮有效
         bl = os.path.join(tmp, "bl.csv")
