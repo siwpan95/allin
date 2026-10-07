@@ -30,6 +30,14 @@ gitee_release.py — Gitee 建仓 / 转公开 / 发布发行版（分步、可�
   · `GET /releases/tags/{tag}` 在 tag 不存在时返回 **200 + null**，不是 404 ——
     只判状态码会走进"已存在"分支然后对 None 取属性。
   · 建仓用 `auto_init: false`：否则会多一个无关的首次提交，且默认分支不再是你要推的那个。
+  · **`--repo` 的默认值是 cwd，不是本工具所在仓根**（2026-10-06 改）：此前默认取
+    工具自身仓根，导致「未带 `--repo` 跑 `remote`」会把 /allin 的 origin 改写掉。
+    现在有本地副作用的子命令（remote/release/attach/upload）**必须**能解析出 git 工作树，
+    否则退出码 2；`selfcheck` 子命令断言这套解析的取值与两个方向。
+  · **`--repo` 的默认值是 cwd，不是本工具所在仓根**（2026-10-06 改）：此前默认取
+    工具自身仓根，导致「未带 `--repo` 跑 `remote`」会把 /allin 的 origin 改写掉。
+    现在有本地副作用的子命令（remote/release/attach/upload）**必须**能解析出 git 工作树，
+    否则退出码 2；`selfcheck` 子命令断言这套解析的取值与两个方向。
   · 响应的 `html_url` 可能为 null；发行版网页地址按
     `https://gitee.com/{owner}/{repo}/releases/{tag}` 构造。
   · 发布页上 Gitee 自动附的源码包链接（`/archive/refs/tags/*.zip`）**不是直链**：
@@ -128,6 +136,140 @@ def upload_file(path, token, filepath, timeout=1800):
     return resp.status, resp.read().decode("utf-8", "replace")
 
 
+# 本工具自身所在的仓根。**曾经**它是 `--repo` 的默认值 —— 2026-10-06 的事故根因：
+# 未带 `--repo` 执行 `remote` 时，它把 /allin 的 origin 改写成了目标仓。
+TOOL_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 会在目标仓里跑 git 命令的子命令（有本地副作用）：必须能解析出一个**真工作树**
+GIT_SIDE_EFFECT_CMDS = ("remote", "release", "attach", "upload")
+
+
+def resolve_repo(args):
+    """把 `--repo` 解析成实际目标仓；有副作用的子命令**必须在 git 工作树里**。
+
+    - 不给 `--repo` -> 取 **cwd**（不再取工具自身仓根，见文件头事故记）；
+    - 给了 `--repo` -> 用它，并归一化到工作树根（`git rev-parse --show-toplevel`）；
+    - 有副作用的子命令解析不到工作树 -> **退出码 2 + 说明**，绝不静默猜一个目录。
+
+    调试铁律 41：拿到坏输入必须响亮失败，不许"打印提示就返回 0"。
+    """
+    raw = (args.repo or "").strip()
+    explicit = bool(raw)
+    repo = os.path.abspath(raw) if explicit else os.getcwd()
+    if args.cmd in GIT_SIDE_EFFECT_CMDS:
+        if not os.path.isdir(repo):
+            print("[FAIL] --repo 不是目录: %s" % repo)
+            sys.exit(2)
+        probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=repo,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if probe.returncode != 0:
+            print("[FAIL] 目标不是 git 工作树: %s" % repo)
+            print("       `%s` 会在目标仓里执行 git 操作，拒绝在非仓目录上猜。" % args.cmd)
+            print("       用法：cd <目标仓> 后执行，或显式 --repo <目标仓路径>")
+            sys.exit(2)
+        top = probe.stdout.decode("utf-8", "replace").strip()
+        if not explicit:
+            print("[INFO] 未给 --repo，按 cwd 解析目标仓: %s" % top)
+        args.repo = top or repo
+    else:
+        args.repo = repo
+    return args.repo
+
+
+def cmd_selfcheck(args, token):
+    """自检：断言"目标仓解析"的**具体取值**与**两个方向**（离线、不需要令牌）。
+
+    调试铁律 61：自检必须断言分类/字段值，且每个方向各一条用例；只断言"有输出"抓不出判反。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    class _A:
+        def __init__(self, cmd, repo):
+            self.cmd, self.repo = cmd, repo
+
+    fails = []
+
+    def check(name, cond, detail=""):
+        print("  %s %s%s" % ("ok  " if cond else "FAIL", name,
+                             "" if cond else "  <- " + detail))
+        if not cond:
+            fails.append(name)
+
+    root = tempfile.mkdtemp(prefix="gitee_rel_selfcheck_")
+    plain = os.path.join(root, "not_a_repo")
+    repo_a, repo_b = os.path.join(root, "repo_a"), os.path.join(root, "repo_b")
+    saved = os.getcwd()
+    try:
+        for d in (plain, repo_a, repo_b):
+            os.makedirs(d)
+        for d in (repo_a, repo_b):
+            subprocess.run(["git", "init", "-q", d], check=True)
+
+        # ① 不给 --repo -> 取 cwd（**尤其是不能取工具自身仓根** = 事故回归用例）
+        os.chdir(repo_a)
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = resolve_repo(_A("remote", ""))
+        check("默认取 cwd", os.path.realpath(got) == os.path.realpath(repo_a), got)
+        check("默认不再是工具自身仓根（事故回归）",
+              os.path.realpath(got) != os.path.realpath(TOOL_REPO_ROOT), got)
+
+        # ② 显式 --repo 胜出（反方向）
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = resolve_repo(_A("remote", repo_b))
+        check("显式 --repo 胜出", os.path.realpath(got) == os.path.realpath(repo_b), got)
+
+        # ③ 有副作用的子命令在非仓目录 -> 退出码 2（响亮失败）
+        os.chdir(plain)
+        code = None
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                resolve_repo(_A("remote", ""))
+        except SystemExit as e:
+            code = e.code
+        check("非仓目录 + 有副作用 -> exit 2", code == 2, repr(code))
+
+        # ④ 无副作用的子命令在非仓目录 -> 正常工作（另一方向，别把门关死）
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = resolve_repo(_A("create", ""))
+        check("纯 API 子命令不要求工作树",
+              os.path.realpath(got) == os.path.realpath(plain), got)
+
+        # ⑤ argparse 这一层：默认值必须是哨兵，**不能**是工具自身仓根
+        #    （上面用的是伪 args，测不到 argparse；这一条才真正覆盖事故回归）
+        parser = build_parser()
+        parsed = parser.parse_args(["remote"])
+        check("argparse 默认值是哨兵（不是工具自身仓根）",
+              parsed.repo == "" and os.path.abspath(parsed.repo or os.getcwd())
+              != os.path.realpath(TOOL_REPO_ROOT), repr(parsed.repo))
+        os.chdir(repo_a)
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = resolve_repo(parser.parse_args(["remote"]))
+        check("真 parser + 无 --repo -> cwd",
+              os.path.realpath(got) == os.path.realpath(repo_a), got)
+
+        # ⑥ 子目录也要归一化到工作树根（否则 git -C 子目录会另建 tag/远端）
+        sub = os.path.join(repo_a, "sub", "deep")
+        os.makedirs(sub)
+        os.chdir(sub)
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = resolve_repo(_A("release", ""))
+        check("子目录归一化到工作树根",
+              os.path.realpath(got) == os.path.realpath(repo_a), got)
+    finally:
+        os.chdir(saved)
+        shutil.rmtree(root, ignore_errors=True)
+
+    total = 8
+    print("SELFCHECK_%s (%d/%d)" % ("PASSED" if not fails else "FAILED",
+                                    total - len(fails), total))
+    return 0 if not fails else 1
+
+
+# 本工具自身所在的仓根。**曾经**它是 `--repo` 的默认值 —— 2026-10-06 的事故根因：
+# 未带 `--repo` 执行 `remote` 时，它把 /allin 的 origin 改写成了目标仓。
 def repo_path(args):
     return "/repos/%s/%s" % (args.owner, args.name)
 
@@ -261,7 +403,7 @@ def cmd_release(args, token):
     data = {"tag_name": tag, "name": args.title, "body": body, "prerelease": args.pre}
     # ⚠⚠ Gitee 的 POST /releases **必须**带 `target_commitish`，否则直接
     #   400 {"messages": ["target_commitish is missing"]}（2026-09-22 实测撞到）。
-    #   原实现只在显式传 --branch 时才带上它 → **不传必失败**。
+    #   原实现只在显式传 --branch 时才带上它 -> **不传必失败**。
     #   改成：没传就自动探测仓库当前分支，保证默认路径也能成功。
     branch = args.branch
     if not branch:
@@ -375,17 +517,25 @@ def cmd_status(args, token):
     return 0
 
 
-def main():
+def build_parser():
+    """构造参数解析器（抽成函数：自检必须能拿到**真 parser**）。
+
+    2026-10-06 自证教训：自检原先构造伪 args 直接调 `resolve_repo()`，**绕过了 argparse 默认值**，
+    于是"把 `--repo` 默认值改回工具自身仓根"这个**正是事故本身的回归**竟然测不出来。
+    调试铁律 61：自检要断言真实取值；61/65 合起来的结论是——**测不到默认值就等于没测**。
+    """
     ap = argparse.ArgumentParser(description="Gitee 建仓 / 转公开 / 发布发行版")
     ap.add_argument("--owner", default="siwpan")
     ap.add_argument("--name", default="pluginplayer")
-    ap.add_argument("--repo", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # default 必须是空串哨兵：要能区分"没给"（-> cwd）与"显式给了"（-> 归一化并提示）
+    ap.add_argument("--repo", default="",
+                    help="目标仓路径；留空 = 当前工作目录（cwd）")
     ap.add_argument("--desc", default="",
                     help="仓库描述；留空则自动从 --repo（或 cwd）下 README.md 首行标题取")
     ap.add_argument("--token", default="")
     ap.add_argument("--token-file", default="")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for n in ("whoami", "create", "remote", "public", "status"):
+    for n in ("whoami", "create", "remote", "public", "status", "selfcheck"):
         sub.add_parser(n)
     s = sub.add_parser("release")
     s.add_argument("--tag", required=True)
@@ -399,9 +549,17 @@ def main():
     s = sub.add_parser("upload")
     s.add_argument("--tag", required=True)
     s.add_argument("--dir", default="")
+    return ap
+
+
+def main():
+    ap = build_parser()
     args = ap.parse_args()
 
+    if args.cmd == "selfcheck":                  # 自检是离线的，先于取令牌
+        return cmd_selfcheck(args, "")
     token = load_token(args.token, args.token_file)
+    resolve_repo(args)                           # 解析并（有副作用时）校验目标仓
     fn = {"whoami": cmd_whoami, "create": cmd_create, "remote": cmd_remote,
           "public": cmd_public, "release": cmd_release, "attach": cmd_attach,
           "upload": cmd_upload, "status": cmd_status}[args.cmd]

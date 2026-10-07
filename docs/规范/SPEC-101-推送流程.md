@@ -1,8 +1,8 @@
 # Gitee 本地推送流程（含「绕过确认」全解）
 
 > **编号** SPEC-101 ｜ **效力** 操作规范 ｜ **状态** 生效
-> **生效** 2026-09-25 ｜ **最后修订** 2026-09-28 ｜ **适用面** 向 gitee 推送任何仓时的操作流程（本地 runbook）
-> **承载体** `g04-push-evidence`（同步只信 `ls-remote`、凭据残留、分叉检测）、`repo_hygiene.py` H5/H8
+> **生效** 2026-09-25 ｜ **最后修订** 2026-10-06 ｜ **适用面** 向 gitee 推送任何仓时的操作流程（本地 runbook）
+> **承载体** `g04-push-evidence`（同步只信 `ls-remote`、凭据残留、分叉检测）、`repo_hygiene.py` H5/H8、`gitee_release.py selfcheck`
 > **引用格式** SPEC-101 §3
 
 > 维护时间：2026-09-25｜适用账户：`siwpan`｜适用仓库：`gitee.com/siwpan/*`
@@ -64,6 +64,7 @@
 # —— 本机落点（2026-09-25 实测；换机后先按 §8 复核）——
 PY="/Python314/python.exe"                  # E: 卷不存在；F: 盘上的 Python 3.14.7 在 PATH
 SKILL="/allin/tools/gitee_release.py"       # 脚本随 allin 仓分发，不再依赖 skill 目录
+REPO="/repos/myproj"                        # ★ 目标仓：有副作用的子命令**必须**显式给 --repo
 
 # 0. 验令牌（本机无 store 文件可读，**必须显式给令牌**，否则直接报错）
 $PY $SKILL --token "<HEX>" whoami
@@ -73,22 +74,33 @@ $PY $SKILL --token "<HEX>" whoami
 #    ⚠ 新 clone 的仓须先配**仓库级**身份，否则 commit 报 Author identity unknown：
 #      git config --local user.name siwpan
 #      git config --local user.email siwpan@users.noreply.gitee.com
-git init -b main && git add -A
+cd /repos/myproj && git init -b main && git add -A
 #   （门禁 PASS）
 git commit -F /tmp/msg.txt
 
 # 2. 建仓（私有, auto_init=false）→ 配 remote → 推送 → 转公开
 $PY $SKILL --token "<HEX>" --name myproj create
-$PY $SKILL --token "<HEX>" --name myproj remote
+$PY $SKILL --token "<HEX>" --repo "$REPO" --name myproj remote      # ★ 必须带 --repo
 #    推送：**实测本机 GCM 可自动取用**（2026-09-25 分支探针 15.6s 成功），下面这条最稳：
 GIT_TERMINAL_PROMPT=0 git -c credential.helper= push "https://siwpan:<HEX>@gitee.com/siwpan/myproj.git" main:main
 $PY $SKILL --token "<HEX>" --name myproj public
 #   → private=False default_branch=main
 
 # 3. （可选）发版 + 传附件
-$PY $SKILL --token "<HEX>" --name myproj release --tag v1.0.0 --title ... --notes-file notes.md
-$PY $SKILL --token "<HEX>" --name myproj attach  --tag v1.0.0 --file x.zip --file SHA256SUMS.txt
+$PY $SKILL --token "<HEX>" --repo "$REPO" --name myproj release --tag v1.0.0 --title ... --notes-file notes.md
+$PY $SKILL --token "<HEX>" --repo "$REPO" --name myproj attach  --tag v1.0.0 --file x.zip --file SHA256SUMS.txt
 ```
+
+> ⚠ **`--repo` 的默认值是 cwd，不是本工具所在仓根（2026-10-06 修订）**。
+> 修订前默认值取的是**工具自身仓根**（`/allin`），于是照抄旧版示例（`--name myproj remote`，不带 `--repo`）
+> 会把 **`/allin` 的 origin 改写成 `siwpan/myproj`** —— 当日实测踩到（`记录/交接/2026-10.md` §一百）。
+> 现在：① 不给 `--repo` ⇒ 取 **cwd**；② 有本地副作用的子命令（`remote` / `release` / `attach` / `upload`）
+> **必须**能解析出 git 工作树，解析不到即**退出码 2**（不再静默作用于别的仓）；
+> ③ `selfcheck` 子命令断言这套解析的取值与两个方向（默认取 cwd / 显式胜出 / 非仓目录响亮失败 /
+> 纯 API 子命令不要求工作树 / 子目录归一化到工作树根），可离线跑。
+> **纪律**：凡有副作用的命令，**复制示例时把 `--repo "$REPO"` 一起带上**，并回读产物
+> （`git -C "$REPO" remote -v`、`git -C "$REPO" config --get remote.origin.url`）确认作用对象，
+> 不信 `[OK]` 输出 —— 与「push 输出不算证据」同源，只是把口径提前到**配置层**。
 
 - 各子命令**幂等**（已存在就 SKIP），中断直接重跑。`--token` / `--token-file` / `--owner` / `--name` / `--repo` 等**全局参数必须写在子命令之前**，否则 `unrecognized arguments`。
 - **凭据现状（与原文不同，实测订正）**：本机**未配** `credential.https://gitee.com.helper=store`，`~/.git-credentials` 也不存在；凭据由 **Windows 凭据管理器（GCM）** 持有。
@@ -208,3 +220,13 @@ git ls-remote origin "refs/heads/$(git rev-parse --abbrev-ref HEAD)"
 ```
 
 > **通用纪律**：绝对路径先复核、再使用；发现不符就地更正本文档并记账。
+
+---
+
+## 9. 修订记录
+
+| 日期 | 版本 | 改动 | 依据 |
+| --- | --- | --- | --- |
+| 2026-09-25 | v1.0 | 首版：本地推送 runbook，含「绕过确认」9 手段、三层验收、平台坑表、落点复核 | 从外部整理借鉴并逐条实测本地化（`SPEC-003 §借用外部文档的落点纪律`） |
+| 2026-09-28 | v1.0.1 | 头部补齐 `承载体` / `引用格式` 字段与 `docs/` 中文真身路径 | 文档枢纽大修（`SPEC-005`） |
+| 2026-10-06 | v1.1 | **§2 示例全部补 `--repo "$REPO"` 并加警告**；`承载体` 增加 `gitee_release.py selfcheck` | 当日事故：未带 `--repo` 跑 `remote` 把 `/allin` 的 origin 改写成目标仓（`记录/交接/2026-10.md` §一百）；工具侧默认值已同时改为 cwd + 有副作用子命令强制工作树（`gitee_release.py` 自检 6/6） |
