@@ -1,8 +1,8 @@
 # DSH 分发版当前版本使用说明（0.1.7-rc.1）
 
 > **编号** SPEC-104 ｜ **效力** 操作规范 ｜ **状态** 生效
-> **生效** 2026-09-27 ｜ **最后修订** 2026-09-28 ｜ **适用面** siwpan/deepseek-harness 分发版的使用者与维护者
-> **承载体** `g00`–`g15`（随分发版交付的 15 条治理门禁）；本文件是它们在 allin 侧的说明
+> **生效** 2026-09-27 ｜ **最后修订** 2026-10-08 ｜ **适用面** siwpan/deepseek-harness 分发版的使用者与维护者
+> **承载体** `g00`–`g18`（随分发版交付的 **18 条**治理门禁）；本文件是它们在 allin 侧的说明
 > **引用格式** SPEC-104 §三
 
 > **这是什么**：`siwpan/deepseek-harness`（**独立分发版**，上游 GitHub 官方仓仅作参考）的使用说明。
@@ -37,8 +37,8 @@ python start-dsh-web.py --diagnose   # 启动并把服务端输出全部落到�
 规则来源是**本仓**（`allin/docs/`，2026-09-27 前目录名为 `allin_push`），落地形态是 **DSH 仓内的 `governance/` 目录** —— 克隆即得，不依赖本机路径。
 
 ```powershell
-pnpm run check:governance            # 全部 15 条门禁
-pnpm run governance:selfcheck        # 证明每条门禁仍能抓到注入的缺陷
+pnpm run check:governance            # 全部 18 条门禁（2026-10-08 实测 18/18 clean）
+pnpm run governance:selfcheck        # 证明每条门禁仍能抓到注入的缺陷（0 误报）
 pnpm exec tsx governance/run.ts --list            # 列出 id / 档位 / 覆盖的规则
 pnpm exec tsx governance/run.ts --only g01-paths  # 只跑其中几条
 ```
@@ -63,6 +63,9 @@ pnpm exec tsx governance/run.ts --only g01-paths  # 只跑其中几条
 | `g13-docs-only` | OPS-D1 / G8 | `docs/` 下的脚本、归档、可执行位 |
 | `g14-preset` | 铁律 5、调试铁律 42 | 治理 preset 与出厂件漂移、治理段里写了盘符 |
 | `g15-docs-contract` | **`SPEC-005` 全部**、OPS-D6 / D7、调试铁律 45 | 文档枢纽索引契约（**选用制**）：文档没登记 / 索引指向不存在的文件 / 规范缺头部 / 规范名带日期或记录名无日期 / 分类错位 / ASCII 别名缺失 / 交接卷断号。本仓无 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` |
+| `g16-launcher-integrity` | 铁律 5、调试铁律 34 | 启动器把环境专属工具根**写死并带版本钉**（如 `versions/22.22.2-3`）→ 阻断；裸锚定可基线化但须写明理由；平台薄膜（SHIM_MATRIX）缺对 → 阻断。补 `g01` 看不到的「父目录在本机存在、工具一升级就静默退化」 |
+| `g17-skip-visibility` | 调试铁律 39、OPS-E1 / E2 | 部署/启动脚本里被守卫包裹的验证调用**无 else、无输出**（`silent-skip`）或 Python `except` 吞掉验证失败（`swallowed-failure`）→ 阻断。是 `g10` 在部署侧的对应物；运维显式跳过的 flag 不算 |
+| `g18-doc-bilingual-triad` | OPS-D9 | 文档**语言位与三方完备**：`missing-zh`（源文档无 `.zh.md` 对）/ `missing-record`（有对缺 `.i18n.yaml`）/ `source-not-english`（CJK 占比判出语言位调换）。与 `verify-translation-pairing` 分工：后者判「两侧是否一致」，本条只判「三方是否齐、各在其名所说的语言位」 |
 
 **规则 → 门禁的逐条映射、引用契约、维护约定**在 DSH 仓的 `governance/RULES.md`（该目录已登记进 `translation-pairing` 排除表：它是中文主文档，不做双语配对）。
 
@@ -89,4 +92,4 @@ dsh web --patch governance/preset/allin.patch.yml   # 临时：单次启动的 o
 
 ---
 
-*最后更新：2026-09-27（分发版治理机械保障落地同日）。本文件是 DSH 侧配对文档的中文同源副本，落点与命令按本仓习惯表述。*
+*最后更新：2026-10-08（门禁口径订正 15 → **18 条**：补 `g16`–`g18` 三行，与 `governance/gates/` 及注册表实测一致；`check:governance` / `governance:selfcheck` 当日复跑均全绿）。本文件是 DSH 侧配对文档的中文同源副本，落点与命令按本仓习惯表述。*

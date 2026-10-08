@@ -81,7 +81,7 @@
 | --- | --- | --- | --- |
 | REC-HO-01 | [2026-08.md](记录/交接/2026-08.md) | 2026-08-27 ~ 08-30（§一~§五十八） | 安装包发布线、gitee 拆 91 仓、发行版、R2 内核并入 |
 | REC-HO-02 | [2026-09.md](记录/交接/2026-09.md) | 2026-09-02 ~ 09-28（§五十九~§九十三） | 三线核对、硬编码清零、文档枢纽建设、DSH 机械保障、**文档枢纽大修**、P6/P7 查重证据 |
-| REC-HO-03 | [2026-10.md](记录/交接/2026-10.md) | 2026-10-04 ~ 10-06（§九十四~§一百） | DSH 0.2.1 换基底执行（M0–M9 全绿 + tag `dsh-v1.1.0`）、七处自身失误与八条教训、六项待决；**§一百 3dworld 建仓推送 + `gitee_release.py --repo` 默认值事故** |
+| REC-HO-03 | [2026-10.md](记录/交接/2026-10.md) | 2026-10-04 ~ 10-08（§九十四~§一百零七，含 §一百零一） | DSH 0.2.1 换基底执行（M0–M9 全绿 + tag `dsh-v1.1.0`）、七处自身失误与八条教训、六项待决；**§一百 3dworld 建仓推送 + `gitee_release.py --repo` 默认值事故**；**§107.5–§107.10 R5 闭合与 §107.4 六条执行 + 2026-10-08 复核更正块** |
 | — | **下一卷** | `记录/交接/2026-11.md` | 新月份开新卷；节号全系列连续 |
 
 ### 4.2 审计（审核 / 核对 / 盘点）
@@ -133,9 +133,9 @@
 | 位置 | 是什么 |
 | --- | --- |
 | `../PORTFOLIO.md`（仓根） | 远端 **121 仓**全量索引（脚本从 Gitee API 生成） |
-| `../tools/gate/` | 可执行门禁（`scan_hardcoded.ps1` / `check_undefined_names.py` / `repo_hygiene.py` / `check_ps1_bom.py` / `watchdog.py` / `docs_index.py`） |
+| `../tools/` | 可执行门禁：仓根 `tools/repo_hygiene.py`（H1–H8）+ `tools/gate/`（`scan_hardcoded.ps1` / `check_undefined_names.py` / `docs_index.py` / `check_ps1_bom.py` / `watchdog.py` / `check_gate_drift.py` / `make_doc_aliases.ps1`）—— 2026-10-08 按实测订正落点（原写「`../tools/gate/` 含 `repo_hygiene.py`」与盘上不符，照抄会报 `No such file or directory`；同日清掉 `tools/` 下两份过期重复副本，见交接 §107.10 更正块） |
 | `../preset/allin/` | 治理模式载体（DSH agent preset 可重装副本） |
-| DSH 仓 `governance/` | 规则的可执行落地：`RULES.md`（规则→门禁映射）+ 15 条门禁 |
+| DSH 仓 `governance/` | 规则的可执行落地：`RULES.md`（规则→门禁映射）+ **18 条门禁**（`g00`–`g18`；2026-10-08 实测 `18/18 clean`，自检 0 误报） |
 | `../目录索引.txt`（仓根） | 项目目录文档化索引，生成器 `/tools/build_dir_index.py` |
 
 ---

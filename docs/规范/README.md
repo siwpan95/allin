@@ -2,7 +2,7 @@
 
 > **作用**：本目录是**约束性文档**的唯一落点。本文件是它的门面：效力等级、引用格式、分册清单、**规则 → 门禁映射**、生效与废弃流程。
 > **配套**：目录/命名/头部/编号的细则见 [`SPEC-005-文档枢纽契约.md`](SPEC-005-文档枢纽契约.md)；全量文档索引见 [`../INDEX.md`](../INDEX.md)。
-> **规则的可执行落地**：DSH 分发版内的 `governance/`（`RULES.md` = 规则→门禁映射，`gates/` = **15 条门禁**）。
+> **规则的可执行落地**：DSH 分发版内的 `governance/`（`RULES.md` = 规则→门禁映射，`gates/` = **18 条门禁**，2026-10-08 实测）。
 
 ---
 
@@ -79,13 +79,12 @@
 | `docs_index.py`（D1–D7） | **SPEC-005 全部** | 未登记的文档、断掉的索引条目、缺头部的规范、带日期的规范名、错位的分类、缺失的 ASCII 别名、断号/无区间的交接卷 |
 | `scan_hardcoded.ps1` | 铁律 5、SPEC-006 | 父目录不存在的死路径；写死本机绝对路径 |
 | `check_undefined_names.py` | 调试铁律 32 / 40 | `py_compile` 查不出的"读了但从未定义"的名字 |
-| `repo_hygiene.py`（H1–H8） | 铁律 0 / 4、治理准则·敏感信息、SPEC-101 | 缺 README/LICENSE/.gitignore、第三方源码或产物入库、凭据入索引、仓名≠目录名、行尾假改动 |
+| `repo_hygiene.py`（H1–H8，**实体在 `/tools/repo_hygiene.py`**，不在 `/tools/gate/`） | 铁律 0 / 4、治理准则·敏感信息、SPEC-101 | 缺 README/LICENSE/.gitignore、第三方源码或产物入库、凭据入索引、仓名≠目录名、行尾假改动 |
 | `check_ps1_bom.py` | 调试铁律 59 / **66**、SPEC-006 | 含非 ASCII 却无 BOM 的 `.ps1`（PS 5.1 报假语法错误）。**2026-10-06 随仓入库**（原只在工作副本，导致纪律跨会话不可见） |
 | `check_gate_drift.py` | 调试铁律 12 / 64、SPEC-101 | 门禁**双落点漂移**（`/allin/tools/gate` ↔ `/tools/gate`）：归一化 EOL 后逐个比对，不一致即报红；对端缺失记 `SKIPPED (not a pass)`；两侧解析成同一目录则**响亮失败**（防"自己跟自己比"的假绿）。2026-10-06 新增 |
 | `watchdog.py`（W1–W3） | 调试铁律 51 / 58 | 盘健康与 IO 重试、`.git/objects` 可读性、`ls-remote` 同步漂移。**2026-10-06 随仓入库**（默认仓根改为按约定工作区根推导，不写死盘符） |
-| `watchdog.py`（W1–W3） | 调试铁律 51 / 58 | 盘健康与 IO 重试、`.git/objects` 可读性、`ls-remote` 同步漂移 |
 
-### 4.2 DSH 分发版门禁（`governance/`，随 `siwpan/deepseek-harness` 分发）
+### 4.2 DSH 分发版门禁（`governance/`，18 条，随 `siwpan/deepseek-harness` 分发）
 
 | 门禁 | 覆盖规范 | 拦什么 |
 | --- | --- | --- |
@@ -104,6 +103,9 @@
 | `g13-docs-only` | SPEC-005 §3 | `docs/` 下的脚本、归档、可执行位 |
 | `g14-preset` | 铁律 5、调试铁律 42、SPEC-901 | 治理 preset 与出厂件漂移、治理段里写了盘符、persona 引用的仓内文件不存在 |
 | `g15-docs-contract` | **SPEC-005 全部** | 与本仓 `docs_index.py` 同判据的分发版落地（无契约文件的仓记 `SKIPPED (not a pass)`） |
+| `g16-launcher-integrity` | 铁律 5、调试铁律 34 | 启动器把环境专属工具根写死**并带版本钉**；平台薄膜缺对；补 `g01` 看不到的「工具一升级即静默退化」 |
+| `g17-skip-visibility` | 调试铁律 39、OPS-E1 / E2 | 部署/启动脚本里被守卫包裹的验证调用**无 else、无输出**（`silent-skip`）；Python `except` 吞掉验证失败（`swallowed-failure`） |
+| `g18-doc-bilingual-triad` | OPS-D9 | 文档语言位与三方完备：缺 `.zh.md` 对 / 缺 `.i18n.yaml` 记录 / 语言位调换（只判「三方是否齐」，不判「两侧是否一致」） |
 
 ### 4.3 明确**不可**机械化的（流程纪律）
 
@@ -128,4 +130,4 @@
 
 ---
 
-*最后更新：2026-09-28（随文档枢纽大修建立）。*
+*最后更新：2026-10-08（门禁口径按实测订正：DSH 分发版 **15 → 18 条**，补 `g16`–`g18` 映射行；`repo_hygiene.py` 落点订正为 `/tools/`；原 2026-09-28 随文档枢纽大修建立）。*

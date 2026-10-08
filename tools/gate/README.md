@@ -2,6 +2,10 @@
 
 > 把「不许写死路径」「不许有未定义名」这类**口头规矩**变成**退出码**，并让它们能被复跑、被自检、被基线棘轮管理。
 > 迁移记录：两个脚本原在 `/tools/gate/`（文档枢纽里混了脚本）；2026-09-24 文档枢纽纯文档化时迁到此处，内部默认路径同步更新。
+> ⚠ **落点订正（2026-10-08 实测）**：本目录现有 `scan_hardcoded.ps1` / `check_undefined_names.py` / `docs_index.py` /
+> `watchdog.py` / `check_ps1_bom.py` / `check_gate_drift.py` / `make_doc_aliases.ps1`；
+> **`repo_hygiene.py` 不在本目录** —— 它是 `/tools/repo_hygiene.py`（仓根 `tools/` 下，见 §4）。
+> 本节命令里写 `/tools/gate/repo_hygiene.py` 的话会得到 `No such file or directory`。
 
 ## 1. `scan_hardcoded.ps1` — 死根路径门禁
 
@@ -60,7 +64,7 @@ python /tools/gate/check_undefined_names.py --repo /repos/pluginplayer
 
 ---
 
-## 4. `repo_hygiene.py` — 仓库卫生门禁（2026-09-25 新增）
+## 4. `repo_hygiene.py` — 仓库卫生门禁（2026-09-25 新增；**实体在 `/tools/repo_hygiene.py`**）
 
 把 `docs/gitee推送流程_2026-09-25.md` §1 的「仓库卫生六项」从**文字**变成**退出码**。
 此前该要求 6 项 → **0 项有门禁**（2026-09-25 实测确认）。
@@ -77,11 +81,11 @@ python /tools/gate/check_undefined_names.py --repo /repos/pluginplayer
 | H8 行尾一致性 | 「内容与库内逐字节相同却被标 modified」的假改动检测 |
 
 ```powershell
-python /tools/gate/repo_hygiene.py --repo /repos/cordis-table-app   # 单仓
-python /tools/gate/repo_hygiene.py --all                              # 全部（日常，用基线棘轮）
-python /tools/gate/repo_hygiene.py --all --no-baseline --list-all     # 普查全部存量
-python /tools/gate/repo_hygiene.py --all --write-baseline             # 存量上线
-python /tools/gate/repo_hygiene.py --selfcheck                        # 注入破坏用例自证
+python /tools/repo_hygiene.py --repo /repos/cordis-table-app   # 单仓
+python /tools/repo_hygiene.py --all                              # 全部（日常，用基线棘轮）
+python /tools/repo_hygiene.py --all --no-baseline --list-all     # 普查全部存量
+python /tools/repo_hygiene.py --all --write-baseline             # 存量上线
+python /tools/repo_hygiene.py --selfcheck                        # 注入破坏用例自证
 ```
 
 **退出码**：`0` 通过 · `1` 基线外新增阻断 · `2` 用法错误 · `3` 环境错误。
@@ -218,7 +222,7 @@ pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名�
 | 落点 | 形态 | 谁在用 |
 | --- | --- | --- |
 | 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区的日常巡检 |
-| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发，本机检出 `/repos/deepseek-harness`） | **一份 Python 门禁运行时 + 15 条门禁**（`g00`~`g15`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
+| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发，本机检出 `/repos/deepseek-harness`） | **一份 Python 门禁运行时 + 18 条门禁**（`g00`~`g18`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
 
 > ⚠ **落点订正（2026-09-28 实测）**：本节原写 `/projects/deepseek-harness-master/governance/` —— **该路径不存在**。
 > DSH 检出实测在 `/repos/deepseek-harness`（去符盘形式）。同类的 `/projects/` 写法一律以
