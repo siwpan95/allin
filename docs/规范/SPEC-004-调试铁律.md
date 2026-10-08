@@ -1,7 +1,7 @@
 # SPEC-004 · 调试铁律（1–66）
 
 > **编号** SPEC-004 ｜ **效力** 纪律（事故驱动沉淀，代价可量化） ｜ **状态** 生效
-> **生效** 2026-08-24 ｜ **最后修订** 2026-10-06 ｜ **适用面** 本工作区全部工程操作（PowerShell / Python / git / 门禁 / 盘与文件系统）
+> **生效** 2026-08-24 ｜ **最后修订** 2026-10-08 ｜ **适用面** 本工作区全部工程操作（PowerShell / Python / git / 门禁 / 盘与文件系统）
 > **承载体** 逐条见 `规范/README.md` §4.1–4.2 的「规则 → 门禁映射」；未机械化者在表中标注为流程纪律
 > **引用格式** SPEC-004 §调试铁律 19
 >
@@ -155,14 +155,32 @@
       1. **用 Python 3.13.14**（本机已有，见 49），**不要用 F:\Python314**；
       2. 临时 workaround：把问题包的失败相对导入改成 `__import__('pkg.sub', fromlist=[...])`（openpyxl 已就地打补丁，备份 `excel.py.bak-20260925`）—— 但**重装包会丢补丁**，只能应急。
     - **纪律**：遇到「进程无输出直接消失」，先跑最小复现判定是否本缺陷，再去查自己的代码；**不要**在无 traceback 的情况下盲目调试业务逻辑。
+    - **⚠ 2026-10-08 实测订正（本条的前提待重新定性）**：用**本条自己的最小复现**（按 50 号落成 `.py` 文件执行），
+      在本机四台解释器上重跑 —— `/Python314`(3.14.7)、`/Python/pythoncore-3.14-64`(3.14.6)、
+      `/workbuddy/.workbuddy/binaries/python/versions/3.13.12`(3.13.14)：**全部 `exit 0`，输出 `go() = False`，未复现崩溃**；
+      反向对照（改成绝对导入）同样 `exit 0` ⇒ 探针本身有效。⇒ **"3.14.7 必崩"截至今日不成立**
+      （可能上游已修、或该安装已被更新，但 `python -V` 仍报 3.14.7）。
+      **结论：本条降级为"遇到『进程无输出直接消失』时的判定线索"，不再当作"禁用 3.14.7"的选型依据**；
+      选型以 49 号为准（并按 49 号新增的"先测 tkinter"纪律）。
+    - **同轮唯一失败的台（与 48 无关，另立事实）**：`/Python314_embed_backup`(3.14.6) 对**相对导入与绝对导入都**
+      `exit 1` 带 traceback ⇒ 那是 **embeddable 布局的 `._pth` 隔离**（脚本目录不进 `sys.path`），
+      **embeddable 构建不能当普通解释器用**。
 
 49. **本机可用 Python 清单与选型（2026-09-25 实测）**：
-    | 解释器 | 实际版本 | 可用性 |
-    | --- | --- | --- |
-    | `/workbuddy/.workbuddy/binaries/python/versions/3.13.12/python.exe` | **3.13.14** | ✅ **推荐**（实测最小复现 exit 0）|
-    | `/Users/psw/.workbuddy/binaries/python/versions/3.13.12/python.exe` | **3.13.14** | ✅ 同上（同一份的副本）|
-    | `/Python314/python.exe` | 3.14.7 | ❌ **有 48 的缺陷，勿用** |
+    | 解释器 | 实际版本 | tkinter | 可用性（2026-10-08 复测重排） |
+    | --- | --- | --- | --- |
+    | `/Python/pythoncore-3.14-64/python.exe` | **3.14.6** | ✅ 8.6 | ✅ **首选**（完整构建；非 48 号指控的 3.14.7；主 Python） |
+    | `/Python314_embed_backup/python.exe` | 3.14.6 | ✅ 8.6 | ⚠ **不能当普通解释器**：embeddable 布局（`._pth` 隔离 ⇒ 脚本目录不进 `sys.path`，`import` 本地包必失败）。旧 `/Python314` 的备份，仅作取用 |
+    | `/Python314/python.exe` | 3.14.7 | ✅ 9.0 | ⚠ 曾被 48 号点名；2026-10-08 复测**未复现**其缺陷（见 48 订正）⇒ 可用但**非首选** |
+    | `/workbuddy/.workbuddy/binaries/python/versions/3.13.12/python.exe` | 3.13.14 | ❌ **无** | ❌ **依赖 tkinter 的项目不可用**（见下）；原表曾把它列为"推荐" |
+    - ⚠ **新纪律（2026-10-08 沉淀）：选解释器先跑 `-c "import tkinter"`，不要只看版本号。**
+      同类坑**一天内出现两次**：`.workbuddy` 的 3.13.14 是**精简构建、没有 tkinter**；
+      `foolproof-operation` 用它建 venv 后 `smoke_test.py`/`gui.py` 直接 `ModuleNotFoundError: No module named 'tkinter'`，
+      换回 3.14.7 建的 venv 后同一套测试 **310 passed / 1 failed（已证既有）/ 5 skipped**。
+      ⇒ **选型三步：① `-V` 定版本 ② `-c "import tkinter"` 定 GUI 能力 ③ 建项目级 `.venv` 钉住。**
     - **坑**：目录名写 `3.13.12`，**实际版本是 3.13.14** —— **判定版本一律用 `python -V`，不要信目录名**。
+    - **坑（2026-10-08 新增）**：原表首行的 `/Python314` **已不存在**；全工作区曾有 **61 处**代码/脚本引用它
+      （详见 `事实源/本机事实.md §4.1`）⇒ **引用解释器一律去符盘**（`SPEC-001 §铁律 5`）。
     - **另一个真损坏**：`/workbuddy/.workbuddy/binaries/python/envs/default/Scripts/python.exe` 是 venv，其 `pyvenv.cfg` 指向 **`/Users/13122/...`（旧机路径，已不存在）**，运行报 `did not find executable ... exit 103`。**这些 WorkBuddy venv 在换机后已全部失效，需重建**（本机死根路径门禁报出的 `/Users/13122` 多由此而来）。
     - **推荐用法**：给每个需要 Python 的项目建**项目级 `.venv`**：
       `/workbuddy/.workbuddy/binaries/python/versions/3.13.12/python.exe -m venv <项目>\.venv`，
