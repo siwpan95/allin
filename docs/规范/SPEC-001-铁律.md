@@ -1,7 +1,7 @@
 # SPEC-001 · 铁律（0–5）
 
 > **编号** SPEC-001 ｜ **效力** 铁律（用户拍板，最高效力） ｜ **状态** 生效
-> **生效** 2026-08-25 ｜ **最后修订** 2026-09-26 ｜ **适用面** 全工作区：代码、配置、文档、脚本、仓库操作
+> **生效** 2026-08-25 ｜ **最后修订** 2026-10-15 ｜ **适用面** 全工作区：代码、配置、文档、脚本、仓库操作
 > **承载体** `g01-paths`（铁律 5）、`g03-credentials`/`g05-hygiene`（铁律 0/4）、`g04-push-evidence`（铁律 3）、`g14-preset`；铁律 1/2 为流程纪律（不可机械化，见 `规范/README.md` §4.3）
 > **引用格式** SPEC-001 §铁律 5
 
@@ -97,7 +97,14 @@
   **令牌建仓的结果必然私有，需手动转公开**（这是 Gitee 的既定行为 —— 建仓请求里写 `private: false` **不会生效**，
   不是"字段被静默忽略"，也不是缺陷）。因此**建仓是两步**：
   1. `POST /user/repos` 建仓（可带 `license_template: MIT` 一并设许可）；
-  2. `PATCH /repos/{owner}/{repo}` 显式转公开 —— **坑：PATCH 的 body 必须带 `name`，否则报 `name is missing` 400**。
+  2. `PATCH /repos/{owner}/{repo}` 显式转公开 —— **两个坑，都会让你以为"API 坏了"**：
+     * **坑 A（正体字段）**：body **必须带 `name`**，否则报 `name is missing` 400；
+     * **坑 B（正体编码，2026-10-15 在 `mcclone3d` 建仓时新踩）**：用 PowerShell 的
+       `Invoke-RestMethod -Method Patch -Body @{...}`（默认 **form-urlencoded**）会返回
+       **406 Not Acceptable**，且响应体无有用信息。
+       **解法**：`-ContentType 'application/json; charset=utf-8'` + **JSON 正体**（`'{"name":"…","private":false}'`），
+       一次过。查询参数式（把 `name=`/`private=` 放 URL）同样可行。
+       ⇒ **判据**：PATCH 类调用报 406 时，先去查"正体编码与 Content-Type"，别先怀疑权限或字段值。
   **纪律**：建仓后**不能只看创建响应**，必须用**匿名视角**复验（`Invoke-WebRequest https://gitee.com/<owner>/<repo>` 应 200；
   `git ls-remote` 匿名应 exit 0；`GET /repos` 看 `private`/`public` 两个字段）。
   另一条：`license_template: MIT` **会**让 Gitee 自动生成一个 `Initial commit`（含 LICENSE），因此建仓后远端非空，
@@ -105,6 +112,9 @@
   > **我这次的判断失误（留档）**：观察到"请求写了 `private: false` 而响应是 `private: true`"，我**直接判定为 API 缺陷/事故**
   > 并写进了本文档，**没有考虑"这是平台设计约定"这一可能**。用户指出后才纠正。**教训**：行为与预期不符时，
   > 先问「这是不是该平台的既定语义」，再下"缺陷"结论。
+- **修订 · 2026-10-15（用户放行后并进本节）**：给上面第 2 步补了**坑 B（PATCH 正体编码 ⇒ 406）**，
+  由 `mcclone3d` 建仓实测沉淀（实证过程见 `记录/审计/mcclone3d建仓_2026-10-15.md` §2.1）。
+  本节其余内容未动；引用格式与编号不变（`SPEC-001 §铁律 4`）。
 - **仓数订正**：`G:\repos` 现为 **108 仓 / 108 含 `.git`**；本文件另三处（许可分布、全域同步、新机挂载事实）原写 **107**，
   均因 `cordis-text-game` 当时未被计入 —— 以本节为准。
 - **引用消歧（重要）**：本文件有**两套「铁律」编号**，引用时必须带限定词 ——
