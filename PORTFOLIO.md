@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-14），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-15），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 120 个仓库**（公开 120 · 私有 0）。
+**共 121 个仓库**（公开 121 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -71,6 +71,7 @@
 | [siwpan/math](https://gitee.com/siwpan/math.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
 | [siwpan/mathematical-formula-renderer](https://gitee.com/siwpan/mathematical-formula-renderer.git) | Python | 0 | 公开 | 类教学工具 |
 | [siwpan/mc-clone](https://gitee.com/siwpan/mc-clone.git) | — | 0 | 公开 | MCclone（自 game-collection 拆分） |
+| [siwpan/mcclone3d](https://gitee.com/siwpan/mcclone3d.git) | — | 0 | 公开 | 《我的世界》风格 3D 体素沙盒（基于 3dworld 引擎）：确定性体素世界 / 世界级 UV 投影贴图 / 第一人称挖掘放置 / 存档 |
 | [siwpan/midi](https://gitee.com/siwpan/midi.git) | — | 0 | 公开 | midi（自 media-collection 拆分） |
 | [siwpan/midjourney_video](https://gitee.com/siwpan/midjourney_video.git) | — | 0 | 公开 | Midjourney Explore 视频抓取下载工具（Playwright），CLI + GUI 双入口 |
 | [siwpan/moba_battle_platform](https://gitee.com/siwpan/moba_battle_platform.git) | Python | 0 | 公开 | moba_battle_platform |
