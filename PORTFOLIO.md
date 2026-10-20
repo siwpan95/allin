@@ -45,7 +45,7 @@
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
-| [siwpan/easy-ai](https://gitee.com/siwpan/easy-ai.git) | — | 0 | 公开 | 零硬编码、配置驱动的可嵌入 AI 核心 + 叙事引擎 + TRPG 训练场 |
+| [siwpan/peasy-ai](https://gitee.com/siwpan/peasy-ai.git) | Python | 0 | 公开 | 零硬编码、配置驱动的可嵌入 AI 核心 + 叙事引擎 + TRPG 训练场（原 `siwpan/easy-ai`，2026-10-20 删仓重建；PyPI: `peasy-ai`） |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
 | [siwpan/foolproof-operation](https://gitee.com/siwpan/foolproof-operation.git) | Python | 0 | 公开 | 按需下载 |
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
