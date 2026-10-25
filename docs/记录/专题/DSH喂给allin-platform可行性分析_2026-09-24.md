@@ -1,11 +1,15 @@
 # 可行性分析：拆 deepseek-harness 开源源码喂给 allin-platform
 
+> **本文是 2026-09-24 的一次性记录，不作为约束。**
+> **迁移记账** 本文原名 `allin-platform/docs/feasibility-dsh-reference.md`；2026-10-26 三仓整合后
+> 迁入本仓 `docs/记录/专题/`，内容除本记账块与 ADR 引用路径修正外未作改动。原仓远端已删除。
+
 > 2026-09-24 规划 · 同日 Phase 1 已实施并推送（本文已随执行状态更新）·
 > 参考对象：deepseek-ai/deepseek-harness master@2026-09-22（MIT）
 > 分析对象：allin-platform（纯 JS ESM，唯一运行时依赖 js-yaml，零框架）
 > 证据基线：DSH 仓库实测 307 个包的内部依赖密度 + npm 发布状态逐包探针
-> 实施记录（ADR）：`decisions/2026-09-24-harness-reference-hardening.md`（P0–P2）、
-> `decisions/2026-09-24-phase1-host-guard-durable-jsonl.md`（Phase 1）
+> 实施记录（ADR）：[`docs/记录/决策/platform决策_DSH模式移植加固_2026-09-24.md`](../决策/platform决策_DSH模式移植加固_2026-09-24.md)（P0–P2）、
+> [`docs/记录/决策/platform决策_Host围栏与持久JSONL_2026-09-24.md`](../决策/platform决策_Host围栏与持久JSONL_2026-09-24.md)（Phase 1）
 
 ---
 

@@ -1,7 +1,11 @@
 # allin-platform —— Steam 式全项目集成平台
 
-> 仓库：<https://gitee.com/siwpan/allin-platform> ｜ 许可：MIT（见 [LICENSE](LICENSE)）
-> 注：文中 <PATH> 为路径占位符，请替换为你本机实际的目录 / 可执行文件路径。
+> **迁移记账（2026-10-26）**：本目录现属 **`siwpan/allin` 治理仓**，由原独立仓 `siwpan/allin-platform`
+> 整仓迁入 `platform/`（历史按决议压缩为单个 squash 提交；远端原仓已删除）。
+> 架构与清单契约已上提到 [`../docs/规范/SPEC-203-allin-platform契约.md`](../docs/规范/SPEC-203-allin-platform契约.md)；
+> 历史版本锚点见本仓 tag `platform-v1.0.0`；决策理由见 [`../docs/记录/决策/`](../docs/记录/决策/)。
+> 许可：MIT（见 [LICENSE](LICENSE)）。
+> 注：文中 `<PATH>` 为路径占位符，请替换为你本机实际的目录 / 可执行文件路径。
 
 > 立项：<PATH>（2026-08-25 用户拍板：Node+Cordis 栈 / 新建本仓 / 单机工坊+静态目录 / 首批 8 项目）。
 
@@ -38,7 +42,9 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 
 ## 清单规范
 
-每个接入项目一个 `platform.yaml`（字段：id/name/category/version/path/port/launch/stop/health/publish/manual），详见《平台项目清单规范_platform.yaml.md》。port 必查 ports.yaml，未登记拒绝登记。
+每个接入项目一个 `platform.yaml`（字段：id/name/category/version/path/port/launch/stop/health/publish/manual），
+规范已上提到 [`../docs/规范/SPEC-203-allin-platform契约.md`](../docs/规范/SPEC-203-allin-platform契约.md) §清单规范
+（原引《平台项目清单规范_platform.yaml.md》未随原仓迁移）。port 必查 ports.yaml，未登记拒绝登记。
 
 ## 环境变量
 
@@ -56,9 +62,9 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 ## 文档
 
 - [AGENTS.md](AGENTS.md) —— 常备命令 / 环境变量 / 纪律速览（agent 与新协作者入口）
-- [docs/architecture.md](docs/architecture.md) —— 架构地图 + 文档税表（一个事实一个家）
-- [docs/decisions/](docs/decisions/) —— 冻结的决策记录（Problem/Decision/Alternatives/Consequences）
-- [docs/feasibility-dsh-reference.md](docs/feasibility-dsh-reference.md) —— 参照 DeepSeek Harness 的强化可行性分析与推进状态
+- [../docs/规范/SPEC-203-allin-platform契约.md](../docs/规范/SPEC-203-allin-platform契约.md) —— 架构地图 + 文档税表 + 清单规范（2026-10-26 由 `docs/architecture.md` 上提到本仓文档枢纽）
+- [../docs/记录/决策/](../docs/记录/决策/) —— 冻结的决策记录（Problem/Decision/Alternatives/Consequences）
+- [../docs/记录/专题/DSH喂给allin-platform可行性分析_2026-09-24.md](../docs/记录/专题/DSH喂给allin-platform可行性分析_2026-09-24.md) —— 参照 DeepSeek Harness 的强化可行性分析与推进状态
 - [harness/spec.md](harness/spec.md) —— 编排 harness 契约（用例的单一真相来源）
 
 ## 接入新项目
@@ -71,7 +77,7 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 
 - 门户只绑 `127.0.0.1`，写操作限回环（`loopbackOnly`），**全部请求校验 Host 头**——
   仅接受 `127.0.0.1 / localhost / [::1]`（任意端口），防 DNS rebinding 读取/写穿
-  （2026-09-24 Phase 1，详见 ADR `docs/decisions/2026-09-24-phase1-host-guard-durable-jsonl.md`）。
+  （2026-09-24 Phase 1，详见 ADR [`../docs/记录/决策/platform决策_Host围栏与持久JSONL_2026-09-24.md`](../docs/记录/决策/platform决策_Host围栏与持久JSONL_2026-09-24.md)）。
 - **无鉴权**：本机其他用户/进程仍可访问门户并启停项目——单机单用户形态的已知边界，
   接受此边界是使用前提；多用户场景请勿部署。
 - 状态文件（running.json / workshop.json）temp+fsync+rename 原子写 + .bak 回退；

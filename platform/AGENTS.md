@@ -1,7 +1,8 @@
 # AGENTS.md — allin-platform 常备上下文
 
 > 面向 AI agent 与新协作者：每次会话都该在场的事实只放本文件；其余一律链接归属文档。
-> 文档税表（一个事实一个家）见 [docs/architecture.md](docs/architecture.md)。
+> **迁移记账（2026-10-26）**：本目录由原独立仓 `siwpan/allin-platform` 整仓迁入治理仓 `siwpan/allin` 的 `platform/`，原仓远端已删除。
+> 文档税表（一个事实一个家）见 [`../docs/规范/SPEC-203-allin-platform契约.md`](../docs/规范/SPEC-203-allin-platform契约.md)。
 
 ## 常备命令
 
@@ -36,4 +37,4 @@ node apps/cli/src/index.js list   # CLI（allin list/search/status/start/stop/..
 5. **状态文件原子写**：running.json / workshop.json / portal.port 一律 temp+fsync+rename（+.bak 回退）；日志归档前 fsync（durable 语义，2026-09-24 Phase 1）。
 6. **Host 围栏**：门户只接受回环 Host（127.0.0.1 / localhost / [::1]），防 DNS rebinding；GET 读取面同样受保护（2026-09-24 Phase 1）。
 
-详细架构与决策记录：[docs/architecture.md](docs/architecture.md)、[docs/decisions/](docs/decisions/)。
+详细架构与决策记录：[`../docs/规范/SPEC-203-allin-platform契约.md`](../docs/规范/SPEC-203-allin-platform契约.md)、[`../docs/记录/决策/`](../docs/记录/决策/)。

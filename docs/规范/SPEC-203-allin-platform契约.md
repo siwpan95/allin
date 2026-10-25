@@ -1,6 +1,15 @@
-# allin-platform 架构地图（一个事实一个家）
+# SPEC-203 · allin-platform 契约（架构地图 + 清单规范）
 
-> 本文是有序地图：模块职责与依赖方向。类型细节看源码，决策理由看 docs/decisions/。
+> **编号** SPEC-203 ｜ **效力** 准则（结构约定，可被 registry 校验引用）｜ **状态** 生效
+> **生效** 2026-10-26 ｜ **最后修订** 2026-10-26 ｜ **适用面** `platform/` 全部代码与 `platform/registry/` 数据面
+> **承载体** `platform/scripts/check.mjs`（注册表审计）、`platform/harness/`（黄金值门禁 exit 0）
+> **引用格式** SPEC-203 §关键不变量
+> **迁移记账** 本文由原独立仓 `siwpan/allin-platform` 的 `docs/architecture.md` 就地升级而来（2026-10-26 三仓整合）；
+> 原仓远端已随之删除。历次决策理由见 [`docs/记录/决策/`](../记录/决策/)（冻结，永不为现行权威）。本仓落户 `platform/` 后，文中模块路径一律以 `platform/` 为基准。
+
+---
+
+> 本文是有序地图：模块职责与依赖方向。类型细节看源码，决策理由看 `docs/记录/决策/`。
 
 ## 分层
 
@@ -39,9 +48,17 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 
 | 事实 | 唯一的家 |
 |---|---|
-| 常备命令 / 环境变量 | 根 [AGENTS.md](../AGENTS.md) |
-| 模块职责 / 不变量 | 本文 |
-| 持久决策理由（含后果） | docs/decisions/YYYY-MM-DD-<slug>.md（冻结，永不为现行权威） |
-| harness 用例契约 | [harness/spec.md](../harness/spec.md) |
-| platform.yaml 字段规范 | 《平台项目清单规范_platform.yaml.md》（外部文档枢纽） |
-| 端口分配 | `PLATFORM_PORTS` 指向的外部端口分配表（仓内 ports.yaml 仅为回退默认） |
+| 常备命令 / 环境变量 | [`platform/AGENTS.md`](../../platform/AGENTS.md) |
+| 模块职责 / 不变量 | 本文（`docs/规范/SPEC-203-allin-platform契约.md`） |
+| 持久决策理由（含后果） | [`docs/记录/决策/`](../记录/决策/)（冻结，永不为现行权威） |
+| harness 用例契约 | [`platform/harness/spec.md`](../../platform/harness/spec.md) |
+| platform.yaml 字段规范 | 见本文 §清单规范（原引《平台项目清单规范_platform.yaml.md》未随仓迁移，已就地并入） |
+| 端口分配 | `PLATFORM_PORTS` 指向的外部端口分配表（仓内 `platform/registry/ports.yaml` 仅为回退默认） |
+
+## 清单规范
+
+每个接入项目在 `platform/registry/projects/` 下写一个 `platform.yaml`（字段：
+`id/name/category/version/path/port/launch/stop/health/publish/manual`）。
+
+- **`port` 必查 ports.yaml**：未登记的端口拒绝登记（唯一的端口事实源是 `PLATFORM_PORTS` 指向的外部端口分配表，仓内副本仅作回退）。
+- **`path` 去盘符**：一律写相对于仓库根的 POSIX 相对路径（如 `repos/xxx`），**禁止盘符**（见 SPEC-006 机器与路径约定）——绝对路径在本机会漂移到失效盘符，属 repocheck 规则 7 的检查对象。

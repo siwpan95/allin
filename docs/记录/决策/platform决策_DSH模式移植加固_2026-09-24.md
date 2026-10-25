@@ -1,5 +1,10 @@
 # ADR 2026-09-24 — 参照 DeepSeek Harness 的 P0–P2 强化
 
+> **本文是 2026-09-24 的一次性记录，不作为约束。**
+> **迁移记账** 本文原名 `allin-platform/docs/decisions/2026-09-24-harness-reference-hardening.md`；
+> 2026-10-26 三仓整合后迁入本仓 `docs/记录/决策/`，内容除本记账块与交叉引用修正外未作改动。
+> 原仓远端已删除。
+
 > 状态：已实施并验证（npm test 37/37；check/harness exit 0；portal 冒烟通过）。冻结。
 
 ## Problem

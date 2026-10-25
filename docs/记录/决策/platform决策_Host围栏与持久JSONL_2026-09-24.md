@@ -1,8 +1,13 @@
 # ADR 2026-09-24 — Phase 1：Host 围栏 + durable JSONL（参照 DSH 的第二批模式移植）
 
+> **本文是 2026-09-24 的一次性记录，不作为约束。**
+> **迁移记账** 本文原名 `allin-platform/docs/decisions/2026-09-24-phase1-host-guard-durable-jsonl.md`；
+> 2026-10-26 三仓整合后迁入本仓 `docs/记录/决策/`，内容除本记账块与交叉引用修正外未作改动。
+> 原仓远端已删除。
+
 > 状态：已实施并验证（npm test 39/39；harness exit 0）。冻结。
-> 上篇：[2026-09-24-harness-reference-hardening.md](2026-09-24-harness-reference-hardening.md)（P0–P2）。
-> 路线定性见工作区《dsh-feed-allin-可行性分析.md》：本篇属 Route A（模式移植，零新依赖）。
+> 上篇：[platform决策_DSH模式移植加固_2026-09-24.md](platform决策_DSH模式移植加固_2026-09-24.md)（P0–P2）。
+> 路线定性见 [`docs/记录/专题/DSH喂给allin-platform可行性分析_2026-09-24.md`](../专题/DSH喂给allin-platform可行性分析_2026-09-24.md)：本篇属 Route A（模式移植，零新依赖）。
 
 ## Problem
 
