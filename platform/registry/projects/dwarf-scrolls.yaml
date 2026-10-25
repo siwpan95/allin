@@ -1,0 +1,12 @@
+﻿id: dwarf-scrolls
+name: 矮人卷轴
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\repos\dwarf-scrolls
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/dwarf-scrolls
+  branch: master

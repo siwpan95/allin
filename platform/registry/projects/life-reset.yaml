@@ -1,0 +1,11 @@
+﻿id: life-reset
+name: Life Reset Simulator
+category: game
+gameplay: [idle]
+note: 人生重置：决策树挂机
+order: 5
+version: 1.0.0
+path: G:\repos\life-reset-simulator
+manual: true
+launch:
+  command: python main.py

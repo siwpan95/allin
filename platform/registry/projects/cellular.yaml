@@ -1,0 +1,11 @@
+﻿id: cellular
+name: 细胞自动机壁纸
+category: media
+version: 1.0.0
+path: G:\repos\cellular_automaton
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/cellular_automaton
+  branch: master

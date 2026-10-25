@@ -1,0 +1,11 @@
+﻿id: twelve-labors
+name: 十二试炼
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\repos\god-hand-
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/god-hand-

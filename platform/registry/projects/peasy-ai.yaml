@@ -1,0 +1,14 @@
+﻿id: peasy-ai
+name: Peasy AI（原 easy-ai）
+category: tool
+version: 1.0.0
+path: G:\repos\peasy-ai
+manual: true
+launch:
+  # 1.0.0 起重构为 src 布局命名空间包，仓库根目录不再有 main.py；
+  # 需先 pip install -e .（或 pip install peasy-ai），再以模块方式启动。
+  command: python -m easy_ai
+publish:
+  repo: siwpan/peasy-ai
+  branch: master
+  pypi: peasy-ai

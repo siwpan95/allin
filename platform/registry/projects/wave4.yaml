@@ -1,0 +1,8 @@
+﻿id: wave4
+name: 布朗噪声工具包
+category: tool
+version: 1.0.0
+path: G:\repos\wave4
+manual: true
+launch:
+  command: python -m wave4

@@ -1,0 +1,11 @@
+﻿id: bilibili-helper
+name: B 站下载助手
+category: crawler
+version: 1.0.0
+path: G:\repos\bilibili-helper-py
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/bilibili-helper-py
+  branch: master

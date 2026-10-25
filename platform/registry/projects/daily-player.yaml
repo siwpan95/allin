@@ -1,0 +1,11 @@
+﻿id: daily-player
+name: 每日播放器
+category: tool
+version: 1.0.0
+path: G:\repos\daily_player
+manual: true
+launch:
+  command: python play.py
+publish:
+  repo: siwpan/daily_player
+  branch: master

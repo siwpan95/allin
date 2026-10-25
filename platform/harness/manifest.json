@@ -1,0 +1,32 @@
+{
+  "name": "allin-platform",
+  "description": "编排 harness 组件清单（组合即数据：加组件只改本文件；enabled:false = 运行时下架）。",
+  "runtime": {
+    "node": "node",
+    "python": "python",
+    "_comment": "python/node 走 PATH；特定版本可用 env（PLATFORM_PYTHON 等）覆盖，不再硬编码盘符路径（2026-09-24 可移植性强化）"
+  },
+  "components": [
+    {
+      "id": "platform-gate",
+      "kind": "subprocess",
+      "enabled": true,
+      "cmd": "{node}",
+      "args": [
+        "harness/driver.mjs"
+      ],
+      "cwd": "{root}",
+      "timeout": 150000,
+      "comment": "scripts/check.mjs 注册表质量门禁"
+    },
+    {
+      "id": "portal-probe",
+      "kind": "probe",
+      "enabled": true,
+      "target": "http://127.0.0.1:9000/",
+      "timeout": 5000,
+      "marker": "allin-platform",
+      "comment": "只读探活既有门户 :9000，不新增端口"
+    }
+  ]
+}

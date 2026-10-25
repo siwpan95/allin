@@ -1,0 +1,11 @@
+﻿id: renamer
+name: 批量改名
+category: tool
+version: 1.0.0
+path: G:\repos\renamer
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/renamer
+  branch: master

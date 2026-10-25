@@ -1,0 +1,11 @@
+﻿id: magictowel
+name: 魔塔
+category: game
+gameplay: [puzzle, rpg]
+version: 1.0.0
+path: G:\repos\magic-tower
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/magic-tower

@@ -1,0 +1,10 @@
+﻿id: particle
+name: 粒子系统库（示例）
+category: tool
+version: 1.0.0
+path: G:\repos\particle
+manual: true
+launch:
+  command: python examples/fireworks.py
+publish:
+  repo: siwpan/particle

@@ -1,0 +1,4 @@
+Win+R
+powershell
+cd G:\platform
+./start-platform.bat

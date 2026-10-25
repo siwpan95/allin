@@ -1,0 +1,7 @@
+node_modules/
+data/
+workshop-copies/
+release/
+build-batch/
+installer/
+*.log

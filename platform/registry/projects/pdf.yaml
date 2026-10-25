@@ -1,0 +1,11 @@
+﻿id: pdf
+name: PDF 工具
+category: tool
+version: 1.0.0
+path: G:\repos\pdf
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/pdf
+  branch: master

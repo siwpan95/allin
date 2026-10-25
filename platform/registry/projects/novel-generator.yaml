@@ -1,0 +1,11 @@
+﻿id: novel-generator
+name: 小说生成器
+category: ai
+version: 1.0.0
+path: G:\repos\novel-generator
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/novel-generator
+  branch: master

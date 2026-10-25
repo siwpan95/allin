@@ -1,0 +1,11 @@
+﻿id: carimara
+name: 枯肢之下（Carimara）
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\repos\under-withered-limbs
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/under-withered-limbs

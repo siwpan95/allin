@@ -1,0 +1,11 @@
+﻿id: procedural-video
+name: 程序化视频
+category: ai
+version: 1.0.0
+path: G:\repos\procedural-video
+manual: true
+launch:
+  command: python procedural_video.py
+publish:
+  repo: siwpan/procedural-video
+  branch: master

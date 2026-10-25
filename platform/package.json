@@ -1,0 +1,21 @@
+{
+  "name": "allin-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Steam 式全项目集成平台：库 Library + 创意工坊 Workshop + 引擎视图（聚合不融合）",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "portal": "npm start --workspace @allin/portal",
+    "allin": "node apps/cli/src/index.js",
+    "check": "node scripts/check.mjs",
+    "test": "node --test packages/core/test/*.test.mjs apps/portal/test/*.test.mjs apps/cli/test/*.test.mjs",
+    "harness": "node harness/harness.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

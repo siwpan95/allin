@@ -1,0 +1,12 @@
+﻿id: cordis-snake
+name: Cordis 贪吃蛇（一切皆插件）
+category: game
+gameplay: [snake]
+version: 1.0.0
+path: G:\repos\cordis-snake
+manual: true
+launch:
+  command: npm start
+publish:
+  repo: siwpan/cordis-snake
+  branch: master

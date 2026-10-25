@@ -1,0 +1,11 @@
+﻿id: imgproc
+name: 图像处理
+category: tool
+version: 1.0.0
+path: G:\repos\imgproc
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/imgproc
+  branch: master

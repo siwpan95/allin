@@ -1,0 +1,10 @@
+﻿id: music-prompt
+name: 纯音乐提示词生成器
+category: music
+version: 1.0.0
+path: G:\repos\music-prompt-generator
+manual: true
+launch:
+  command: python music/music_prompt_generator.py
+publish:
+  repo: siwpan/music-prompt-generator

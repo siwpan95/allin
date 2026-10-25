@@ -1,0 +1,15 @@
+id: radio
+name: 电台
+category: media
+version: 4.0.0
+path: G:\repos\private-radio-stations
+port: 8000
+launch:
+  command: npm run radio
+stop:
+  command: stop-radio.bat
+health:
+  url: http://localhost:8000/api/status
+publish:
+  repo: siwpan/private-radio-stations
+  branch: "3.0"

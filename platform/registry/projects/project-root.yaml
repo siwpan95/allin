@@ -1,0 +1,9 @@
+﻿id: project-root
+name: 诡秘之主·序列途径模拟
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\repos\project-root
+manual: true
+launch:
+  command: python main.py

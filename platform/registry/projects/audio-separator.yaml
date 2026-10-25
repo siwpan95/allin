@@ -1,0 +1,10 @@
+id: audio-separator
+name: 音频分离服务
+category: tool
+version: 1.0.0
+path: G:\repos\audio-separator
+port: 8080
+launch:
+  command: venv\Scripts\python.exe src\web_server.py --port 8080
+publish:
+  repo: siwpan/audio-separator
