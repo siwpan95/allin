@@ -1,0 +1,351 @@
+{
+  "generated": "2026-10-26T01:00:23",
+  "cwd": "D:\\projects",
+  "items": [
+    {
+      "name": "3dworld",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/3dworld.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/3dworld.git (push)"
+      ],
+      "branch": "master",
+      "head": "823e0d6d6d4bb05f7663751578b77e6b1b58b83e",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "3dworld-demos",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/3dworld-demos.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/3dworld-demos.git (push)"
+      ],
+      "branch": "master",
+      "head": "3859c66591592f6e3a88c2b84668a9a6dca32575",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "1/0"
+    },
+    {
+      "name": "3dworld-globe",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/3dworld-globe.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/3dworld-globe.git (push)"
+      ],
+      "branch": "main",
+      "head": "db45c46fd694379f746c8e52eae904721270c515",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "D20",
+      "has_git": false
+    },
+    {
+      "name": "Pomodmer",
+      "has_git": true,
+      "remotes": [
+        "legacy\thttps://gitee.com/siwpan/cordis-table-app.git (fetch)",
+        "legacy\thttps://gitee.com/siwpan/cordis-table-app.git (push)",
+        "origin\thttps://gitee.com/siwpan/pomodmer.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/pomodmer.git (push)"
+      ],
+      "branch": "main",
+      "head": "33ef7e91bccb513e5ed6824d2a5da6811659cb77",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "RolePlayer",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/roleplayer.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/roleplayer.git (push)"
+      ],
+      "branch": "master",
+      "head": "4b8d4a6320d995841a2e75e2bf5204ed1e139f97",
+      "status": [
+        "?? docs/ROLEPLAYER-ALIGN-HANDOVER-2026-09-28.md"
+      ],
+      "status_count": 1,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "backroom",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/backroom.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/backroom.git (push)"
+      ],
+      "branch": "master",
+      "head": "52c15d257e15e5245ca39669f0197e07fe7e5200",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "bloodmusic",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/bloodmusic.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/bloodmusic.git (push)"
+      ],
+      "branch": "master",
+      "head": "99d08499e0d4c2d5819f13e8c52081f2a2359f20",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "board-replay",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/board-replay.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/board-replay.git (push)"
+      ],
+      "branch": "master",
+      "head": "a80caaad774d1b3e6fdf554c0dc56549ff668992",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "cordis-py",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/cordis-py.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/cordis-py.git (push)"
+      ],
+      "branch": "p1-core-engine",
+      "head": "b2fe2a890fcad095a0c15409f92e2abd875e6e75",
+      "status": [
+        "M PLAN.md",
+        " M pyproject.toml",
+        " M src/dse_core/sdk.py"
+      ],
+      "status_count": 3,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "cordis-table-app",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/cordis-table-app.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/cordis-table-app.git (push)"
+      ],
+      "branch": "main",
+      "head": "1d44c5eca3dfceb61c0180342a069960138410dc",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "deepseek-harness-master",
+      "has_git": true,
+      "remotes": [
+        "gitde\thttps://gitee.com/siwpan/deepseek-harness.git (fetch)",
+        "gitde\thttps://gitee.com/siwpan/deepseek-harness.git (push)"
+      ],
+      "branch": "master",
+      "head": "180452a2d0dd9a943e39c415d4b02afcfff5736c",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "easy-ai",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/easy-ai.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/easy-ai.git (push)"
+      ],
+      "branch": "master",
+      "head": "809139e9089e62262f4b800b58780311017f1c58",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "foolproof-operation",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/foolproof-operation (fetch)",
+        "origin\thttps://gitee.com/siwpan/foolproof-operation (push)"
+      ],
+      "branch": "master",
+      "head": "b387e5ee792746c381a6d69ad8d7a74fc21c0081",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "lab",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/lab.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/lab.git (push)"
+      ],
+      "branch": "master",
+      "head": "09a051f8b1c6aa6fc8fc549bf26391b016f20ddd",
+      "status": [
+        "M tournament/run_tournament.mjs",
+        "?? tournament/reports/.tourn_end_",
+        "?? tournament/reports/.tourn_end_2026-10-11",
+        "?? tournament/reports/.tourn_end_2026-10-12",
+        "?? tournament/reports/.tourn_end_v3_2026-10-13",
+        "?? tournament/reports/.tourn_start_",
+        "?? tournament/reports/.tourn_start_v3_2026-10-13",
+        "?? tournament/validate_lock.mjs"
+      ],
+      "status_count": 8,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "magic-tower",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/magic-tower.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/magic-tower.git (push)"
+      ],
+      "branch": "master",
+      "head": "755170dbaeed4487da69670080b5b83274f5d996",
+      "status": [
+        "?? tools/harvest_promo.py"
+      ],
+      "status_count": 1,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "mirsolo",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/mirsolo.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/mirsolo.git (push)"
+      ],
+      "branch": "master",
+      "head": "c8ea0a65a51d56e9b44adeb0ff2547c823635571",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "moba_battle_platform",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/moba_battle_platform.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/moba_battle_platform.git (push)"
+      ],
+      "branch": "main",
+      "head": "b40e7b8b07f71a732dc4e8d7f9ec47a73e2094b0",
+      "status": [
+        "?? moba_battle_platform/",
+        "?? output/",
+        "?? run_battle.py"
+      ],
+      "status_count": 3,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "music-master",
+      "has_git": false
+    },
+    {
+      "name": "music-player",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/music-player.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/music-player.git (push)"
+      ],
+      "branch": "master",
+      "head": "46e65af5f027bd5bf5e4844ca08248cb7618b44b",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "ncmturnmp3",
+      "has_git": false
+    },
+    {
+      "name": "niulai",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/niulai.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/niulai.git (push)"
+      ],
+      "branch": "main",
+      "head": "1bb6751c862febafe337d7231b3a01e30a055bc5",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "n/a"
+    },
+    {
+      "name": "novel_down",
+      "has_git": false
+    },
+    {
+      "name": "private-radio-stations",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/private-radio-stations.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/private-radio-stations.git (push)"
+      ],
+      "branch": "master",
+      "head": "206db915a0ed6154b33c76254f8507dcdae529ce",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "webcopier",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/webcopier.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/webcopier.git (push)"
+      ],
+      "branch": "master",
+      "head": "cbeea529d26d9ee2159eeef370ab08a1750de2db",
+      "status": [
+        "?? .debug/",
+        "?? output/trow/",
+        "?? output/trow2/",
+        "?? output/trow3/"
+      ],
+      "status_count": 4,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "weiqi_lab",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/weiqi_lab.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/weiqi_lab.git (push)"
+      ],
+      "branch": "master",
+      "head": "5feba7449234d60e7d57bd4d2ca3ceea41c3c81c",
+      "status": [],
+      "status_count": 0,
+      "ahead_behind": "0/0"
+    },
+    {
+      "name": "worldbuilder",
+      "has_git": true,
+      "remotes": [
+        "origin\thttps://gitee.com/siwpan/worldbuilder.git (fetch)",
+        "origin\thttps://gitee.com/siwpan/worldbuilder.git (push)"
+      ],
+      "branch": "master",
+      "head": "0f9994cd02cbd37b47fe291544e69e490721cada",
+      "status": [
+        "?? .workbuddy/"
+      ],
+      "status_count": 1,
+      "ahead_behind": "0/0"
+    }
+  ]
+}
