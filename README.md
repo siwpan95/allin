@@ -40,9 +40,11 @@
 - **alloy**（an-engine）：统一游戏引擎——ECS + EventBus + Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。
 - **private-radio-stations**：Node.js + Cordis 插件式转播站（radio/video/portal 三簇）。
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
-- **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork，已推独立 gitee 仓 `siwpan/deepseek-harness`（见下）。
+- **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork；原独立 gitee 仓
+  `siwpan/deepseek-harness` **已于 2026-10-26 整合后删除**——治理内核并入本仓（见「三仓整合」第 6 条），
+  工具本体仍在 `repos/deepseek-harness` 现役运行。
 - 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `roleplayer` `music-master` `ncmturnmp3` `D20`。
-- 以上 12 个为本机已克隆的**成员子集**；全量 119 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
+- 以上 12 个为本机已克隆的**成员子集**；全量 124 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
 
 ## DeepSeek-Harness 治理落地（2026-09-26）
 
@@ -103,20 +105,26 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 **现状**：`A)` `--fail-on error` 退出码 **0**（通过）；`B)` 仅剩规则 1 固有项。
 `platform` 的 warn 级（无 SECURITY / CONTRIBUTING / CHANGELOG / CI 配置）为**真实待办**，本期不处理，留作下一批。
 
-## 三仓整合（2026-10-26）：repocheck + allin-platform → allin
+## 三仓整合（2026-10-26）：repocheck + allin-platform + deepseek-harness → allin
 
-> **本次变更**：用户拍板把治理相关的两个独立仓并入本仓，实现「管理与治理一体化」，完成后删除两仓远端。
+> **本次变更**：用户拍板把治理相关的三个独立仓并入本仓，实现「管理与治理一体化」，完成后删除三仓远端。
 > 过去的治理更多依靠长期实践积累的经验；**本仓自此成为「制度 + 载体 + 执行器」三位一体的单一入口**：
-> 制度在 `docs/规范/`，载体是 [`platform/`](platform/README.md)，执行器是 [`tools/repocheck/`](tools/repocheck/README.md)。
+> 制度在 `docs/规范/`，载体是 [`platform/`](platform/README.md)，执行器是 [`tools/repocheck/`](tools/repocheck/README.md)，
+> 粘合剂叙事取自 `deepseek-harness` 的治理内核（并入方式不同，见下方第 6 条）。
+>
+> **整合理念**（据用户说明，2026-10-26）：整合的目的，是**后续统一用 allin 管理与治理 repos**——
+> 治理入口收敛到一处；因此 DSH 也需要纳入本仓体系。同时用户定性：**DSH 最重要的就是 API key（付费接口）**，
+> 移入 allin 只是治理归位，**不影响原有功能继续发挥**。
 
 | 原独立仓 | 本仓落点 | 历史处理 | 版本锚点 | 远端 |
 | --- | --- | --- | --- | --- |
 | `siwpan/repocheck`（14 commits / 29 文件） | `tools/repocheck/` | 压缩为 1 个 squash 提交 | `repocheck-v1.0.0` · `repocheck-v2.0.0` | 整合后删除 |
 | `siwpan/allin-platform`（54 commits / 152 文件） | `platform/`（制度上提） | 压缩为 1 个 squash 提交 | `platform-v1.0.0` | 整合后删除 |
+| `siwpan/deepseek-harness`（88 commits / 14339 文件） | `docs/记录/`、`docs/规范/`（**仅治理内核**） | **解构式并入**，见第 6 条 | 本地 `1.1.0` / 上游 `v0.1.7-rc.1` | 整合后删除 |
 
-**关键取舍与记账**（五条，均可复跑核对）：
+**关键取舍与记账**（六条，均可复跑核对）：
 
-1. **历史压缩**：两仓共 68 个 commit 压成 2 个 squash 提交（用户拍板），主仓历史保持线性干净。
+1. **历史压缩**：repocheck + allin-platform 两仓共 68 个 commit 压成 2 个 squash 提交（用户拍板），主仓历史保持线性干净。
    代价是不能用 `git log` 追溯中间过程；补偿措施是为三个历史发行版建了**内容精确的孤儿快照 tag**
    （tree 已加对应目录前缀），它们不在 master 主历史内，但 `git checkout <tag>` 能拿到当时的真实内容。
 2. **tag 去冲突**：两仓都有 `v1.0.0`，直接合并会丢一个。按本仓既有约定「tag = `<项目>-v<版本>`」重命名。
@@ -127,6 +135,19 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 4. **License 不混同**：本仓根 LICENSE 是 **MIT-0**，两个子件各自是 **MIT** —— 各自的 LICENSE 文件随目录保留，不通吃、不替换。
 5. **交叉引用已同步**：`platform/README.md`、`platform/AGENTS.md` 的文档链接改指向枢纽新位置；
    `docs/INDEX.md` 自述份数、SPEC-005 目录树均已同步（跑 `tools/gate/docs_index.py` 验证 `blocking=0`）。
+6. **DSH 例外：解构式并入，不做 subtree squash**（`deepseek-harness`，88 commits / 14339 文件 / MIT，
+   Copyright 2026 DeepSeek）。它的 14339 个文件若整体 squash 进来，会把主仓体积与治理焦点一起冲垮；
+   而本次要的是它的**治理智慧**而非代码体积，故分三个提交提取并入：
+   `479793f`（cordis 粘合剂 · 治理内核）→ `2448135`（治理哲学）→ `d11c47f`（通用架构原则，填补 allin 粘合剂叙事缺口），
+   落点全在 `docs/记录/` 与 `docs/规范/`。**代码本体不并入**，理由有三：
+   - 它是**现役运行工具**（本地 `repos/deepseek-harness`，版本 `1.1.0`，末次提交 2026-10-09），
+     `start-dsh-web.py` 与 `.dsh-home/` 会话数据都在，删了工具即断供；
+   - 用户定性：**dsh 最重要的就是 API key，也就是付费接口** —— 移入 allin 只是治理归位，
+     不影响原有功能继续发挥，功能性资产无需搬迁；
+   - 治理资产的接任者已在（本条三个提交），符合「无接任者不可删」。
+   ⚠️ **凭证边界**：`.dsh-home/`（含真实 API key）由该仓 `.gitignore` 第 74 行 `.dsh-home*/` 排除，
+   **从未入库**；本仓 `.gitignore` 亦有 `私人令牌.txt` / `*.token` / `*.key` / `*.pem` / `.env` 兜底。
+   本仓为**公开仓**（铁律 0），任何真实凭据一律不得落入，此条无例外。
 
 ### 发布区约定（已完成 · 2026-10-26）
 
@@ -148,15 +169,17 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 > `repos/...` → `<工作区根>` 之下；其它相对值 → 治理仓根 `allin/` 之下（如平台自身的 `platform`）。
 > 可用 `PLATFORM_REPOS_ROOT` 覆盖发布区根。
 
-## Gitee 项目组合全量索引（119 仓）
+## Gitee 项目组合全量索引（124 仓）
 
-全量 **119 个 Gitee 仓库**（公开 119 · 私有 0，2026-10-26 核实：整合删去 `repocheck`、`allin-platform` 两仓）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
+全量 **124 个 Gitee 仓库**（公开 124 · 私有 0，2026-10-26 实测 API 核实：整合删去 `repocheck`、`allin-platform`、
+`deepseek-harness` 三仓，并补齐此前未入索引的新项目）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
 按仓库名排序，含语言 / Star / 简介 / 可见性。该文件由脚本从 Gitee API 自动生成，是**索引而非源码镜像**。
 
 **治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本地 `/projects/<仓名>`；
-不预先克隆全量 119 仓。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
-以及**已并入的两个治理子件**（`platform/` 集成平台、`tools/repocheck/` 体检器）；
-其余 117 个仓库各自独立，按需克隆、独立演进、整仓推送（铁律 0/3）。
+不预先克隆全量 124 仓。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
+以及**治理动脉**：两件已并入库的子件（`platform/` 集成平台、`tools/repocheck/` 体检器）
+加上 `deepseek-harness` 的治理内核（仅文档层，见第 6 条）；
+其余 **123 个仓库各自独立**（124 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
 `PORTFOLIO.md` 随远端变化而过期，需刷新时重跑生成脚本。
 
 ## 治理准则（2026-08-27 深度审核固化）

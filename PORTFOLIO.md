@@ -1,23 +1,25 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-15），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-26），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 119 个仓库**（公开 119 · 私有 0）。
+**共 124 个仓库**（公开 124 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
 | 仓库 | 语言 | Star | 可见性 | 简介 |
 |---|---|---|---|---|
 | [siwpan/3dworld](https://gitee.com/siwpan/3dworld.git) | — | 0 | 公开 | pyglet 三维世界与动画演出：48s 五幕编排 + kkrieger 96s 四幕 + 9 个单文件 demos，MIT |
+| [siwpan/3dworld-demos](https://gitee.com/siwpan/3dworld-demos.git) | — | 0 | 公开 | 3dworld 三维引擎的演示程序集（39 个演示 + 成片录制/exe 打包/批量验收工具；引擎本体在 siwpan/3dworld） |
+| [siwpan/3dworld-globe](https://gitee.com/siwpan/3dworld-globe.git) | — | 0 | 公开 | 交互地球仪：真实海岸线(Natural Earth) + 程序化地形/云层/大气/星空，跑在 pip 安装的 3dworld 引擎 DemoApp 上 |
 | [siwpan/adventurelog](https://gitee.com/siwpan/adventurelog.git) | Python | 0 | 公开 | 探险日志 |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
-| [siwpan/arcade](https://gitee.com/siwpan/arcade.git) | — | 0 | 公开 | 街机游戏合集（自 game-collection 拆分） |
+| [siwpan/arcade](https://gitee.com/siwpan/arcade.git) | — | 1 | 公开 | 街机游戏合集（自 game-collection 拆分） |
 | [siwpan/art_video_gen](https://gitee.com/siwpan/art_video_gen.git) | — | 0 | 公开 | 元胞自动机 + 粒子系统生成随机艺术视频，程序化音频同步、ffmpeg 合并 |
-| [siwpan/audio-generation](https://gitee.com/siwpan/audio-generation.git) | Python | 0 | 公开 | 程序化音频合成引擎（BloodMusic v2）：BGM / SFX 实时生成，6 引擎 12 风格预设，零外部采样 |
+| [siwpan/ashen-beacon](https://gitee.com/siwpan/ashen-beacon.git) | — | 0 | 公开 | 灰烬信标 · 用 dse-core   allin-engine 双引擎做的终端文字冒险 |
 | [siwpan/audio-pipeline](https://gitee.com/siwpan/audio-pipeline.git) | — | 0 | 公开 | audio_pipeline ????? |
 | [siwpan/audio-separator](https://gitee.com/siwpan/audio-separator.git) | — | 0 | 公开 | audio_separator Demucs ?? |
 | [siwpan/audiotool](https://gitee.com/siwpan/audiotool.git) | — | 0 | 公开 | Windows 桌面批处理：音频 / 视频重编码、响度归一、拼接与流复制（ffmpeg 驱动，输出到独立目录） |
@@ -25,26 +27,26 @@
 | [siwpan/backroom](https://gitee.com/siwpan/backroom.git) | Python | 0 | 公开 | 后室 |
 | [siwpan/bee](https://gitee.com/siwpan/bee.git) | — | 0 | 公开 | bee |
 | [siwpan/bilibili-helper-py](https://gitee.com/siwpan/bilibili-helper-py.git) | — | 0 | 公开 | B 站视频下载桌面版（Playwright 复用浏览器登录态）：合集批量、代理与日志系统 |
+| [siwpan/bloodmusic](https://gitee.com/siwpan/bloodmusic.git) | — | 0 | 公开 | 程序化音频合成引擎（BloodMusic v2）：BGM / SFX 实时生成，6 引擎 12 风格预设，零外部采样 |
 | [siwpan/board-replay](https://gitee.com/siwpan/board-replay.git) | — | 0 | 公开 | Cordis 内核的围棋（SGF）复盘器：棋盘可视化 / 逐步复盘 / PNG 出图。复用 cordis-table-app/pomodmer 骨架。 |
 | [siwpan/calculator](https://gitee.com/siwpan/calculator.git) | Python | 0 | 公开 |  |
 | [siwpan/captcha-demo](https://gitee.com/siwpan/captcha-demo.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
 | [siwpan/cellular_automaton](https://gitee.com/siwpan/cellular_automaton.git) | — | 0 | 公开 | 细胞自动机壁纸（自 media-collection 拆分） |
+| [siwpan/cordis-py](https://gitee.com/siwpan/cordis-py.git) | — | 0 | 公开 | 字典场景引擎 Python 移植版（场景即字典，能力即插件） |
 | [siwpan/cordis-snake](https://gitee.com/siwpan/cordis-snake.git) | — | 0 | 公开 | Cordis「一切皆插件」贪吃蛇：可运行的架构样例（真实 HMR、依赖闭包重载、storage 沙箱 fail-closed） |
 | [siwpan/cordis-table-app](https://gitee.com/siwpan/cordis-table-app.git) | — | 0 | 公开 | 基于 Cordis 内核 + OpenPyXL 的表格小应用：Node.js 宿主编排，Python 经 JSON-RPC stdio 桥接 OpenPyXL。 |
 | [siwpan/cordis-text-game](https://gitee.com/siwpan/cordis-text-game.git) | — | 0 | 公开 | Cordis「一切皆插件」文字冒险引擎示例（迷雾地窖）：房间/物品/指令/渲染层/黑暗机制全是可装卸插件 |
 | [siwpan/crawl-hub](https://gitee.com/siwpan/crawl-hub.git) | — | 0 | 公开 | crawl_hub ???????(????? + ????) |
-| [siwpan/d20](https://gitee.com/siwpan/d20.git) | — | 0 | 公开 | D&D-GURPS 变体角色构建器（规则界面壳 v3.0；规则内核已并入 siwpan/an-engine 的 alloy.trpg，R2） |
 | [siwpan/d20-table-link](https://gitee.com/siwpan/d20-table-link.git) | — | 0 | 公开 | d20（TRPG 规则内核）× Cordis 表格应用（载体）联动适配器：连接 siwpan/d20 与 cordis-table-app，规则/表格双向互通 |
 | [siwpan/daily_player](https://gitee.com/siwpan/daily_player.git) | — | 0 | 公开 | 基于 libVLC 的日常视频播放器：字幕、播放列表、快捷键与托盘 |
 | [siwpan/darksouls](https://gitee.com/siwpan/darksouls.git) | Python | 0 | 公开 | 黑暗之魂 |
 | [siwpan/ddd2](https://gitee.com/siwpan/ddd2.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
-| [siwpan/deepseek-harness](https://gitee.com/siwpan/deepseek-harness.git) | — | 0 | 公开 | DeepSeek agent harness (dsh) - Cordis-based monorepo, upstream v0.1.7-rc.1. Local mirror for dev-process transparency. MIT. |
 | [siwpan/diablo](https://gitee.com/siwpan/diablo.git) | Python | 0 | 公开 | 私服版本 |
 | [siwpan/dict-scene-engine](https://gitee.com/siwpan/dict-scene-engine.git) | — | 0 | 公开 | 字典场景引擎 —— 基于 Cordis 4.0 插件架构的文字冒险游戏引擎（场景即字典，能力即插件） |
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
+| [siwpan/dse-core](https://gitee.com/siwpan/dse-core.git) | — | 0 | 公开 | 字典场景引擎内核 —— 基于 Cordis 4.0 插件架构、与内容解耦的文字冒险/互动叙事引擎（场景即字典，能力即插件） |
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
-| [siwpan/peasy-ai](https://gitee.com/siwpan/peasy-ai.git) | Python | 0 | 公开 | 零硬编码、配置驱动的可嵌入 AI 核心 + 叙事引擎 + TRPG 训练场（原 `siwpan/easy-ai`，2026-10-20 删仓重建；PyPI: `peasy-ai`） |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
 | [siwpan/foolproof-operation](https://gitee.com/siwpan/foolproof-operation.git) | Python | 0 | 公开 | 按需下载 |
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
@@ -73,20 +75,23 @@
 | [siwpan/mcclone3d](https://gitee.com/siwpan/mcclone3d.git) | — | 0 | 公开 | 《我的世界》风格 3D 体素沙盒（基于 3dworld 引擎）：确定性体素世界 / 世界级 UV 投影贴图 / 第一人称挖掘放置 / 存档 |
 | [siwpan/midi](https://gitee.com/siwpan/midi.git) | — | 0 | 公开 | midi（自 media-collection 拆分） |
 | [siwpan/midjourney_video](https://gitee.com/siwpan/midjourney_video.git) | — | 0 | 公开 | Midjourney Explore 视频抓取下载工具（Playwright），CLI + GUI 双入口 |
+| [siwpan/mirsolo](https://gitee.com/siwpan/mirsolo.git) | — | 0 | 公开 | 热血传奇单机复刻（致敬，非官方）—— 基于 3dworld + allin-engine 的确定性 ARPG 逻辑核 |
 | [siwpan/moba_battle_platform](https://gitee.com/siwpan/moba_battle_platform.git) | Python | 0 | 公开 | moba_battle_platform |
 | [siwpan/mp](https://gitee.com/siwpan/mp.git) | — | 0 | 公开 | mp（自 media-collection 拆分） |
 | [siwpan/music-player](https://gitee.com/siwpan/music-player.git) | — | 0 | 公开 | 本地音乐播放器：tkinter + python-vlc 全功能版 + Cordis Node host 内核重构（零依赖 Web UI + JSON-RPC），MIT |
 | [siwpan/music-prompt-generator](https://gitee.com/siwpan/music-prompt-generator.git) | — | 0 | 公开 | 音乐提示词生成器（自 music#master 拆分） |
 | [siwpan/musickit](https://gitee.com/siwpan/musickit.git) | — | 0 | 公开 | phonk 混音工程：真实采样 + 本地混音引擎（24 位混音师签名链）+ 授权分层治理 |
 | [siwpan/ncmturnmp3](https://gitee.com/siwpan/ncmturnmp3.git) | — | 0 | 公开 | 加密音乐格式转换：ncm / qmc / kgm 等解密并转码 mp3 / flac / wav / ogg / m4a，纯本地运行 |
+| [siwpan/niulai](https://gitee.com/siwpan/niulai.git) | — | 0 | 公开 | 《牛来》双引擎复刻：world3d(3dworld) 渲染演出 + allin_engine 逻辑智能，86 分钟同人学习性复刻（不商用） |
 | [siwpan/novel](https://gitee.com/siwpan/novel.git) | — | 0 | 公开 | 双引擎程序化中文小说生成系统：ASP 模板流 × Save the Cat! 15 节拍因果流，长篇可生成 |
 | [siwpan/novel-down](https://gitee.com/siwpan/novel-down.git) | — | 0 | 公开 | novel-down · 规则驱动的网络小说离线阅读工具（仅免费章节）：目录归一化 / base64 正文还原 / 六层免费拦截 / TXT·MD·EPUB3·单文件HTML 导出 |
 | [siwpan/novel-generator](https://gitee.com/siwpan/novel-generator.git) | — | 0 | 公开 | novel_generator（自 ai-collection 拆分） |
 | [siwpan/novel-reader](https://gitee.com/siwpan/novel-reader.git) | Python | 0 | 公开 | 小说阅读器 |
 | [siwpan/novel-run](https://gitee.com/siwpan/novel-run.git) | — | 0 | 公开 | novel (Python generator) <-> dict-scene-engine (Node runtime) integration route verification: lazy JSON scene packs, 7-item content lint, safe if/do condition engine, 1000-scene scale generation |
 | [siwpan/ollama_generator](https://gitee.com/siwpan/ollama_generator.git) | — | 0 | 公开 | 基于 Ollama 的通用文本生成库：多轮对话 + 中英混排清洗 + 游戏场景提示词 |
-| [siwpan/particle](https://gitee.com/siwpan/particle.git) | — | 0 | 公开 | particle |
+| [siwpan/particlefx](https://gitee.com/siwpan/particlefx.git) | — | 0 | 公开 | 纯 Python + NumPy 粒子系统库 — 多渲染器（pygame/PIL/ModernGL）+ 效果工厂 + Taichi 流体后端 + GPU 模拟 |
 | [siwpan/pdf](https://gitee.com/siwpan/pdf.git) | — | 0 | 公开 | 轻量 PDF 阅读器（PyMuPDF + Pillow + Tkinter），附物理教材 PDF 样本 |
+| [siwpan/peasy-ai](https://gitee.com/siwpan/peasy-ai.git) | — | 0 | 公开 | 零硬编码、配置驱动的通用 AI 对话框架：AI 核心 + 叙事引擎 + TRPG 训练场（PyPI: peasy-ai） |
 | [siwpan/photo](https://gitee.com/siwpan/photo.git) | — | 0 | 公开 | 图片爬虫（自 media-collection 拆分） |
 | [siwpan/photovideo](https://gitee.com/siwpan/photovideo.git) | — | 0 | 公开 | 图片转视频：6 种动效模式（网格拼贴 / 长图滚动 / 淡入淡出 / KenBurns 推镜等） |
 | [siwpan/player](https://gitee.com/siwpan/player.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
@@ -96,7 +101,6 @@
 | [siwpan/print](https://gitee.com/siwpan/print.git) | — | 0 | 公开 | 纯 Python 中文拼音输入法：状态机内核 + rime-ice 真实词频 + 系统级候选窗口 |
 | [siwpan/private-radio-stations](https://gitee.com/siwpan/private-radio-stations.git) | Python | 0 | 公开 | 私人电台 + 转播整机方案：音频电台（HLS / ICY）+ 视频转播 + 门户面板，独立进程、按需启停 |
 | [siwpan/procedural-video](https://gitee.com/siwpan/procedural-video.git) | — | 0 | 公开 | procedural_video（自 ai-collection 拆分） |
-| [siwpan/procgen](https://gitee.com/siwpan/procgen.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
 | [siwpan/project-root](https://gitee.com/siwpan/project-root.git) | — | 0 | 公开 | ??????(/local ???? 2,2026-08-27) |
 | [siwpan/py_test_runner](https://gitee.com/siwpan/py_test_runner.git) | — | 0 | 公开 | Python 多模式测试框架：AST 静态扫描 + 架构模式识别 + 动态运行，输出 HTML / JSON / 覆盖率报告 |
 | [siwpan/pyinstaller](https://gitee.com/siwpan/pyinstaller.git) | — | 0 | 公开 | PyInstaller 批量打包工具箱：从基础 GUI 到专业级（签名 / UPX / 图标转换） |
@@ -113,8 +117,8 @@
 | [siwpan/shikonghuaban](https://gitee.com/siwpan/shikonghuaban.git) | — | 0 | 公开 | 时空画板（自 media-collection 拆分） |
 | [siwpan/sign-in-simulator](https://gitee.com/siwpan/sign-in-simulator.git) | Python | 0 | 公开 | 签到一下吧 |
 | [siwpan/smile](https://gitee.com/siwpan/smile.git) | — | 0 | 公开 | smile 签到+表情包（自 sign-in-simulator#2.0 拆分） |
-| [siwpan/station](https://gitee.com/siwpan/station.git) | — | 0 | 公开 | station |
 | [siwpan/subtitle](https://gitee.com/siwpan/subtitle.git) | — | 0 | 公开 | 桌面字幕处理工具（Tkinter + ffmpeg）：提取、编辑、烧录，面向中文用户 |
+| [siwpan/superengine](https://gitee.com/siwpan/superengine.git) | — | 0 | 公开 | 基于 cordis 的三仓组合仓（worldbuilder/an-engine/3dworld）：契约 + 桥接 + 装配 + 门禁 |
 | [siwpan/table-hanging-machine](https://gitee.com/siwpan/table-hanging-machine.git) | Python | 0 | 公开 | excel表格挂机 |
 | [siwpan/tavern-rogue](https://gitee.com/siwpan/tavern-rogue.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
 | [siwpan/test](https://gitee.com/siwpan/test.git) | Python | 0 | 公开 | 一个恶搞版性格测试 |
@@ -127,6 +131,7 @@
 | [siwpan/webcopier](https://gitee.com/siwpan/webcopier.git) | — | 0 | 公开 | 网页正文抓取程序：单页 / 批量 / 整站三模式，六种提取方式 + 反爬适配 |
 | [siwpan/weiqi_lab](https://gitee.com/siwpan/weiqi_lab.git) | — | 0 | 公开 | ������������������������������ JS ���� + Markov/CNN ������������MIT�� |
 | [siwpan/weor](https://gitee.com/siwpan/weor.git) | — | 0 | 公开 | weor（自 ai-collection 拆分） |
+| [siwpan/worldbuilder](https://gitee.com/siwpan/worldbuilder.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
 | [siwpan/yasuo](https://gitee.com/siwpan/yasuo.git) | — | 0 | 公开 | 文件加密与压缩工具：AES-256-GCM / CBC + zlib / lzma / bz2，GUI 与 CLI 双入口 |
 | [siwpan/yuanbao](https://gitee.com/siwpan/yuanbao.git) | — | 0 | 公开 | 细胞工厂（自 media-collection 拆分） |
 | [siwpan/zhuangtaiji](https://gitee.com/siwpan/zhuangtaiji.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
