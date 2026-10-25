@@ -9,6 +9,7 @@ __pycache__/
 私人令牌.txt
 *.token
 *.key
+*.pem
 .env
 
 # ===== Windows 保留设备名文件（git 无法索引，跳过） =====

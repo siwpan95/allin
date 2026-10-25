@@ -278,7 +278,39 @@
 
 ---
 
-## 9. 相关文档（同一枢纽内）
+## 9. cordis 化内核整体构建（粘合剂模式）
+
+> **这一节回答「allin 怎么把文档、工具、platform 粘成一个有机整体」** —— 不是再立一个顶层 `kernel/` 目录（那只能治标，结构一变又散），而是用 **cordis 声明式 preset 作为粘合剂**，把四类资产按同一份契约有机绑定、互相守护。
+> 背景：2026-10-26 把 `siwpan/deepseek-harness` 的治理内核（15 条门禁 `g00-meta`~`g15-docs-contract`）整体并入本仓 `tools/gate/governance/`，原 DSH 远端删除；cordis preset（`preset/allin/allin.patch.yml`）成为唯一可执行治理载体。
+
+### 9.1 为什么用 cordis preset 当粘合剂
+
+- 文档（`docs/规范/` 约束、`docs/事实源/` 现值）是**文字事实源**；工具（`tools/gate/` 机械门禁）是**可执行判据**；`platform/` 是**编排层**。三者各自演化，问题出在「改文档不更新门禁」「加工具不登记契约」「platform 扩却不备案」。
+- cordis preset 是唯一**随会话/随仓可重装**的载体：它把「开卷必读四份 + 铁律 + 治理准则 + 本机边界」写进 agent 的 persona 段（`<!-- GOVERNANCE:BEGIN -->`…`<!-- GOVERNANCE:END -->` 标记块），**每次会话启动即生效**，不依赖人记得去读。
+- 治理门禁树（`tools/gate/governance/`，`g00-meta` 元门禁 + `g01-paths`…`g15-docs-contract` 共 15 道）反过来**守住这条 preset**：块必须成对有序、段内无盘符路径、引用的仓内文件必须存在、提到的门禁 id 必须已注册（`g14-preset`）。
+
+### 9.2 粘合契约（判据同源、实现不同）
+
+| 资产 | 载体 | 守护门禁 | 引用格式 |
+| --- | --- | --- | --- |
+| 约束性规则 | `docs/规范/SPEC-*` | 各 `gNN` + `docs_index.py` D3/D4 | `SPEC-NNN` |
+| 当前值 / 事实 | `docs/事实源/*` | `g07-doc-freshness`（时点） | `FACT-NN` |
+| 机械门禁 | `tools/gate/governance/gates/*` | `g00-meta`（契约自检） | `gNN-*` |
+| 编排 / 平台 | `platform/` | `platform/scripts/check.mjs` + `npm test` | — |
+| 粘合剂本身 | `preset/allin/allin.patch.yml` | `g14-preset` | — |
+
+**关键不变量**：任何新内容并入（文档改、工具加、platform 扩）都先过两道门禁 —— `npm run check:governance`（仓内判据，聚合默认带 `--no-profile`）与 `python tools/gate/docs_index.py`（索引契约）。门禁红 = 没过关，**不许提交**。
+
+### 9.3 怎么接新内容（沿用同一契约）
+
+1. **文档** → 落 `docs/` 四类之一，领 `SPEC-/FACT-` 编号，登记 `INDEX.md`，跑 `docs_index.py`。
+2. **工具 / 门禁** → 放 `tools/gate/`（或 `tools/gate/governance/gates/`），带 `--selfcheck` 与四开关，登记 `governance/registry.json` + `governance/RULES.md`。
+3. **平台能力** → 进 `platform/`，过 `platform/scripts/check.mjs` 与 `npm test`。
+4. **写进 agent 启动即生效的治理段** → 改 `preset/allin/allin.patch.yml` 的 GOVERNANCE 块，再跑 `check:governance` 确认 `g14-preset` 仍绿。
+
+> 教训（2026-09-24 实测）：副本仓把根文档搬进 `docs/` 却没改引用/门禁路径，三条门禁长期红而源仓全绿 —— **搬文件必须同步链接、门禁路径、索引**（铁律 42）。cordis 粘合剂把这条纪律变成了开机即检查的机械判据。
+
+## 10. 相关文档（同一枢纽内）
 
 | 文档 | 内容 |
 | --- | --- |

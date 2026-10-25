@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "comment": "Registry of the governance gates shipped by this distribution repository. The meta gate reads this file and refuses to pass when an entry is incomplete, when a gate cannot prove itself, or when a gate is missing from governance/RULES.md.",
+  "gates": [
+    {
+      "id": "g00-meta",
+      "title": "gate contract self-verification",
+      "script": "governance/gates/g00_meta.py",
+      "tier": "P0",
+      "rules": ["debug-30", "debug-41", "ops-G15", "ops-P3"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": null,
+      "selfcheck": true
+    },
+    {
+      "id": "g01-paths",
+      "title": "machine-specific absolute paths",
+      "script": "governance/gates/g01_paths.py",
+      "tier": "P0",
+      "rules": ["iron-5", "debug-26", "debug-34", "debug-53", "ops-E3"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g01-paths.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g03-credentials",
+      "title": "no credentials in tracked content or git config",
+      "script": "governance/gates/g03_credentials.py",
+      "tier": "P0",
+      "rules": ["iron-0", "sensitive-info", "debug-52", "ops-P1", "ops-E8"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g03-credentials.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g04-push-evidence",
+      "title": "push readiness from authoritative remote evidence",
+      "script": "governance/gates/g04_push_evidence.py",
+      "tier": "P0",
+      "rules": ["iron-3", "debug-25", "debug-37", "debug-47", "ops-P8", "ops-E8"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git", "network-optional"],
+      "baseline": "governance/baseline/g04-push-evidence.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g05-hygiene",
+      "title": "repository hygiene on the tracked surface",
+      "script": "governance/gates/g05_hygiene.py",
+      "tier": "P0",
+      "rules": ["iron-0", "iron-4", "sensitive-info", "debug-54", "ops-P2", "ops-C3", "ops-C4", "ops-G3"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g05-hygiene.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g06-numbering",
+      "title": "numbering contracts (series continuity, pair equality)",
+      "script": "governance/gates/g06_numbering.py",
+      "tier": "P0",
+      "rules": ["debug-45", "ops-G4", "ops-G5", "ops-D7"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g06-numbering.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g07-doc-freshness",
+      "title": "declared fact sources carry a time point",
+      "script": "governance/gates/g07_doc_freshness.py",
+      "tier": "P0",
+      "rules": ["debug-57", "debug-58", "ops-D6"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g07-doc-freshness.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g08-deletion-evidence",
+      "title": "deletions carry capability-surface evidence",
+      "script": "governance/gates/g08_deletion_evidence.py",
+      "tier": "P0",
+      "rules": ["retirement-three-checks", "ops-G5", "ops-G13"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g08-deletion-evidence.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g09-python-hygiene",
+      "title": "Python encoding, escape, and console discipline",
+      "script": "governance/gates/g09_python_hygiene.py",
+      "tier": "P1",
+      "rules": ["debug-35", "debug-38", "debug-43"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g09-python-hygiene.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g10-failloud-probe",
+      "title": "gates refuse an unusable input loudly",
+      "script": "governance/gates/g10_failloud_probe.py",
+      "tier": "P1",
+      "rules": ["ops-E1", "ops-E2", "debug-39", "iron-5"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": null,
+      "selfcheck": true
+    },
+    {
+      "id": "g11-undef-names",
+      "title": "no name is loaded without being defined",
+      "script": "governance/gates/g11_undef_names.py",
+      "tier": "P1",
+      "rules": ["debug-32", "debug-40"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g11-undef-names.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g12-integrity",
+      "title": "the object store reads and HEAD resolves",
+      "script": "governance/gates/g12_integrity.py",
+      "tier": "P1",
+      "rules": ["debug-51", "debug-58", "ops-E8"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g12-integrity.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g13-docs-only",
+      "title": "the docs tree holds documents",
+      "script": "governance/gates/g13_docs_only.py",
+      "tier": "P1",
+      "rules": ["ops-D1", "ops-G8", "ops-G17"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g13-docs-only.txt",
+      "selfcheck": true
+    },
+    {
+      "id": "g14-preset",
+      "title": "the preset stays mountable and honest",
+      "script": "governance/gates/g14_preset.py",
+      "tier": "P0",
+      "rules": ["iron-5", "debug-42", "ops-D4", "ops-D5"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": null,
+      "selfcheck": true,
+      "profileProbe": true
+    },
+    {
+      "id": "g15-docs-contract",
+      "title": "docs hub index contract (adoption-based)",
+      "script": "governance/gates/g15_docs_contract.py",
+      "tier": "P1",
+      "rules": ["spec-005", "ops-D6", "ops-D7", "debug-45"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9"],
+      "baseline": "governance/baseline/g15-docs-contract.txt",
+      "selfcheck": true
+    }
+  ]
+}

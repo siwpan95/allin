@@ -215,18 +215,17 @@ pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名�
 
 ---
 
-## 与 DSH 仓 `governance/` 的关系（2026-09-27 新增，2026-09-28 订正落点）
+## 与 DSH 仓 `governance/` 的关系（2026-09-27 新增，2026-10-26 已并入本仓）
 
-治理规则现在有**两个落点**，判据同源、形态不同，别把两份当成重复建设：
+> **2026-10-26 状态**：`siwpan/deepseek-harness` 的治理内核（Python 门禁运行时 + 15 条门禁 `g00-meta`~`g15-docs-contract`）**已整体并入本仓 `tools/gate/governance/`**，原 DSH 远端已删除。
+> 并入后**只有一个落点**（本仓内 `tools/gate/` 与 `tools/gate/governance/` 两棵互补的门禁树），判据同源、形态不同，不是重复建设：
 
 | 落点 | 形态 | 谁在用 |
 | --- | --- | --- |
 | 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区的日常巡检 |
-| DSH 仓 `governance/`（随分发版 `siwpan/deepseek-harness` 分发，本机检出 `/repos/deepseek-harness`） | **一份 Python 门禁运行时 + 18 条门禁**（`g00`~`g18`），单仓、跨平台、每条自带 `--selfcheck`；入口 `pnpm run check:governance` | 拿到 DSH 分发版的任何人 |
+| `tools/gate/governance/`（由 DSH 治理内核并入） | **一份 Python 门禁运行时 `runtime/govlib.py` + 15 条门禁**（`g00-meta`~`g15-docs-contract`），单仓、跨平台、每条自带 `--selfcheck`；聚合入口 `npx tsx tools/gate/governance/run.ts`（或根 `package.json` 的 `check:governance`） | 本仓自身的治理门禁，经 `check:governance` 驱动 |
 
-> ⚠ **落点订正（2026-09-28 实测）**：本节原写 `/projects/deepseek-harness-master/governance/` —— **该路径不存在**。
-> DSH 检出实测在 `/repos/deepseek-harness`（去符盘形式）。同类的 `/projects/` 写法一律以
-> [`../../docs/事实源/本机事实.md`](../../docs/事实源/本机事实.md) §2 的实测值为准。
+> ⚠ **落点订正**：DSH 治理内核原在 `/repos/deepseek-harness/governance/`（本机去符盘形式）；2026-10-26 已整体并入本仓 `tools/gate/governance/` 并删除 DSH 远端。路径一律以 [`../../docs/事实源/本机事实.md`](../../docs/事实源/本机事实.md) 的实测值为准。
 
 - **规则事实源是本仓 `docs/规范/`**（2026-09-28 前写 `docs/MEMORY.md`，该文件现已降为路由页）：
   铁律 → `SPEC-001`，调试铁律 → `SPEC-004`，治理准则 → `SPEC-003`，文档枢纽契约 → `SPEC-005`。
@@ -238,7 +237,7 @@ pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名�
   `--baseline/--no-baseline/--write-baseline/--list-all` 四开关，豁免与跳过**计数打印不静默丢弃**；
   DSH 侧由 `g10-failloud-probe` 反过来验证「拿到坏输入必须响亮报错」。
 
-## 9. `check_gate_drift.py` — 门禁双落点漂移检查（2026-10-06 新增）
+## 10. `check_gate_drift.py` — 门禁双落点漂移检查（2026-10-06 新增）
 
 **为什么存在**：同一个门禁在两个落点（`/allin/tools/gate` 与 `/tools/gate`）会**各自演化**。
 `SPEC-004 §调试铁律 64` 记过一次因漂移差点丢东西；2026-10-06 又实测到 `scan_hardcoded.ps1`
@@ -260,7 +259,7 @@ python /tools/gate/check_gate_drift.py --selfcheck  # 自证：EOL 差异判绿 
 
 > 新增门禁脚本时**必须把文件名加进 `TRACKED`**，否则它会静默漏检。
 
-## 10. 提交前钩子（`hooks/pre-commit`，2026-10-06 新增）
+## 11. 提交前钩子（`hooks/pre-commit`，2026-10-06 新增）
 
 **为什么存在**：`SPEC-004 §调试铁律 66` —— **编辑工具会静默剥掉 `.ps1` 的 UTF-8 BOM**，
 `pwsh` 下看不出、**PowerShell 5.1 必炸**（中文乱码 + 假语法错误）。`check_ps1_bom.py` 只能事后扫存量，

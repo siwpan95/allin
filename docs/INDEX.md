@@ -4,7 +4,7 @@
 > **怎么用**：想找东西先在这里搜；**不要**靠翻目录。找"规矩"看 `规范/`，找"现在的值"看 `事实源/`，找"当时怎么发生的"看 `记录/`。
 > **谁保证它不过期**：`python tools/gate/docs_index.py`（判据 D1–D8）——文件没登记、登记没文件、规范缺头部、规范名带日期、分类错位、ASCII 别名缺失、交接卷断号、**本行自述份数与实际不符**，任一条都报红。
 > **分类判据与命名规则**：见 [`规范/SPEC-005-文档枢纽契约.md`](规范/SPEC-005-文档枢纽契约.md)。
-> **时点** 2026-10-26 ｜ **覆盖** 根 3 + 规范 16 + 事实源 6 + 记录 35 = **60 份**（不含 `md/` 历史树 231 篇）
+> **时点** 2026-10-26 ｜ **覆盖** 根 3 + 规范 16 + 事实源 6 + 记录 37 = **62 份**（不含 `md/` 历史树 231 篇）
 > ⚠ **本行份数由门禁 D8 逐次核对**：改完文档忘了改这里的数字会直接报红（2026-09-28 曾出现「头部写 51 / 实际 49」）。
 
 | 类别 | 目录 | ASCII 别名 | 是什么 | 可变性 |
@@ -98,6 +98,7 @@
 | REC-AU-07 | [3dworld 全量核对与门禁修复](记录/审计/3dworld核对与门禁修复_2026-10-14.md) | 2026-10-14 | 本机⇄Gitee IN_SYNC（master/tag 双核）；查出并修掉 5 个缺陷（残留目录打红 test_compat / GBK 吞掉真失败 / 自检字面量漂移 / .gitignore 根锚定 / 计数漂移）；1 项未修待放行（`record_all.py` 2 处死盘符） |
 | REC-AU-08 | [mcclone3d 建仓](记录/审计/mcclone3d建仓_2026-10-15.md) | 2026-10-15 | 新仓公开 + MIT 建成并首推（`ls-remote` IN_SYNC `31144e9`；匿名克隆 27 文件 / 217.2 KB / 三件套齐 / 产物零混入）；远端仓数 120 → 121；**新踩 Gitee PATCH 用 form-urlencoded 返回 406，改 JSON 正体即通** |
 | REC-AU-09 | [mcclone3d 验收](记录/审计/mcclone3d验收_2026-10-16.md) | 2026-10-16 | 匿名克隆 + 另起 venv 走 PyPI 通路验收：单测 **22 模块 350 项** + cli **23 条**全过（exit 0，与 README 逐字相符）、仓级治理 11 项除下列外全过；查出 **3 处账实不符**（配方 21→**26**、附魔判据口径不明、README 示例死盘符）并**已按放行修复 + 两轮复验全绿**；**原规划无 Phase 4**（Phase 3 为最后阶段） |
+| REC-AU-10 | [preset 漂移 diff](记录/审计/preset漂移diff_2026-10-26.txt) | 2026-10-26 | 旧 DSH `governance/preset/allin.patch.yml`（repos/deepseek-harness-master）vs 新 `allin/preset/allin/allin.patch.yml` 全量 diff（173→205 行；英文治理段替换为中文治理段，粘合剂契约落位） |
 
 ### 4.3 计划 · 事故 · 专题
 
@@ -127,6 +128,7 @@
 | REC-SN-02 | [本机硬件与差异摘要](记录/快照/本机硬件与差异摘要_2026-09-24.md) | 2026-09-24 | ⚠ 同上；盘位结论已失效 |
 | REC-SN-03 | [新机挂载事实](记录/快照/新机挂载事实_2026-09-24.md) | 2026-09-24 | 盘位结论经 09-28 复核**仍成立** |
 | REC-SN-04 | [gitee 项目记录](记录/快照/gitee项目记录_2026-08-20.md) | 2026-08-20 | 仓名 ↔ 本地目录的对应记录（已被 `PORTFOLIO.md` 取代） |
+| REC-SN-05 | [发布区搬迁前快照](记录/快照/发布区搬迁前快照_2026-10-26.json) | 2026-10-26 | 三仓整合（repocheck / allin-platform / deepseek-harness → allin）发布区搬迁前的全量仓库快照（30 仓 git 状态 / ahead_behind，生成于 `D:\projects`） |
 
 ### 4.5 决策（`记录/决策/`，2026-10-26 随 `platform/` 并入新增的子类）
 
@@ -149,8 +151,9 @@
 | --- | --- |
 | `../PORTFOLIO.md`（仓根） | 远端 **121 仓**全量索引（脚本从 Gitee API 生成） |
 | `../tools/` | 可执行门禁：仓根 `tools/repo_hygiene.py`（H1–H8）+ `tools/gate/`（`scan_hardcoded.ps1` / `check_undefined_names.py` / `docs_index.py` / `check_ps1_bom.py` / `watchdog.py` / `check_gate_drift.py` / `make_doc_aliases.ps1`）—— 2026-10-08 按实测订正落点（原写「`../tools/gate/` 含 `repo_hygiene.py`」与盘上不符，照抄会报 `No such file or directory`；同日清掉 `tools/` 下两份过期重复副本，见交接 §107.10 更正块） |
-| `../preset/allin/` | 治理模式载体（DSH agent preset 可重装副本） |
-| DSH 仓 `governance/` | 规则的可执行落地：`RULES.md`（规则→门禁映射）+ **18 条门禁**（`g00`–`g18`；2026-10-08 实测 `18/18 clean`，自检 0 误报） |
+| `preset/allin/allin.patch.yml` | 治理模式载体（cordis 声明式 preset，GOVERNANCE 块为粘合剂核；`g14-preset` 守护） |
+| `tools/gate/governance/`（本仓内，原 DSH 治理内核并入） | 规则的可执行落地：Python 运行时 `runtime/govlib.py` + `RULES.md`（规则→门禁映射）+ **15 条门禁**（`g00-meta`–`g15-docs-contract`）；聚合入口根 `package.json` 的 `check:governance`（= `npx tsx tools/gate/governance/run.ts`）。2026-10-26 由 `siwpan/deepseek-harness` 整体并入，原 DSH 远端已删除 |
+| DSH 仓 `governance/`（外部源，已退役） | 2026-10-26 前 `siwpan/deepseek-harness` 分发版的规则落地（`g00`–`g18`）；其治理内核已并入本仓 `tools/gate/governance/`，远端 `siwpan/deepseek-harness` 已删除 |
 | `../目录索引.txt`（仓根） | 项目目录文档化索引，生成器 `/tools/build_dir_index.py` |
 
 ---
@@ -166,4 +169,4 @@
 
 ---
 
-*最后更新：2026-10-16（新增 REC-AU-09：mcclone3d 验收与账实不符修复；记录 31→32、总 55→56；REC-HO-03 覆盖区间与结论补 §110/§111）。*
+*最后更新：2026-10-26（登记 REC-AU-10：preset 漂移 diff；REC-SN-05：发布区搬迁前快照；记录 35→37、总 60→62。此二件为三仓整合批次遗留、此前未在 INDEX 登记的快照/比对证据，现补登以过 D1/D8）。*

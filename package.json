@@ -1,0 +1,12 @@
+{
+  "name": "allin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "工作区治理仓（公开，MIT）：文档枢纽 + 可执行门禁 + cordis 治理 preset（粘合剂）",
+  "license": "MIT",
+  "scripts": {
+    "check:governance": "npx tsx tools/gate/governance/run.ts",
+    "check:governance:selfcheck": "npx tsx tools/gate/governance/run.ts --selfcheck-all",
+    "check:docs": "python tools/gate/docs_index.py"
+  }
+}
