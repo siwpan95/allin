@@ -2,7 +2,7 @@
 name: 随机视频生成器
 category: ai
 version: 1.0.0
-path: G:\repos\video-generator
+path: repos/video-generator
 manual: true
 launch:
   command: python video_generator.py

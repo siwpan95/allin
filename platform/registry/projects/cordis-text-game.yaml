@@ -2,7 +2,7 @@ id: cordis-text-game
 name: Cordis 文字冒险（迷雾地窖）
 category: game
 version: 0.1.0
-path: G:\repos\cordis-text-game
+path: repos/cordis-text-game
 manual: true
 launch:
   command: npm start

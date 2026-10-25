@@ -2,7 +2,7 @@
 name: 自动点击器
 category: tool
 version: 1.0.0
-path: G:\repos\auto_clicker
+path: repos/auto_clicker
 manual: true
 launch:
   command: python main.py

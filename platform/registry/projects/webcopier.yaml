@@ -2,7 +2,7 @@
 name: 网站复制器
 category: crawler
 version: 1.0.0
-path: G:\repos\webcopier
+path: repos/webcopier
 manual: true
 launch:
   command: python WebCopier_GUI.py

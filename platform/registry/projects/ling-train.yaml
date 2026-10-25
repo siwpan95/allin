@@ -2,7 +2,7 @@ id: ling-train
 name: 灵讯训练流水线
 category: ai
 version: 1.0.0
-path: G:\repos\ling-train
+path: repos/ling-train
 manual: true
 launch:
   command: python ling-cinema\ling-cinema-v2\generate_base.py

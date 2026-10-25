@@ -2,7 +2,7 @@ id: players-unified
 name: 播放器统一宿主（三端合并）
 category: media
 version: 0.8.0
-path: G:\repos\players-unified
+path: repos/players-unified
 launch:
   command: node launcher/server.mjs
 publish:

@@ -2,7 +2,7 @@
 name: 签到+表情包生成器
 category: tool
 version: 2.0.0
-path: G:\repos\smile
+path: repos/smile
 manual: true
 launch:
   command: python main.py

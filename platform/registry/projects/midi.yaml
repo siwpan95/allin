@@ -2,7 +2,7 @@
 name: MusicStudio（midi）
 category: music
 version: 1.0.0
-path: G:\repos\midi
+path: repos/midi
 manual: true
 launch:
   command: python MusicStudio/main.py

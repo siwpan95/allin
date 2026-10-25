@@ -3,7 +3,7 @@ name: 地狱之下（多线平台）
 category: game
 gameplay: [visual-novel]
 version: 1.0.0
-path: G:\repos\hell-below
+path: repos/hell-below
 manual: true
 launch:
   command: python launcher/main.py

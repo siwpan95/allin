@@ -5,7 +5,7 @@ gameplay: [idle]
 note: 主题挂机：蜜蜂 RPG + 系统托盘 + 实时音频
 order: 1
 version: 1.0.0
-path: G:\repos\bee
+path: repos/bee
 manual: true
 launch:
   command: pythonw main.pyw

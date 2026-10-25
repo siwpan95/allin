@@ -2,7 +2,7 @@ id: foolproof-operation
 name: 傻瓜式操作（依赖安装器）
 category: tool
 version: 1.1.2
-path: G:\repos\foolproof-operation
+path: repos/foolproof-operation
 manual: true
 launch:
   command: python requirements.py

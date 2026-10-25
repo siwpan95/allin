@@ -3,7 +3,7 @@ name: 黑暗之魂·卡牌编年史
 category: game
 gameplay: [card, rpg]
 version: 1.0.0
-path: G:\repos\darksouls
+path: repos/darksouls
 manual: true
 launch:
   command: python main.pyw

@@ -4,7 +4,7 @@ id: procgen
 name: 程序化生成器
 category: tool
 version: 1.0.0
-path: G:\repos\procgen
+path: repos/procgen
 manual: true
 launch:
   command: python cli.py

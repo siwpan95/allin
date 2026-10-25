@@ -2,7 +2,7 @@
 name: 仓库体检
 category: tool
 version: 1.0.0
-path: G:\repos\repocheck
+path: repos/repocheck
 manual: true
 launch:
   command: python main.py

@@ -2,7 +2,7 @@
 name: 签到工具
 category: crawler
 version: 1.0.0
-path: G:\repos\sign-in-simulator
+path: repos/sign-in-simulator
 manual: true
 launch:
   command: python qiandao.pyw

@@ -2,7 +2,7 @@ id: radio
 name: 电台
 category: media
 version: 4.0.0
-path: G:\repos\private-radio-stations
+path: repos/private-radio-stations
 port: 8000
 launch:
   command: npm run radio

@@ -2,7 +2,7 @@ id: cordis-table-app
 name: Cordis 表格小应用
 category: tool
 version: 1.0.0
-path: G:\repos\cordis-table-app
+path: repos/cordis-table-app
 manual: true
 launch:
   command: npm start

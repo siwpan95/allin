@@ -2,7 +2,7 @@
 name: MJ 视频助手
 category: crawler
 version: 1.0.0
-path: G:\repos\midjourney_video
+path: repos/midjourney_video
 manual: true
 launch:
   command: python gui.py

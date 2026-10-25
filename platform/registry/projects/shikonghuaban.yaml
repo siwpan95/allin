@@ -2,7 +2,7 @@
 name: 时空画板
 category: media
 version: 1.0.0
-path: G:\repos\shikonghuaban
+path: repos/shikonghuaban
 manual: true
 launch:
   command: python -m shikonghuaban

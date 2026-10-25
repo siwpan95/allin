@@ -3,6 +3,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolvePath } from './registry.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
@@ -191,7 +192,7 @@ export function startEntry(entry, options = {}) {
   const startedAt = Date.now()
   const child = spawn(prepareCommand(entry.launch.command), {
     shell: true,
-    cwd: entry.path,
+    cwd: resolvePath(entry.path),
     detached: true,
     stdio: 'ignore',
   })
@@ -254,7 +255,7 @@ export async function stopEntry(id, entry = null, options = {}) {
     usedGraceful = true
     // 优雅停止：等待 stop 命令退出（graceMs 封顶杀之），不阻塞事件循环
     await new Promise((resolve) => {
-      const g = spawn(stopCmd, { shell: true, cwd: entry.path || process.cwd(), stdio: 'ignore' })
+      const g = spawn(stopCmd, { shell: true, cwd: (entry.path && resolvePath(entry.path)) || process.cwd(), stdio: 'ignore' })
       const t = setTimeout(() => { try { g.kill() } catch { /* 已退出 */ } resolve() }, graceMs)
       g.on('exit', () => { clearTimeout(t); resolve() })
       g.on('error', () => { clearTimeout(t); resolve() })

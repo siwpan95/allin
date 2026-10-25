@@ -2,7 +2,7 @@
 name: CA Formula Lab
 category: tool
 version: 1.0.0
-path: G:\repos\math
+path: repos/math
 manual: true
 launch:
   command: python main.py

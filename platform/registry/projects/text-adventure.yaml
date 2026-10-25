@@ -3,7 +3,7 @@ name: 文字冒险引擎
 category: game
 gameplay: [text]
 version: 1.0.0
-path: G:\repos\text-adventure
+path: repos/text-adventure
 manual: true
 launch:
   command: python text_adventure/main.py

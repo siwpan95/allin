@@ -2,7 +2,7 @@
 name: 音频工具箱
 category: tool
 version: 1.0.0
-path: G:\repos\audiotool
+path: repos/audiotool
 manual: true
 launch:
   command: python main.py

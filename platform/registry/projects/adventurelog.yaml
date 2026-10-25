@@ -5,7 +5,7 @@ gameplay: [idle]
 order: 6
 note: 挂机 RPG（2026-09 收编；order 顺延，前端挂机族视图按此排序）
 version: 1.0.0
-path: G:\repos\adventurelog
+path: repos/adventurelog
 manual: true
 launch:
   command: python main.py

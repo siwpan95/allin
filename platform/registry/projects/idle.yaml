@@ -5,7 +5,7 @@ gameplay: [idle]
 note: 数值放置：石器→太空时代 35 装备
 order: 2
 version: 1.0.0
-path: G:\repos\Idle
+path: repos/Idle
 manual: true
 launch:
   command: python main.py

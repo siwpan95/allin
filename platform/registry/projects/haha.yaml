@@ -2,7 +2,7 @@
 name: 消息应用（MVC）
 category: tool
 version: 1.0.0
-path: G:\repos\haha
+path: repos/haha
 manual: true
 launch:
   command: python main.py

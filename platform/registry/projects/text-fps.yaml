@@ -3,7 +3,7 @@ name: 文字 FPS
 category: game
 gameplay: [text]
 version: 1.0.0
-path: G:\repos\text-fps
+path: repos/text-fps
 manual: true
 launch:
   command: python text_fps/main.py

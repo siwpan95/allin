@@ -2,7 +2,7 @@
 name: 波形音乐生成
 category: tool
 version: 1.0.0
-path: G:\repos\wav_music_gen
+path: repos/wav_music_gen
 manual: true
 launch:
   command: python gui.py

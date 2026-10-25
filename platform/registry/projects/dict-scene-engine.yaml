@@ -3,7 +3,7 @@ name: 字典场景引擎（文字冒险）
 category: game
 gameplay: [text]
 version: 0.2.0
-path: G:\repos\dict-scene-engine
+path: repos/dict-scene-engine
 launch:
   command: npm run start
 publish:

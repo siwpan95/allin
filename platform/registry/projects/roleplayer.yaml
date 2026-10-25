@@ -3,7 +3,7 @@ name: Role Player 跑团模拟器（原 D20）
 category: game
 gameplay: [rpg]
 version: 3.0.0
-path: G:\repos\roleplayer
+path: repos/roleplayer
 manual: true
 launch:
   command: python mvp_gui.py

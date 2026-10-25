@@ -2,7 +2,7 @@
 name: 万界归墟生成器
 category: ai
 version: 1.0.0
-path: G:\repos\novel
+path: repos/novel
 manual: true
 launch:
   command: python main.py

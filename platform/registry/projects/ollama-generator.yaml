@@ -2,7 +2,7 @@
 name: Ollama 文本生成库
 category: tool
 version: 1.0.0
-path: G:\repos\ollama_generator
+path: repos/ollama_generator
 manual: true
 launch:
   command: python demo.py

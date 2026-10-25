@@ -3,7 +3,7 @@ name: 重装机兵同人
 category: game
 gameplay: [rpg]
 version: 1.0.0
-path: G:\repos\maga
+path: repos/maga
 manual: true
 launch:
   command: python main.py

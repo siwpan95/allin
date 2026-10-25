@@ -3,7 +3,7 @@ name: 俄罗斯轮盘（ECS 版）
 category: game
 gameplay: [roulette]
 version: 1.0.0
-path: G:\repos\russia
+path: repos/russia
 manual: true
 launch:
   command: python main.py

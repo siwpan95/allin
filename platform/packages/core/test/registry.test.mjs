@@ -9,7 +9,9 @@ import { loadRegistry, validateEntry, loadPorts } from '../src/registry.js'
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-reg-'))
 // 测试不绑定具体机器（2026-09-24 强化）：good 条目的 path 用必然存在的目录，
 // path 存在性校验（默认 exists 模式）由「不存在的路径」负例单独覆盖。
-const EXISTING_DIR = os.tmpdir()
+// 2026-10-26 起 path **禁盘符**（去符盘铁律），故不再使用 os.tmpdir() 这类绝对路径，
+// 改用仓内相对路径 `platform`（解析到治理仓根下，本机与 CI 都必然存在）。
+const EXISTING_DIR = 'platform'
 fs.writeFileSync(path.join(tmp, 'good.yaml'), [
   'id: radio',
   'name: 电台',
@@ -25,7 +27,7 @@ fs.writeFileSync(path.join(tmp, 'badport.yaml'), [
   'name: 幽灵服务',
   'category: tool',
   'version: 1.0.0',
-  'path: G:\\tmp',
+  'path: repos/no-such-repo',
   'port: 1234',
   'launch:',
   '  command: python x.py',
@@ -35,7 +37,7 @@ fs.writeFileSync(path.join(tmp, 'missing.yaml'), [
   'name: 缺字段',
   'category: tool',
   'version: 1.0.0',
-  'path: G:\\tmp',
+  'path: repos/no-such-repo',
 ].join('\n'))
 
 test('loadRegistry: 端口查表与必填字段 fail-loud', () => {

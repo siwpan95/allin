@@ -2,7 +2,7 @@
 name: 测试运行器
 category: tool
 version: 1.0.0
-path: G:\repos\py_test_runner
+path: repos/py_test_runner
 manual: true
 launch:
   command: python main.py

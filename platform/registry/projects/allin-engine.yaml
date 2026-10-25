@@ -2,7 +2,7 @@ id: allin-engine
 name: 综合引擎（装配视图）
 category: engine
 version: 1.0.0
-path: G:\repos\an-engine
+path: repos/an-engine
 manual: true
 launch:
   command: python -m allin_engine dump-profile

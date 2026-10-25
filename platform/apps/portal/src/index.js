@@ -22,6 +22,7 @@ import {
   auditWorkshop,
   checkUpdate,
   DATA_DIR,
+  resolvePath,
 } from '@allin/core'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -145,7 +146,7 @@ function readAlerts() {
   const { entries } = loadRegistry(REGISTRY)
   const alerts = []
   for (const e of entries) {
-    const f = path.join(e.path, 'data', 'divergence-events.jsonl')
+    const f = path.join(resolvePath(e.path), 'data', 'divergence-events.jsonl')
     if (!fs.existsSync(f)) continue
     try {
       const lines = fs.readFileSync(f, 'utf8').trim().split('\n').slice(-20)

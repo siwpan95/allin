@@ -2,7 +2,7 @@
 name: 照片工具
 category: media
 version: 1.0.0
-path: G:\repos\photo
+path: repos/photo
 manual: true
 launch:
   command: python app.py

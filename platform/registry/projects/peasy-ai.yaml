@@ -2,7 +2,7 @@
 name: Peasy AI（原 easy-ai）
 category: tool
 version: 1.0.0
-path: G:\repos\peasy-ai
+path: repos/peasy-ai
 manual: true
 launch:
   # 1.0.0 起重构为 src 布局命名空间包，仓库根目录不再有 main.py；

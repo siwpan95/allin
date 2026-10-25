@@ -2,7 +2,7 @@
 name: 音频工作站
 category: music
 version: 3.0.0
-path: G:\repos\station
+path: repos/station
 manual: true
 launch:
   command: python main.py

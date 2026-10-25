@@ -128,9 +128,25 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 5. **交叉引用已同步**：`platform/README.md`、`platform/AGENTS.md` 的文档链接改指向枢纽新位置；
    `docs/INDEX.md` 自述份数、SPEC-005 目录树均已同步（跑 `tools/gate/docs_index.py` 验证 `blocking=0`）。
 
-**待办（下一批）**：`platform/registry/projects/` 里约 105 份 yaml 仍写死已失效的 `G:\repos\...` 盘符路径 ——
-这是 repocheck 规则 7 的检查对象。按用户裁定统一为 **`repos/<仓名>`**（去盘符、保留 repos 语义），
-本机发布项一律迁到 `<工作区>/repos/` 与 `allin/` 并立。
+### 发布区约定（已完成 · 2026-10-26）
+
+> **已落地**：`platform/registry/projects/` 全部 **107 份** yaml 的 `path`，由写死的失效盘符 `G:\repos\...`
+> 统一改为 **`repos/<仓名>`**（去盘符、保留 repos 语义）。这是 repocheck 规则 7 的治理对象。
+>
+> 目录约定（<工作区根> = 本仓的上一级，本仓检出在 `<工作区根>/allin/`）：
+>
+> ```
+> <工作区根>/
+> ├── allin/      ← 本仓：制度 + 文档枢纽 + 治理载体/执行器（唯一仓库本体）
+> └── repos/      ← 发布区：各发布项目各自独立克隆，与本仓并立
+>     ├── lab/
+>     ├── webcopier/
+>     └── ...     （源码按需懒拉取，不预先克隆全量）
+> ```
+>
+> 路径解析基准（`platform/packages/core/src/registry.js` → `resolvePath()`）：
+> `repos/...` → `<工作区根>` 之下；其它相对值 → 治理仓根 `allin/` 之下（如平台自身的 `platform`）。
+> 可用 `PLATFORM_REPOS_ROOT` 覆盖发布区根。
 
 ## Gitee 项目组合全量索引（119 仓）
 

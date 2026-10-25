@@ -3,7 +3,7 @@ name: Savage Dungeon 地下城
 category: game
 gameplay: [rpg]
 version: 1.0.0
-path: G:\repos\dungeon
+path: repos/dungeon
 manual: true
 launch:
   command: python main.py

@@ -2,7 +2,7 @@ id: video
 name: 视频转播站
 category: media
 version: 4.0.0
-path: G:\repos\private-radio-stations
+path: repos/private-radio-stations
 port: 8100
 launch:
   command: npm run video

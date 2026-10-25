@@ -2,7 +2,7 @@
 name: 音效下载器
 category: tool
 version: 1.0.0
-path: G:\repos\sfx-download
+path: repos/sfx-download
 manual: true
 launch:
   command: python gui.py

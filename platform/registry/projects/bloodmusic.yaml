@@ -2,7 +2,7 @@ id: bloodmusic
 name: BloodMusic 音频合成
 category: tool
 version: 2.0.0
-path: G:\repos\bloodmusic
+path: repos/bloodmusic
 manual: true
 launch:
   command: python main.py

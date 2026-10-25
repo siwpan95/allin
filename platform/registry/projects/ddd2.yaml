@@ -2,7 +2,7 @@
 name: 元胞自动机视频生成器
 category: tool
 version: 1.0.0
-path: G:\repos\ddd2
+path: repos/ddd2
 manual: true
 launch:
   command: python "ddd (2).py"

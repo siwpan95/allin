@@ -2,7 +2,7 @@
 name: Remix 混音 CLI
 category: music
 version: 1.0.0
-path: G:\repos\musickit\remix
+path: repos/musickit/remix
 manual: true
 launch:
   command: python main.py

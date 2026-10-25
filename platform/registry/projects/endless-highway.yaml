@@ -3,7 +3,7 @@ name: 无尽高速公路
 category: game
 gameplay: [driving]
 version: 1.0.0
-path: G:\repos\lonely-desert-road
+path: repos/lonely-desert-road
 manual: true
 launch:
   command: python main.py

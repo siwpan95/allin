@@ -3,7 +3,7 @@ name: JOTUNNSLAYER 复刻
 category: game
 gameplay: [survivor]
 version: 1.0.0
-path: G:\repos\jotunnslayer
+path: repos/jotunnslayer
 manual: true
 launch:
   command: python main.py

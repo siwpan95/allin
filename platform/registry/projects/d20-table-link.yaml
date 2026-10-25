@@ -2,7 +2,7 @@ id: d20-table-link
 name: d20 表格联动（TRPG 规则 × Cordis 表格）
 category: tool
 version: 0.1.0
-path: G:\repos\d20-table-link
+path: repos/d20-table-link
 manual: true
 launch:
   command: npm start

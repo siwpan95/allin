@@ -2,7 +2,7 @@
 name: 打印工具
 category: tool
 version: 1.0.0
-path: G:\repos\print
+path: repos/print
 manual: true
 launch:
   command: python main.py

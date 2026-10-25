@@ -2,7 +2,7 @@
 name: Weor
 category: ai
 version: 1.0.0
-path: G:\repos\weor
+path: repos/weor
 manual: true
 launch:
   command: python main.py

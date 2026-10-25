@@ -2,7 +2,7 @@ id: fonts
 name: 字体下载工具
 category: tool
 version: 1.0.0
-path: G:\assets\fonts
+path: assets/fonts
 manual: true
 launch:
   command: run.bat

@@ -2,7 +2,7 @@
 name: WMP 可视化模拟器
 category: tool
 version: 1.0.0
-path: G:\repos\player
+path: repos/player
 manual: true
 launch:
   command: python player.py

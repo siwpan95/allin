@@ -2,7 +2,7 @@
 name: 画图
 category: tool
 version: 1.0.0
-path: G:\repos\drawpic
+path: repos/drawpic
 manual: true
 launch:
   command: python main.py
