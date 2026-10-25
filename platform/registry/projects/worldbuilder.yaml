@@ -1,0 +1,16 @@
+﻿# 命名沿革（2026-10-26 实测校正）：
+#   2026-10-20 PyPI 发行名 procgen -> worldbuilder（原 procgen 被 OpenAI 占用）。
+#   2026-10-26 复核：当初注记断言「Gitee 仓路径 siwpan/procgen 不变」已失效——
+#     实测远端 124 仓中已无 procgen，Gitee 仓亦已更名为 siwpan/worldbuilder。
+#   教训：快照型注记必须带失效条款，判定远端只认现场实测。
+id: worldbuilder
+name: 程序化生成器
+category: tool
+version: 1.0.0
+path: repos/worldbuilder
+manual: true
+launch:
+  command: python cli.py
+publish:
+  repo: siwpan/worldbuilder
+  branch: master

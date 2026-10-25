@@ -1,10 +1,12 @@
-﻿id: particle
+﻿# 2026-10-26 锚点校正：Gitee 仓已于 2026-10-21 删仓重建为 siwpan/particlefx；
+# 本地发布区目录同步更名 G:\repos\particle -> repos\particlefx（旧地址无重定向直接 404）。
+id: particle
 name: 粒子系统库（示例）
 category: tool
 version: 1.0.0
-path: repos/particle
+path: repos/particlefx
 manual: true
 launch:
   command: python examples/fireworks.py
 publish:
-  repo: siwpan/particle
+  repo: siwpan/particlefx
