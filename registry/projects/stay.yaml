@@ -1,0 +1,11 @@
+﻿id: stay
+name: Progress Quest 2
+category: game
+gameplay: [idle]
+note: Progress Quest 2 正统续作
+order: 3
+version: 2.0.0
+path: G:\local\stay
+manual: true
+launch:
+  command: python main.py

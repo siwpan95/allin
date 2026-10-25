@@ -1,0 +1,14 @@
+id: adventurelog
+name: 探险日志（挂机 RPG）
+category: game
+gameplay: [idle]
+order: 6
+note: 挂机 RPG（2026-09 收编；order 顺延，前端挂机族视图按此排序）
+version: 1.0.0
+path: G:\repos\adventurelog
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/adventurelog
+  branch: master

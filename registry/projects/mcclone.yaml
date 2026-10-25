@@ -1,0 +1,12 @@
+﻿id: mcclone
+name: MC 克隆
+category: game
+gameplay: [building]
+version: 1.0.0
+path: G:\repos\mc-clone
+manual: true
+launch:
+  command: python launcher.py
+publish:
+  repo: siwpan/mc-clone
+  branch: master

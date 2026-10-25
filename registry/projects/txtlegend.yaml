@@ -1,0 +1,11 @@
+﻿id: txtlegend
+name: 文字传奇·点怪就打
+category: game
+gameplay: [rpg, text]
+version: 1.0.0
+path: G:\repos\legend
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/legend

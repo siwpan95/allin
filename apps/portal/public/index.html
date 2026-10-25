@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>allin-platform —— 库 · 工坊 · 引擎</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>allin-platform</h1>
+    <nav>
+      <button class="tab active" data-tab="library">库 Library</button>
+      <button class="tab" data-tab="workshop">工坊 Workshop</button>
+      <button class="tab" data-tab="engine">引擎 Engine</button>
+      <button class="tab" data-tab="alerts">告警 Alerts</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="tab-library" class="panel active">
+      <div id="problems" class="problems"></div>
+      <div id="chips" class="chips"></div>
+      <div id="lineage" class="lineage" style="display:none"></div>
+      <div id="library" class="grid"></div>
+    </section>
+    <section id="tab-workshop" class="panel">
+      <div class="toolbar">
+        <a class="badge" href="/workshop/catalog" target="_blank">静态目录页</a>
+        <button class="act slim" data-audit>审计流水</button>
+      </div>
+      <div id="audit" class="problems" style="display:none"></div>
+      <div id="workshop" class="list"></div>
+    </section>
+    <section id="tab-engine" class="panel">
+      <div id="engine" class="engine"></div>
+    </section>
+    <section id="tab-alerts" class="panel">
+      <p class="hint">分歧/报错事件订阅视图（E5）：各项目 harness 写入 data/divergence-events.jsonl，此处聚合展示。</p>
+      <div id="alerts" class="list"></div>
+    </section>
+  </main>
+
+  <footer>聚合不融合 · 子进程隔离 · 统一端口（ports.yaml 单一事实源） · <span id="uptime"></span></footer>
+  <script src="app.js"></script>
+</body>
+</html>

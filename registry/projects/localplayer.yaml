@@ -1,0 +1,11 @@
+id: localplayer
+name: 轻量播放器·本地媒体（浏览器扩展）
+category: tool
+version: 1.3.4
+path: G:\repos\localplayer
+manual: true
+launch:
+  command: python server.py
+publish:
+  repo: siwpan/localplayer
+  branch: master

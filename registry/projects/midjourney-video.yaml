@@ -1,0 +1,11 @@
+﻿id: midjourney-video
+name: MJ 视频助手
+category: crawler
+version: 1.0.0
+path: G:\repos\midjourney_video
+manual: true
+launch:
+  command: python gui.py
+publish:
+  repo: siwpan/midjourney_video
+  branch: master

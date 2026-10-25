@@ -1,0 +1,8 @@
+﻿id: zhuangtaiji
+name: 庄太极·多范式决策工作台
+category: tool
+version: 1.0.0
+path: G:\repos\zhuangtaiji
+manual: true
+launch:
+  command: python main.py

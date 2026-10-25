@@ -1,0 +1,11 @@
+id: santi-teleprompter
+name: 三题故事提词器
+category: tool
+version: 1.1.0
+path: G:\repos\santi-teleprompter
+manual: true
+launch:
+  command: npm start
+publish:
+  repo: siwpan/santi-teleprompter
+  branch: master

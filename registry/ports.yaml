@@ -1,0 +1,9 @@
+ports:
+  - port: 8000
+    service: radio
+  - port: 8010
+    service: mixer
+  - port: 8080
+    service: audio-separator
+  - port: 8100
+    service: video

@@ -1,0 +1,11 @@
+id: novel-down
+name: 读书爬虫（仅免费章节）
+category: crawler
+version: 0.8.40
+path: G:\repos\novel-down
+manual: true
+launch:
+  command: python -m noveldown.gui
+publish:
+  repo: siwpan/novel-down
+  branch: main

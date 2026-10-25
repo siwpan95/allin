@@ -1,0 +1,11 @@
+﻿id: image-scraper
+name: 图片爬取
+category: crawler
+version: 1.0.0
+path: G:\repos\image-scraper
+manual: true
+launch:
+  command: python gui_scraper.py
+publish:
+  repo: siwpan/image-scraper
+  branch: master

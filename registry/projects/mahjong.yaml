@@ -1,0 +1,12 @@
+﻿id: mahjong
+name: 麻将
+category: game
+gameplay: [mahjong]
+version: 1.0.0
+path: G:\repos\mahjong
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/mahjong
+  branch: master

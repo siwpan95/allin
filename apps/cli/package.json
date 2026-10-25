@@ -1,0 +1,19 @@
+{
+  "name": "@allin/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "allin-platform 命令行接口（ES 之于 Everything 的形态：portal 常驻服务 + 轻客户端；只读命令直连 registry）",
+  "bin": {
+    "allin": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@allin/core": "0.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

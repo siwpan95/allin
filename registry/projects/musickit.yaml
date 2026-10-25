@@ -1,0 +1,11 @@
+id: musickit
+name: 音色工程（采样整理 + remix 混音）
+category: media
+version: 1.0.0
+path: G:\repos\musickit
+manual: true
+launch:
+  command: python remix\main.py --remix
+publish:
+  repo: siwpan/musickit
+  branch: master

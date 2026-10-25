@@ -1,0 +1,11 @@
+﻿id: gan
+name: GAN 生成
+category: ai
+version: 1.0.0
+path: G:\repos\gan
+manual: true
+launch:
+  command: python gan.py
+publish:
+  repo: siwpan/gan
+  branch: master

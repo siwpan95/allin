@@ -1,0 +1,12 @@
+id: cordis-table-app
+name: Cordis 表格小应用
+category: tool
+version: 1.0.0
+path: G:\repos\cordis-table-app
+manual: true
+launch:
+  command: npm start
+publish:
+  repo: siwpan/cordis-table-app
+  branch: main
+note: Cordis 内核 + Python/OpenPyXL 经 JSON-RPC stdio 桥；需 Node 与 Python(openpyxl)，首次 npm install

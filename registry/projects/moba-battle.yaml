@@ -1,0 +1,11 @@
+﻿id: moba-battle
+name: MOBA 英雄大乱斗
+category: game
+gameplay: [moba]
+version: 1.0.0
+path: G:\repos\moba_battle_platform
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/moba_battle_platform

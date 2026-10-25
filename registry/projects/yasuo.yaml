@@ -1,0 +1,11 @@
+﻿id: yasuo
+name: 压缩工具
+category: tool
+version: 1.0.0
+path: G:\repos\yasuo
+manual: true
+launch:
+  command: python __main__.py
+publish:
+  repo: siwpan/yasuo
+  branch: master

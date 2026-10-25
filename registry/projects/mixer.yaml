@@ -1,0 +1,11 @@
+﻿id: mixer
+name: Mixer 流服务
+category: music
+version: 1.0.0
+path: G:\repos\musickit\remix
+port: 8010
+launch:
+  command: python tools\mixer_stream.py
+publish:
+  repo: siwpan/musickit
+  branch: master
