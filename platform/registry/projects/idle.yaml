@@ -1,0 +1,11 @@
+id: idle
+name: Idle Clicker 放置挂机
+category: game
+gameplay: [idle]
+note: 数值放置：石器→太空时代 35 装备
+order: 2
+version: 1.0.0
+path: G:\games\Idle
+manual: true
+launch:
+  command: python main.py

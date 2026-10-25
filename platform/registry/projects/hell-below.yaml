@@ -1,0 +1,9 @@
+id: hell-below
+name: 地狱之下（多线平台）
+category: game
+gameplay: [visual-novel]
+version: 1.0.0
+path: G:\games\hell below
+manual: true
+launch:
+  command: python launcher/main.py

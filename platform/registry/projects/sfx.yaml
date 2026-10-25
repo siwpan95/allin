@@ -1,0 +1,10 @@
+id: sfx
+name: 音效下载器
+category: tool
+version: 1.0.0
+path: G:\tools\audio\sfx
+manual: true
+launch:
+  command: python gui.py
+publish:
+  repo: siwpan/sfx-download

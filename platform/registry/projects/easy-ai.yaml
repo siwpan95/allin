@@ -1,0 +1,11 @@
+id: easy-ai
+name: Easy AI
+category: tool
+version: 1.0.0
+path: G:\tools\ai\easy-ai
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: easy-ai

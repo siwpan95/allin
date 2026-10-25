@@ -1,0 +1,10 @@
+id: audio-pipeline
+name: 音乐制作流水线
+category: tool
+version: 1.0.0
+path: G:\tools\audio\audio_pipeline
+manual: true
+launch:
+  command: python cli.py
+publish:
+  repo: siwpan/audio-pipeline

@@ -1,0 +1,11 @@
+id: pyinstaller
+name: 打包器
+category: tool
+version: 1.0.0
+path: G:\tools\dev\pyinstaller
+manual: true
+launch:
+  command: python packer_pro.py
+publish:
+  repo: siwpan/tools-collection
+  branch: pyinstaller

@@ -1,0 +1,11 @@
+id: webcopier
+name: 网站复制器
+category: crawler
+version: 1.0.0
+path: G:\tools\crawler\webcopier
+manual: true
+launch:
+  command: python WebCopier_GUI.py
+publish:
+  repo: siwpan/tools-collection
+  branch: webcopier

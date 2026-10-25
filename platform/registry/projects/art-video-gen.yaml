@@ -1,0 +1,11 @@
+id: art-video-gen
+name: 艺术视频生成器
+category: tool
+version: 1.0.0
+path: G:\tools\visual\art_video_gen
+manual: true
+launch:
+  command: python integrated_video_audio_generator.py
+publish:
+  repo: siwpan/tools-collection
+  branch: art_video_gen

@@ -1,0 +1,9 @@
+id: text-fps
+name: 文字 FPS
+category: game
+gameplay: [text]
+version: 1.0.0
+path: G:\games\text_fps
+manual: true
+launch:
+  command: python text_fps/main.py

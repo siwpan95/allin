@@ -1,0 +1,8 @@
+id: haha
+name: 消息应用（MVC）
+category: tool
+version: 1.0.0
+path: G:\tools\desktop\haha
+manual: true
+launch:
+  command: python main.py

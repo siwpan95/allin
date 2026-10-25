@@ -1,0 +1,11 @@
+id: pq-multiverse
+name: Progress Quest Multiverse
+category: game
+gameplay: [idle]
+note: PQ Multiverse 多元宇宙
+order: 4
+version: 1.0.0
+path: G:\games\pq_multiverse
+manual: true
+launch:
+  command: python main.py

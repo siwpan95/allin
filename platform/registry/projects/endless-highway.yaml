@@ -1,0 +1,11 @@
+id: endless-highway
+name: 无尽高速公路
+category: game
+gameplay: [driving]
+version: 1.0.0
+path: G:\games\Endless Highway
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/lonely-desert-road

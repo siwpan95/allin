@@ -1,0 +1,10 @@
+id: pywallpaper
+name: 效果器壁纸
+category: media
+version: 1.0.0
+path: G:\media\pywallpaper
+manual: true
+launch:
+  command: pythonw main.pyw
+publish:
+  repo: siwpan/pywallpaper

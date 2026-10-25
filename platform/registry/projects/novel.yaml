@@ -1,0 +1,10 @@
+id: novel
+name: 万界归墟生成器
+category: ai
+version: 1.0.0
+path: G:\ai\novel
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/novel

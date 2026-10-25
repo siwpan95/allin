@@ -1,0 +1,9 @@
+id: russia
+name: 俄罗斯轮盘（ECS 版）
+category: game
+gameplay: [roulette]
+version: 1.0.0
+path: G:\games\russia
+manual: true
+launch:
+  command: python main.py

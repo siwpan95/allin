@@ -1,0 +1,11 @@
+id: jotunnslayer
+name: JOTUNNSLAYER 复刻
+category: game
+gameplay: [survivor]
+version: 1.0.0
+path: G:\games\jotunnslayer_py
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/jotunnslayer

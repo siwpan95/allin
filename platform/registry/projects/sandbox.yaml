@@ -1,0 +1,12 @@
+id: sandbox
+name: 沙盒游戏
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\games\sandbox
+manual: true
+launch:
+  command: python run.py
+publish:
+  repo: siwpan/game-collection
+  branch: sandbox

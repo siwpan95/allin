@@ -1,0 +1,8 @@
+id: ddd2
+name: 元胞自动机视频生成器
+category: tool
+version: 1.0.0
+path: G:\tools\visual\ddd2
+manual: true
+launch:
+  command: python "ddd (2).py"

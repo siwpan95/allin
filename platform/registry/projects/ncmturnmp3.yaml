@@ -1,0 +1,11 @@
+id: ncmturnmp3
+name: NCM 转 MP3
+category: tool
+version: 1.0.0
+path: G:\tools\audio\ncmturnmp3
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: ncmturnmp3

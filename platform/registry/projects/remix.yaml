@@ -1,0 +1,11 @@
+id: remix
+name: Remix 混音 CLI
+category: music
+version: 1.0.0
+path: G:\music\musickit\remix
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/music
+  branch: musickit

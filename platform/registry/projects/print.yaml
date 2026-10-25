@@ -1,0 +1,11 @@
+id: print
+name: 打印工具
+category: tool
+version: 1.0.0
+path: G:\tools\desktop\print
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: print

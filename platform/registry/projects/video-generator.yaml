@@ -1,0 +1,10 @@
+id: video-generator
+name: 随机视频生成器
+category: ai
+version: 1.0.0
+path: G:\ai\video_generator
+manual: true
+launch:
+  command: python video_generator.py
+publish:
+  repo: siwpan/video-generator

@@ -1,0 +1,12 @@
+id: arcade
+name: 街机合集（6 小游戏选单）
+category: game
+gameplay: [arcade]
+version: 1.0.0
+path: G:\games\arcade-collection
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/game-collection
+  branch: arcade

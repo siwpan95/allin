@@ -1,0 +1,11 @@
+id: photo
+name: 照片工具
+category: media
+version: 1.0.0
+path: G:\media\photo
+manual: true
+launch:
+  command: python app.py
+publish:
+  repo: siwpan/media-collection
+  branch: photo

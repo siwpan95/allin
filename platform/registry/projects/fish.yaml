@@ -1,0 +1,12 @@
+id: fish
+name: 捕鱼
+category: game
+gameplay: [fishing]
+version: 1.0.0
+path: G:\games\fish
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/game-collection
+  branch: fish

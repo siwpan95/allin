@@ -1,0 +1,11 @@
+id: drawpic
+name: 画图
+category: tool
+version: 1.0.0
+path: G:\tools\visual\drawpic
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: drawpic

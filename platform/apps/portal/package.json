@@ -1,0 +1,17 @@
+{
+  "name": "@allin/portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "allin-platform 前台 :9000 —— 库 Library / 工坊 Workshop / 引擎 Engine（自 private-radio-stations/apps/portal 升级迁移）",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@allin/core": "0.1.0",
+    "js-yaml": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

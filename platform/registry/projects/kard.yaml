@@ -1,0 +1,11 @@
+id: kard
+name: 打牌
+category: game
+gameplay: [card]
+version: 1.0.0
+path: G:\games\kard
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/kard

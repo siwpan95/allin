@@ -1,0 +1,11 @@
+id: photovideo
+name: 照片视频
+category: tool
+version: 1.0.0
+path: G:\tools\visual\photovideo
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: photovideo

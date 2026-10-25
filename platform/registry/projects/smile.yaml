@@ -1,0 +1,11 @@
+id: smile
+name: 签到+表情包生成器
+category: tool
+version: 2.0.0
+path: G:\tools\desktop\smile
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/sign-in-simulator
+  branch: "2.0"

@@ -1,0 +1,11 @@
+id: repocheck
+name: 仓库体检
+category: tool
+version: 1.0.0
+path: G:\tools\dev\repocheck
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/tools-collection
+  branch: repocheck

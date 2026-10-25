@@ -1,0 +1,11 @@
+id: paotuan
+name: 跑团模拟器（镜中之失）
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\games\paotuan
+manual: true
+launch:
+  command: python mirror_launcher.py
+publish:
+  repo: siwpan/running-group-simulator

@@ -1,0 +1,9 @@
+id: d20
+name: D&D 角色构建器
+category: game
+gameplay: [sim]
+version: 2.0.0
+path: G:\games\D20
+manual: true
+launch:
+  command: python mvp_gui.py

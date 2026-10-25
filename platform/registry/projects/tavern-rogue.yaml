@@ -1,0 +1,9 @@
+id: tavern-rogue
+name: 酒馆异闻录
+category: game
+gameplay: [rpg]
+version: 1.0.0
+path: G:\games\TavernRogue
+manual: true
+launch:
+  command: python run_gui.py

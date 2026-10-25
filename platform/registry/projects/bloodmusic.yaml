@@ -1,0 +1,10 @@
+id: bloodmusic
+name: BloodMusic 音频合成
+category: tool
+version: 1.0.0
+path: G:\tools\audio\bloodmusic
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/audio-generation

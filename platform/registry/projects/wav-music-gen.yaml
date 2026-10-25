@@ -1,0 +1,11 @@
+id: wav-music-gen
+name: 波形音乐生成
+category: tool
+version: 1.0.0
+path: G:\tools\audio\wav_music_gen
+manual: true
+launch:
+  command: python gui.py
+publish:
+  repo: siwpan/tools-collection
+  branch: wav_music_gen

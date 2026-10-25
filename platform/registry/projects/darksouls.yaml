@@ -1,0 +1,11 @@
+id: darksouls
+name: 黑暗之魂·卡牌编年史
+category: game
+gameplay: [card, rpg]
+version: 1.0.0
+path: G:\games\darksouls
+manual: true
+launch:
+  command: python main.pyw
+publish:
+  repo: siwpan/darksouls

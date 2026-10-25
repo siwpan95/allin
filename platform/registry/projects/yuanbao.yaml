@@ -1,0 +1,11 @@
+id: yuanbao
+name: 元宝
+category: media
+version: 1.0.0
+path: G:\media\yuanbao
+manual: true
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/media-collection
+  branch: yuanbao

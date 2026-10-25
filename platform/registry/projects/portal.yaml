@@ -1,0 +1,12 @@
+id: portal
+name: 平台门户（本平台自举）
+category: platform
+version: 0.1.0
+path: G:\platform
+port: 9000
+manual: true
+launch:
+  command: npm run portal
+publish:
+  repo: siwpan/allin-platform
+  branch: master

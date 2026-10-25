@@ -1,0 +1,10 @@
+id: crawl-hub
+name: 爬虫聚合启动器
+category: crawler
+version: 1.0.0
+path: G:\crawlers\crawl_hub
+manual: true
+launch:
+  command: python launcher.py
+publish:
+  repo: siwpan/crawl-hub

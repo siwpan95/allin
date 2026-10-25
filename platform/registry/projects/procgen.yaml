@@ -1,0 +1,11 @@
+id: procgen
+name: 程序化生成器
+category: tool
+version: 1.0.0
+path: G:\tools\game\procgen
+manual: true
+launch:
+  command: python cli.py
+publish:
+  repo: siwpan/tools-collection
+  branch: procgen

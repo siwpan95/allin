@@ -1,0 +1,11 @@
+id: shikonghuaban
+name: 时空画板
+category: media
+version: 1.0.0
+path: G:\media\shikonghuaban
+manual: true
+launch:
+  command: python -m shikonghuaban
+publish:
+  repo: siwpan/media-collection
+  branch: shikonghuaban

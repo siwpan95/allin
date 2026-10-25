@@ -1,0 +1,8 @@
+id: captcha-demo
+name: 验证码演示
+category: crawler
+version: 1.0.0
+path: G:\crawlers\captcha_demo
+manual: true
+launch:
+  command: python main.py
