@@ -1,0 +1,10 @@
+# repocheck 的开发依赖（运行时仍然是零第三方依赖）
+#
+#   pip install -r requirements-dev.txt
+#   pytest
+#
+# 可选增强依赖（装了会启用更严格的二次校验，不装也能完整运行）：
+#   pip install "repocheck[full]"
+#
+# 版本用 == 锁定：开发依赖漂移会让「本地全绿、CI 红」这种事反复发生。
+pytest==9.1.1

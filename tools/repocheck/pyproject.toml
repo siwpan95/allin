@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repocheck"
+version = "2.0.0"
+description = "离线仓库体检：30 条规则检查工程卫生并给出 0-10 健康分"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "siwpan"}]
+keywords = ["repository", "health", "lint", "audit", "offline", "scorecard"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://gitee.com/siwpan/repocheck"
+Repository = "https://gitee.com/siwpan/repocheck"
+Changelog = "https://gitee.com/siwpan/repocheck/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+# 全部为宽松许可（Apache-2.0 / MIT），装了就启用更严格的二次校验。
+# 不装也能完整运行：内置实现自成一体，结论口径不变。
+full = [
+  "license-expression>=30.0",
+  "detect-secrets>=1.5",
+  "markdown-it-py>=3.0",
+  "requirements-parser>=0.11",
+  "packaging>=23.0",
+]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+repocheck = "cli:main"
+
+[tool.setuptools]
+py-modules = [
+  "main", "cli", "scanner", "scanctx", "rulebase", "report", "_optional",
+  "rules_core", "rules_docs", "rules_vcs", "rules_ci", "rules_misc",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+addopts = "-q"
