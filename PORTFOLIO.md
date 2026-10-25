@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 121 个仓库**（公开 121 · 私有 0）。
+**共 119 个仓库**（公开 119 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -14,7 +14,6 @@
 | [siwpan/3dworld](https://gitee.com/siwpan/3dworld.git) | — | 0 | 公开 | pyglet 三维世界与动画演出：48s 五幕编排 + kkrieger 96s 四幕 + 9 个单文件 demos，MIT |
 | [siwpan/adventurelog](https://gitee.com/siwpan/adventurelog.git) | Python | 0 | 公开 | 探险日志 |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
-| [siwpan/allin-platform](https://gitee.com/siwpan/allin-platform.git) | — | 0 | 公开 | Steam 式全项目集成平台：库 + 创意工坊 + 引擎视图（聚合不融合） |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
 | [siwpan/arcade](https://gitee.com/siwpan/arcade.git) | — | 0 | 公开 | 街机游戏合集（自 game-collection 拆分） |
 | [siwpan/art_video_gen](https://gitee.com/siwpan/art_video_gen.git) | — | 0 | 公开 | 元胞自动机 + 粒子系统生成随机艺术视频，程序化音频同步、ffmpeg 合并 |
@@ -105,7 +104,6 @@
 | [siwpan/random-dungeon-](https://gitee.com/siwpan/random-dungeon-.git) | Python | 0 | 公开 | 随机地牢 |
 | [siwpan/remix](https://gitee.com/siwpan/remix.git) | — | 0 | 公开 | remix pydub ??? |
 | [siwpan/renamer](https://gitee.com/siwpan/renamer.git) | — | 0 | 公开 | 正则批量重命名桌面工具：默认 dry-run、五类风险标红、链式改名安全处理 |
-| [siwpan/repocheck](https://gitee.com/siwpan/repocheck.git) | — | 0 | 公开 | 工程卫生体检：一次扫出「无版本控制 / 无文档 / 无测试 / 无依赖声明 / 无 License / import 断裂」 |
 | [siwpan/roleplayer](https://gitee.com/siwpan/roleplayer.git) | — | 0 | 公开 | 跑团模拟器 v3.0：D&D 三宝书 + GURPS + CoC 融合（角色构建 + GM 模拟 + 三规则集判定 + 战役引擎 + Web 面板） |
 | [siwpan/running-group-simulator](https://gitee.com/siwpan/running-group-simulator.git) | Python | 0 | 公开 | TRPG 多系统裁决中间件（镜中之失）：GURPS / CoC 7e / D&D 5e / WoD 可插拔规则画像，让 GM 专注叙事 |
 | [siwpan/russia](https://gitee.com/siwpan/russia.git) | — | 0 | 公开 | ??????(/local ???? 3,2026-08-27) |

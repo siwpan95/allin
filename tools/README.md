@@ -1,7 +1,18 @@
-# tools/ — Gitee 推送 / 发版配套脚本
+# tools/ — Gitee 推送 / 发版配套脚本 + 仓库体检器
 
-本目录放与 `docs/gitee推送流程_2026-09-25.md`、`docs/gitee发版指南.md` 配套的**可执行脚本**。
-所有脚本**零三方依赖**（仅用 Python 3.x 标准库），拷走即可用，不依赖本仓库其它部分。
+本目录放与 `docs/规范/SPEC-101-推送流程.md`、`docs/规范/SPEC-102-发版指南.md` 配套的**可执行脚本**，
+以及 2026-10-26 并入的**离线体检器** `repocheck/`（原独立仓 `siwpan/repocheck`）。
+脚本类一律**零三方依赖**（仅用 Python 3.x 标准库），拷走即可用，不依赖本仓库其它部分。
+
+## 子件一览
+
+| 子件 | 用途 | 入口 |
+| --- | --- | --- |
+| `gitee_release.py` | 建仓 / 转公开 / 发版 / 附件 | `python tools/gitee_release.py whoami` |
+| `build_portfolio.py` | 从 Gitee API 生成 [`../PORTFOLIO.md`](../PORTFOLIO.md) | `python tools/build_portfolio.py --apply` |
+| `repo_hygiene.py` | 仓库卫生巡检 | 见文末 |
+| `gate/` | 工作区门禁集合（文档索引契约等） | 见 `gate/README.md` |
+| **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
 
 ---
 

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Steam 式全项目集成平台：库 Library + 创意工坊 Workshop + 引擎视图（聚合不融合）",
+  "license": "MIT",
   "workspaces": [
     "packages/*",
     "apps/*"
