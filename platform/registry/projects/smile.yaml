@@ -7,5 +7,6 @@ manual: true
 launch:
   command: python main.py
 publish:
-  repo: siwpan/sign-in-simulator
-  branch: "2.0"
+  # 2026-10-26 校正：smile 系自 sign-in-simulator#2.0 拆分独立后的新仓，旧锚点已漂
+  repo: siwpan/smile
+  branch: master

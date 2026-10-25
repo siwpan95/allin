@@ -75,7 +75,10 @@ test('GET /api/library 数量与 registry yaml 文件数一致（problems 为空
   const ids = body.items.map(i => i.id)
   // 注：'d20' 原在此清单内，但它的 registry 条目已于 2026-10-20 的「清理 d20 死项」提交中删除，
   // 而当时漏同步本断言 —— 属预存在技术债，2026-10-26 三仓整合跑 npm test 时发现并随清理移除。
-  for (const id of ['radio', 'video', 'portal', 'crawl-hub', 'audio-pipeline', 'audio-separator', 'mixer', 'allin-engine', 'dwarf-scrolls', 'pywallpaper', 'cellular', 'shikonghuaban', 'bee', 'jotunnslayer', 'novel', 'video-generator', 'station', 'remix', 'cordis-snake', 'repocheck', 'bloodmusic', 'webcopier', 'arcade', 'idle', 'stay', 'pq-multiverse', 'life-reset', 'endless-highway', 'russia', 'txtlegend', 'darksouls', 'kard', 'loly', 'hell-below', 'moba-battle', 'carimara']) {
+  // 注：'repocheck' 原在此清单内，但其 registry 条目已于 2026-10-26 三仓整合治理中
+  // 删除（repocheck 以 subtree 并入 allin 的 tools/repocheck/，不再是独立仓），
+  // 同步将其从本断言移除 —— 与 d20 死项清理同手法。
+  for (const id of ['radio', 'video', 'portal', 'crawl-hub', 'audio-pipeline', 'audio-separator', 'mixer', 'allin-engine', 'dwarf-scrolls', 'pywallpaper', 'cellular', 'shikonghuaban', 'bee', 'jotunnslayer', 'novel', 'video-generator', 'station', 'remix', 'cordis-snake', 'bloodmusic', 'webcopier', 'arcade', 'idle', 'stay', 'pq-multiverse', 'life-reset', 'endless-highway', 'russia', 'txtlegend', 'darksouls', 'kard', 'loly', 'hell-below', 'moba-battle', 'carimara']) {
     assert.ok(ids.includes(id), 'missing ' + id)
   }
   assert.deepEqual(body.problems, [])
