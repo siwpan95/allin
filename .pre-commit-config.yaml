@@ -1,0 +1,30 @@
+# 本地提交前的静态检查。
+#
+#   pip install pre-commit
+#   pre-commit install
+#   pre-commit run --all-files
+#
+# 这些工具是**开发期**依赖，不进入运行时；repocheck 本体仍然零第三方依赖。
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        # 只看中高危；低危噪音太多，交付前由人工判断
+        args: ["-ll", "-r", "."]
+        exclude: ^test_scanner\.py$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: check-yaml
