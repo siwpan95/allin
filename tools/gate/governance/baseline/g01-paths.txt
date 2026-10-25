@@ -1,3 +1,27 @@
 # Baseline ratchet for this gate. One finding key per line.
 # Refresh only after the remaining findings were reviewed in full:
 #   python governance/gates/<gate>.py --no-baseline --list-all
+platform/start-platform.bat|6b031fb9dec89fc0|windows
+preset/allin/agent.cordis.yml|292a3e9515c5a4df|windows
+preset/allin/agent.cordis.yml|9f50e7a126e7dd58|windows
+siwpan旧机配置汇总.html|06315a7941fab210|windows
+siwpan旧机配置汇总.html|231e91a79cdcd441|windows
+siwpan旧机配置汇总.html|3ba6f8dac0e25e27|windows
+siwpan旧机配置汇总.html|6993feecd1445ec9|windows
+siwpan旧机配置汇总.html|7696a2bc1269efba|windows
+siwpan旧机配置汇总.html|9578e808f846c17a|windows
+siwpan旧机配置汇总.html|c5da8e0c71152606|windows
+siwpan旧机配置汇总.html|c61523038dce0e9e|windows
+siwpan旧机配置汇总.html|c79be48187202c0a|windows
+siwpan旧机配置汇总.html|e7cc0b27b91630bd|windows
+tools/gate/audit/repo_hygiene_exemptions.csv|8f8350b87d0c66a0|windows
+tools/gate/audit/repo_hygiene_exemptions.csv|e329855d06064f7d|windows
+tools/gate/check_gate_drift.py|2a97dc916371b294|windows
+tools/gate/check_undefined_names.py|ff9327ba11ebd579|windows
+tools/gate/scan_hardcoded.ps1|1d950d1cdddba86f|windows
+tools/gate/scan_hardcoded.ps1|dd7d6a7f8ee8f1f6|windows
+tools/gate/scan_hardcoded.ps1|df4c2576a0be6749|windows
+tools/repo_hygiene.py|63369db2c815f5b3|windows
+tools/repo_hygiene.py|6cb117cc72eabde8|windows
+tools/repocheck/cli.py|13bedb21f1f60698|windows
+tools/repocheck/test_scanner.py|d4dafed0913c1005|windows

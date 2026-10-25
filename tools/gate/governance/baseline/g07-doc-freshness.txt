@@ -1,3 +1,4 @@
 # Baseline ratchet for this gate. One finding key per line.
 # Refresh only after the remaining findings were reviewed in full:
 #   python governance/gates/<gate>.py --no-baseline --list-all
+docs/记录/交接/2026-08.md|20d1bcc665103dbb|snapshot-without-expiry

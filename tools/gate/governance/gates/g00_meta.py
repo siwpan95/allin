@@ -106,7 +106,15 @@ def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> R
             continue
         if not entry["rules"]:
             report.block("registry", str(registry_path.relative_to(root)), 0, f"{identifier}: declares no rules")
-        script = root / str(entry["script"])
+        # Registry script paths are expressed relative to the governance subtree's
+        # parent (tools/gate) — matching the base run.ts uses to resolve gate
+        # scripts. Derive it from the *registry file* we were handed, not the module
+        # constant GOVERNANCE_DIR: the meta gate's own --selfcheck runs against a
+        # Sandbox() copy whose registry lives under a temp dir, so a fixed constant
+        # would point at the real tree and the fixture scripts would never resolve.
+        # registry_path.parent.parent == tools/gate in the real run, == sandbox.path
+        # in the self-check, so both scenarios resolve correctly.
+        script = registry_path.parent.parent / str(entry["script"])
         if not script.is_file():
             report.block("registry", str(registry_path.relative_to(root)), 0,
                          f"{identifier}: script not found at {entry['script']}")
