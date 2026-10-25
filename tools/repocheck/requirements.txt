@@ -1,0 +1,5 @@
+# repocheck dependencies (auto-generated 2026-10-21)
+# no third-party deps (stdlib only) —— 运行时保持零第三方依赖
+#
+# 可选增强依赖见 pyproject.toml 的 [project.optional-dependencies].full；
+# 装了会用更严格的库做二次校验，不装则走内置实现，结论口径一致。

@@ -1,0 +1,9 @@
+﻿
+# 未跟踪产物/输出治理（2026-08-28）
+# 注：*.spec 自 2.0.0 起纳入版本库 —— 构建配置需要可复现
+__pycache__/
+build/
+dist/
+.pytest_cache/
+.venv/
+*.pyc
