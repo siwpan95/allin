@@ -39,4 +39,6 @@ class PlatformService(Service):
         reg_dir = os.path.join(PLATFORM_DIR, 'registry', 'projects')
         n = len([f for f in os.listdir(reg_dir) if f.endswith('.yaml')])
         print(f'registry 项目条目：{n}')
-        return n
+        # 数量是**输出**，不是退出码：`allin` 会把返回值当 exit code 用，
+        # 返回 n 会让 `registry-count` 以 138 退出（脚本侧看起来像崩溃）。
+        return 0

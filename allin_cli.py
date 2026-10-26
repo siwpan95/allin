@@ -24,6 +24,19 @@ if ROOT not in sys.path:
 from kernel.tree import mount_tree, WANT_ALL, config_path, ALLIN_CONFIG  # noqa: E402
 
 
+def _configure_stdio() -> None:
+    """强制 UTF-8 输出，与治理门禁 govlib.configure_stdio() 同一口径。
+
+    为什么不靠系统默认：PowerShell 7.4+ 按 UTF-8 解码子进程输出，而 Python 在
+    cp936 控制台下会写 GBK 字节 ⇒ `allin --help` 的中文全变乱码。门禁侧早已统一
+    强制 UTF-8，CLI 作为同一仓的前门也照此办理（2026-10-26 实测）。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, 'reconfigure', None)
+        if reconfigure is not None:
+            reconfigure(encoding='utf-8', errors='replace', newline='\n')
+
+
 async def _boot():
     return await mount_tree(config_path(ALLIN_CONFIG), want=WANT_ALL)
 
@@ -116,6 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    _configure_stdio()
     args = build_parser().parse_args()
     rc = dispatch(args)
     return _exit_code(rc)
