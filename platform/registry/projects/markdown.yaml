@@ -1,0 +1,13 @@
+id: markdown
+name: Markdown 查看器
+category: tool
+version: 1.0.0
+path: repos/markdown
+manual: true
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 建仓并纳入治理：原发布区 G:\local\write 一类的本地区项目，
+  # 迁至 G:\repos 后统一在 allin registry 登记（去符盘纪律：只写 repos/<仓名>）
+  repo: siwpan/markdown
+  branch: master

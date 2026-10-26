@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 124 个仓库**（公开 124 · 私有 0）。
+**共 129 个仓库**（公开 129 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -54,6 +54,7 @@
 | [siwpan/haha](https://gitee.com/siwpan/haha.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
 | [siwpan/happy-childrens-day](https://gitee.com/siwpan/happy-childrens-day.git) | Python | 0 | 公开 | 六一礼物 |
 | [siwpan/hell-below](https://gitee.com/siwpan/hell-below.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
+| [siwpan/hushi_twrj](https://gitee.com/siwpan/hushi_twrj.git) | — | 0 | 公开 | 胡适留学日记全集抓取/OCR/校验归档（纯标准库，零第三方依赖）｜/repos/hushi_twrj |
 | [siwpan/Idle](https://gitee.com/siwpan/Idle.git) | — | 0 | 公开 | ??????(/local ???? 2,2026-08-27) |
 | [siwpan/image-scraper](https://gitee.com/siwpan/image-scraper.git) | — | 0 | 公开 | 30 源统一图片 / 视频抓取引擎：JSON 配置驱动、自动注册、断点续传、防盗链绕过 + Playwright / Edge 抓包探针 |
 | [siwpan/imgproc](https://gitee.com/siwpan/imgproc.git) | — | 0 | 公开 | 图像批处理 GUI：缩放 / 灰度 / 水印 / 缩略图 / 格式转换，绝不覆盖原图 |
@@ -69,6 +70,7 @@
 | [siwpan/maga](https://gitee.com/siwpan/maga.git) | — | 0 | 公开 | ??????(/local ???? 3,2026-08-27) |
 | [siwpan/magic-tower](https://gitee.com/siwpan/magic-tower.git) | Python | 0 | 公开 | 手冲味道好 |
 | [siwpan/mahjong](https://gitee.com/siwpan/mahjong.git) | — | 0 | 公开 | mahjong（自 game-collection 拆分） |
+| [siwpan/markdown](https://gitee.com/siwpan/markdown.git) | — | 0 | 公开 | Markdown 查看器（Tkinter + Cordis 重写架构）｜/repos/markdown |
 | [siwpan/math](https://gitee.com/siwpan/math.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
 | [siwpan/mathematical-formula-renderer](https://gitee.com/siwpan/mathematical-formula-renderer.git) | Python | 0 | 公开 | 类教学工具 |
 | [siwpan/mc-clone](https://gitee.com/siwpan/mc-clone.git) | — | 0 | 公开 | MCclone（自 game-collection 拆分） |
@@ -98,6 +100,7 @@
 | [siwpan/players-unified](https://gitee.com/siwpan/players-unified.git) | — | 0 | 公开 | 本地三个播放器(daily_player/localplayer/PluginPlayer)的整合规划 meta 仓库 |
 | [siwpan/pluginplayer](https://gitee.com/siwpan/pluginplayer.git) | — | 0 | 公开 | 插件版 Windows 播放器：FFmpeg 9 + SDL3 重写内核，C ABI 插件宿主（事件总线 / 帧处理链 / JSON-RPC 控制通道 / 完整性清单） |
 | [siwpan/pomodmer](https://gitee.com/siwpan/pomodmer.git) | — | 0 | 公开 | Cordis 内核 + 本地 Web UI 的番茄钟计时器（Pomodoro），服务端权威计时 |
+| [siwpan/pq-multiverse](https://gitee.com/siwpan/pq-multiverse.git) | — | 0 | 公开 | Progress Quest Multiverse 多元宇宙｜/repos/pq-multiverse |
 | [siwpan/print](https://gitee.com/siwpan/print.git) | — | 0 | 公开 | 纯 Python 中文拼音输入法：状态机内核 + rime-ice 真实词频 + 系统级候选窗口 |
 | [siwpan/private-radio-stations](https://gitee.com/siwpan/private-radio-stations.git) | Python | 0 | 公开 | 私人电台 + 转播整机方案：音频电台（HLS / ICY）+ 视频转播 + 门户面板，独立进程、按需启停 |
 | [siwpan/procedural-video](https://gitee.com/siwpan/procedural-video.git) | — | 0 | 公开 | procedural_video（自 ai-collection 拆分） |
@@ -117,6 +120,7 @@
 | [siwpan/shikonghuaban](https://gitee.com/siwpan/shikonghuaban.git) | — | 0 | 公开 | 时空画板（自 media-collection 拆分） |
 | [siwpan/sign-in-simulator](https://gitee.com/siwpan/sign-in-simulator.git) | Python | 0 | 公开 | 签到一下吧 |
 | [siwpan/smile](https://gitee.com/siwpan/smile.git) | — | 0 | 公开 | smile 签到+表情包（自 sign-in-simulator#2.0 拆分） |
+| [siwpan/stay](https://gitee.com/siwpan/stay.git) | — | 0 | 公开 | Progress Quest 2 正统续作｜/repos/stay |
 | [siwpan/subtitle](https://gitee.com/siwpan/subtitle.git) | — | 0 | 公开 | 桌面字幕处理工具（Tkinter + ffmpeg）：提取、编辑、烧录，面向中文用户 |
 | [siwpan/superengine](https://gitee.com/siwpan/superengine.git) | — | 0 | 公开 | 基于 cordis 的三仓组合仓（worldbuilder/an-engine/3dworld）：契约 + 桥接 + 装配 + 门禁 |
 | [siwpan/table-hanging-machine](https://gitee.com/siwpan/table-hanging-machine.git) | Python | 0 | 公开 | excel表格挂机 |
@@ -132,6 +136,7 @@
 | [siwpan/weiqi_lab](https://gitee.com/siwpan/weiqi_lab.git) | — | 0 | 公开 | ������������������������������ JS ���� + Markov/CNN ������������MIT�� |
 | [siwpan/weor](https://gitee.com/siwpan/weor.git) | — | 0 | 公开 | weor（自 ai-collection 拆分） |
 | [siwpan/worldbuilder](https://gitee.com/siwpan/worldbuilder.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
+| [siwpan/write](https://gitee.com/siwpan/write.git) | — | 0 | 公开 | 网文创作与素材工作区（多部连载网文正文/设定/素材）｜/repos/write |
 | [siwpan/yasuo](https://gitee.com/siwpan/yasuo.git) | — | 0 | 公开 | 文件加密与压缩工具：AES-256-GCM / CBC + zlib / lzma / bz2，GUI 与 CLI 双入口 |
 | [siwpan/yuanbao](https://gitee.com/siwpan/yuanbao.git) | — | 0 | 公开 | 细胞工厂（自 media-collection 拆分） |
 | [siwpan/zhuangtaiji](https://gitee.com/siwpan/zhuangtaiji.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |

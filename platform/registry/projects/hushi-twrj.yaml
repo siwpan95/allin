@@ -1,0 +1,14 @@
+id: hushi-twrj
+name: 胡适日记本地存档
+category: crawler
+version: 1.0.0
+path: repos/hushi_twrj
+manual: true
+note: 胡适留学日记全集抓取/OCR/校验归档（纯标准库，零第三方依赖）
+launch:
+  command: python crawl/build_all.py
+publish:
+  # 2026-10-26 建仓并纳入治理；id 用连字符（登记 id 受 ^[a-z0-9][a-z0-9-]*$ 约束，
+  # 下划线非法），而 path/publish.repo 保留真实仓名 hushi_twrj
+  repo: siwpan/hushi_twrj
+  branch: master

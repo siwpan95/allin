@@ -1,0 +1,14 @@
+id: write
+name: 网文创作与素材工作区
+category: tool
+version: 1.0.0
+path: repos/write
+manual: true
+note: 纯文本创作工作区（多部连载网文的正文/设定/素材），无构建链路，launch 为打开目录
+launch:
+  command: explorer .
+publish:
+  # 2026-10-26 建仓并纳入治理：原非 git 仓（README 曾写"G:\local 为未发布区"），
+  # 已建仓发布并迁至 G:\repos
+  repo: siwpan/write
+  branch: master

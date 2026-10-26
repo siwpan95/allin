@@ -9,3 +9,8 @@ path: repos/pq-multiverse
 manual: true
 launch:
   command: python main.py
+publish:
+  # 2026-10-26 补登：原为 G:\local 发布区项目，2026-10-26 建仓发布并迁至 G:\repos，
+  # path 一直是 repos/pq-multiverse（此前因目录不在 G:\repos 而悬空，现已自愈）
+  repo: siwpan/pq-multiverse
+  branch: master
