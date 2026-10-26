@@ -61,7 +61,7 @@ const REQUIRED = ['id', 'name', 'category', 'version']
 export const KNOWN_GAMEPLAY = [
   'arcade', 'survivor', 'driving', 'roulette', 'snake', 'idle', 'rpg', 'card',
   'fishing', 'mahjong', 'building', 'moba', 'puzzle', 'sports', 'music',
-  'visual-novel', 'sim', 'chess', 'text', 'shooting',
+  'visual-novel', 'sim', 'chess', 'go', 'text', 'shooting',
 ]
 
 /**

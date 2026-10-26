@@ -1,0 +1,14 @@
+id: lab
+name: 国际象棋多语言移植实验场
+category: game
+gameplay: [chess]
+version: 1.0.0
+path: repos/lab
+manual: true
+note: 10 语言（Py/Js/Rust/C++/C#/Go/Java/F#/TS/VB）功能对等国际象棋引擎 + perft 黄金值一致性 + 跨语言循环赛；weiqi_lab 的母仓
+launch:
+  command: node chess-cordis/test_engine.mjs
+publish:
+  # 2026-10-26 补登：该仓早已是 siwpan/lab 上的公开仓，此前未入 registry（与 weiqi_lab 同类缺口）
+  repo: siwpan/lab
+  branch: master

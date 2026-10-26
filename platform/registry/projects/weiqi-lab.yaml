@@ -1,0 +1,16 @@
+id: weiqi-lab
+name: 围棋多语言引擎实验场
+category: game
+gameplay: [go]
+version: 1.0.0
+path: repos/weiqi_lab
+manual: true
+note: 6 语言（Py/Js/Rust/C++/C#/Go）功能对等围棋引擎 + 独立裁判层 + 9 路跨语言循环赛；母仓为 repos/lab（国际象棋版）
+launch:
+  command: node harness/host.mjs
+publish:
+  # 2026-10-26 补登：该仓早已是 siwpan/weiqi_lab 上的公开仓，此前未入 registry；
+  # 另注：2026-10-26 之前本仓在 G:\repos 与 G:\local 双份并存（仅差 gitignore 的构建产物与
+  # .cache 人类棋谱归档，且 local 侧被 CRLF 化），已按「合并同类项」收敛为 G:\repos 单份。
+  repo: siwpan/weiqi_lab
+  branch: master

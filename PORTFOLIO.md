@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 129 个仓库**（公开 129 · 私有 0）。
+**共 130 个仓库**（公开 130 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -48,6 +48,7 @@
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
+| [siwpan/fonts](https://gitee.com/siwpan/fonts.git) | — | 0 | 公开 | 中文字体资源库 + Tkinter 字体浏览/复制工具（字体本体本地保留，不入库）｜/repos/fonts |
 | [siwpan/foolproof-operation](https://gitee.com/siwpan/foolproof-operation.git) | Python | 0 | 公开 | 按需下载 |
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
 | [siwpan/god-hand-](https://gitee.com/siwpan/god-hand-.git) | Python | 0 | 公开 | 十二试炼 |
