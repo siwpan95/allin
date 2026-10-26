@@ -1,0 +1,13 @@
+# allin 统一调度配置树（单一事实来源）
+#
+# 四大支柱：docs（文档）/ platform（管理）/ preset（治理模式）/ tools（工具）
+# 经 cordis 内核挂载，由统一 CLI（allin_cli.py）调度。
+# 改一行 yml 即可换装配，不改代码。
+- name: docs
+  id: docs
+- name: platform
+  id: platform
+- name: preset
+  id: preset
+- name: tools
+  id: tools
