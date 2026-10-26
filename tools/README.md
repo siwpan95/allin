@@ -13,6 +13,7 @@
 | `repo_hygiene.py` | 仓库卫生巡检 | 见文末 |
 | `gate/` | 工作区门禁集合（文档索引契约等） | 见 `gate/README.md` |
 | **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
+| **`security/venv_ca_audit.py`** | **venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）** | `allin tools venv-audit scan G:/repos` |
 
 ---
 
@@ -141,6 +142,47 @@ python watchdog.py --selfcheck
 > 开发中的 `/tools/gate/` 是同一批脚本的工作副本；**本目录（随仓分发）是给外部使用者的一份**。
 > 两份内容一致，修改时需同步。
 
+
+---
+
+## `security/venv_ca_audit.py` — venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）
+
+2026-10-20 披露的 **CRITICAL** 事件（CVSS 9.1，CWE-295，无 CVE）：certifi `>= 2019.03.09, < 2026.10.19`
+的 CA 捆绑包含 `emSign ECC Root CA - G3` 根证书，eMudhra 签发并链到该根的 **8 张中间 CA 私钥已泄露**并被吊销；
+持泄露私钥者可签发「对任意主机名都像真的」证书，叠加 on-path 即可 **MITM**。
+受影响组件含 `requests` / `urllib3` / **`pip`**。修复：certifi `>= 2026.10.19`、pip `>= 26.2.2`、uv `>= 0.13.4`。
+
+**统一调度入口**（走 cordis 内核）：
+
+```bash
+allin tools venv-audit scan   G:/repos        # 只读扫描
+allin tools venv-audit apply  G:/repos 8      # 加固（幂等）
+allin tools venv-audit verify G:/repos 8      # 功能级审计
+```
+
+### 两条别判错的判据
+
+1. **判据必须精确到 G3**：certifi 2026.10.19 起**合法保留** 9~15 处未受影响的 emSign 根
+   （公告只恢复未受影响的那些）。所以「包里有没有 emSign」是**错的**判据，会对着全部 venv 误报；
+   唯一正确判据是精确匹配 `emSign ECC Root CA - G3`，且**只在活跃包目录内**计数。
+2. **必须查 pip 的 vendored certifi**：多数 venv 根本没装独立 certifi ⇒ 靠 `import certifi` 判断会
+   **静默跳过**这一面，而 pip 的 vendored 那一份（真正要命的）从未被检查过。
+   ⇒ 判据是「在磁盘上直接扫 cacert.pem」，不依赖 import 成不成功。
+
+### 额外处置：`~ip` 孤儿残留（Windows pip 自升级遗留）
+
+Windows 上 pip 自升级时删不掉正在运行的自身包目录，于是改名成 `~ip`（dist-info 改 `~ip-<ver>.dist-info`），
+清理失败就留下孤儿。实测 124 个 venv 里 **201 个孤儿项 / 99 个 venv**，
+其 `~ip/_vendor/certifi` 停在 **2026.06.17**（在受影响区间内，含 3 份 G3 根）。
+
+风险定性（实测）：**活跃信任链干净**（`import pip` 走 `pip/`；`importlib.metadata.version('pip')`
+在全部 100 个受影响 venv 都返回活跃版本 26.2.2，`~` 前缀不遮蔽元数据），
+但磁盘上留着过期易受攻击的 CA 捆绑包，且让扫 `cacert.pem` 的工具反复误报。
+⇒ 处置 = **改名隔离出 site-packages** 到 `<venv>/.orphan/<name>.<时间戳>/`，**一个字节都不删**。
+（边界：若活跃 `pip` 目录缺失而 `~ip` 存在，说明孤儿顶掉了唯一 pip ⇒ 改为**还原** `~ip`→`pip` 修 venv。）
+
+> 完整判据推导、踩坑与完成判据见项目级技能
+> [`.workbuddy/skills/venv-ca-security-audit/SKILL.md`](../.workbuddy/skills/venv-ca-security-audit/SKILL.md)。
 
 ---
 

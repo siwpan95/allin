@@ -64,6 +64,20 @@ class ToolService(Service):
         cmd = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, action]
         return _run(cmd, cwd=ROOT)
 
+    # ---- venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）----
+    def venv_audit(self, args):
+        """调度 tools/security/venv_ca_audit.py。
+
+        用法：allin tools venv-audit <scan|apply|verify> [root] [jobs]
+        判据：certifi >= 2026.10.19 / pip >= 26.2.2 / uv >= 0.13.4，
+        且活跃 CA 捆绑包内不得出现 'emSign ECC Root CA - G3'。
+        """
+        tool = os.path.join(TOOLS_DIR, 'security', 'venv_ca_audit.py')
+        if not os.path.isfile(tool):
+            raise FileNotFoundError(f'巡检工具不存在: {tool}')
+        cmd = [sys.executable, tool] + list(args)
+        return _run(cmd, cwd=ROOT)
+
     # ---- 已吸收的技能：列出可被内核调度的技能清单 ----
     def skills(self):
         skill_dir = os.path.join(ROOT, '.workbuddy', 'skills')
