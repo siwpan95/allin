@@ -1,4 +1,4 @@
-﻿id: carimara
+id: carimara
 name: 枯肢之下（Carimara）
 category: game
 gameplay: [rpg]
@@ -9,3 +9,6 @@ launch:
   command: python main.py
 publish:
   repo: siwpan/under-withered-limbs
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: math
+id: math
 name: CA Formula Lab
 category: tool
 version: 1.0.0
@@ -6,3 +6,6 @@ path: repos/math
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

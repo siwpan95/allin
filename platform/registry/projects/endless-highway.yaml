@@ -1,4 +1,4 @@
-﻿id: endless-highway
+id: endless-highway
 name: 无尽高速公路
 category: game
 gameplay: [driving]
@@ -9,3 +9,6 @@ launch:
   command: python main.py
 publish:
   repo: siwpan/lonely-desert-road
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

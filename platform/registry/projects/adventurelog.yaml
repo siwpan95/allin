@@ -12,3 +12,6 @@ launch:
 publish:
   repo: siwpan/adventurelog
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: bee
+id: bee
 name: 蜜蜂挂机 RPG
 category: game
 gameplay: [idle]
@@ -11,3 +11,6 @@ launch:
   command: pythonw main.pyw
 publish:
   repo: siwpan/bee
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

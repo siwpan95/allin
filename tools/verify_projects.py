@@ -15,6 +15,7 @@ Evidence tiers, from strong to weak:
     T2  launch command accepted --help / exited 0   ("command surface works")
     T3  package imports headlessly                  ("code and deps load")
     T4  none of the above                           ("needs a CLI/selfcheck")
+    N/A `verify.skip` declares a non-runnable project (content corpus / asset library)
 
 Exit codes: 0 all T1/T2/T3, 1 at least one T4 or a crash, 2 usage error,
 3 environment error (no PyYAML / no registry).
@@ -53,6 +54,8 @@ HEADLESS_ENV = {
     "PYTHONIOENCODING": "utf-8",
     "PYTHONUNBUFFERED": "1",
     "PYTHONWARNINGS": "ignore",
+    # 验证过程不许在项目里留下字节码：有仓曾把 .pyc 跟踪进库，一次自检就会把工作区弄脏。
+    "PYTHONDONTWRITEBYTECODE": "1",
     "GIT_TERMINAL_PROMPT": "0",
 }
 
@@ -72,6 +75,14 @@ def verify_text(entry: dict) -> str:
     if isinstance(verify, dict):
         return str(verify.get("command") or "").strip()
     return str(verify or "").strip()
+
+
+def skip_reason(entry: dict) -> str:
+    """A declared non-runnable project (content corpus / asset library), with its reason."""
+    verify = entry.get("verify")
+    if isinstance(verify, dict):
+        return str(verify.get("skip") or "").strip()
+    return ""
 
 
 def project_dir(entry: dict) -> Path | None:
@@ -141,6 +152,11 @@ def verify(entry: dict, timeout: float) -> dict:
               "evidence": "", "command": "", "seconds": 0.0, "detail": ""}
     if project is None or not project.is_dir():
         record.update(evidence="no local project", detail="path does not exist")
+        return record
+
+    declared_skip = skip_reason(entry)
+    if declared_skip:
+        record.update(tier="N/A", evidence="not runnable (declared)", detail=declared_skip)
         return record
 
     explicit = verify_text(entry)

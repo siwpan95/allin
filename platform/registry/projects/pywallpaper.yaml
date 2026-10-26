@@ -1,4 +1,4 @@
-﻿id: pywallpaper
+id: pywallpaper
 name: 效果器壁纸
 category: media
 version: 1.0.0
@@ -8,3 +8,6 @@ launch:
   command: pythonw main.pyw
 publish:
   repo: siwpan/pywallpaper
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: arcade
+id: arcade
 name: 街机合集（6 小游戏选单）
 category: game
 gameplay: [arcade]
@@ -10,3 +10,6 @@ launch:
 publish:
   repo: siwpan/arcade
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: haha
+id: haha
 name: 消息应用（MVC）
 category: tool
 version: 1.0.0
@@ -6,3 +6,6 @@ path: repos/haha
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py
