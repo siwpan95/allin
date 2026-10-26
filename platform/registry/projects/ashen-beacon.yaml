@@ -4,9 +4,9 @@ category: game
 version: 1.0.0
 path: repos/ashen-beacon
 manual: true
-note: 文字冒险；`play.py --check` 可做内容体检（悬空跳转 / 结局可达）
+note: 文字冒险；入口在 game/ 子目录（2026-10-26 实测订正），`game/play.py --check` 可做内容体检（悬空跳转 / 结局可达）
 launch:
-  command: python play.py
+  command: python game/play.py
 publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/ashen-beacon

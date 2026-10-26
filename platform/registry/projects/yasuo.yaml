@@ -1,11 +1,15 @@
-﻿id: yasuo
+id: yasuo
 name: 压缩工具
 category: tool
 version: 1.0.0
 path: repos/yasuo
 manual: true
 launch:
-  command: python __main__.py
+  command: python run.py
+verify:
+  # `python __main__.py` 会因相对导入失败（2026-10-26 实测）：仓根 run.py 把父目录加入
+  # sys.path，并提供无头自检（压缩/解压往返逐字节比较）。
+  command: python run.py --selfcheck
 publish:
   repo: siwpan/yasuo
   branch: master

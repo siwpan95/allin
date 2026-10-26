@@ -7,7 +7,7 @@ path: repos/novel-reader
 manual: true
 note: 综网系列视觉小说
 launch:
-  command: python game.py
+  command: python game.pyw
 publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/novel-reader
