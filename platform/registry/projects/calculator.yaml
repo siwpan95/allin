@@ -7,6 +7,9 @@ manual: true
 note: 炼金术式解密终端
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头自检（四则运算状态机 + 除零彩蛋 + 表达式行），实测退出 0。
+  command: python selfcheck.py
 publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/calculator

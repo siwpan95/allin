@@ -1,4 +1,4 @@
-﻿id: captcha-demo
+id: captcha-demo
 name: 验证码演示
 category: crawler
 version: 1.0.0
@@ -6,3 +6,7 @@ path: repos/captcha-demo
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头自检（文字验证码生成/正误判定 + 滑块数据），实测退出 0；
+  # 自检同时揪出并修掉「成功后错误输入仍判通过」的状态残留缺陷。
+  command: python selfcheck.py

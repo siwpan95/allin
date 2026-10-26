@@ -1,4 +1,4 @@
-﻿id: russia
+id: russia
 name: 俄罗斯轮盘（ECS 版）
 category: game
 gameplay: [roulette]
@@ -7,3 +7,6 @@ path: repos/russia
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：GUI 之外的无头自检（3d6 判定 / 弹巢 / ECS 组件往返），实测退出 0。
+  command: python selfcheck.py
