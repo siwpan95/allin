@@ -1,4 +1,4 @@
-﻿id: image-scraper
+id: image-scraper
 name: 图片爬取
 category: crawler
 version: 1.0.0
@@ -9,3 +9,6 @@ launch:
 publish:
   repo: siwpan/image-scraper
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，实测退出 0）
+  command: python selfcheck.py

@@ -9,3 +9,6 @@ launch:
   command: python mirror_launcher.py
 publish:
   repo: siwpan/running-group-simulator
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，实测退出 0）
+  command: python selfcheck.py

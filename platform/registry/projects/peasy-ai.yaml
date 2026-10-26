@@ -1,4 +1,4 @@
-﻿id: peasy-ai
+id: peasy-ai
 name: Peasy AI（原 easy-ai）
 category: tool
 version: 1.0.0
@@ -12,3 +12,6 @@ publish:
   repo: siwpan/peasy-ai
   branch: master
   pypi: peasy-ai
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

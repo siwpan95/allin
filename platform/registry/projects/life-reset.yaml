@@ -1,4 +1,4 @@
-﻿id: life-reset
+id: life-reset
 name: Life Reset Simulator
 category: game
 gameplay: [idle]
@@ -9,3 +9,6 @@ path: repos/life-reset-simulator
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，实测退出 0）
+  command: python selfcheck.py

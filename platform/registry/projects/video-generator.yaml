@@ -1,4 +1,4 @@
-﻿id: video-generator
+id: video-generator
 name: 随机视频生成器
 category: ai
 version: 1.0.0
@@ -8,3 +8,6 @@ launch:
   command: python video_generator.py
 publish:
   repo: siwpan/video-generator
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

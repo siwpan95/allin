@@ -1,4 +1,4 @@
-﻿id: pyinstaller
+id: pyinstaller
 name: 打包器
 category: tool
 version: 1.0.0
@@ -9,3 +9,6 @@ launch:
 publish:
   repo: siwpan/pyinstaller
   branch: master
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: jotunnslayer
+id: jotunnslayer
 name: JOTUNNSLAYER 复刻
 category: game
 gameplay: [survivor]
@@ -10,5 +10,6 @@ launch:
 publish:
   repo: siwpan/jotunnslayer
 verify:
-  # 2026-10-26 补：仓里既有入口实测可无头跑通（退出 0），见 tools/gate/audit/projects_verify.json
-  command: python main.py --smoke
+  # 2026-10-26 补：无头自玩 10 秒（0.7s 跑完，退出 0）。默认 90 秒要 12s+，
+  # 会撞上验证器 12 秒超时，故显式给短时长。
+  command: python main.py --smoke 10

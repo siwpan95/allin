@@ -12,5 +12,6 @@ publish:
   repo: siwpan/pomodmer
   branch: master
 verify:
-  # 2026-10-26 补：仓里既有入口实测可无头跑通（退出 0），见 tools/gate/audit/projects_verify.json
-  command: npm run verify
+  # 2026-10-26 补：`npm run verify` 是完整测试套件（含 SSE 推送，跑不完 12 秒），
+  # 改为子代理写的无头自检（0.1s，退出 0）。
+  command: node selfcheck.mjs

@@ -12,3 +12,6 @@ publish:
   # 2026-10-26 补登：该仓早已是 siwpan/lab 上的公开仓，此前未入 registry（与 weiqi_lab 同类缺口）
   repo: siwpan/lab
   branch: master
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: node selfcheck.mjs

@@ -12,3 +12,6 @@ publish:
   # 的路子建仓入 G:\repos；曲目清单 _all_music_urls.txt 已入库，可据此复现全部曲目
   repo: siwpan/csmusic
   branch: master
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

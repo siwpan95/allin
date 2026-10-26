@@ -1,4 +1,4 @@
-﻿id: novel
+id: novel
 name: 万界归墟生成器
 category: ai
 version: 1.0.0
@@ -8,3 +8,6 @@ launch:
   command: python main.py
 publish:
   repo: siwpan/novel
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py

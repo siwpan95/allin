@@ -1,4 +1,4 @@
-﻿id: sandbox
+id: sandbox
 name: 沙盒游戏
 category: game
 gameplay: [rpg]
@@ -10,3 +10,6 @@ launch:
 publish:
   repo: siwpan/sandbox
   branch: master
+verify:
+  # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
+  command: python selfcheck.py
