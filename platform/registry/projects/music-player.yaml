@@ -1,0 +1,13 @@
+id: music-player
+name: Music Player · Python + VLC
+category: tool
+version: 1.0.0
+path: repos/music-player
+manual: true
+note: 基于 VLC 的音乐播放器
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/music-player
+  branch: master

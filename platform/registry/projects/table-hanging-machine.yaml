@@ -1,0 +1,14 @@
+id: table-hanging-machine
+name: 表格挂机 · Progress Quest v2 风格挂机桌游
+category: game
+gameplay: [idle]
+version: 1.0.0
+path: repos/table-hanging-machine
+manual: true
+note: Progress Quest v2 风格挂机桌游
+launch:
+  command: python main.pyw
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/table-hanging-machine
+  branch: master

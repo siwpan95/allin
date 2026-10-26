@@ -1,0 +1,13 @@
+id: mathematical-formula-renderer
+name: CA Render Engine · 数学公式渲染
+category: media
+version: 1.0.0
+path: repos/mathematical-formula-renderer
+manual: true
+note: ECS 架构的 CA 渲染引擎，从 effects/ 加载数学公式配方；`--composer` / `--generate` 可出图
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/mathematical-formula-renderer
+  branch: master

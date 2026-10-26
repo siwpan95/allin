@@ -1,0 +1,13 @@
+id: superengine
+name: superengine · 基于 cordis 的三仓「超级引擎」组合仓
+category: engine
+version: 0.1.0
+path: repos/superengine
+manual: true
+note: 把 worldbuilder / an-engine / 3dworld 组合成一条流水线（契约 + 桥接 + 装配 + 门禁），不吞并三者
+launch:
+  command: python -m superengine.cli.boot --report
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/superengine
+  branch: master

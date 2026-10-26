@@ -1,0 +1,13 @@
+id: pomodmer
+name: Pomodmer · Cordis 内核 + 本地 Web UI 的番茄钟
+category: tool
+version: 2.2.0
+path: repos/pomodmer
+manual: true
+note: Cordis 内核 + 本地 Web UI 的番茄钟（默认 http://127.0.0.1:5173/）
+launch:
+  command: npm run pom
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/pomodmer
+  branch: master

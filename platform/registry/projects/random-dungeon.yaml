@@ -1,0 +1,14 @@
+id: random-dungeon
+name: 随机地牢 · 终端文字地牢探险
+category: game
+gameplay: [text]
+version: 1.0.0
+path: repos/random-dungeon-
+manual: true
+note: 终端文字地牢；`--engine super` 可接超级引擎（真实地牢图 + 骰系规则）。注：id 用连字符收尾规整化，path/publish 保留真实仓名 random-dungeon-
+launch:
+  command: python 随机地牢.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/random-dungeon-
+  branch: master

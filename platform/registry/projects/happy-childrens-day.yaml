@@ -1,0 +1,14 @@
+id: happy-childrens-day
+name: 六一快乐 · 六一零食大闯关（无尽模式）
+category: game
+gameplay: [arcade]
+version: 1.0.0
+path: repos/happy-childrens-day
+manual: true
+note: 六一主题的零食大闯关（无尽模式）
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/happy-childrens-day
+  branch: master

@@ -1,0 +1,13 @@
+id: board-replay
+name: 棋谱回放
+category: tool
+version: 0.1.0
+path: repos/board-replay
+manual: true
+note: 棋谱回放工具；`npm run smoke` / `npm run verify` 为自检入口
+launch:
+  command: npm start
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/board-replay
+  branch: master

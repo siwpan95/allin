@@ -1,0 +1,13 @@
+id: remixaudio
+name: Remix · 音频混音 & 视频合成（独立仓）
+category: music
+version: 1.0.0
+path: repos/remix
+manual: true
+note: 音频混音与视频合成（pydub，内置 ffmpeg/ffprobe）；注：registry 里的 id「remix」已属 musickit 单仓内的 remix/ 子目录，本独立仓用 id「remixaudio」
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/remix
+  branch: master

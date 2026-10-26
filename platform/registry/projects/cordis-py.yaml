@@ -1,0 +1,13 @@
+id: cordis-py
+name: dse-core（Python 版）· 字典场景引擎
+category: engine
+version: 0.6.0
+path: repos/cordis-py
+manual: true
+note: 字典场景引擎的 Python 原生实现（发行名 dse-core / 导入名 dse_core / CLI dse）；Node/Cordis 版见姊妹仓 siwpan/dse-core —— 两者勿混
+launch:
+  command: dse
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/cordis-py
+  branch: p1-core-engine

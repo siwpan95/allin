@@ -1,0 +1,13 @@
+id: 3dworld
+name: 3dworld · pyglet 三维世界引擎
+category: engine
+version: 2026.10.13
+path: repos/3dworld
+manual: true
+note: 三维世界引擎（pyglet）；mcclone3d / mirsolo / backroom 等的上游，allin 的 cordis 副本亦源自其 vendor 目录
+launch:
+  command: python scripts\check_imports.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/3dworld
+  branch: master

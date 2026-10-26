@@ -1,0 +1,13 @@
+id: backroom
+name: 无尽阈室 v2.0（3dworld 引擎重构版）
+category: game
+version: 2.0.0
+path: repos/backroom
+manual: true
+note: 3dworld 引擎重构版；`main.py auto` 自动驾驶演示、`seed1234` 同种子同地图
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/backroom
+  branch: master

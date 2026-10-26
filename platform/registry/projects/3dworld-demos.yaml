@@ -1,0 +1,13 @@
+id: 3dworld-demos
+name: 3dworld 演示程序集
+category: game
+version: 1.0.0
+path: repos/3dworld-demos
+manual: true
+note: 3dworld 引擎的演示程序集（48 秒五幕演出 + 冒烟模式）
+launch:
+  command: python main.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/3dworld-demos
+  branch: master

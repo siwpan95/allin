@@ -1,0 +1,14 @@
+id: novel-reader
+name: 综网终端 · 地狱之下平台（视觉小说版）
+category: game
+gameplay: [visual-novel]
+version: 1.0.0
+path: repos/novel-reader
+manual: true
+note: 综网系列视觉小说
+launch:
+  command: python game.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/novel-reader
+  branch: master

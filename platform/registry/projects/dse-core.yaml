@@ -1,0 +1,13 @@
+id: dse-core
+name: dse-core · 字典场景引擎内核（Node/Cordis 版）
+category: engine
+version: 0.1.0
+path: repos/dse-core
+manual: true
+note: 基于 Cordis 4.0 插件架构的文字冒险 / 互动叙事引擎内核；「场景即字典，能力即插件」；内容仓见 siwpan/dict-scene-engine
+launch:
+  command: npm start
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/dse-core
+  branch: master

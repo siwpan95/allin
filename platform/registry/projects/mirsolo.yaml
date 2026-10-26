@@ -1,0 +1,14 @@
+id: mirsolo
+name: 热血传奇单机复刻（致敬，非官方）
+category: game
+gameplay: [rpg]
+version: 0.1.0
+path: repos/mirsolo
+manual: true
+note: 三职业 / 地牢打宝 / 攻城复刻，但对手全是 AI；零外部素材、确定性种子；技术底座 3dworld + allin-engine + dse-core + bloodmusic
+launch:
+  command: python -m mirsolo.cli.smoke --ticks 20000
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/mirsolo
+  branch: master

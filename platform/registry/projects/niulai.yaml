@@ -1,0 +1,13 @@
+id: niulai
+name: 《牛来》双引擎复刻工程
+category: game
+version: 1.0.0
+path: repos/niulai
+manual: true
+note: 双引擎复刻工程；`scripts/bootstrap.py` 负责解释器与 ffmpeg 引导
+launch:
+  command: python scripts\bootstrap.py
+publish:
+  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  repo: siwpan/niulai
+  branch: main
