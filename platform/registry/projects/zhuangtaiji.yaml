@@ -1,4 +1,4 @@
-﻿id: zhuangtaiji
+id: zhuangtaiji
 name: 庄太极·多范式决策工作台
 category: tool
 version: 1.0.0
@@ -6,3 +6,6 @@ path: repos/zhuangtaiji
 manual: true
 launch:
   command: python main.py
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

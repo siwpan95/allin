@@ -1,4 +1,4 @@
-﻿id: ollama-generator
+id: ollama-generator
 name: Ollama 文本生成库
 category: tool
 version: 1.0.0
@@ -9,3 +9,6 @@ launch:
 publish:
   repo: siwpan/ollama_generator
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

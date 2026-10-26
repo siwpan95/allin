@@ -12,3 +12,6 @@ publish:
   # 下划线非法），而 path/publish.repo 保留真实仓名 hushi_twrj
   repo: siwpan/hushi_twrj
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

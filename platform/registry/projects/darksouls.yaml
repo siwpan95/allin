@@ -1,4 +1,4 @@
-﻿id: darksouls
+id: darksouls
 name: 黑暗之魂·卡牌编年史
 category: game
 gameplay: [card, rpg]
@@ -9,3 +9,6 @@ launch:
   command: python main.pyw
 publish:
   repo: siwpan/darksouls
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: smile
+id: smile
 name: 签到+表情包生成器
 category: tool
 version: 2.0.0
@@ -10,3 +10,6 @@ publish:
   # 2026-10-26 校正：smile 系自 sign-in-simulator#2.0 拆分独立后的新仓，旧锚点已漂
   repo: siwpan/smile
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

@@ -1,4 +1,4 @@
-﻿id: txtlegend
+id: txtlegend
 name: 文字传奇·点怪就打
 category: game
 gameplay: [rpg, text]
@@ -9,3 +9,6 @@ launch:
   command: python main.py
 publish:
   repo: siwpan/legend
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

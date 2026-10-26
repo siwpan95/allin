@@ -1,4 +1,4 @@
-﻿id: dwarf-scrolls
+id: dwarf-scrolls
 name: 矮人卷轴
 category: game
 gameplay: [rpg]
@@ -10,3 +10,6 @@ launch:
 publish:
   repo: siwpan/dwarf-scrolls
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

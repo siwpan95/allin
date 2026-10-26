@@ -1,4 +1,4 @@
-﻿id: text-fps
+id: text-fps
 name: 文字 FPS
 category: game
 gameplay: [text]
@@ -7,3 +7,6 @@ path: repos/text-fps
 manual: true
 launch:
   command: python text_fps/main.py
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py

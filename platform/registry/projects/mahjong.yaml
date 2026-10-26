@@ -1,4 +1,4 @@
-﻿id: mahjong
+id: mahjong
 name: 麻将
 category: game
 gameplay: [mahjong]
@@ -10,3 +10,6 @@ launch:
 publish:
   repo: siwpan/mahjong
   branch: master
+verify:
+  # 2026-10-26 补：无头 selfcheck.py（子代理编写，逐项实测退出 0；见 tools/gate/audit/projects_verify.json）
+  command: python selfcheck.py
