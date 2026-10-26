@@ -1,0 +1,18 @@
+id: 3dworld-globe
+name: 3dworld 交互地球仪
+category: media
+version: 0.1.0
+path: repos/3dworld-globe
+manual: true
+note: Natural Earth 大陆轮廓 + 程序化地形/云层/城市灯光，跑在 3dworld（world3d）DemoApp 骨架上；README 提供 --smoke / --shot / --bench
+launch:
+  command: python main.py
+verify:
+  # 2026-10-26 补登记并验证：README 的冒烟模式 `--smoke 3` 实跑 4.9 秒、输出 EXIT_OK、退出 0
+  # （此前只在 PORTFOLIO 远端有，本地未克隆、registry 未登记）。
+  # 冒烟要建真实 pyglet 窗口，故关掉验证器的无头驱动（headless: false）。
+  headless: false
+  command: python main.py --smoke 3
+publish:
+  repo: siwpan/3dworld-globe
+  branch: master

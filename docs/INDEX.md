@@ -102,7 +102,7 @@
 | REC-AU-10 | [preset 漂移 diff](记录/审计/preset漂移diff_2026-10-26.txt) | 2026-10-26 | 旧 DSH `governance/preset/allin.patch.yml`（repos/deepseek-harness-master）vs 新 `allin/preset/allin/allin.patch.yml` 全量 diff（173→205 行；英文治理段替换为中文治理段，粘合剂契约落位） |
 | REC-AU-11 | [agent 独立复验与 g01 回归修复](记录/审计/agent独立复验与g01回归修复_2026-10-27.md) | 2026-10-27 | 把 allin-governance-agent 实例化为独立子 agent 只读复验，抓出 cd55ab8 的 g01 回归（openapi.yaml 3 处机器路径，:303 `G:\repos` BLOCK）；根因 = g01 只扫已跟踪文件、提交前验证假绿；去盘符修复（502005d）后全绿推送，IN_SYNC |
 | REC-AU-12 | [项目清单核实与分类（第一轮）](记录/审计/项目清单核实与分类_2026-10-26.md) | 2026-10-26 | `项目.txt` 125 条逐一核实：PyPI 11/11、Gitee 106/108（2 条 404 为有意退役）、备选 5/6；120 条运行验证矩阵 A/B/C/D/E = 38/49/8/20/7；测试实跑 71 个仓（PASS 11 / FAIL 57 / NO_RUNNER 3，已注明噪声口径）；修 4 条 registry 启动命令 + yasuo 补 `run.py --selfcheck`；编号顺延 REC-AU-12（11 已被 10-27 复验记录占用） |
-| REC-AU-13 | [项目逐项结论](记录/审计/项目逐项结论_2026-10-26.md) | 2026-10-26 | 125 条逐项结论：**121 通过（已实跑）+ 1 本仓 + 3 已退役**；138 条 registry 全量 **T1 95 / T2 42 / N/A 1，T3/T4 归零**；判据与证据命令逐条列出 |
+| REC-AU-13 | [项目逐项结论](记录/审计/项目逐项结论_2026-10-26.md) | 2026-10-26 | 125 条逐项结论：**121 通过（已实跑）+ 1 本仓 + 3 已退役**；registry 全量 **139 条：T1 96 / T2 42 / N/A 1，T3/T4 归零**；附录覆盖清单外 14 条，并补登记+验证了 PORTFOLIO 里唯一未登记仓 `3dworld-globe` |
 
 ### 4.3 计划 · 事故 · 专题
 

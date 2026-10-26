@@ -111,10 +111,17 @@ def prepare(command: str, project: Path) -> str:
     return command
 
 
-def run(command: str, project: Path, timeout: float) -> tuple[int | None, str, float]:
+def headless_off(entry: dict) -> bool:
+    """Some smokes need a real window/pyglet context (headless drivers break them)."""
+    verify = entry.get("verify")
+    return isinstance(verify, dict) and verify.get("headless") is False
+
+
+def run(command: str, project: Path, timeout: float,
+        env: dict[str, str] | None = None) -> tuple[int | None, str, float]:
     started = time.time()
     process = subprocess.Popen(command, cwd=str(project), shell=True,
-                               env={**os.environ, **HEADLESS_ENV},
+                               env=env or {**os.environ, **HEADLESS_ENV},
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                stdin=subprocess.DEVNULL, text=True, encoding="utf-8",
                                errors="replace")
@@ -169,7 +176,8 @@ def verify(entry: dict, timeout: float) -> dict:
             return record
         command = prepare(launch, project) + " --help"
     record["command"] = command
-    code, output, seconds = run(command, project, timeout)
+    env = {**os.environ, **({} if headless_off(entry) else HEADLESS_ENV)}
+    code, output, seconds = run(command, project, timeout, env)
     record["seconds"] = seconds
     record["detail"] = "\n".join(output.splitlines()[:4])[-400:]
     if code is None:
