@@ -11,3 +11,6 @@ publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/pomodmer
   branch: master
+verify:
+  # 2026-10-26 补：仓里既有入口实测可无头跑通（退出 0），见 tools/gate/audit/projects_verify.json
+  command: npm run verify

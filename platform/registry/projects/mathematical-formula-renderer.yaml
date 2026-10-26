@@ -7,6 +7,9 @@ manual: true
 note: ECS 架构的 CA 渲染引擎，从 effects/ 加载数学公式配方；`--composer` / `--generate` 可出图
 launch:
   command: python main.py
+verify:
+  # 无头验证入口：模板模式只打印配方、不开窗口，退出 0（2026-10-26 实测）。
+  command: python main.py --template all
 publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/mathematical-formula-renderer

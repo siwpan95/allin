@@ -6,6 +6,9 @@ path: repos/private-radio-stations
 port: 8100
 launch:
   command: npm run video
+verify:
+  # 2026-10-26 补：与 radio 同一工作区，仓级测试可无头跑通（退出 0）。
+  command: npm run test
 stop:
   command: stop-video.bat
 health:

@@ -10,3 +10,6 @@ publish:
   repo: siwpan/cordis-table-app
   branch: main
 note: Cordis 内核 + Python/OpenPyXL 经 JSON-RPC stdio 桥；需 Node 与 Python(openpyxl)，首次 npm install
+verify:
+  # 2026-10-26 补：仓里既有入口实测可无头跑通（退出 0），见 tools/gate/audit/projects_verify.json
+  command: npm run test

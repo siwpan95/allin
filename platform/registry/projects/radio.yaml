@@ -6,6 +6,9 @@ path: repos/private-radio-stations
 port: 8000
 launch:
   command: npm run radio
+verify:
+  # 2026-10-26 补：仓级测试可无头跑通（退出 0）；服务本身仍按 port/health 探活。
+  command: npm run test
 stop:
   command: stop-radio.bat
 health:

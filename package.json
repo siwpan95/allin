@@ -13,6 +13,7 @@
     "check:governance:selfcheck": "node tools/gate/governance/run.ts --selfcheck-all",
     "check:precommit": "node tools/gate/governance/run.ts --no-profile --only g01-paths,g03-credentials,g05-hygiene,g06-numbering,g07-doc-freshness,g08-deletion-evidence,g09-python-hygiene,g10-failloud-probe,g11-undef-names,g12-integrity,g13-docs-only,g14-preset,g15-docs-contract",
     "check:docs": "python tools/gate/docs_index.py",
-    "check:ps1": "python tools/gate/check_ps1_bom.py --root ."
+    "check:ps1": "python tools/gate/check_ps1_bom.py --root .",
+    "verify:projects": "python tools/verify_projects.py --workers 8"
   }
 }
