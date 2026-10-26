@@ -6,7 +6,8 @@ agent_created: true
 
 # dsh 部署修复
 
-适用对象：`dsh`（DeepSeek Harness）本地源码检出，典型路径 `D:\deepseek-harness` 或 `G:\repos\deepseek-harness`。
+适用对象：`dsh`（DeepSeek Harness）本地源码检出，**现役路径 `D:\deepseek-harness`**。
+（2026-10-26 订正：旧检出 `G:\repos\deepseek-harness` 已合并进现役副本并移除，**该路径不再存在**，勿再按它排查。）
 
 ## 0. 先做只读体检（永远第一步）
 
@@ -23,7 +24,7 @@ cd <checkout> && python start-dsh-web.py --check
    对每检出独立 home（`./.dsh-home`）的形态，不显式传入就会**查错对象**——迁移标记/会话/配置全是另一个 home 的：
 
    ```sh
-   DSH_HOME="G:\repos\deepseek-harness\.dsh-home" python start-dsh-web.py --check
+   DSH_HOME="D:\deepseek-harness\.dsh-home" python start-dsh-web.py --check
    ```
 
 2. **它眼里没有「陈旧」这个维度。** 判据弱到只有：
@@ -180,7 +181,7 @@ grep -rln "shortcuts" packages apps --include=*.ts | grep "/src/"   # src 里根
 
 `start-dsh-web.py --port 0` 也能用（它把非默认 port 透传给 CLI），并且保留全部自愈能力（含生成 `tsconfig.runtime.json`）。
 写一个薄封装即可补足三件事：**每检出 HOME 播种、端口文件发现、控制台绑定生命周期**。
-参考实现见 `D:\deepseek-harness\start-dsh-ephemeral.py` + `.cmd`（`G:\repos\deepseek-harness` 有一份同样的）。
+参考实现见 `D:\deepseek-harness\start-dsh-ephemeral.py` + `.cmd`（**现役检出的唯一一份**；旧的 `G:\repos\deepseek-harness` 已于 2026-10-26 移除）。
 
 播种要点：profile 里 `link:` 的治理预设/Tavily 必须指向**当前检出**，否则两个检出会互相挂载对方的 governance。
 
