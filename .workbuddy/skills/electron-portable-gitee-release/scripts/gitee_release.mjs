@@ -2,17 +2,22 @@
 // 用法：在装有 isomorphic-git 的 node workspace 目录下运行（本脚本只用内置 fetch，无外部依赖）。
 import fs from 'fs';
 import crypto from 'crypto';
+import os from 'os';
+import { join } from 'path';
 import { spawnSync } from 'child_process';
 
 // ---- 可调参数 ----
+// 路径一律可被环境变量覆盖、默认值不含盘符（铁律 5：不把某台机器的路径写死）。
 const OWNER = 'siwpan';
 const REPO = 'santi-teleprompter';
 const TAG = 'v1.0.0';
 const NAME = 'v1.0.0 · 首个发行版';
-const ASSET = 'C:/santi/dist/SantiTeleprompter-1.0.0-portable-win-x64.7z.001'; // 单附件须 <100MB
+const ASSET = process.env.RELEASE_ASSET
+  ?? 'dist/SantiTeleprompter-1.0.0-portable-win-x64.7z.001'; // 单附件须 <100MB
 const BODY = `## 发行说明\n\n下载后解压，双击启动即可。`;                          // Markdown 正文
 // NOTE: use PortableGit 2.55.0 (the old `versions/1.2.0` tree lacks /bin/sh).
-const GIT_BIN = 'C:/Users/psw/.workbuddy/binaries/PortableGit/versions/2.55.0/mingw64/bin';
+const GIT_BIN = process.env.PORTABLE_GIT_BIN
+  ?? join(os.homedir(), '.workbuddy', 'binaries', 'PortableGit', 'versions', '2.55.0', 'mingw64', 'bin');
 
 // Multiple assets: pass "path=assetName" pairs, or just paths (basename is used).
 // All assets go into ONE release; each must stay under Gitee's 100MB per-file cap.

@@ -52,12 +52,18 @@ def unreadable_objects(root: Path, revision: str) -> list[str]:
     completed = subprocess.run(
         ["git", "cat-file", "--batch-check"],
         cwd=str(root),
-        env={**govlib.GIT_ENV},
+        env=govlib.git_env(),
         input="\n".join(shas).encode("utf-8"),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
     )
+    # A failed cat-file prints nothing on stdout, and "no line says missing" would
+    # then be read as "every object reads back" -- a green gate that judged nothing.
+    if completed.returncode != 0:
+        raise govlib.GateError(
+            f"git cat-file --batch-check failed: {completed.stderr.decode('utf-8', 'replace').strip()}"
+        )
     missing: list[str] = []
     for line in completed.stdout.decode("utf-8", "replace").splitlines():
         parts = line.split()

@@ -4,17 +4,21 @@
 import git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 import { promises as fsp } from 'fs';
+import os from 'os';
+import { join } from 'path';
 import { spawnSync } from 'child_process';
 
 // ---- 可调参数 ----
-const DIR = 'C:/santi';                                   // 本地仓库
+// 路径一律可被环境变量覆盖、默认值不含盘符（铁律 5：不把某台机器的路径写死）。
+const DIR = process.env.REPO_DIR ?? process.cwd();          // 本地仓库
 const REMOTE = 'origin';
 const REF = 'master';
 const OWNER = 'siwpan';
 const REPO = 'santi-teleprompter';
 // NOTE: use PortableGit 2.55.0. The old `versions/1.2.0` tree lacks /bin/sh and
 // cannot spawn shell hooks / credential helpers reliably.
-const GIT_BIN = 'C:/Users/psw/.workbuddy/binaries/PortableGit/versions/2.55.0/mingw64/bin';
+const GIT_BIN = process.env.PORTABLE_GIT_BIN
+  ?? join(os.homedir(), '.workbuddy', 'binaries', 'PortableGit', 'versions', '2.55.0', 'mingw64', 'bin');
 const FORCE = false;                                       // 需要覆盖远端历史时置 true
 // ------------------
 

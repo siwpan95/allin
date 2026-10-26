@@ -8,12 +8,13 @@
 ## 一、怎么跑（allin 侧命令）
 
 ```powershell
+npm run check                        # 一条命令：治理门禁 + 文档契约 + .ps1 编码
 npm run check:governance            # 全部门禁，仓内判据（聚合默认带 --no-profile，不读 host profile）
 npm run check:governance:selfcheck  # 证明每个门禁仍能抓到注入的缺陷
-npx tsx tools/gate/governance/run.ts --list            # 列出 id / 档位 / 覆盖的规则
-npx tsx tools/gate/governance/run.ts --only g01-paths # 只跑某几条（逗号分隔）
-npx tsx tools/gate/governance/run.ts --no-profile     # 显式声明「只看仓内」（聚合默认已带）
-npx tsx tools/gate/governance/run.ts -- --quiet       # `--` 之后的参数透传给每个门禁
+node tools/gate/governance/run.ts --list            # 列出 id / 档位 / 覆盖的规则
+node tools/gate/governance/run.ts --only g01-paths # 只跑某几条（逗号分隔）
+node tools/gate/governance/run.ts --no-profile     # 显式声明「只看仓内」（聚合默认已带）
+node tools/gate/governance/run.ts -- --quiet       # `--` 之后的参数透传给每个门禁
 python tools/gate/governance/gates/g01_paths.py --selfcheck       # 单条门禁自检（不经 Node）
 python tools/gate/governance/gates/g01_paths.py --no-baseline --list-all  # 看全量存量，忽略基线
 python tools/gate/governance/gates/g14_preset.py                  # 单跑：含 profile 探针（读 preset 安装点）
@@ -22,13 +23,18 @@ python tools/gate/governance/gates/g14_preset.py                  # 单跑：含
 **仓内 vs 仓外的边界（重要）**：`check:governance` 是**仓内**判据 —— 它带 `--no-profile`，只转发给
 注册表里声明了 `profileProbe` 的门禁（当前只有 `g14-preset`），其他门禁不会收到这个开关。
 **要查「仓外部署面」**（preset 安装点的 `link:` bundle 是否悬空、挂载的 patch 是否完整）就**单跑** `g14-preset`，
-或显式 `npx tsx tools/gate/governance/run.ts --only g14-preset`（不带 `--no-profile`）。两种模式都有 A/B 实证：
+或显式 `node tools/gate/governance/run.ts --only g14-preset`（不带 `--no-profile`）。两种模式都有 A/B 实证：
 带标志时输出里 0 条 profile 解析行，不带时 1 条。
+
+**提交时自动跑**：`pre-commit` 钩子会执行 `npm run check:precommit`（13 条快速子集，约 8 秒）：
+排除 `g00-meta`（契约自检要跑完 15 条门禁的 `--selfcheck`，约 20 秒）与 `g04-push-evidence`（要连远端，离线会等超时）。
+这两条与其余全量核查仍由 `npm run check` 覆盖；子集清单只在 `package.json` 里定义一处，钩子不复制。
 
 **退出码（全部门禁统一）**：`0` 干净 · `1` 基线之外的新阻断 · `2` 用法错误 · `3` 环境错误。
 `run.ts` 按「最坏优先」聚合（`3` > `2` > `1` > `0`）；任何一条非 0 都不会被吞掉。
 
-**依赖**：Python 3.9+ 与 `git`。解释器按 `DSH_GOVERNANCE_PYTHON` → `python3` → `python` → `py -3` 顺序探测，**探不到就带名字报错**（`exit 3`），不会静默跳过。
+**依赖**：Python 3.9+、`git`、Node.js ≥ 22.18（`run.ts` 用 Node 原生类型擦除直接运行，**不需要 `npm install`、不需要 tsx**）。
+Python 解释器按 `DSH_GOVERNANCE_PYTHON` → `python3` → `python` → `py -3` 顺序探测，**探不到就带名字报错**（`exit 3`），不会静默跳过。
 平台专属能力在别的平台上记 `SKIPPED (not a pass)` 并计数，**SKIP 不算通过**。
 
 ## 二、门禁契约（由 `g00-meta` 逐条机械校验）

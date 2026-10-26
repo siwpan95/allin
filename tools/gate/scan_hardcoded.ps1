@@ -351,7 +351,7 @@ except ImportError as e:
   $r = Invoke-Scan -Targets $target
   $blocking = @($r.Hits | Where-Object { $_.Blocking })
   $r2 = Invoke-Scan -Targets $target
-  $t1 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like 'Q:\nope*' }).Count -eq 1)   # 门禁自检
+  $t1 = (@($r2.Hits | Where-Object { $_.Blocking -and $_.Path -like ('Q' + ':\nope*') }).Count -eq 1)   # 门禁自检
   $t2 = (@($r2.Hits | Where-Object { $_.Path -like 'C:\Windows*' -or $_.Path -like 'http*' -or $_.Path -like 'G:\fake*' -or $_.Path -like '*\n' }).Count -eq 0)   # 门禁自检
   # 基线棘轮：把当前阻断写进基线后，同一目标不应再有「新增」
   $bl = Join-Path $tmp 'baseline.csv'

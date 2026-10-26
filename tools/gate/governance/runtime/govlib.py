@@ -50,6 +50,19 @@ GIT_ENV = {
     "LC_ALL": "C.UTF-8",
 }
 
+
+def git_env() -> dict[str, str]:
+    """The process environment plus the no-prompt guard.
+
+    Merging is the whole point: replacing the environment outright drops
+    ``HOME``/``USERPROFILE``, so git cannot read the user's global config --
+    including the ``safe.directory`` exceptions that make a checkout owned by
+    another account readable at all. A gate that loses them either stops loudly
+    (g03, g05) or, worse, reads an empty ``stdout`` as "nothing is wrong" (g12).
+    """
+    return {**os.environ, **GIT_ENV}
+
+
 #: How many sample findings a gate prints before summarizing the rest.
 SAMPLE_LIMIT = 20
 
@@ -102,7 +115,7 @@ def run_git_result(args: list[str], root: Path) -> subprocess.CompletedProcess[b
     return subprocess.run(
         command,
         cwd=str(root),
-        env={**os.environ, **GIT_ENV},
+        env=git_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,

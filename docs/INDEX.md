@@ -154,10 +154,10 @@
 
 | 位置 | 是什么 |
 | --- | --- |
-| `../PORTFOLIO.md`（仓根） | 远端 **121 仓**全量索引（脚本从 Gitee API 生成） |
+| `../PORTFOLIO.md`（仓根） | 远端 **135 仓**全量索引（脚本从 Gitee API 生成） |
 | `../tools/` | 可执行门禁：仓根 `tools/repo_hygiene.py`（H1–H8）+ `tools/gate/`（`scan_hardcoded.ps1` / `check_undefined_names.py` / `docs_index.py` / `check_ps1_bom.py` / `watchdog.py` / `check_gate_drift.py` / `make_doc_aliases.ps1`）—— 2026-10-08 按实测订正落点（原写「`../tools/gate/` 含 `repo_hygiene.py`」与盘上不符，照抄会报 `No such file or directory`；同日清掉 `tools/` 下两份过期重复副本，见交接 §107.10 更正块） |
 | `preset/allin/allin.patch.yml` | 治理模式载体（cordis 声明式 preset，GOVERNANCE 块为粘合剂核；`g14-preset` 守护） |
-| `tools/gate/governance/`（本仓内，原 DSH 治理内核并入） | 规则的可执行落地：Python 运行时 `runtime/govlib.py` + `RULES.md`（规则→门禁映射）+ **15 条门禁**（`g00-meta`–`g15-docs-contract`）；聚合入口根 `package.json` 的 `check:governance`（= `npx tsx tools/gate/governance/run.ts`）。2026-10-26 由 `siwpan/deepseek-harness` 整体并入，原 DSH 远端已删除 |
+| `tools/gate/governance/`（本仓内，原 DSH 治理内核并入） | 规则的可执行落地：Python 运行时 `runtime/govlib.py` + `RULES.md`（规则→门禁映射）+ **15 条门禁**（`g00-meta`–`g15-docs-contract`）；聚合入口根 `package.json` 的 `check:governance`（= `node tools/gate/governance/run.ts --no-profile`，Node ≥ 22.18 原生类型擦除，不需要 tsx）。2026-10-26 由 `siwpan/deepseek-harness` 整体并入，原 DSH 远端已删除 |
 | DSH 仓 `governance/`（外部源，已退役） | 2026-10-26 前 `siwpan/deepseek-harness` 分发版的规则落地（`g00`–`g18`）；其治理内核已并入本仓 `tools/gate/governance/`，远端 `siwpan/deepseek-harness` 已删除 |
 | `../目录索引.txt`（仓根） | 项目目录文档化索引，生成器 `/tools/build_dir_index.py` |
 

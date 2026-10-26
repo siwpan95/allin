@@ -90,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_tools = sub.add_parser('tools', help='工具调度（gitee_release.py / 凭据脚本 / venv 安全巡检 / 技能）')
     p_tools.add_argument('args', nargs=argparse.REMAINDER,
                          help='工具名 + 透传参数，如 gitee-release --name X status / credential gitee get '
-                              '/ venv-audit scan G:/repos / skills')
+                              '/ venv-audit scan <目录> / skills')
 
     p_docs = sub.add_parser('docs', help='文档构建/索引')
     ds = p_docs.add_subparsers(dest='action', required=True)

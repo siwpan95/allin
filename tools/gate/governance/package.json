@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "让 run.ts 在本目录内按 ESM 解析：Node >= 22.18 的原生类型擦除可直接运行，不再需要 npx tsx。"
+}

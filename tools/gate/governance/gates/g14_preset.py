@@ -36,9 +36,10 @@ GATE = "g14-preset"
 TITLE = "governance: the preset stays mountable and honest"
 
 # In allin the active governance preset is the cordis declarative carrier at
-# preset/allin/allin.patch.yml (not a root-level governance/preset/ copy).
+# preset/allin/allin.patch.yml (not a root-level governance/preset/ copy), and the
+# preset that ships next to the gates is the one capability drift is judged against.
 PRESET = "preset/allin/allin.patch.yml"
-SHIPPED = "packages/bundle/web-app/presets/cordis.patch.yml"
+SHIPPED = "tools/gate/governance/preset/allin.patch.yml"
 
 BEGIN = "<!-- GOVERNANCE:BEGIN -->"
 END = "<!-- GOVERNANCE:END -->"

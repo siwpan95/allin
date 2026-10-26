@@ -1,5 +1,5 @@
 #!/bin/sh
-# allin 仓提交前钩子 —— PowerShell 编码门禁（BOM）
+# allin 仓提交前钩子 —— 编码门禁（BOM）+ 治理门禁快速子集
 #
 # 为什么存在（SPEC-004 §调试铁律 66）
 # ----------------------------------
@@ -8,37 +8,57 @@
 # 后果：`pwsh` 下看不出，**PowerShell 5.1 按 ANSI 解码 ⇒ 中文注释乱码 + 一堆假语法错误**。
 # `check_ps1_bom.py` 只能事后扫存量 —— 本钩子把"事后发现"提前到"提交前拦住"。
 #
+# 为什么还要跑治理门禁（2026-10-26 追加）
+# --------------------------------------
+# 此前钩子只查 BOM，门禁红了照样能提交：HEAD `7600eb0` 里就躺着 5 条阻断 + 3 处门禁缺陷。
+# 现在提交面会跑**快速子集**（13 条，约 8 秒）：
+#   · 排除 `g00-meta`（契约自检要跑完 15 条门禁的 `--selfcheck`，约 20 秒）→ 归 `npm run check`；
+#   · 排除 `g04-push-evidence`（要 `git ls-remote`，离线会等超时）→ 归 `npm run check`。
+# 全量核查仍是一条命令：`npm run check`（治理 + 文档 + .ps1 编码）。
+#
 # 设计纪律
 # --------
-# · **只在暂存面真的含 `.ps1` 时跑**（否则每次提交都白等几百毫秒）；
+# · **只在暂存面真的含 `.ps1` 时**跑 BOM 检查（否则每次提交都白等几百毫秒）；
 # · **不许假绿**：门禁脚本缺失/跑不起来 ⇒ 明确 FAIL 退出（`g10-failloud-probe` 口径）；
-# · 只做"拦"，不自动改 —— 补 BOM 是**字节级**操作，交给人/agent 明确执行（铁律 66 给了命令）。
+# · 只做"拦"，不自动改 —— 补 BOM 是**字节级**操作，交给人/agent 明确执行（铁律 66 给了命令）；
+# · 门禁子集只在 `package.json` 的 `check:precommit` 里定义一处，本文件不复制清单，避免两处漂移。
 set -e
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-# 暂存面（含新增）里有没有 .ps1
+# 1) .ps1 编码（仅当提交面含 .ps1）
 staged_ps1=$(git diff --cached --name-only --diff-filter=ACMR | grep -i '\.ps1$' || true)
-if [ -z "$staged_ps1" ]; then
-    exit 0
+if [ -n "$staged_ps1" ]; then
+    gate="tools/gate/check_ps1_bom.py"
+    if [ ! -f "$gate" ]; then
+        echo "[pre-commit] FAIL: 找不到 $gate —— 提交面含 .ps1，但编码门禁缺失，拒绝放行" >&2
+        exit 1
+    fi
+
+    py=python
+    command -v python >/dev/null 2>&1 || py=python3
+
+    echo "[pre-commit] 提交面含 .ps1，跑编码门禁：$staged_ps1"
+    if ! "$py" "$gate" --root . ; then
+        echo "[pre-commit] FAIL: .ps1 编码不合规（见上）。补 BOM 用字节级操作：" >&2
+        echo "  \$b=[IO.File]::ReadAllBytes(\$f); if(\$b[0] -ne 0xEF){ \$n=New-Object byte[] (\$b.Length+3);" >&2
+        echo "    [Array]::Copy([byte[]](0xEF,0xBB,0xBF),0,\$n,0,3); [Array]::Copy(\$b,0,\$n,3,\$b.Length);" >&2
+        echo "    [IO.File]::WriteAllBytes(\$f,\$n) }" >&2
+        exit 1
+    fi
 fi
 
-gate="tools/gate/check_ps1_bom.py"
-if [ ! -f "$gate" ]; then
-    echo "[pre-commit] FAIL: 找不到 $gate —— 提交面含 .ps1，但编码门禁缺失，拒绝放行" >&2
+# 2) 治理门禁快速子集（--no-profile；清单见 package.json -> check:precommit）
+if ! command -v npm >/dev/null 2>&1; then
+    echo "[pre-commit] FAIL: 找不到 npm —— 治理门禁跑不了（需要 Node.js >= 22.18），拒绝放行" >&2
     exit 1
 fi
 
-py=python
-command -v python >/dev/null 2>&1 || py=python3
-
-echo "[pre-commit] 提交面含 .ps1，跑编码门禁：$staged_ps1"
-if ! "$py" "$gate" --root . ; then
-    echo "[pre-commit] FAIL: .ps1 编码不合规（见上）。补 BOM 用字节级操作：" >&2
-    echo "  \$b=[IO.File]::ReadAllBytes(\$f); if(\$b[0] -ne 0xEF){ \$n=New-Object byte[] (\$b.Length+3);" >&2
-    echo "    [Array]::Copy([byte[]](0xEF,0xBB,0xBF),0,\$n,0,3); [Array]::Copy(\$b,0,\$n,3,\$b.Length);" >&2
-    echo "    [IO.File]::WriteAllBytes(\$f,\$n) }" >&2
+echo "[pre-commit] 跑治理门禁（快速子集；全量用 npm run check）…"
+if ! npm run --silent check:precommit; then
+    echo "[pre-commit] FAIL: 治理门禁未通过（见上）。全量核查：npm run check" >&2
     exit 1
 fi
+
 exit 0

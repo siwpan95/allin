@@ -3,7 +3,7 @@
 一个**单一索引仓库**承载工作区治理说明、文档枢纽入口与 DeepSeek Harness 治理模式的**可重装载体**：
 游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等全部个人项目的事实源与约定都从这里索引出去。
 
-> **⚠️ 盘位已变更（2026-09-24）**：原整盘工作区（盘符已撤销）的代码统一归置到 **`/projects/`**（12 个成员项目）。
+> **⚠️ 盘位已变更（2026-09-24）**：原整盘工作区（盘符已撤销）的代码统一归置到 **`/projects/`**（13 个成员项目）。
 > 本仓原先挂在 `/allin`（旧盘根），2026-09-24 起落在 `/projects/`，2026-09-27 由 `allin_push` 改名为 **`allin`**（目录名与远端仓名一致）；其文档里仍会出现一些历史路径，以"当时的事实"保留，新项目一律走 `/projects/`。
 > 接手完整背景请读本仓 [`docs/README.md`](docs/README.md) 与 [`docs/新机配置汇总_2026-09-24.md`](docs/记录/快照/新机配置汇总_2026-09-24.md)。
 
@@ -42,9 +42,9 @@
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
 - **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork；原独立 gitee 仓
   `siwpan/deepseek-harness` **已于 2026-10-26 整合后删除**——治理内核并入本仓（见「三仓整合」第 6 条），
-  工具本体仍在 `repos/deepseek-harness` 现役运行。
+  工具本体现役在 `D:\deepseek-harness`（同日的旧检出 `G:\repos\deepseek-harness` 已移除，见 [`docs/事实源/本机事实.md`](docs/事实源/本机事实.md)）。
 - 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `roleplayer` `music-master` `ncmturnmp3` `D20`。
-- 以上 12 个为本机已克隆的**成员子集**；全量 124 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
+- 以上 13 个为本机已克隆的**成员子集**；全量 135 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
 
 ## DeepSeek-Harness 治理落地（2026-09-26）
 
@@ -140,7 +140,7 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
    而本次要的是它的**治理智慧**而非代码体积，故分三个提交提取并入：
    `479793f`（cordis 粘合剂 · 治理内核）→ `2448135`（治理哲学）→ `d11c47f`（通用架构原则，填补 allin 粘合剂叙事缺口），
    落点全在 `docs/记录/` 与 `docs/规范/`。**代码本体不并入**，理由有三：
-   - 它是**现役运行工具**（本地 `repos/deepseek-harness`，版本 `1.1.0`，末次提交 2026-10-09），
+   - 它是**现役运行工具**（本地 `D:\deepseek-harness`，版本 `1.1.0`，末次提交 2026-10-09），
      `start-dsh-web.py` 与 `.dsh-home/` 会话数据都在，删了工具即断供；
    - 用户定性：**dsh 最重要的就是 API key，也就是付费接口** —— 移入 allin 只是治理归位，
      不影响原有功能继续发挥，功能性资产无需搬迁；
@@ -169,17 +169,17 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 > `repos/...` → `<工作区根>` 之下；其它相对值 → 治理仓根 `allin/` 之下（如平台自身的 `platform`）。
 > 可用 `PLATFORM_REPOS_ROOT` 覆盖发布区根。
 
-## Gitee 项目组合全量索引（124 仓）
+## Gitee 项目组合全量索引（135 仓）
 
-全量 **124 个 Gitee 仓库**（公开 124 · 私有 0，2026-10-26 实测 API 核实：整合删去 `repocheck`、`allin-platform`、
+全量 **135 个 Gitee 仓库**（公开 135 · 私有 0，2026-10-26 实测 API 核实：整合删去 `repocheck`、`allin-platform`、
 `deepseek-harness` 三仓，并补齐此前未入索引的新项目）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
 按仓库名排序，含语言 / Star / 简介 / 可见性。该文件由脚本从 Gitee API 自动生成，是**索引而非源码镜像**。
 
 **治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本地 `/projects/<仓名>`；
-不预先克隆全量 124 仓。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
+不预先克隆全量 135 仓。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
 以及**治理动脉**：两件已并入库的子件（`platform/` 集成平台、`tools/repocheck/` 体检器）
 加上 `deepseek-harness` 的治理内核（仅文档层，见第 6 条）；
-其余 **123 个仓库各自独立**（124 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
+其余 **134 个仓库各自独立**（135 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
 `PORTFOLIO.md` 随远端变化而过期，需刷新时重跑生成脚本。
 
 ## 治理准则（2026-08-27 深度审核固化）

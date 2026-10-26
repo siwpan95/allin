@@ -83,7 +83,7 @@ def staged_blob_sizes(root: Path) -> dict[str, int]:
     completed = subprocess.run(
         ["git", "cat-file", "--batch-check"],
         cwd=str(root),
-        env={**govlib.GIT_ENV},
+        env=govlib.git_env(),
         input="\n".join(order).encode("utf-8"),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

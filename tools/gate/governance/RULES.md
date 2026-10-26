@@ -39,20 +39,20 @@
 | 门禁 id | 覆盖规则 | 判据要点 | 基线 |
 | --- | --- | --- | --- |
 | `g00-meta` | 调试铁律 30 / 41、OPS-G15、OPS-P3 | 读注册表，逐个校验契约、跑 `--selfcheck`、核对 RULES.md 收录 | 无（必须恒绿） |
-| `g01-paths` | 铁律 5、调试铁律 26 / 34 / 53、OPS-E3 | 判「路径的父目录是否存在」得出死路径；按平台归属判「写死本机路径」；命中三分（**只有 CODE 有效行阻断**）；每类豁免与跳过都计数打印 | `governance/baseline/g01-paths.txt`（当前为空：存量已清零） |
-| `g03-credentials` | 铁律 0、治理准则·敏感信息、调试铁律 52、OPS-P1 / OPS-E8 | 判 `git grep --cached` 的**索引内容**（不是可能有部分暂存的落盘文件）：私有密钥块、厂商令牌形态、URL userinfo、Bearer 头、密钥型赋值；另扫 `.git/config` **全文**（含 `branch.*.remote` 里的令牌与 `credential.*.helper` 空值） | `governance/baseline/g03-credentials.txt`（当前为空） |
+| `g01-paths` | 铁律 5、调试铁律 26 / 34 / 53、OPS-E3 | 判「路径的父目录是否存在」得出死路径；按平台归属判「写死本机路径」；命中三分（**只有 CODE 有效行阻断**；`.md/.html` 等文档扩展名只报告不阻断）；每类豁免与跳过都计数打印 | `governance/baseline/g01-paths.txt`（当前为空：存量已清零） |
+| `g03-credentials` | 铁律 0、治理准则·敏感信息、调试铁律 52、OPS-P1 / OPS-E8 | 判 `git grep --cached` 的**索引内容**（不是可能有部分暂存的落盘文件）：私有密钥块、厂商令牌形态、URL userinfo、Bearer 头、密钥型赋值；另扫 `.git/config` **全文**（含 `branch.*.remote` 里的令牌与 `credential.*.helper` 空值） | `governance/baseline/g03-credentials.txt`（9 条历史存量：门禁与 `repo_hygiene.py` 的自测夹具、交接记录里引用的合成串，均已复核为误报） |
 | `g04-push-evidence` | 铁律 3、调试铁律 25 / 37 / 47、OPS-P8 / OPS-E8 | 远端 URL 无凭据；同步状态**只由 `git ls-remote` 判定**（`IN_SYNC` / `LOCAL_AHEAD` / `REMOTE_AHEAD` / `DIVERGED`）；`DIVERGED` 阻断（分叉后下一步通常是强推），本地领先与远端领先只记账；网络不可达记 **SKIP（不是通过）** | `governance/baseline/g04-push-evidence.txt`（当前为空） |
 | `g05-hygiene` | 铁律 0 / 4、治理准则·敏感信息、调试铁律 54、OPS-P2 / C3 / C4 / G3 | 只判**被跟踪**面：根三件套（LICENSE / README.md / .gitignore）、`.gitignore` 必须覆盖凭据面（`.env` / `*.pem` / `*.key` / `__pycache__/`）、无产物目录与字节码/日志/`*.egg-info` 入索引、无超阈值大文件（阈值按本仓实测定为 5 MiB，最大文件 ~2.3 MB）、归档目录必须有 README/MANIFEST | `governance/baseline/g05-hygiene.txt`（当前为空） |
 | `g06-numbering` | 调试铁律 45、OPS-G4 / G5 / D7 | 序号版本文件（`v0.*`、`v1.*`…）必须从最小号起连续；中英配对文档的**列表形状必须逐项相等**（列表数、编号标签、条目数），代码围栏内不计 | `governance/baseline/g06-numbering.txt`（当前为空） |
-| `g07-doc-freshness` | 调试铁律 57 / 58、OPS-D6 | 文档在**开头 20 行内第一人称自称**环境事实源/快照时，必须带时点；自称「快照」的还必须带失效或「以…为准」条款；Agent Notes 与 vendor 整体排除 | `governance/baseline/g07-doc-freshness.txt`（当前为空） |
+| `g07-doc-freshness` | 调试铁律 57 / 58、OPS-D6 | 文档在**开头 20 行内第一人称自称**环境事实源/快照时，必须带时点；自称「快照」的还必须带失效或「以…为准」条款；Agent Notes 与 vendor 整体排除 | `governance/baseline/g07-doc-freshness.txt`（1 条：2026-08 交接卷自称快照却缺失效条款，已复核） |
 | `g08-deletion-evidence` | 治理准则·冗余退役三查、OPS-G5 / G13 | 判指定提交（默认 `HEAD`，可 `--range A..B`）**删了文件却没有「功能面 × 接任者」对照表**（表头标记 + ≥2 行表格）→ 阻断；显式 `gov-deletion: allow` 可豁免并留痕 | `governance/baseline/g08-deletion-evidence.txt`（当前为空） |
 | `g14-preset` 的 **profile 探针**（2026-09-27 追加） | 铁律 5、OPS-D4 / D5 | 读 `$DSH_HOME/profiles/web/package.json`（`--profile` 可指定、`--no-profile` 可关）：**本地 `link:`/`file:` bundle 的链接目标必须存在**（仓目录改名/搬动后必然悬空）→ 阻断；profile 里的 `node_modules/<name>` 必须可解析；bundle 声明的 `dsh.bundle.patch` 必须存在；该 patch 的 `GOVERNANCE:BEGIN/END` 必须成对。官方 `@deepseek-ai/*` bundle 从 DSH 安装目录解析，**计数豁免**不动；profile 不存在记 **SKIP（不是通过）**。**聚合默认不读仓外**：`check:governance` 带 `--no-profile`，只转发给注册表声明 `profileProbe` 的门禁；要查部署面就单跑本门禁。起因见下方「profile 探针的由来」 | 无（必须恒绿） |
-| `g09-python-hygiene` | 调试铁律 35 / 38 / 43 | 文本 I/O（`open`/`read_text`/`write_text`）必须显式 `encoding=`；非 raw 字符串里的盘符路径（`\d`/`\a` 这类转义伪影）阻断；`-W error::SyntaxWarning` 编译不通过即阻断。上游存量站点已冻进基线，**新增即拦** | `governance/baseline/g09-python-hygiene.txt`（存量 72 条，待逐步归零） |
+| `g09-python-hygiene` | 调试铁律 35 / 38 / 43 | 文本 I/O（`open`/`read_text`/`write_text`）必须显式 `encoding=`；非 raw 字符串里的盘符路径（`\d`/`\a` 这类转义伪影）阻断；`-W error::SyntaxWarning` 编译不通过即阻断。上游存量站点已冻进基线，**新增即拦** | `governance/baseline/g09-python-hygiene.txt`（存量 38 条，2026-10-26 复核全部仍复现，待逐步归零） |
 | `g10-failloud-probe` | OPS-E1 / E2、调试铁律 39、铁律 5 | 给每条已登记门禁喂一个**不可能存在的 root**，必须非 0 退出**且**有报错信息；静默返回 0 或静默失败都阻断 | 无（必须恒绿） |
 | `g11-undef-names` | 调试铁律 32 / 40 | AST 收集全文件的定义名（导入/赋值/函数类/形参/推导式目标/with-except-for 目标/海象/global）与读取名，报「读了但全文件从未定义」；解析失败单独报 | `governance/baseline/g11-undef-names.txt`（当前为空） |
 | `g12-integrity` | 调试铁律 51 / 58、OPS-E8 | `HEAD^{commit}` 必须可解析（`rev-parse --verify HEAD` 只解析 ref 名，验证不了对象存在）；HEAD 可达对象必须逐个可读；`--deep` 追加 `git fsck --connectivity-only`。盘健康（事件日志/脏位）**明确不在本门禁**：Windows 专属、另有归属，跑不了的判据不装成通过 | `governance/baseline/g12-integrity.txt`（当前为空） |
 | `g13-docs-only` | OPS-D1 / G8 / G17 | `docs/**` 扩展名白名单（`.md/.json/.yaml/.png/...`）；脚本、二进制、归档一律阻断；**可执行位**也阻断 | `governance/baseline/g13-docs-only.txt`（当前为空） |
-| `g14-preset` | 铁律 5、调试铁律 42、OPS-D4 / D5 | 治理 preset：`GOVERNANCE:BEGIN/END` 成对有序、治理段内无盘符路径、插件名序列与出厂 `cordis.patch.yml` **逐项相等**（上游破坏性变更 → 变红）、persona 引用的仓内文件存在、提到的门禁 id 都在注册表里；**外加 profile 探针**（见上一行） | 无（必须恒绿） |
+| `g14-preset` | 铁律 5、调试铁律 42、OPS-D4 / D5 | 治理 preset：`GOVERNANCE:BEGIN/END` 成对有序、治理段内无盘符路径、插件名序列与随门禁出厂的 `tools/gate/governance/preset/allin.patch.yml` **逐项相等**（上游破坏性变更 → 变红）、persona 引用的仓内文件存在、提到的门禁 id 都在注册表里；**外加 profile 探针**（见上一行） | 无（必须恒绿） |
 | `g15-docs-contract` | **SPEC-005 全部**、OPS-D6 / D7、调试铁律 45 | 文档枢纽索引契约（**选用制**）：D1 文档未登记索引 / D2 索引指向不存在的文件 / D3 规范缺头部字段 / D4 规范名带日期或记录名无日期 / D5 分类与所在目录不一致 / D6 ASCII 别名缺失或指向错误 / D7 交接卷号有空洞或缺覆盖区间。**本仓 `docs/` 没有 `INDEX.md` 时记 `SKIPPED (not a pass)` 并计数**，不当作通过。判据与 allin 仓 `tools/gate/docs_index.py` 同源 | `governance/baseline/g15-docs-contract.txt`（allin 侧存量为 0） |
 
 ### profile 探针的由来（2026-09-27，真实故障）
@@ -71,16 +71,17 @@
 
 1. **必须泛化到 POSIX**：只认盘符的版本在 Linux/macOS 上恒绿，等于没有门禁；因此判据是「绝对路径的父目录不存在」，Windows 盘符与 `/Users`、`/home`、`/Volumes`、`/mnt`、`/media` 同等对待。
 2. **平台归属**：为另一个平台书写的路径（Windows 上的 `/Users/...`、POSIX 上的 `C:\...`）只报告不阻断 —— 本仓三平台分发，Windows 专用脚本里的盘符是合法的。
-3. **豁免必须绑定文件类型与目录层级**：测试面只认目录段（`tests/`、`fixtures/`、`__snapshots__/`…）与文件模式（`*.spec.ts`、`*_test.py`…），**不做子串匹配**（历史上 `spec/` 子串豁免曾放过一整片）。
+3. **豁免必须绑定文件类型与目录层级**：测试面只认目录段（`tests/`、`fixtures/`、`__snapshots__/`…）与文件模式（`*.spec.ts`、`*_test.py`、`test_*.py`…），**不做子串匹配**（历史上 `spec/` 子串豁免曾放过一整片）。
 4. **转义伪影**：盘符前加负向后顾 `(?<![A-Za-z0-9_])`，并要求分隔符后不是转义尾巴（`\n`/`\t`…），否则 `` `diagnostics:\n` `` 这类字符串会被误判成路径。
 5. **计数不静默丢弃**：每次运行都打印 `exempted: 类别=数量`，任何一类豁免膨胀都能在输出里看见。
+6. **文档面按扩展名整体降级**：`.md/.mdx/.rst/.txt/.adoc/.html/.htm` 只报告不阻断（`--include-docs` 才阻断）——旧机事实表这类文档里的历史死路径是**证据**，不是缺陷。
 
 ### g03-credentials / g04-push-evidence 的判定口径（误报治理留档）
 
 1. **扫索引而不是落盘**：候选行来自 `git grep --cached`；`.gitattributes` 做过 EOL 归一化时，落盘内容与索引并不一致，只看工作树会漏。
 2. **占位符白名单必须三层**：整体形如 `<...>`/`${...}`/`your-*`/`redacted` 的值；**值内含** `test`/`example`/`mock`/`synthetic`/`e2e`/`do-not-log` 这类合成标记；以及 `process.env.*`、`os.environ`、`getenv(` 这类**环境引用**（读环境是配置，不是泄露）。
 3. **泛型赋值要求「长不间断串」**：真实凭据是长串而非分词短语，所以 `plum-galaxy-1791` 这类夹具名不阻断 —— 值里必须出现 ≥16 字符的连续字母数字串，且**含数字**（类型名、标识符、文档标签都没有数字）。
-4. **样例主机与样例账号不算泄露**：`example.*`、`*.invalid`、`*.test`、`localhost` 上的 userinfo，以及 `user:password` 这类文档配对，一律豁免。
+4. **样例主机与样例账号不算泄露**：`example.*`、`*.invalid`、`*.test`、`localhost` 上的 userinfo，以及 `user:password` 这类文档配对，一律豁免；userinfo 的密码位是 `${TOKEN}` 这类**环境展开**时同样豁免（与赋值口径一致）。
 5. **行内注记必须与样本同一行**：`gov-credentials: allow` 只豁免它所在的那一行；夹具文件（`*.example`、`*.sample`、`*.template`）整文件豁免。
 6. **同步状态只信远端**：`origin/BR` 是缓存，任何一次用 URL 直推都会让它过期；判定必须走 `git ls-remote`，并把方向（本地领先 / 远端领先 / 分叉）分别报出来。
 7. **自检夹具要落在被扫的位置**：`g04` 用**真实的本地裸仓**跑通 `IN_SYNC → LOCAL_AHEAD → DIVERGED` 三态；`g03` 的夹具注记必须写进夹具文件内容里（写在生成夹具的代码行上只豁免门禁自身）。

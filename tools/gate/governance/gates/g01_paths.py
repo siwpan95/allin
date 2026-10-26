@@ -61,7 +61,9 @@ FIXTURE_SEGMENTS = (
 )
 
 #: Test-file names, matched as a whole name so a directory called "latest" is untouched.
-TEST_FILE_NAMES = re.compile(r"(\.(spec|test)\.(ts|tsx|mts|cts|js|mjs|cjs)$)|(_test\.(py|cpp|cc|c|h)$)")
+#: Both pytest conventions count: ``test_module.py`` and ``module_test.py``.
+TEST_FILE_NAMES = re.compile(r"(\.(spec|test)\.(ts|tsx|mts|cts|js|mjs|cjs)$)|(^test_[^/]*\.py$)"
+                             r"|(_test\.(py|cpp|cc|c|h)$)")
 
 #: Binary and asset extensions: never scanned, and counted as such.
 SKIP_EXTENSIONS = frozenset(
@@ -70,7 +72,9 @@ SKIP_EXTENSIONS = frozenset(
 )
 
 #: Documentation extensions: reported, never blocking, unless --include-docs.
-DOC_EXTENSIONS = frozenset({".md", ".mdx", ".rst", ".txt", ".adoc"})
+#: ``.html`` is documentation too: the old-machine fact sheet is prose with machine
+#: paths in it, and judging it as code turned its dead paths into blockers.
+DOC_EXTENSIONS = frozenset({".md", ".mdx", ".rst", ".txt", ".adoc", ".html", ".htm"})
 
 #: Comment leaders per extension family, used only to classify a line, never to hide a file.
 LINE_COMMENT_LEADERS = ("//", "#", "*", "/*", "<!--", "--", ";", '"""', "'''")
@@ -298,13 +302,16 @@ def main(argv: list[str]) -> int:
         return EXIT_OK
     if not args.no_baseline:
         baseline.load()
-    new_findings = report.findings if args.no_baseline else baseline.filter_new(report.findings)
-    report.findings = report.findings if args.list_all else new_findings
+    all_findings = report.findings
+    new_findings = all_findings if args.no_baseline else baseline.filter_new(all_findings)
+    report.findings = all_findings if args.list_all else new_findings
     if args.quiet:
         print(report.render().splitlines()[0])
     else:
         print(report.render())
-    stale = baseline.stale(new_findings) if baseline.keys else []
+    # The ratchet note must be judged against every finding, not the filtered list:
+    # filtering first makes every reproduced key look stale.
+    stale = baseline.stale(all_findings) if baseline.keys else []
     if stale and not args.quiet:
         print(f"  note: {len(stale)} baseline entr(ies) no longer reproduce; refresh with --write-baseline")
     return EXIT_BLOCKING if new_findings else EXIT_OK

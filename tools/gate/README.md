@@ -223,7 +223,7 @@ pwsh -File /tools/gate/make_doc_aliases.ps1 -Check   # 只校验：四个别名�
 | 落点 | 形态 | 谁在用 |
 | --- | --- | --- |
 | 本目录（`tools/gate/`，随本仓 `siwpan/allin` 分发） | PowerShell + Python 脚本，多仓扫描、基线在 `audit/` | 本工作区的日常巡检 |
-| `tools/gate/governance/`（由 DSH 治理内核并入） | **一份 Python 门禁运行时 `runtime/govlib.py` + 15 条门禁**（`g00-meta`~`g15-docs-contract`），单仓、跨平台、每条自带 `--selfcheck`；聚合入口 `npx tsx tools/gate/governance/run.ts`（或根 `package.json` 的 `check:governance`） | 本仓自身的治理门禁，经 `check:governance` 驱动 |
+| `tools/gate/governance/`（由 DSH 治理内核并入） | **一份 Python 门禁运行时 `runtime/govlib.py` + 15 条门禁**（`g00-meta`~`g15-docs-contract`），单仓、跨平台、每条自带 `--selfcheck`；聚合入口 `node tools/gate/governance/run.ts`（Node ≥ 22.18 原生类型擦除，不需要 tsx；或根 `package.json` 的 `check:governance`） | 本仓自身的治理门禁，经 `check:governance` 驱动 |
 
 > ⚠ **落点订正**：DSH 治理内核原在 `/repos/deepseek-harness/governance/`（本机去符盘形式）；2026-10-26 已整体并入本仓 `tools/gate/governance/` 并删除 DSH 远端。路径一律以 [`../../docs/事实源/本机事实.md`](../../docs/事实源/本机事实.md) 的实测值为准。
 

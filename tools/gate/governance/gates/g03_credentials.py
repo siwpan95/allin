@@ -72,6 +72,11 @@ ENV_REFERENCES = ("process.env", "import.meta.env", "os.environ", "os.getenv", "
 #: Hosts that exist only in examples and tests.
 SAMPLE_HOSTS = ("example.", ".invalid", ".test", "localhost", "127.0.0.1", "host.invalid")
 
+#: A userinfo password slot that expands from the environment, not a literal secret.
+ENV_REFERENCE_VALUE = re.compile(
+    r"(?i)^(?:\$\{?[a-z_][a-z0-9_]*\}?|%[a-z_][a-z0-9_]*%|\{\{.*\}\}|<[^>]+>)$"
+)
+
 #: A userinfo pair that is obviously a documentation placeholder.
 SAMPLE_USERINFO = ("user:password", "user:pass", "username:password", "user:secret", "admin:admin")
 
@@ -123,7 +128,12 @@ def url_is_sample(match: str, line: str) -> bool:
     if any(host in lowered_line for host in SAMPLE_HOSTS):
         return True
     userinfo = match.split("://", 1)[-1].split("@", 1)[0].lower()
-    return userinfo in SAMPLE_USERINFO
+    if userinfo in SAMPLE_USERINFO:
+        return True
+    # A password slot that expands from the environment (``${TOKEN}``, ``$TOKEN``,
+    # ``%TOKEN%``, ``{{ token }}``, ``<token>``) is configuration, not a committed
+    # secret -- the same allowance the assignment patterns already give.
+    return ENV_REFERENCE_VALUE.match(userinfo.rsplit(":", 1)[-1]) is not None
 
 
 def candidate_lines(root: Path) -> list[tuple[str, int, str]]:
@@ -131,7 +141,7 @@ def candidate_lines(root: Path) -> list[tuple[str, int, str]]:
     completed = subprocess.run(
         ["git", "-c", "core.quotepath=false", "grep", "--cached", "-n", "-I", "-i", "-E", PREFILTER],
         cwd=str(root),
-        env={**govlib.GIT_ENV},
+        env=govlib.git_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
@@ -235,6 +245,10 @@ def selfcheck() -> int:
         sandbox.write("src/keys.ts", "const apiKey = 'a8f3d9e2b7c4a1f6d0e5b8c3a9f2d7e4'\n")  # gov-credentials: allow
         sandbox.write("src/legacy.ts",
                       "const token = 'https://svc:8f14e45fceea167a5a36dedd4bea2543@git.corp-net.io/x'\n")  # gov-credentials: allow
+        # Deliberately no annotation: the fixture must prove the environment-reference
+        # allowance inside a URL userinfo, not the inline opt-out.
+        sandbox.write("src/push_example.ts",
+                      "const push = 'https://<user>:${TOKEN}@gitee.com/<owner>/<repo>.git'\n")
         report = scan(sandbox.path)
         blocked = {finding.kind for finding in report.findings}
         blocked_paths = {finding.path for finding in report.findings}
@@ -244,6 +258,8 @@ def selfcheck() -> int:
         check.detects("secret-shaped assignment", "assignment" in blocked)
         check.quiet("clean lines, placeholders, env references, and sample hosts",
                     "src/clean.ts" in blocked_paths or "src/config.ts" in blocked_paths)
+        check.quiet("a URL userinfo that expands an environment variable",
+                    "src/push_example.ts" in blocked_paths)
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/ok.ts", "export const answer = 42\n")
