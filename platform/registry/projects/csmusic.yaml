@@ -1,0 +1,14 @@
+id: csmusic
+name: CS 音乐盒成品库
+category: music
+version: 1.0.0
+path: repos/csmusic
+manual: true
+note: 94 个 CS 音乐盒 / 1138 首 MP3 成品 + 批量下载脚本；MP3 资源本地保留，不入库
+launch:
+  command: python download_mp3.py
+publish:
+  # 2026-10-26 建仓归位：G:\assets 整体是资源池，其中带脚本的项照 fonts / radio_special_instruments
+  # 的路子建仓入 G:\repos；曲目清单 _all_music_urls.txt 已入库，可据此复现全部曲目
+  repo: siwpan/csmusic
+  branch: master

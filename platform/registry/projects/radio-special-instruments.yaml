@@ -1,0 +1,15 @@
+id: radio-special-instruments
+name: 特殊乐器采样包库
+category: music
+version: 1.0.0
+path: repos/radio_special_instruments
+manual: true
+note: CC0 特殊乐器采样包（钢琴/管弦/世界打击乐，4100+ 音频文件）+ 下载与乐器池生成脚本；采样资源本地保留，不入库
+launch:
+  command: python generate_pool_yaml.py
+publish:
+  # 2026-10-26 建仓归位：G:\assets 整体是资源池，其中带脚本的项照 fonts / csmusic 的路子建仓入
+  # G:\repos；id 用连字符（登记 id 受 ^[a-z0-9][a-z0-9-]*$ 约束，下划线非法），
+  # path / publish.repo 保留真实仓名 radio_special_instruments
+  repo: siwpan/radio_special_instruments
+  branch: master

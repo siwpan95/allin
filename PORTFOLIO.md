@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 130 个仓库**（公开 130 · 私有 0）。
+**共 132 个仓库**（公开 132 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -37,6 +37,7 @@
 | [siwpan/cordis-table-app](https://gitee.com/siwpan/cordis-table-app.git) | — | 0 | 公开 | 基于 Cordis 内核 + OpenPyXL 的表格小应用：Node.js 宿主编排，Python 经 JSON-RPC stdio 桥接 OpenPyXL。 |
 | [siwpan/cordis-text-game](https://gitee.com/siwpan/cordis-text-game.git) | — | 0 | 公开 | Cordis「一切皆插件」文字冒险引擎示例（迷雾地窖）：房间/物品/指令/渲染层/黑暗机制全是可装卸插件 |
 | [siwpan/crawl-hub](https://gitee.com/siwpan/crawl-hub.git) | — | 0 | 公开 | crawl_hub ???????(????? + ????) |
+| [siwpan/csmusic](https://gitee.com/siwpan/csmusic.git) | — | 0 | 公开 | CS 音乐盒成品库（94 个音乐盒 / 1138 首 MP3）+ 批量下载脚本｜/repos/csmusic |
 | [siwpan/d20-table-link](https://gitee.com/siwpan/d20-table-link.git) | — | 0 | 公开 | d20（TRPG 规则内核）× Cordis 表格应用（载体）联动适配器：连接 siwpan/d20 与 cordis-table-app，规则/表格双向互通 |
 | [siwpan/daily_player](https://gitee.com/siwpan/daily_player.git) | — | 0 | 公开 | 基于 libVLC 的日常视频播放器：字幕、播放列表、快捷键与托盘 |
 | [siwpan/darksouls](https://gitee.com/siwpan/darksouls.git) | Python | 0 | 公开 | 黑暗之魂 |
@@ -109,6 +110,7 @@
 | [siwpan/py_test_runner](https://gitee.com/siwpan/py_test_runner.git) | — | 0 | 公开 | Python 多模式测试框架：AST 静态扫描 + 架构模式识别 + 动态运行，输出 HTML / JSON / 覆盖率报告 |
 | [siwpan/pyinstaller](https://gitee.com/siwpan/pyinstaller.git) | — | 0 | 公开 | PyInstaller 批量打包工具箱：从基础 GUI 到专业级（签名 / UPX / 图标转换） |
 | [siwpan/pywallpaper](https://gitee.com/siwpan/pywallpaper.git) | — | 0 | 公开 | pywallpaper |
+| [siwpan/radio_special_instruments](https://gitee.com/siwpan/radio_special_instruments.git) | — | 0 | 公开 | 特殊乐器采样包库（CC0 等）+ 下载与乐器池生成脚本｜/repos/radio_special_instruments |
 | [siwpan/random-dungeon-](https://gitee.com/siwpan/random-dungeon-.git) | Python | 0 | 公开 | 随机地牢 |
 | [siwpan/remix](https://gitee.com/siwpan/remix.git) | — | 0 | 公开 | remix pydub ??? |
 | [siwpan/renamer](https://gitee.com/siwpan/renamer.git) | — | 0 | 公开 | 正则批量重命名桌面工具：默认 dry-run、五类风险标红、链式改名安全处理 |
