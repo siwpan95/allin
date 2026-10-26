@@ -1,0 +1,14 @@
+id: sin-virtue-cordis-host
+name: 七宗罪VS七美德·Cordis 宿主原型
+category: game
+gameplay: [visual-novel]
+version: 0.1.0
+path: repos/sin-virtue-cordis-host
+manual: true
+note: 用 Cordis（@deepseek-ai/cordis@4.x）实现的「一切皆插件」架构验证原型，对应《如果从原创的角度出发，这样的测试可以如何设计》第三章；附 cordis-primer.zh.md
+launch:
+  command: npm start
+publish:
+  # 2026-10-26 建仓归位：原在 G:\local\12test\cordis-host（实验区），随该批归位入 G:\repos
+  repo: siwpan/sin-virtue-cordis-host
+  branch: master

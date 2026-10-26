@@ -1,0 +1,14 @@
+id: sin-virtue-game
+name: 七宗罪VS七美德·互动叙事测试原型
+category: game
+gameplay: [visual-novel]
+version: 1.0.0
+path: repos/sin-virtue-game
+manual: true
+note: 趣味性优先的互动叙事游戏原型（前端引擎 + Node/Express 后端 + 12 卡数据，4 张 QTE、7 基础 + 3 覆盖结局）；含 docx 设计文档与生成脚本
+launch:
+  command: npm start
+publish:
+  # 2026-10-26 建仓归位：原在 G:\local\12test\sin_virtue_game（实验区），随该批归位入 G:\repos
+  repo: siwpan/sin-virtue-game
+  branch: master

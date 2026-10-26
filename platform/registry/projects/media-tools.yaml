@@ -1,0 +1,15 @@
+id: media-tools
+name: 媒体视觉小工具集
+category: media
+version: 1.0.0
+path: repos/media-tools
+manual: true
+note: 五个独立小项目合仓：art(软件三角形光栅化) / create(手动构造 PNG) / lap(风扇仿真) / wallpaper1(carboy 动态壁纸) / wallpaper2(form 跨平台壁纸设置)
+launch:
+  command: python art/main.py
+publish:
+  # 2026-10-26 建仓归位：原在 G:\local\media-archive 下 5 个**未声明归档**的项目
+  # （同批的 media_engine / brownian_wave / wallpaper5 / draw / wallpaper_pywallpaper
+  #  均自带「已归档（2026-08-21）」声明且继任者 pywallpaper 在库，故随那批清理）
+  repo: siwpan/media-tools
+  branch: master

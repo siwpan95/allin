@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 132 个仓库**（公开 132 · 私有 0）。
+**共 135 个仓库**（公开 135 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -77,6 +77,7 @@
 | [siwpan/mathematical-formula-renderer](https://gitee.com/siwpan/mathematical-formula-renderer.git) | Python | 0 | 公开 | 类教学工具 |
 | [siwpan/mc-clone](https://gitee.com/siwpan/mc-clone.git) | — | 0 | 公开 | MCclone（自 game-collection 拆分） |
 | [siwpan/mcclone3d](https://gitee.com/siwpan/mcclone3d.git) | — | 0 | 公开 | 《我的世界》风格 3D 体素沙盒（基于 3dworld 引擎）：确定性体素世界 / 世界级 UV 投影贴图 / 第一人称挖掘放置 / 存档 |
+| [siwpan/media-tools](https://gitee.com/siwpan/media-tools.git) | — | 0 | 公开 | 媒体/视觉小工具集：软件光栅化 / PNG 构造 / 风扇仿真 / 动态壁纸 / 壁纸设置｜/repos/media-tools |
 | [siwpan/midi](https://gitee.com/siwpan/midi.git) | — | 0 | 公开 | midi（自 media-collection 拆分） |
 | [siwpan/midjourney_video](https://gitee.com/siwpan/midjourney_video.git) | — | 0 | 公开 | Midjourney Explore 视频抓取下载工具（Playwright），CLI + GUI 双入口 |
 | [siwpan/mirsolo](https://gitee.com/siwpan/mirsolo.git) | — | 0 | 公开 | 热血传奇单机复刻（致敬，非官方）—— 基于 3dworld + allin-engine 的确定性 ARPG 逻辑核 |
@@ -122,6 +123,8 @@
 | [siwpan/sfx-download](https://gitee.com/siwpan/sfx-download.git) | Python | 0 | 公开 | 亲测可用（bushi |
 | [siwpan/shikonghuaban](https://gitee.com/siwpan/shikonghuaban.git) | — | 0 | 公开 | 时空画板（自 media-collection 拆分） |
 | [siwpan/sign-in-simulator](https://gitee.com/siwpan/sign-in-simulator.git) | Python | 0 | 公开 | 签到一下吧 |
+| [siwpan/sin-virtue-cordis-host](https://gitee.com/siwpan/sin-virtue-cordis-host.git) | — | 0 | 公开 | 七宗罪 VS 七美德 · Cordis「一切皆插件」宿主验证原型｜/repos/sin-virtue-cordis-host |
+| [siwpan/sin-virtue-game](https://gitee.com/siwpan/sin-virtue-game.git) | — | 0 | 公开 | 七宗罪 VS 七美德 · 互动叙事测试原型（前端引擎 + Node 后端 + 12 卡数据 + docx 设计文档）｜/repos/sin-virtue-game |
 | [siwpan/smile](https://gitee.com/siwpan/smile.git) | — | 0 | 公开 | smile 签到+表情包（自 sign-in-simulator#2.0 拆分） |
 | [siwpan/stay](https://gitee.com/siwpan/stay.git) | — | 0 | 公开 | Progress Quest 2 正统续作｜/repos/stay |
 | [siwpan/subtitle](https://gitee.com/siwpan/subtitle.git) | — | 0 | 公开 | 桌面字幕处理工具（Tkinter + ffmpeg）：提取、编辑、烧录，面向中文用户 |
