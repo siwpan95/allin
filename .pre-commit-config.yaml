@@ -1,0 +1,24 @@
+# 仓根静态分析基线（补齐 kernel/ / platform/ 之外的覆盖面：docs、tools、registry、preset）
+#
+# 为什么必须有这一份：子仓各自的 .pre-commit-config.yaml 只覆盖自己那棵子树，
+# 而仓根恰恰装着最容易泄密的东西——注册表、审计记录、preset 补丁。密钥属「day-1 block」
+# 类问题：一旦进历史就必须回滚重写，绝不进影子模式，所以这里 gitleaks 直接拦。
+#
+# 只放了「不会改写文件内容」的钩子：本仓文档多、换行与 BOM 有既有约定
+# （g05-hygiene / check_ps1_bom 已管），再加 end-of-file-fixer 之类的格式化钩子
+# 只会制造与门禁互相打架的噪音。
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: check-yaml
+        files: ^(platform/registry/.*\.yaml|tools/gate/governance/.*\.ya?ml)$
+      - id: check-json
+        files: \.json$
