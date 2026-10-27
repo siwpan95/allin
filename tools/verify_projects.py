@@ -42,7 +42,9 @@ except ImportError:  # pragma: no cover - zero-dependency path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "platform" / "registry" / "projects"
 REPOS = ROOT.parent / "repos"
-SYSTEM_PYTHON = Path(r"G:\Python314\python.exe")
+# g01 铁律 5：绝不写死机器盘符解释器。优先级：ALLIN_PYTHON 环境变量 > 当前解释器。
+_env_python = os.environ.get("ALLIN_PYTHON")
+SYSTEM_PYTHON = Path(_env_python) if _env_python else Path(sys.executable)
 DEFAULT_REPORT = ROOT / "tools" / "gate" / "audit" / "projects_verify.json"
 
 HEADLESS_ENV = {
