@@ -97,7 +97,7 @@ paths:
                     note: null
                     order: 1
                     port: 5173
-                    path: 'D:/projects/cordis-table-app'
+                    path: 'repos/cordis-table-app'
                     manual: false
                     valid: true
                     running: true
@@ -300,7 +300,7 @@ paths:
       description: |
         调用 `allin_engine dump-profile --json`，返回引擎装配视图（CLI 调用，缓存 30s；
         execFile 异步化，不阻塞事件循环）。未配置 `PLATFORM_ALLIN_ENGINE_CWD` 时返回
-        `{ ok: false, error }` 而不是硬编码路径（2026-09-24 G:\repos 解绑强化）。
+        `{ ok: false, error }` 而不是硬编码路径（2026-09-24 解绑强化）。
       operationId: getEngine
       security:
         - loopbackBoundary: []
@@ -506,7 +506,7 @@ components:
         path:
           type: string
           description: 项目目录（由环境变量 PLATFORM_ALLIN_ENGINE_CWD 解析，不写死）
-          example: 'D:/projects/cordis-table-app'
+          example: 'repos/cordis-table-app'
         manual:
           type: boolean
           example: false
