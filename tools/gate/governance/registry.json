@@ -93,7 +93,8 @@
         "network-optional"
       ],
       "baseline": "governance/baseline/g04-push-evidence.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "context": "push"
     },
     {
       "id": "g05-hygiene",

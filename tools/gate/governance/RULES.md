@@ -59,6 +59,21 @@
 | `g19-docs-refs` | 铁律 2、OPS-G5、调试铁律 46 | **文档即测试（docs-as-tests）**（2026-10-28 新增）：文档是断言集，所以跑断言。三类可验证主张 —— ① **命令目标**：围栏块（bash/sh/console/python/powershell 等）里的 `python x.py` / `node x.js` / `bash x.sh` 必须指向存在的文件（解析基准放宽：仓根 / 文档自身目录 / 上级目录 / 带前导 `/`，存在即过，哪儿都不存在才红）；② **npm 脚本**：`npm run <name>` 必须存在于从文档所在包到根包的 `package.json` 链；③ **路径引用**：`docs/ tools/ scripts/ platform/ kernel/ preset/ architecture/` 开头的仓内相对路径必须存在。**豁免且计数可见**：`docs/md/`（冻结历史树，与 `docs_index` 同一口径）、`vendor/`、`.workbuddy/skills/`（描述的是别仓）、`tools/gate/audit/`（运行时产物，不入库）；`docs/记录/` 与 `audit-fragments/` 是** dated 快照**，豁免路径引用但仍判命令（记录说「当时如此」，规范说「现在为真」）。存量按棘轮冻结在 `baseline/g19-docs-refs.txt`，只拦新增 | `governance/baseline/g19-docs-refs.txt`（2026-10-28 冻结 20 键，全部为跨仓/退役文档的历史引用） |
 | `g15-docs-contract` | **SPEC-005 全部**、OPS-D6 / D7、调试铁律 45 | 文档枢纽索引契约（**选用制**）：D1 文档未登记索引 / D2 索引指向不存在的文件 / D3 规范缺头部字段 / D4 规范名带日期或记录名无日期 / D5 分类与所在目录不一致 / D6 ASCII 别名缺失或指向错误 / D7 交接卷号有空洞或缺覆盖区间。**本仓 `docs/` 没有 `INDEX.md` 时记 `SKIPPED (not a pass)` 并计数**，不当作通过。判据与 allin 仓 `tools/gate/docs_index.py` 同源 | `governance/baseline/g15-docs-contract.txt`（allin 侧存量为 0） |
 
+### 门禁的分层与上下文（2026-10-28 新增，`run.ts --tier`）
+
+`package.json` 的 `check:precommit` 原先手写一份门清单（`--only g01,...,g15`）。
+**它漂移过两次**：新增 `g16`/`g17`/`g18` 后没人同步，预提交阶段于是静默地
+不再跑那三条新门禁——清单本身成了唯一没有门禁看守的事实。现改为按声明选择：
+
+- **`--tier P0,P1`** —— 选出 `registry.json` 里 tier 匹配的门禁。层号写在注册表里，
+  与门禁同一处声明，新增门禁不必再改任何清单。
+- **`context`** —— 默认 `local`（离线可跑）；声明为 `push` 的门禁（`g04-push-evidence`
+  需要 `git ls-remote` 的权威远端证据）会被分层选择跳过，
+  **没有网络时预提交不会因为拿不到远端而失败**。全量 `check:governance` 仍会跑它。
+
+> 性能预算见 `npm run metrics:gates` 指标 ④：单次聚合当前 p95 约 54s，
+> 逼近研究共识的 60s 上限；一旦越线，应把预提交降到 `--tier P0` 而非放宽预算。
+
 ### profile 探针的由来（2026-09-27，真实故障）
 
 仓目录由 `allin_push` 改名为 `allin` 后，DSH profile 里那条

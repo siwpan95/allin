@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Turn the gate execution trail into the three governance metrics.
+"""Turn the gate execution trail into the governance metrics.
 
 `scripts/run_all_gates.sh` appends one JSON line per executed check to
 `tools/gate/audit/gate-runs.jsonl`. Without that trail a repository can only
@@ -15,6 +15,11 @@ questions that actually matter (and that an auditor asks first):
    whether the pile is shrinking. Every frozen baseline key and every hygiene
    exemption row is accepted risk; accepted risk has to be counted, and a count
    that never moves is a count nobody is working on.
+4. **性能预算 (gate latency budget)** -- how long each check takes against a
+   budget. The literature is unsubtle here: a check that takes minutes gets
+   skipped, worked around, or switched off, and then it is not a control at all.
+   Reported per label as p50 / p95 / max; p95 over budget is what counts, so a
+   single cold-start outlier does not condemn a fast gate.
 
 The tool is a reporter, never a gate: it always exits 0 unless asked for an
 unusable input (missing trail), where it exits 3 like the gates do.
@@ -37,6 +42,7 @@ EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
 
 FRESH_HOURS = 24
 AGING_DAYS = 7
+BUDGET_MS = 60_000          # 门禁研究共识：单次检查应 < 60s，慢过这条线的门禁会被绕过
 
 
 def read_lines(path: Path) -> list[str]:
@@ -110,7 +116,37 @@ def previous_snapshot() -> int | None:
         return None
 
 
-def build_metrics(runs: list[dict], days: int) -> dict:
+def percentile(values: list[int], fraction: float) -> int:
+    """Nearest-rank percentile; the sample is tiny, so no interpolation games."""
+    if not values:
+        return 0
+    ordered = sorted(values)
+    index = max(0, min(len(ordered) - 1, int(round(fraction * (len(ordered) - 1)))))
+    return ordered[index]
+
+
+def latency(runs: list[dict], budget_ms: int) -> dict:
+    """Per-label latency against the budget; p95 over budget is the verdict."""
+    by_label: dict[str, list[int]] = {}
+    for run in runs:
+        try:
+            by_label.setdefault(str(run.get("label", "")), []).append(int(run.get("ms", 0)))
+        except (TypeError, ValueError):
+            continue
+    per_label = []
+    for label, samples in sorted(by_label.items()):
+        p95 = percentile(samples, 0.95)
+        per_label.append({
+            "label": label, "n": len(samples),
+            "p50": percentile(samples, 0.5), "p95": p95, "max": max(samples),
+            "over_budget": p95 > budget_ms,
+        })
+    per_label.sort(key=lambda item: -item["p95"])
+    return {"budget_ms": budget_ms, "per_label": per_label,
+            "over_budget": [item["label"] for item in per_label if item["over_budget"]]}
+
+
+def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> dict:
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=days)
     window = [run for run in runs if in_window(run, since)]
@@ -153,6 +189,7 @@ def build_metrics(runs: list[dict], days: int) -> dict:
         "failing_labels": sorted({str(run.get("label", "")) for run in failed})[:10],
         "evidence_freshness": freshness,
         "exceptions": {"total": total_exceptions, "by_source": exceptions},
+        "latency": latency(window, budget_ms),
     }
 
 
@@ -178,6 +215,13 @@ def render(metrics: dict, previous: int | None) -> str:
     for source, count in sorted(exc["by_source"].items(), key=lambda kv: -kv[1]):
         if count:
             lines.append(f"       - {source}: {count}")
+    perf = metrics["latency"]
+    lines.append(f"  ④ 性能预算：预算 {perf['budget_ms']} ms（p95 超限即计）"
+                 f"　超限 {len(perf['over_budget'])}/{len(perf['per_label'])} 项")
+    for item in perf["per_label"][:6]:
+        flag = "超限" if item["over_budget"] else "ok"
+        lines.append(f"       - [{flag}] {item['label']}：p50 {item['p50']}ms / "
+                     f"p95 {item['p95']}ms / max {item['max']}ms（n={item['n']}）")
     return "\n".join(lines)
 
 
@@ -185,6 +229,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="governance metrics from the gate execution trail")
     parser.add_argument("--trail", default=str(TRAIL), help=f"gate run trail (default: {TRAIL})")
     parser.add_argument("--days", type=int, default=30, help="window for the escape rate (default 30)")
+    parser.add_argument("--budget", type=int, default=BUDGET_MS,
+                        help=f"latency budget in ms for metric 4 (default {BUDGET_MS})")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--snapshot", action="store_true", help="append the current exception count to the trend file")
     args = parser.parse_args(argv)
@@ -194,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ENV ERROR: 没有执行留痕：{path}（先跑 bash scripts/run_all_gates.sh）")
         return 3
     runs = load_runs(path)
-    metrics = build_metrics(runs, args.days)
+    metrics = build_metrics(runs, args.days, args.budget)
     previous = previous_snapshot()
     if args.snapshot:
         append_snapshot(metrics["exceptions"]["total"])

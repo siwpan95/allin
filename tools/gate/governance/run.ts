@@ -18,8 +18,15 @@
  *   tsx governance/run.ts                     # every registered gate
  *   tsx governance/run.ts --list              # ids, tiers, and covered rules
  *   tsx governance/run.ts --only g01-paths    # a subset, comma separated
+ *   tsx governance/run.ts --tier P0,P1        # every gate at these tiers that can
+ *                                             # run offline (context != push)
  *   tsx governance/run.ts --selfcheck-all     # prove every gate still detects
  *   tsx governance/run.ts -- <args>           # forwarded to each gate
+ *
+ * `--tier` exists because a hand-maintained subset list drifts: every new gate
+ * had to be added to `check:precommit` by hand, and twice it was not, so the
+ * pre-commit stage silently stopped running the newest checks. Tier and context
+ * live in `registry.json` -- the same file that already declares the gate.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -53,6 +60,13 @@ interface GateEntry {
   requires: string[]
   baseline: string | null
   selfcheck: boolean
+  /**
+   * Where the gate may run. `local` (default) works offline against the working
+   * tree; `push` needs authoritative remote evidence (`git ls-remote`). Tier
+   * selection keeps `push` gates out so a pre-commit run never fails on a
+   * missing network.
+   */
+  context?: string
   /**
    * True when the gate consults state outside the repository (the active DSH
    * profile). The aggregate passes `--no-profile` to exactly these gates, so a
@@ -117,6 +131,7 @@ function readRegistry(): GateEntry[] {
 interface Options {
   list: boolean
   only: string[] | undefined
+  tier: string[] | undefined
   selfcheckAll: boolean
   quiet: boolean
   noProfile: boolean
@@ -129,7 +144,8 @@ function parseArguments(argv: string[]): Options {
   const own = separator === -1 ? argv : argv.slice(0, separator)
   const forwarded = separator === -1 ? [] : argv.slice(separator + 1)
   const options: Options = {
-    list: false, only: undefined, selfcheckAll: false, quiet: false, noProfile: false, forwarded,
+    list: false, only: undefined, tier: undefined, selfcheckAll: false, quiet: false,
+    noProfile: false, forwarded,
   }
   for (let index = 0; index < own.length; index += 1) {
     const argument = own[index]
@@ -142,11 +158,33 @@ function parseArguments(argv: string[]): Options {
       if (value === undefined) throw new Error('governance: --only needs a comma-separated gate list')
       options.only = value.split(',').map(entry => entry.trim()).filter(entry => entry !== '')
       index += 1
+    } else if (argument === '--tier') {
+      const value = own[index + 1]
+      if (value === undefined) throw new Error('governance: --tier needs a comma-separated tier list')
+      options.tier = value.split(',').map(entry => entry.trim()).filter(entry => entry !== '')
+      index += 1
     } else {
       throw new Error(`governance: unknown argument ${JSON.stringify(argument)}; see the usage block in run.ts`)
     }
   }
   return options
+}
+
+/**
+ * Choose which gates run. `--only` wins when given; otherwise `--tier` selects
+ * by the tier declared in `registry.json`, skipping gates whose context is not
+ * `local` so an offline pre-commit run cannot fail on a missing remote.
+ */
+function selectGates(registry: GateEntry[], options: Options): GateEntry[] {
+  if (options.only !== undefined) {
+    return registry.filter(gate => options.only?.includes(gate.id) === true)
+  }
+  if (options.tier !== undefined) {
+    return registry.filter(
+      gate => options.tier?.includes(gate.tier) === true && (gate.context ?? 'local') === 'local',
+    )
+  }
+  return registry
 }
 
 /** Run one gate as a child process, streaming its output to the caller. */
@@ -174,11 +212,10 @@ function aggregate(outcomes: GateOutcome[]): number {
 function main(argv: string[]): number {
   const options = parseArguments(argv)
   const registry = readRegistry()
-  const selected = options.only === undefined
-    ? registry
-    : registry.filter(gate => options.only?.includes(gate.id) === true)
+  const selected = selectGates(registry, options)
   if (selected.length === 0) {
-    console.error(`governance: no registered gate matches ${JSON.stringify(options.only ?? [])}`)
+    const asked = options.only ?? options.tier ?? []
+    console.error(`governance: no registered gate matches ${JSON.stringify(asked)}`)
     return EXIT_USAGE
   }
   if (options.list) {
