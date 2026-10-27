@@ -61,11 +61,11 @@
       - `/allin/docs/` **只放文档**；门禁脚本在 `/tools/gate/`，归档区 `/archive/`。
       - 盘位：C:(内置NTFS) D:(外置exFAT) **F:(外置NTFS, 大依赖盘) G:(外置NTFS, 项目盘)**；pwsh 7 有 `/powershell/7/pwsh.exe` 与 `/PowerShell/7`（均不在 PATH）。
       - `.ps1` 必须存成 **UTF-8 带 BOM**，否则 PowerShell 5.1 按 ANSI 解码中文、报一堆假语法错误（"一边绿一边红"是编码问题指纹）。
-      - **exFAT（D:）不支持硬链接与目录联接** → `write` 文件工具在 D: 上报 `EISDIR`；用 pwsh here-string 管道给 `python -c` 写盘并读回校验，或把工作区放 NTFS（/F:/G:）。
+      - **exFAT（D:）不支持硬链接与目录联接** → `write` 文件工具在 D: 上报 `EISDIR`；用 pwsh here-string 管道给 `python -c` 写盘并读回校验，或把工作区放 NTFS（外置 F 盘 / G 盘）。
       - git 在本机报 `dubious ownership`，需 `git config --global --add safe.directory <路径>`。
       - PowerShell 会**枚举函数返回的集合**（HashSet 必须 `return ,$set`）；单引号里 `'\'` 是一个字符。
       - 中文 Windows 控制台默认 GBK：入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；JSON 读写显式 `encoding="utf-8"`。
-      - 工作区事实源：`/allin/docs/新机配置汇总_2026-09-24.md`。**本机与原型机是同一套工作区换硬件**（G:/F: 两块外置盘已在新机上）。
+      - 工作区事实源：`/allin/docs/新机配置汇总_2026-09-24.md`。**本机与原型机是同一套工作区换硬件**（外置 F 盘 / G 盘两块已在新机上）。
       <!-- GOVERNANCE:END -->
 - id: agent-instructions
   name: '@deepseek-ai/dsh-agent-instructions'

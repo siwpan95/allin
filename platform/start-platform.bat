@@ -2,7 +2,7 @@
 rem allin-platform portal launcher (DSH-style: standalone web app, opened
 rem in the browser automatically).
 rem Paths are derived from this script's directory (%~dp0) since 2026-09-24:
-rem clone the repo anywhere and double-click; no hardcoded G:\platform.
+rem clone the repo anywhere and double-click; paths derive from %~dp0, no hard-coded drive paths.
 rem PORT=0 picks an ephemeral port: keep this window open while the portal
 rem runs; close the window or press Ctrl+C to release the port.
 rem Deps are installed into <repo>\node_modules (npm workspaces) when

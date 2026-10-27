@@ -95,7 +95,7 @@ EPILOG = """\
 示例
 ----
   repocheck                          启动图形界面
-  repocheck G:/repos                 体检 G:/repos 下全部项目（文本报告）
+  repocheck repos                 体检 repos/ 下全部项目（文本报告）
   repocheck . --format json -o r.json    输出 JSON 报告到文件
   repocheck . --fail-on error        发现 error 级问题时退出码为 1（可进 CI）
   repocheck . --fail-on score:8.0    任一项目低于 8 分即失败

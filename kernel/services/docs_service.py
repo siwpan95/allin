@@ -37,10 +37,10 @@ class DocsService(Service):
         cmd = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script]
         return subprocess.run(cmd, cwd=ROOT)
 
-    # ---- 重建可重生成索引产物 ----
+    # ---- 文档枢纽索引契约门禁（SPEC-005，D1–D8）----
     def index(self):
-        tool = os.path.join(TOOLS_DIR, 'build_dir_index.py')
+        tool = os.path.join(TOOLS_DIR, 'gate', 'docs_index.py')
         if not os.path.isfile(tool):
-            print('（build_dir_index.py 不存在）')
+            print('（docs_index.py 不存在）')
             return None
         return subprocess.run([sys.executable, tool], cwd=ROOT)

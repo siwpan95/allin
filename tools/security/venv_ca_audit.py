@@ -37,11 +37,11 @@ certifi 2026.10.19 的捆绑包里 **仍然有 9 处 "emSign"**（未受影响�
   python venv_ca_audit.py apply  [root] [jobs]   # 加固（幂等）
   python venv_ca_audit.py verify [root] [jobs]   # 功能级审计（实跑解释器）
 
-home 映射（本机可用基准解释器，按 venv 的 major.minor 匹配）::
+home 映射（本机可用基准解释器，按 venv 的 major.minor 匹配；具体绝对路径由各机 BASE_MAP 配置，不写死在此）::
 
-  3.14.x -> G:\\Python314
-  3.13.x -> C:\\Users\\psw\\.workbuddy\\binaries\\python\\versions\\3.13.12
-  3.12.x -> C:\\Users\\psw\\AppData\\Roaming\\uv\\python\\cpython-3.12.14-windows-x86_64-none
+  3.14.x -> 本机 3.14 系解释器根
+  3.13.x -> 本机托管 3.13 解释器根
+  3.12.x -> 本机 uv 托管 3.12 解释器根
 
 纪律：纯标准库；只读 site-packages 元数据（不启动解释器）用于 scan；
 verify 才会实跑解释器做功能级确认；**不删除任何文件**（损坏的 pip 仅改名加 .bak 备份）。

@@ -1,3 +1,18 @@
 # Baseline ratchet for this gate. One finding key per line.
 # Refresh only after the remaining findings were reviewed in full:
 #   python governance/gates/<gate>.py --no-baseline --list-all
+#
+# 冻结说明（2026-10-27 清偿 g01）：以下 8 条为「已知且接受」的机器相关绝对路径，
+# 非本次新引入；仅冻结、不消除。若对应文件相关行被改动（内容哈希变化），key 失效将
+# 重新 BLOCK，须重新评审。
+#   - repo_hygiene_exemptions.csv (2 条)：repo 卫生豁免表的数据行，引用真实仓路径，属运营数据
+#   - scan_hardcoded.ps1 (2 条)：自检 fixture 的伪路径 G:/fake，删除会破坏 selftest
+#   - venv_ca_audit.py (4 条)：DEFAULT_ROOT 与 BASE_MAP，逐机运行时配置，删除会破坏工具
+tools/gate/audit/repo_hygiene_exemptions.csv|8f8350b87d0c66a0|windows
+tools/gate/audit/repo_hygiene_exemptions.csv|e329855d06064f7d|windows
+tools/gate/scan_hardcoded.ps1|1d950d1cdddba86f|windows
+tools/gate/scan_hardcoded.ps1|dd7d6a7f8ee8f1f6|windows
+tools/security/venv_ca_audit.py|01b3ad9e4b653cad|windows
+tools/security/venv_ca_audit.py|52adbd23793c6304|windows
+tools/security/venv_ca_audit.py|adf78edd9ab04ff2|windows
+tools/security/venv_ca_audit.py|d8cb34480be58439|windows

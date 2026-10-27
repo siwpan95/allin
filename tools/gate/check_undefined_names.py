@@ -13,7 +13,7 @@
 
 用法：
   python check_undefined_names.py <file.py> [file2.py ...]
-  python check_undefined_names.py --repo G:\\repos\\musickit            # 检查该仓「paths)」提交里改过的 .py
+  python check_undefined_names.py --repo repos/musickit            # 检查该仓「paths)」提交里改过的 .py
 退出码：0 = 无疑似未定义名；1 = 有；2 = 参数错误。
 """
 from __future__ import annotations

@@ -37,8 +37,8 @@
 
 用法
 ----
-    python repo_hygiene.py --repo G:\\repos\\cordis-table-app
-    python repo_hygiene.py --all                       # G:\\repos 下全部仓
+    python repo_hygiene.py --repo repos/cordis-table-app
+    python repo_hygiene.py --all                       # repos/ 下全部仓
     python repo_hygiene.py --all --worktree            # 含未跟踪面
     python repo_hygiene.py --repo X --baseline B.csv   # 基线棘轮（存量不阻断）
     python repo_hygiene.py --selfcheck                 # 注入破坏用例，证明门禁是活的
@@ -337,7 +337,7 @@ def origin_repo_name(repo):
       · `file:///path/to/repo.git`
       · **本地/相对路径**（`<盘>:\\path\\to\\repo`、`/path/to/repo`）—— `git clone <本地路径>` 后就是这种
 
-    ⚠ 旧实现 `re.search(r"[:/]([^/:]+?)(?:\\.git)?$", url)` 对 `G:\\allin` 会取到 **`\\allin`**（含反斜杠：
+    ⚠ 旧实现 `re.search(r"[:/]([^/:]+?)(?:\\.git)?$", url)` 对 **本地仓库根** 会取到 **`\\allin`**（含反斜杠：
     因为 `[^/:]` 不排除 `\\`），于是 H7 在"克隆自本地路径"时**误报**
     `目录名 'allin' != origin 仓名 '\\allin'`。实证与判据验证见 `记录/交接/2026-10.md` §104.6：
     把副本 origin 改回真实 URL 后同一副本 `RESULT: 通过` ⇒ 确认是解析缺陷，不是仓名真不一致。
