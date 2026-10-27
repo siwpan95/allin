@@ -1,6 +1,6 @@
 ---
 name: allin-governance-agent
-description: allin 工作区治理仓（D:\projects\allin）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 15 道治理门禁（g00–g15）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、并把具体任务路由到本仓 15 个既有项目级 skill。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查。
+description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/本机事实.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 15 道治理门禁（g00–g15）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、并把具体任务路由到本仓 15 个既有项目级 skill。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查。
 agent_created: true
 ---
 
@@ -28,7 +28,10 @@ agent_created: true
 3. 跑 `preset/allin/locate-root.ps1`（用 `$PSScriptRoot` 反推仓根，零配置跨机可用）；
 4. 仍失败 → 搜 `allin.patch.yml`，仓根为它的 `../../`。
 
-本仓实际落在 `D:\projects\allin`（2026-09-27 由 `allin_push` 改名，目录名 = 远端仓名）。
+本仓仓根**随机器而异**（2026-09-27 由 `allin_push` 改名，目录名 = 远端仓名）；本机现值以
+`docs/事实源/本机事实.md` 为准，跨机由上面第 3 步 `locate-root.ps1` 自发现。**此处不得写死盘符**
+（SPEC-001 铁律 5；2026-10-27 巡检订正：原写的是实测不存在的 `projects` 父目录，证据见
+`docs/记录/交接/2026-10.md` 的 20261027 条目）。
 
 ---
 
@@ -64,8 +67,9 @@ agent_created: true
 
 ## 3. 工具面（本 agent 可直接调用的执行器）
 
-> 全部脚本**零三方依赖**（仅 Python 标准库 / Node 自带），拷走即用。Python 一律用
-> `E:\Python314\python.exe`（本机带 tkinter 的完整解释器）；agent 沙箱内跑构建/拉起见 §8 的绕过纪律。
+> 全部脚本**零三方依赖**（仅 Python 标准库 / Node 自带），拷走即用。Python 解释器按
+> `docs/事实源/本机事实.md` §4.1 的解释器清单挑（**tkinter 是关键判据**，勿写死盘符；
+> 2026-10-27 巡检订正：原写的盘符路径在本机不存在）；agent 沙箱内跑构建/拉起见 §8 的绕过纪律。
 
 ### 3.1 allin cordis CLI（仓库门面）
 
@@ -129,7 +133,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 
 ## 4. 任务路由表（具体活交给专项 skill）
 
-本仓已有 15 个专项 skill（`D:\projects\allin\.workbuddy\skills/`）。匹配到就**转交**，不要重造：
+本仓已有 15 个专项 skill（`<仓根>/.workbuddy/skills/`）。匹配到就**转交**，不要重造：
 
 | 任务特征 | 路由到的 skill |
 | --- | --- |
