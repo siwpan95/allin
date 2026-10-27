@@ -1,0 +1,11 @@
+id: magic-tower
+name: 魔塔 · Python ECS 版
+category: game
+version: 0.1.0
+path: repos/magic-tower
+note: Python + Tkinter 的魔塔类爬塔 Roguelike；地图程序化无限生成，战斗/捡取/下楼走 ECS 架构。2026-10-28 由 g17 完备性门禁发现并补登记（此前本地有克隆、远端 siwpan/magic-tower 已发布，但 registry 无条目）
+launch:
+  command: python main.py
+publish:
+  repo: siwpan/magic-tower
+  branch: master

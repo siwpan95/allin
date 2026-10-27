@@ -178,6 +178,17 @@
       "requires": ["python>=3.9"],
       "baseline": "governance/baseline/g16-skill-preset-parity.txt",
       "selfcheck": true
+    },
+    {
+      "id": "g17-registry",
+      "title": "the project registry is complete and knows its lifecycle",
+      "script": "governance/gates/g17_registry.py",
+      "tier": "P0",
+      "rules": ["ops-G5", "ops-G13", "debug-46", "retirement-three-checks"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "git"],
+      "baseline": "governance/baseline/g17-registry.txt",
+      "selfcheck": true
     }
   ]
 }

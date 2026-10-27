@@ -2,7 +2,7 @@ id: pomodmer
 name: Pomodmer · Cordis 内核 + 本地 Web UI 的番茄钟
 category: tool
 version: 2.2.0
-path: repos/pomodmer
+path: repos/Pomodmer
 manual: true
 note: Cordis 内核 + 本地 Web UI 的番茄钟（默认 http://127.0.0.1:5173/）
 launch:
