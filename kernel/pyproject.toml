@@ -1,0 +1,9 @@
+[project]
+name = "allin-kernel"
+version = "0.1.0"
+description = "allin 治理内核：制度 + 文档枢纽 + 执行器的 Python/Cordis 服务图引擎"
+license = { text = "MIT-0" }
+requires-python = ">=3.12"
+# 运行时依赖由 vendor/cordis（见 kernel/_cordis_locate.py 的回退策略）与托管解释器提供，
+# 不在 requirements 中硬引，以保证内核可离线、可审计地自举。
+dependencies = []

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 940" font-family="'Microsoft YaHei','Segoe UI',sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+    </marker>
+    <marker id="arrB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#0d9488"/>
+    </marker>
+    <style>
+      .t { fill:#0f172a; }
+      .ts { fill:#0f172a; font-size:13px; }
+      .ttl { fill:#0f172a; font-size:16px; font-weight:700; }
+      .cap { fill:#475569; font-size:12px; }
+      .chip { fill:#ffffff; stroke:#94a3b8; stroke-width:1; }
+      .chip-t { fill:#1e293b; font-size:12px; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="940" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="40" y="34" class="ttl">allin 系统架构 —— 核心模块与分层（2026-10-27）</text>
+  <text x="40" y="52" class="cap">三位一体治理仓：制度(docs/) + 文档枢纽 + 执行器(kernel CLI / platform) + 治理大脑(Agent 双形态) + 门禁(监工)</text>
+
+  <!-- LAYER 0: docs -->
+  <rect x="40" y="68" width="1160" height="86" rx="10" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="60" y="92" class="ttl" fill="#1e3a8a">L0 · 治理事实源  docs/</text>
+  <text x="60" y="110" class="ts" fill="#1e3a8a">唯一事实来源：约束 · 现值 · 审计证据</text>
+  <g>
+    <rect x="60" y="120" width="262" height="26" rx="6" class="chip"/><text x="72" y="138" class="chip-t">规范/  SPEC-001…203（铁律/流程/契约）</text>
+    <rect x="334" y="120" width="220" height="26" rx="6" class="chip"/><text x="346" y="138" class="chip-t">事实源/  本机事实（盘位·运行时）</text>
+    <rect x="566" y="120" width="300" height="26" rx="6" class="chip"/><text x="578" y="138" class="chip-t">记录/  审计·决策·交接（只增不改）</text>
+    <rect x="878" y="120" width="300" height="26" rx="6" class="chip"/><text x="890" y="138" class="chip-t">INDEX.md  总目录（文档索引契约面）</text>
+  </g>
+
+  <!-- LAYER 1: Agent -->
+  <rect x="40" y="178" width="1160" height="120" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="60" y="202" class="ttl" fill="#6d28d9">L1 · 治理大脑（Agent）· 双形态落地</text>
+  <text x="60" y="220" class="ts" fill="#6d28d9">同一份治理事实的两种载体，任一侧改须同步另一侧</text>
+  <rect x="60" y="230" width="520" height="52" rx="8" fill="#ffffff" stroke="#7c3aed"/>
+  <text x="72" y="252" class="chip-t" font-weight="700">WorkBuddy 侧</text>
+  <text x="72" y="272" class="chip-t">.workbuddy/skills/allin-governance-agent</text>
+  <rect x="660" y="230" width="520" height="52" rx="8" fill="#ffffff" stroke="#7c3aed"/>
+  <text x="672" y="252" class="chip-t" font-weight="700">DSH 侧</text>
+  <text x="672" y="272" class="chip-t">preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END</text>
+  <text x="600" y="262" class="ts" fill="#6d28d9" font-weight="700">⇄ 双向同步</text>
+  <text x="600" y="278" class="cap">verify-mount.ps1 + check:governance</text>
+
+  <!-- LAYER 2: two execution surfaces -->
+  <!-- 2a kernel -->
+  <rect x="40" y="320" width="560" height="170" rx="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="60" y="344" class="ttl" fill="#0f766e">执行面 A · allin Cordis CLI（kernel/ + allin_cli.py）</text>
+  <text x="60" y="366" class="ts">• allin_cli.py 前门：tools/docs/platform/preset 子命令</text>
+  <text x="60" y="386" class="ts">• kernel/tree.py：Cordis Loader 按 cordis.allin.yml 挂载</text>
+  <text x="60" y="406" class="ts">• kernel/registry.py：SERVICES 封闭白名单（配置即代码边界）</text>
+  <text x="60" y="426" class="ts">• 4 services：docs / platform / preset / tools</text>
+  <text x="60" y="446" class="ts">• 底层用子进程封装 Python/Node/PowerShell 工具</text>
+  <text x="60" y="470" class="cap">安全：entry name 白名单 · UTF-8 输出 · 令牌取自 env / git credential</text>
+
+  <!-- 2b platform -->
+  <rect x="620" y="320" width="580" height="170" rx="10" fill="#cffafe" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="640" y="344" class="ttl" fill="#155e75">执行面 B · platform 集成平台（Node + Cordis，聚合不融合）</text>
+  <text x="640" y="366" class="ts">• portal :9000 —— node:http 零依赖，绑 127.0.0.1</text>
+  <text x="640" y="386" class="ts">• 安全：Host 围栏 + loopbackOnly 防 DNS rebinding</text>
+  <text x="640" y="406" class="ts">• @allin/core：registry / launch / workshop / probe</text>
+  <text x="640" y="426" class="ts">• data/：running.json + tasks.log（日志即事实源）</text>
+  <text x="640" y="446" class="ts">• apps/cli：list/search/status/start/stop</text>
+  <text x="640" y="470" class="cap">纪律：零业务代码 · 子进程隔离 · 端口查表 ports.yaml</text>
+
+  <!-- LAYER 3: gates -->
+  <rect x="40" y="524" width="1160" height="92" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+  <text x="60" y="548" class="ttl" fill="#92400e">L3 · 治理门禁（监工）tools/gate/</text>
+  <g>
+    <rect x="60" y="560" width="300" height="28" rx="6" class="chip"/><text x="72" y="579" class="chip-t">g00–g15  15 道治理门禁（run.ts 聚合）</text>
+    <rect x="372" y="560" width="280" height="28" rx="6" class="chip"/><text x="384" y="579" class="chip-t">docs_index  D1–D8 文档索引契约</text>
+    <rect x="664" y="560" width="260" height="28" rx="6" class="chip"/><text x="676" y="579" class="chip-t">repocheck  30 规则仓库体检</text>
+    <rect x="936" y="560" width="248" height="28" rx="6" class="chip"/><text x="948" y="579" class="chip-t">repo_hygiene  H1–H8 卫生棘轮</text>
+  </g>
+
+  <!-- LAYER 4: external -->
+  <rect x="40" y="650" width="1160" height="92" rx="10" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <text x="60" y="674" class="ttl" fill="#1e293b">L4 · 外部  repos/ + Gitee API</text>
+  <g>
+    <rect x="60" y="686" width="360" height="28" rx="6" class="chip"/><text x="72" y="705" class="chip-t">124 成员仓：独立 git 子仓，独立进程</text>
+    <rect x="432" y="686" width="360" height="28" rx="6" class="chip"/><text x="444" y="705" class="chip-t">Gitee API：135 公开仓 + MIT（铁律 0）</text>
+    <rect x="804" y="686" width="380" height="28" rx="6" class="chip"/><text x="816" y="705" class="chip-t">divergence-events.jsonl：分歧事件源</text>
+  </g>
+
+  <!-- ARROWS -->
+  <!-- docs -> agent -->
+  <path d="M620,154 L620,176" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="636" y="170" class="cap">开卷必读 / 双形态同步判据</text>
+  <!-- agent -> 2a -->
+  <path d="M320,298 L320,318" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="120" y="314" class="cap">调度 / 放行</text>
+  <!-- agent -> 2b -->
+  <path d="M920,298 L920,318" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="760" y="314" class="cap">治理段文本注入（非运行时耦合）</text>
+  <!-- 2a -> gates -->
+  <path d="M320,490 L320,522" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="150" y="518" class="cap">subprocess 调用工具</text>
+  <!-- 2b -> gates -->
+  <path d="M900,490 L900,522" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="720" y="518" class="cap">读写共享状态</text>
+  <!-- gates -> external -->
+  <path d="M620,616 L620,648" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="636" y="642" class="cap">校验对象 / 推送目标</text>
+  <!-- external -> 2b feedback (divergence events) -->
+  <path d="M1180,700 C1230,700 1230,410 1200,408" stroke="#0d9488" stroke-width="2" fill="none" marker-end="url(#arrB)"/>
+  <text x="1060" y="560" class="cap" fill="#0f766e">divergence-events.jsonl → /api/alerts（订阅方）</text>
+
+  <!-- Legend -->
+  <rect x="40" y="800" width="1160" height="120" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="60" y="824" class="ttl">图例与要点</text>
+  <text x="60" y="846" class="ts">• 双形态同源：WorkBuddy skill 与 DSH GOVERNANCE 段是同一治理事实的两种落地，文本注入式、非运行时耦合。</text>
+  <text x="60" y="866" class="ts">• 两条执行面互不耦合：CLI 走 Cordis 服务图（Python 子进程）；平台走 node:http（独立进程 + 文件系统共享态）。</text>
+  <text x="60" y="886" class="ts">• 门禁作监工：任何并入/新建必先过 check:governance + docs_index；CI/异机用 *absolute 模式只校验形状。</text>
+  <text x="60" y="906" class="ts">• 可移植：路径/端口全部 env 可覆盖（ALLIN_CONFIGS · PLATFORM_ROOT · PLATFORM_PORTS · PLATFORM_REPOS_ROOT …）。</text>
+</svg>

@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="'Microsoft YaHei','Segoe UI',sans-serif">
+  <defs>
+    <marker id="da" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="db" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#6d28d9"/>
+    </marker>
+    <marker id="dc" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#1e40af"/>
+    </marker>
+    <style>
+      .ttl { fill:#0f172a; font-size:16px; font-weight:700; }
+      .ts { fill:#0f172a; font-size:13px; }
+      .cap { fill:#475569; font-size:12px; }
+      .box { fill:#ffffff; stroke-width:1.5; }
+      .box-t { fill:#0f172a; font-size:13px; font-weight:700; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#f8fafc"/>
+  <text x="40" y="34" class="ttl">allin 数据流（2026-10-27）</text>
+  <text x="40" y="52" class="cap">三股主线：platform 启停/分歧事件链 · 治理放行链 · 双形态同步链</text>
+
+  <!-- ============ A: platform lifecycle (left vertical) ============ -->
+  <rect x="40" y="70" width="600" height="588" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="60" y="96" class="ttl" fill="#0f766e">A · platform 启停与分歧事件链路</text>
+
+  <rect x="70" y="110" width="540" height="40" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="135" class="box-t">① registry/projects/*.yaml（去盘符 path，端口查表）</text>
+  <path d="M340,150 L340,166" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="166" width="540" height="40" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="191" class="box-t">② loadRegistry() → validateEntry()（fail-loud，_valid 标记）</text>
+  <path d="M340,206 L340,222" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="222" width="540" height="40" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="247" class="box-t">③ probeEntry() 端口/进程探测（STARTING_GRACE_MS 宽限）</text>
+  <path d="M340,262 L340,278" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+  <text x="624" y="272" class="cap" fill="#0f766e">[启动]</text>
+
+  <rect x="70" y="278" width="540" height="44" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="302" class="box-t">④ startEntry() detached 子进程</text>
+  <text x="84" y="317" class="ts">原子写 running.json + tasks.log（日志即事实源，超 5MB 轮转）</text>
+  <path d="M340,322 L340,338" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="338" width="540" height="44" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="362" class="box-t">⑤ 运行态 running.json（DATA_DIR）</text>
+  <text x="84" y="377" class="ts">portal 与 CLI 经回环 HTTP + 共享文件同步（无数据库）</text>
+  <path d="M340,382 L340,398" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="398" width="540" height="44" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="422" class="box-t">⑥ 各项目 data/divergence-events.jsonl</text>
+  <text x="84" y="437" class="ts">按 ts 倒序，坏帧跳过（D1 纪律）</text>
+  <path d="M340,442 L340,458" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="458" width="540" height="44" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="482" class="box-t">⑦ readAlerts() 聚合（≤100 条，跨项目）</text>
+  <text x="84" y="497" class="ts">→ GET /api/alerts（工坊页订阅方）</text>
+  <path d="M340,502 L340,518" stroke="#0f766e" stroke-width="2" marker-end="url(#da)"/>
+
+  <rect x="70" y="518" width="540" height="40" rx="8" class="box" stroke="#0d9488"/>
+  <text x="84" y="543" class="box-t">⑧ /api/engine：allin_engine dump-profile（缓存 30s）</text>
+
+  <text x="70" y="600" class="cap">引擎视图：经 PLATFORM_ALLIN_ENGINE_CWD 指向外部 an-engine；</text>
+  <text x="70" y="618" class="cap">execFile 异步调用，不阻塞事件循环；未配置则报「未配置」而非硬编码路径。</text>
+  <text x="70" y="642" class="cap">静态资源 /workshop/catalog 同样受 Host 围栏保护。</text>
+
+  <!-- ============ B: agent governance flow (right) ============ -->
+  <rect x="660" y="70" width="540" height="300" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="680" y="96" class="ttl" fill="#6d28d9">B · 治理放行链路（Agent）</text>
+
+  <rect x="680" y="110" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
+  <text x="694" y="135" class="box-t">① 开卷读四事实源（INDEX→SPEC-001→002→本机事实）</text>
+  <path d="M930,150 L930,166" stroke="#6d28d9" stroke-width="2" marker-end="url(#db)"/>
+
+  <rect x="680" y="166" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
+  <text x="694" y="191" class="box-t">② 铁律/SPEC 放行判断（先问→计划→review→执行→复盘）</text>
+  <path d="M930,206 L930,222" stroke="#6d28d9" stroke-width="2" marker-end="url(#db)"/>
+
+  <rect x="680" y="222" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
+  <text x="694" y="247" class="box-t">③ 路由 skill / 跑门禁（run_all_gates.sh · check:governance）</text>
+  <path d="M930,262 L930,278" stroke="#6d28d9" stroke-width="2" marker-end="url(#db)"/>
+
+  <rect x="680" y="278" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
+  <text x="694" y="303" class="box-t">④ 过两道门禁：check:governance + docs_index（全绿）</text>
+  <path d="M930,318 L930,334" stroke="#6d28d9" stroke-width="2" marker-end="url(#db)"/>
+
+  <rect x="680" y="334" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
+  <text x="694" y="359" class="box-t">⑤ 推送/发版：gitee_release.py（令牌绝不回显）</text>
+
+  <text x="680" y="400" class="cap">高风险动作（推送/建仓/删除/密钥/结构变更）不分档，逐项确认。</text>
+  <text x="680" y="420" class="cap">一次性 URL 推送不加 -u；发版后跑收尾清单（凭据残留扫描·HEAD=ls-remote）。</text>
+
+  <!-- ============ C: dual-form sync ============ -->
+  <rect x="660" y="400" width="540" height="258" rx="10" fill="#eff6ff" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="680" y="426" class="ttl" fill="#1e3a8a">C · 双形态同步链路</text>
+
+  <rect x="680" y="440" width="240" height="64" rx="8" class="box" stroke="#1e40af"/>
+  <text x="694" y="464" class="box-t">WorkBuddy 侧</text>
+  <text x="694" y="482" class="ts">.workbuddy/skills/</text>
+  <text x="694" y="498" class="ts">allin-governance-agent</text>
+
+  <text x="924" y="478" class="ttl" fill="#1e3a8a">⇄</text>
+  <text x="916" y="496" class="cap">双向同步</text>
+
+  <rect x="960" y="440" width="220" height="64" rx="8" class="box" stroke="#1e40af"/>
+  <text x="974" y="464" class="box-t">DSH 侧</text>
+  <text x="974" y="482" class="ts">preset/allin/</text>
+  <text x="974" y="498" class="ts">allin.patch.yml 治理段</text>
+
+  <rect x="680" y="524" width="500" height="40" rx="8" class="box" stroke="#1e40af"/>
+  <text x="694" y="549" class="box-t">文本注入式（治理论述注入 Agent 上下文）—— 非运行时耦合</text>
+
+  <rect x="680" y="576" width="500" height="40" rx="8" class="box" stroke="#1e40af"/>
+  <text x="694" y="601" class="box-t">漂移判据：verify-mount.ps1 漂移层 + npm run check:governance</text>
+
+  <rect x="680" y="628" width="500" height="44" rx="8" class="box" stroke="#1e40af"/>
+  <text x="694" y="652" class="box-t">任一侧重写须同步另一侧重写（避免双形态漂移）</text>
+  <text x="694" y="667" class="ts">判据：check:governance 全绿 + docs_index 登记一致</text>
+
+  <!-- bottom note -->
+  <rect x="40" y="678" width="1160" height="78" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="60" y="704" class="ttl">交叉要点</text>
+  <text x="60" y="726" class="ts">• 平台零业务代码：项目是独立进程（子进程隔离），绝不 import 项目代码；状态靠 running.json/tasks.log 在文件系统共享。</text>
+  <text x="60" y="746" class="ts">• Agent 不持有运行时：治理段是文本注入，与 DSH/CLI 解耦；门禁才是「监工」，并入前必过 check:governance + docs_index。</text>
+</svg>

@@ -58,15 +58,19 @@ import sys
 import threading
 import time
 
-DEFAULT_ROOT = r"G:\repos"
+# 默认扫描根：各机用 ALLIN_VENV_SCAN_ROOT 环境变量覆盖；缺省扫当前目录。
+# g01 门禁铁律 5：绝不写死机器盘符路径。
+DEFAULT_ROOT = os.environ.get("ALLIN_VENV_SCAN_ROOT", ".")
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".cache", ".tox", ".mypy_cache",
              ".pytest_cache", ".ruff_cache", "htmlcov", "build", "dist", ".idea", ".vscode"}
 FLOORS = {"certifi": (2026, 10, 19), "pip": (26, 2, 2), "uv": (0, 13, 4)}
 G3 = "emSign ECC Root CA - G3"
+# 逐机基准解释器根：由各机环境变量注入，不写死绝对路径（g01 门禁铁律 5）。
+# 未设置时对应版本不参与 verify（工具仅跳过该版本，不影响 scan/apply）。
 BASE_MAP = {
-    (3, 14): r"G:\Python314",
-    (3, 13): r"C:\Users\psw\.workbuddy\binaries\python\versions\3.13.12",
-    (3, 12): r"C:\Users\psw\AppData\Roaming\uv\python\cpython-3.12.14-windows-x86_64-none",
+    (3, 14): os.environ.get("PYTHON314_ROOT"),
+    (3, 13): os.environ.get("PYTHON313_ROOT"),
+    (3, 12): os.environ.get("PYTHON312_ROOT"),
 }
 
 

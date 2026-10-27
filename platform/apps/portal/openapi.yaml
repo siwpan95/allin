@@ -1,0 +1,677 @@
+openapi: 3.0.3
+
+info:
+  title: allin-platform Portal API
+  version: 0.1.0
+  description: |
+    allin 治理平台前台（`platform/apps/portal`，即 `@allin/portal`）的本地 HTTP 接口规范。
+
+    该服务是一个**零依赖纯 Node `http`** 服务（从 `@relay/portal` 升级而来），默认绑定
+    `127.0.0.1:9000`，向本地浏览器提供「库 Library / 工坊 Workshop / 引擎 Engine」三个页签的
+    数据与操作能力。它不是对外公开的服务，而是**单机回环（loopback）**形态。
+
+    ## 安全边界（重要）
+    所有接口受两层围栏保护：
+    1. **Host 头围栏**：`Host` 必须是字面量回环主机名 `127.0.0.1` / `localhost` / `[::1]`
+       （可带端口），否则返回 `403`。用于防 DNS rebinding——恶意页面把自有域名解析到
+       `127.0.0.1` 后，浏览器会带该域名的 Host 头发本机请求，仅靠 socket 回环无法拦住。
+       （允许字面量回环主机名，不接受可配置白名单，以减少误配面。）
+    2. **回环连接围栏**：写操作（start/stop/subscribe/.../shutdown）额外校验 TCP 对端地址必须是
+       `127.0.0.1` / `::1` / `::ffff:127.0.0.1`，否则返回 `403`。
+
+    因此本 API 仅可由本机访问；远程请求一律 `403`。下面统一以 `loopbackBoundary` 安全方案标注。
+
+    ## 能力来源
+    数据来自 `@allin/core`（registry 装配、entry 启停、工坊订阅、引擎 dump-profile 等），
+    治理事实的权威来源见仓库 `docs/` 文档枢纽与 `preset/allin/allin.patch.yml` 的
+    `GOVERNANCE:BEGIN/END` 段。
+  license:
+    name: MIT No Attribution
+    identifier: MIT-0
+
+servers:
+  - url: http://127.0.0.1:9000
+    description: 本地回环默认地址（端口可由环境变量 PORT 覆盖；PORT=0 时由 data/portal.port 发现实际端口）
+  - url: http://localhost:9000
+    description: 本地回环（localhost）
+
+security:
+  - loopbackBoundary: []
+
+tags:
+  - name: system
+    description: 服务自身状态与生命周期
+  - name: library
+    description: 登记项目/服务的列出与启停
+  - name: alerts
+    description: E5 分歧事件订阅链路（读取面）
+  - name: workshop
+    description: 工坊：订阅/更新/回滚与发布面审计
+  - name: engine
+    description: allin_engine 引擎视图（dump-profile）
+
+paths:
+  /api/status:
+    get:
+      tags: [system]
+      summary: 服务存活 / 就绪探活
+      operationId: getStatus
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 当前服务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+              example:
+                version: '0.1.0'
+                uptime: 137
+                platform: allin-platform
+                port: 9000
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/library:
+    get:
+      tags: [library]
+      summary: 列出全部登记项目/服务及其运行状态
+      operationId: listLibrary
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 库目录与装配问题
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryResponse'
+              example:
+                items:
+                  - id: cordis-table-app
+                    name: 表格小应用
+                    category: app
+                    version: '1.4.2'
+                    gameplay: []
+                    note: null
+                    order: 1
+                    port: 5173
+                    path: 'D:/projects/cordis-table-app'
+                    manual: false
+                    valid: true
+                    running: true
+                    via: spawn
+                    publish: siwpan/cordis-table-app
+                problems: []
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/library/{id}/start:
+    post:
+      tags: [library]
+      summary: 启动一个登记的项目/服务
+      operationId: startEntry
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 启动结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+              example:
+                ok: true
+                id: cordis-table-app
+                pid: 4821
+        '400':
+          description: 启动失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: 'entry.start.command 执行失败：端口被占用'
+        '404':
+          description: 未知的 id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: unknown id
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/library/{id}/stop:
+    post:
+      tags: [library]
+      summary: 停止一个登记的项目/服务（dispose 纪律：优先优雅停止，缺省回退树杀）
+      operationId: stopEntry
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 停止结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+              example:
+                ok: true
+                id: cordis-table-app
+                stopped: true
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/alerts:
+    get:
+      tags: [alerts]
+      summary: E5 分歧事件（订阅链路读取面）
+      description: |
+        聚合各登记项目 `data/divergence-events.jsonl` 的最近事件；缺失/损坏文件跳过，
+        按 ts 倒序封顶 100 条。事件源路径由 registry 的 `path` 决定。
+      operationId: listAlerts
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 最近的分歧事件
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertsResponse'
+              example:
+                alerts:
+                  - project: deepseek-harness
+                    ts: '2026-10-26T18:02:11Z'
+                    kind: divergence
+                    detail: 'E5 上游 manifest 与本地锁定不一致'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/workshop:
+    get:
+      tags: [workshop]
+      summary: 工坊目录（已订阅项带发布面更新探测）
+      description: |
+        返回工坊目录；对 `subscribed=true` 的项调用 `checkUpdate` 比对发布面最新提交，
+        结果 60s 缓存（避免前端 5s 刷新打满 gitee API）。
+      operationId: listWorkshop
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 工坊目录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopCatalog'
+              example:
+                catalog:
+                  - id: cordis-table-app
+                    name: 表格小应用
+                    category: app
+                    version: '1.4.2'
+                    subscribed: true
+                    updateAvailable: false
+                    pendingCommit: null
+                    checkError: null
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/workshop/{id}/{action}:
+    post:
+      tags: [workshop]
+      summary: 工坊动作（subscribe / unsubscribe / update / rollback）
+      operationId: workshopAction
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [subscribe, unsubscribe, update, rollback]
+          description: 动作类型
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 动作成功结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+              example:
+                ok: true
+                id: cordis-table-app
+                action: update
+        '400':
+          description: 动作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: 'update 失败：git pull 冲突'
+        '404':
+          description: 未知的 id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: unknown id
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/workshop/audit:
+    get:
+      tags: [workshop]
+      summary: 工坊发布面审计
+      operationId: auditWorkshop
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 审计结果（各发布面的可审计信息）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopAudit'
+              example:
+                audit:
+                  total: 12
+                  subscribed: 5
+                  drift: 0
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/engine:
+    get:
+      tags: [engine]
+      summary: allin_engine 引擎视图（dump-profile）
+      description: |
+        调用 `allin_engine dump-profile --json`，返回引擎装配视图（CLI 调用，缓存 30s；
+        execFile 异步化，不阻塞事件循环）。未配置 `PLATFORM_ALLIN_ENGINE_CWD` 时返回
+        `{ ok: false, error }` 而不是硬编码路径（2026-09-24 G:\repos 解绑强化）。
+      operationId: getEngine
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 引擎视图（成功或配置缺失均以 200 返回，靠 ok 字段区分）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngineReport'
+              examples:
+                ok:
+                  summary: 已配置引擎
+                  value:
+                    ok: true
+                    profile: { tools: 10, presets: ['base', 'web'] }
+                    presets: ['base', 'web']
+                notConfigured:
+                  summary: 未配置引擎根
+                  value:
+                    ok: false
+                    error: '引擎未配置：设置 PLATFORM_ALLIN_ENGINE_CWD 指向 an-engine 项目目录后再试'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/shutdown:
+    post:
+      tags: [system]
+      summary: 关闭门户（停止全部子进程后退出）
+      operationId: shutdownPortal
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 已请求关闭（150ms 后进程退出）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workshop/catalog:
+    get:
+      tags: [workshop]
+      summary: 工坊发布面静态 HTML 目录页
+      description: |
+        服务端拼装的静态 HTML（gitee 发布面链接，经 HTML 转义以防 XSS）。订阅/更新/回滚请回平台工坊页。
+      operationId: workshopCatalogHtml
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: text/html 目录页
+          content:
+            text/html:
+              schema:
+                type: string
+              example: '<!DOCTYPE html><html lang="zh">…</html>'
+
+  /:
+    get:
+      tags: [system]
+      summary: 门户单页（SPA）入口
+      description: 返回 `public/index.html`（若请求路径落到 public 静态目录则按 MIME 提供）。
+      operationId: getIndex
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: text/html 仪表盘页
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: 静态资源不存在
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /static/{path}:
+    get:
+      tags: [system]
+      summary: 静态资源（HTML/JS/CSS/SVG/PNG）
+      operationId: getStatic
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: public 目录下的相对路径（前缀边界校验，防 `public-evil` 同级前缀穿越）
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 对应静态文件
+          content:
+            application/javascript:
+              schema:
+                type: string
+            text/css:
+              schema:
+                type: string
+            image/svg+xml:
+              schema:
+                type: string
+        '404':
+          description: 文件不存在或越界
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  parameters:
+    EntryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9-]+$'
+      description: 登记项目的 entry id（小写字母数字与连字符）
+
+  responses:
+    Forbidden:
+      description: 非回环连接或非回环 Host 头（见安全边界）
+      content:
+        text/plain:
+          schema:
+            type: string
+          example: forbidden
+
+  securitySchemes:
+    loopbackBoundary:
+      type: apiKey
+      in: header
+      name: Host
+      description: |
+        表达门户的回环围栏：**Host 头必须是 `127.0.0.1` / `localhost` / `[::1]`（可带端口）**，
+        且 TCP 对端必须是回环地址（`127.0.0.1`/`::1`/`::ffff:127.0.0.1`）。
+        写操作额外校验 TCP 对端。远程或非回环 Host 请求一律 `403`。
+        该方案用 `apiKey` 承载「Host 头取值约束」以适配工具链；本质是本机围栏而非认证。
+
+  schemas:
+    Status:
+      type: object
+      properties:
+        version:
+          type: string
+          description: 门户版本
+          example: '0.1.0'
+        uptime:
+          type: integer
+          description: 进程自启动以来的秒数
+          example: 137
+        platform:
+          type: string
+          example: allin-platform
+        port:
+          type: integer
+          description: 实际绑定的端口
+          example: 9000
+      required: [version, uptime, platform, port]
+
+    LibraryItem:
+      type: object
+      description: 库目录中单个登记项目/服务的运行时视图
+      properties:
+        id:
+          type: string
+          example: cordis-table-app
+        name:
+          type: string
+          example: 表格小应用
+        category:
+          type: string
+          example: app
+        version:
+          type: string
+          example: '1.4.2'
+        gameplay:
+          type: array
+          items:
+            type: string
+          description: 玩法标签
+          example: []
+        note:
+          type: string
+          nullable: true
+          example: null
+        order:
+          type: integer
+          nullable: true
+          example: 1
+        port:
+          type: integer
+          nullable: true
+          example: 5173
+        path:
+          type: string
+          description: 项目目录（由环境变量 PLATFORM_ALLIN_ENGINE_CWD 解析，不写死）
+          example: 'D:/projects/cordis-table-app'
+        manual:
+          type: boolean
+          example: false
+        valid:
+          type: boolean
+          example: true
+        running:
+          type: boolean
+          example: true
+        via:
+          type: string
+          nullable: true
+          description: 运行方式（spawn / tree-kill 等）
+          example: spawn
+        publish:
+          type: string
+          nullable: true
+          description: gitee 发布面 `owner/repo`
+          example: siwpan/cordis-table-app
+
+    Problem:
+      type: object
+      description: registry 装配时发现的条目问题
+      properties:
+        id:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required: [message]
+
+    LibraryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LibraryItem'
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Problem'
+      required: [items, problems]
+
+    Alert:
+      type: object
+      description: E5 分歧事件（divergence-events.jsonl 的一行）
+      properties:
+        project:
+          type: string
+          example: deepseek-harness
+        ts:
+          type: string
+          example: '2026-10-26T18:02:11Z'
+      additionalProperties: true
+
+    AlertsResponse:
+      type: object
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+      required: [alerts]
+
+    WorkshopItem:
+      type: object
+      description: 工坊目录项；已订阅项附带更新探测结果
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        version:
+          type: string
+        subscribed:
+          type: boolean
+        updateAvailable:
+          type: boolean
+          nullable: true
+        pendingCommit:
+          type: string
+          nullable: true
+          description: 发布面最新 commit（可更新时给出）
+        checkError:
+          type: string
+          nullable: true
+      required: [id, name, category, version, subscribed]
+
+    WorkshopCatalog:
+      type: object
+      properties:
+        catalog:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkshopItem'
+      required: [catalog]
+
+    WorkshopAudit:
+      type: object
+      description: 工坊发布面审计结果
+      properties:
+        audit:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 12
+            subscribed:
+              type: integer
+              example: 5
+            drift:
+              type: integer
+              example: 0
+          additionalProperties: true
+      required: [audit]
+
+    EngineReport:
+      type: object
+      description: allin_engine dump-profile 视图
+      properties:
+        ok:
+          type: boolean
+        profile:
+          type: object
+          additionalProperties: true
+          description: 引擎装配视图（工具数、preset 等）
+        presets:
+          type: array
+          items:
+            type: string
+          description: 可用 preset 列表
+        error:
+          type: string
+          description: ok=false 时的原因
+      required: [ok]
+
+    ActionResult:
+      type: object
+      description: 启停 / 工坊动作的结果（具体字段随动作而异）
+      properties:
+        ok:
+          type: boolean
+          example: true
+        id:
+          type: string
+          example: cordis-table-app
+        pid:
+          type: integer
+          nullable: true
+          description: start 成功时的子进程 pid
+        stopped:
+          type: boolean
+          nullable: true
+        action:
+          type: string
+          nullable: true
+      additionalProperties: true
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: unknown id
+      required: [error]

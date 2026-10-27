@@ -35,7 +35,7 @@ echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
 run npm run check:docs
-run "$PY" tools/repocheck/main.py . --exclude tools --skip-rules 1,7 --fail-on error
+run "$PY" tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
