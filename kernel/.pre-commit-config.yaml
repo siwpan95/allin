@@ -1,0 +1,13 @@
+# kernel 静态分析基线（满足 repocheck 规则 28：SAST 配置）
+# 仅做本地门禁，不强制远端 CI 复用；ruff 做 lint/import 校验，gitleaks 拦密钥。
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks

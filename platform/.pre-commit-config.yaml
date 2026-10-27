@@ -1,0 +1,14 @@
+# platform 静态分析基线（满足 repocheck 规则 28：SAST 配置）
+# 仅做本地门禁；eslint 校验 JS/Node 源码，gitleaks 拦密钥。
+repos:
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.13.0
+    hooks:
+      - id: eslint
+        files: \.mjs$
+        additional_dependencies:
+          - eslint@9.13.0
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks

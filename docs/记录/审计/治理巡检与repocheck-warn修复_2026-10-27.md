@@ -29,7 +29,7 @@ repocheck 在 `G:\allin` 根扫到 2 个项目，均 **健康分 6.0**，各 6 �
 | `kernel/`（Python + Cordis 服务图） | 无测试、疑似 import 断裂风险：cordis、无 SECURITY.md、无 CONTRIBUTING、CHANGELOG 结构不合格、无 CI 配置 |
 | `platform/`（Node 集成平台） | 无测试、无 SECURITY.md、无 CONTRIBUTING、CHANGELOG 结构不合格、无 CI 配置 |
 
-（两者另有 2 个 `[info]`：无依赖更新工具、无 SAST 配置——info 级，不在本次 warn 处置范围，原始扫描即如此。）
+（两者另有 2 个 `[info]`：无依赖更新工具、无 SAST 配置——info 级，初轮未处置；后于同日补充提交中一并清零，见第七节。）
 
 ## 四、warn 修复动作（2026-10-27，随整仓提交）
 
@@ -49,7 +49,7 @@ repocheck 在 `G:\allin` 根扫到 2 个项目，均 **健康分 6.0**，各 6 �
 
 ## 五、修复后验证
 
-- **repocheck 复扫**：`kernel/`、`platform/` 的 6 个 warn **全部清零**，仅剩 2 个 `[info]`（dependabot / SAST，info 级、不在处置范围）。健康分仍显示 6.0 系因 info 项计入分制，warn 已无。
+- **repocheck 初轮复扫**：`kernel/`、`platform/` 的 6 个 warn **全部清零**，初轮尚余 2 个 `[info]`（dependabot / SAST）；后于同日补充提交中一并清零（见第七节），最终 **0 warn / 0 info**（仅余 monorepo 子目录固有「无 .git」error）。
 - **kernel 冒烟测试**（真实 venv，含 watchdog/yaml）：2/2 通过（discover 与模块路径两种调用均 OK）；直接 import 验证 `kernel.cordis.Service = <class 'cordis.service.Service'>`，四大服务均可导入。
 - **platform 冒烟测试**（真实 Node）：2/2 通过。
 - **cordis 改写安全**：原 `from cordis import Service` 在缺 watchdog/pyyaml 的环境下本就会炸（services 顶层即 import cordis）；新 `from kernel.cordis import Service` 自执行 `ensure()`，更鲁棒，且 `Service` 同一性已验证。
@@ -57,3 +57,10 @@ repocheck 在 `G:\allin` 根扫到 2 个项目，均 **健康分 6.0**，各 6 �
 ## 六、结论
 
 本次巡检门禁全绿、推送就绪 IN_SYNC；repocheck 针对 `kernel/`、`platform/` 的 6 个 warn 已全部处置（含 cordis 按设计收敛），并以真实 venv/node 验证通过。所有改动随本仓整仓提交、整仓推送（见 SPEC-101 §5）。独立子代理按 SKILL 只读复验为后续交叉确认步骤。
+
+## 七、info 项清零（2026-10-27 补充提交）
+
+- 用户要求把 `kernel/`、`platform/` 初轮剩余的 2 个 `[info]`（规则 27 无依赖更新工具、规则 28 无 SAST 配置）也清零。
+- 处置：每个子件新增 `.github/dependabot.yml`（pip/npm + github-actions 周更）+ `.pre-commit-config.yaml`（kernel 用 ruff + gitleaks；platform 用 eslint + gitleaks）。两类文件精确命中规则 27/28 的判定文件名与 hook 正则，真实可用，非占位。
+- 验证：`repocheck .` 自 allin 根复扫，`kernel/`、`platform/` 均为 **0 warn / 0 info**（仅余 monorepo 子目录固有「无 .git」error）；`tools/`、`vendor/` 既有的 error/warn 不在本次范围。
+- 随本仓整仓补充提交并推送（commit 见 SPEC-101 §5 三层验收）。
