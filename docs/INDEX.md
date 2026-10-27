@@ -162,7 +162,8 @@
 | `../PORTFOLIO.md`（仓根） | 远端 **135 仓**全量索引（脚本从 Gitee API 生成） |
 | `../tools/` | 可执行门禁：仓根 `tools/repo_hygiene.py`（H1–H8）+ `tools/gate/`（`scan_hardcoded.ps1` / `check_undefined_names.py` / `docs_index.py` / `check_ps1_bom.py` / `watchdog.py` / `check_gate_drift.py` / `make_doc_aliases.ps1`）—— 2026-10-08 按实测订正落点（原写「`../tools/gate/` 含 `repo_hygiene.py`」与盘上不符，照抄会报 `No such file or directory`；同日清掉 `tools/` 下两份过期重复副本，见交接 §107.10 更正块） |
 | `preset/allin/allin.patch.yml` | 治理模式载体（cordis 声明式 preset，GOVERNANCE 块为粘合剂核；`g14-preset` 守护） |
-| `tools/gate/governance/`（本仓内，原 DSH 治理内核并入） | 规则的可执行落地：Python 运行时 `runtime/govlib.py` + `RULES.md`（规则→门禁映射）+ **15 条门禁**（`g00-meta`–`g15-docs-contract`）；聚合入口根 `package.json` 的 `check:governance`（= `node tools/gate/governance/run.ts --no-profile`，Node ≥ 22.18 原生类型擦除，不需要 tsx）。2026-10-26 由 `siwpan/deepseek-harness` 整体并入，原 DSH 远端已删除 |
+| `../architecture/adr/`（仓根，2026-10-28 新增） | **现行架构决策记录**（Problem / Decision / Alternatives considered / Consequences 四段体例，状态闭集 `proposed / accepted / superseded`）；索引在 `architecture/adr/README.md`。与 `记录/决策/` 的分工：那里是随 `platform/` 并入的**冻结**迁移件，这里是**现行**活决策。可发现性由本表登记保证（该目录刻意置于 `docs/` 之外，避开 D1/D8 计数约束，理由见 `architecture/README.md`） |
+| `tools/gate/governance/`（本仓内，原 DSH 治理内核并入） | 规则的可执行落地：Python 运行时 `runtime/govlib.py` + `RULES.md`（规则→门禁映射）+ **19 条门禁**（`g00-meta`–`g19-docs-refs`，编号缺 `g02`）；聚合入口根 `package.json` 的 `check:governance`（= `node tools/gate/governance/run.ts --no-profile`，Node ≥ 22.18 原生类型擦除，不需要 tsx）。2026-10-26 由 `siwpan/deepseek-harness` 整体并入，原 DSH 远端已删除；2026-10-28 自研增补 `g16-skill-preset-parity` / `g17-registry` / `g18-exceptions` / `g19-docs-refs` |
 | DSH 仓 `governance/`（外部源，已退役） | 2026-10-26 前 `siwpan/deepseek-harness` 分发版的规则落地（`g00`–`g18`）；其治理内核已并入本仓 `tools/gate/governance/`，远端 `siwpan/deepseek-harness` 已删除 |
 | `../目录索引.txt`（仓根） | 项目目录文档化索引，生成器 `/tools/build_dir_index.py` |
 
@@ -181,3 +182,4 @@
 
 *最后更新：2026-10-26（登记 REC-AU-10：preset 漂移 diff；REC-SN-05：发布区搬迁前快照；记录 35→37、总 60→62。此二件为三仓整合批次遗留、此前未在 INDEX 登记的快照/比对证据，现补登以过 D1/D8）。另登记 REC-TO-06：治理门禁哲学与事故表；REC-TO-07/08/09：DSH 架构笔记（能力接缝 / agent 生命周期 / 凭据分层）通用原则并入 allin 粘合剂叙事。记录 38→41、总 63→66。*
 * 最后更新：2026-10-28（登记 REC-AU-15：allin 增强方案调研（治理/Cordis/DSH/Agent），并据此按 P0→P1→P2 分阶段落地；记录 45→46、总 71→72）。*
+* 最后更新：2026-10-28（§6 外部事实源表登记 `../architecture/adr/`（现行 ADR 目录），并订正 `tools/gate/governance/` 行的门禁数 15→19；ADR 落点刻意置于 `docs/` 之外，故不进记录计数，总数不变）。*
