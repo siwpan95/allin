@@ -14,6 +14,10 @@
 #
 # 注意：id 取 `allin`（不是 `cordis`）。同名 id 由靠前根赢；叫 cordis 会被随包那份压住永不生效。
 #   作为独立 preset，工厂 cordis/standard 始终在；本 preset 挂不上时会话自动降级到工厂 preset。
+#
+#   【双向同步】本 `GOVERNANCE:BEGIN/END` 段的治理事实与
+#   `.workbuddy/skills/allin-governance-agent/SKILL.md`（WorkBuddy 侧等价落地）保持同步；
+#   任一侧修改须同步另一侧，用 `verify-mount.ps1` 漂移层 + 本仓 `npm run check:governance` 作判据。
 
 - insert:
     - id: preset-allin
