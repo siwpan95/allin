@@ -115,9 +115,9 @@ python repo_hygiene.py --selfcheck              # 自证
 PowerShell 5.1 下报假语法错误（`Unexpected token '}'`）——**该门禁在 PS 5.1 下完全不可用**。
 
 ```bash
-python check_ps1_bom.py            # 扫默认根
-python check_ps1_bom.py --fix      # 就地补 BOM（默认干跑）
-python check_ps1_bom.py --selfcheck
+python tools/gate/check_ps1_bom.py            # 扫默认根
+python tools/gate/check_ps1_bom.py --fix      # 就地补 BOM（默认干跑）
+python tools/gate/check_ps1_bom.py --selfcheck
 ```
 
 判据：含非 ASCII 却无 BOM → 阻断；纯 ASCII 无 BOM → 合法；有 BOM 但非合法 UTF-8 → 阻断。
@@ -131,9 +131,9 @@ python check_ps1_bom.py --selfcheck
 | W3 同步漂移 | 本地 HEAD vs 远端 ref（**只信 `git ls-remote`**） |
 
 ```bash
-python watchdog.py                # 全量巡检
-python watchdog.py --quick        # 跳过 fsck（快）
-python watchdog.py --selfcheck
+python tools/gate/watchdog.py                # 全量巡检
+python tools/gate/watchdog.py --quick        # 跳过 fsck（快）
+python tools/gate/watchdog.py --selfcheck
 ```
 
 **两条别改错的判据**：

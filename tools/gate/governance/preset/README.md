@@ -41,10 +41,10 @@ dsh web --patch governance/preset/allin.patch.yml
 ## 三、校验与回滚
 
 ```powershell
-python governance/gates/g14_preset.py     # 结构层：标记/路径/插件序列/引用 + profile 探针
-python governance/gates/g14_preset.py --selfcheck   # 证明这条门禁真的会红（9 抓 / 2 静默 / 0 误报）
-python governance/gates/g14_preset.py --no-profile  # 只看仓内结构，不读仓外 profile
-python governance/gates/g14_preset.py --profile <DSH profile 目录>   # 指定别的 profile（CI/多 profile）
+python tools/gate/governance/gates/g14_preset.py     # 结构层：标记/路径/插件序列/引用 + profile 探针
+python tools/gate/governance/gates/g14_preset.py --selfcheck   # 证明这条门禁真的会红（9 抓 / 2 静默 / 0 误报）
+python tools/gate/governance/gates/g14_preset.py --no-profile  # 只看仓内结构，不读仓外 profile
+python tools/gate/governance/gates/g14_preset.py --profile <DSH profile 目录>   # 指定别的 profile（CI/多 profile）
 ```
 
 > **聚合入口默认不读仓外**：`pnpm run check:governance` 带 `--no-profile`（只转发给声明 `profileProbe`

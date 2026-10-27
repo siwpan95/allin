@@ -1,0 +1,23 @@
+# Baseline ratchet for this gate. One finding key per line.
+# Refresh only after the remaining findings were reviewed in full:
+#   python governance/gates/<gate>.py --no-baseline --list-all
+docs/事实源/来源与许可表.md|a287c9fa3e071d56|path-ref
+docs/事实源/端口分配表.md|a106993fa90d5221|path-ref
+docs/规范/SPEC-004-调试铁律.md|02d17d7745541452|path-ref
+docs/规范/SPEC-004-调试铁律.md|27178dc1668c6fc4|path-ref
+docs/规范/SPEC-004-调试铁律.md|38c322b0dbb2e480|path-ref
+docs/规范/SPEC-004-调试铁律.md|413eaa26a5ee590a|path-ref
+docs/规范/SPEC-004-调试铁律.md|5c18a59c17570dc8|path-ref
+docs/规范/SPEC-004-调试铁律.md|cae4cada7636ece1|path-ref
+docs/规范/SPEC-004-调试铁律.md|e13be2b0f13c17a5|path-ref
+docs/规范/SPEC-004-调试铁律.md|fc31cd87c0d7b949|path-ref
+docs/规范/SPEC-102-发版指南.md|5644a921dadeb76d|path-ref
+docs/规范/SPEC-104-DSH分发版使用.md|1d942bbab7ca7935|path-ref
+docs/规范/SPEC-104-DSH分发版使用.md|436507c887c67a7d|path-ref
+docs/规范/SPEC-104-DSH分发版使用.md|a2f8eebd5c93560a|path-ref
+docs/规范/SPEC-104-DSH分发版使用.md|e2b1c0340a344f50|command-target
+docs/规范/SPEC-104-DSH分发版使用.md|e6238a49f0e686c1|path-ref
+docs/规范/SPEC-105-治理模式建设指南.md|5c18a59c17570dc8|path-ref
+docs/规范/SPEC-202-foolproof-operation契约.md|91e069802f04bbe8|path-ref
+docs/规范/SPEC-203-allin-platform契约.md|bfa0c39de8551e62|path-ref
+platform/README.md|bfa0c39de8551e62|path-ref
