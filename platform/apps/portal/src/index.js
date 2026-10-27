@@ -197,6 +197,37 @@ const server = http.createServer(async (req, res) => {
   if (alertsM && req.method === 'GET') {
     return json(res, 200, { alerts: readAlerts() })
   }
+  // 门禁执行留痕（P0-2）：scripts/run_all_gates.sh 每次执行落一行 JSONL，
+  // 这里把它读出来，供「逃逸率 / 证据新鲜度」在界面上看得见。
+  if (p === '/api/gate-history' && req.method === 'GET') {
+    const trail = process.env.ALLIN_GATE_RUNS
+      || path.join(PLATFORM, '..', 'tools', 'gate', 'audit', 'gate-runs.jsonl')
+    const runs = []
+    let readable = true
+    try {
+      for (const line of fs.readFileSync(trail, 'utf8').split('\n')) {
+        const text = line.trim()
+        if (!text) continue
+        try { runs.push(JSON.parse(text)) } catch { /* 坏行跳过，不整体失败 */ }
+      }
+    } catch { readable = false }
+    const tail = runs.slice(-200)
+    const failed = tail.filter(r => Number(r.exit) !== 0).length
+    const okRuns = tail.filter(r => Number(r.exit) === 0)
+    return json(res, 200, {
+      trail,
+      readable,
+      runs: tail,
+      summary: {
+        total: runs.length,
+        inTail: tail.length,
+        failed,
+        escapeRate: tail.length ? Number((failed / tail.length).toFixed(4)) : 0,
+        lastRunAt: tail.length ? tail[tail.length - 1].ts : null,
+        lastOkAt: okRuns.length ? okRuns[okRuns.length - 1].ts : null
+      }
+    })
+  }
   if (p === '/api/workshop' && req.method === 'GET') {
     const { entries } = loadRegistry(REGISTRY)
     const base = listWorkshop(entries)

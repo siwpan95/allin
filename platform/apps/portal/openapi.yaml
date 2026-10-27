@@ -195,6 +195,45 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /api/gate-history:
+    get:
+      tags: [alerts]
+      summary: 门禁执行留痕（三项治理指标的数据源）
+      description: |
+        读取 `scripts/run_all_gates.sh` 落下的执行留痕（默认
+        `<仓根>/tools/gate/audit/gate-runs.jsonl`，可用 `ALLIN_GATE_RUNS` 覆盖），
+        返回最近 200 条与摘要（总数、失败数、逃逸率、最近一次成功时间）。
+        留痕文件属运行时产物，已被 `.gitignore` 忽略；文件不存在时 `readable=false`、
+        `runs` 为空，不报错。逐行解析，坏行跳过而非整份失败。
+      operationId: listGateHistory
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 留痕尾部与摘要
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateHistoryResponse'
+              example:
+                trail: tools/gate/audit/gate-runs.jsonl
+                readable: true
+                runs:
+                  - ts: '2026-10-27T22:16:58Z'
+                    commit: 44824d2
+                    label: npm run check:governance
+                    exit: 0
+                    ms: 46859
+                summary:
+                  total: 3
+                  inTail: 3
+                  failed: 0
+                  escapeRate: 0
+                  lastRunAt: '2026-10-27T22:17:00Z'
+                  lastOkAt: '2026-10-27T22:17:00Z'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /api/workshop:
     get:
       tags: [workshop]
@@ -571,6 +610,59 @@ components:
           items:
             $ref: '#/components/schemas/Alert'
       required: [alerts]
+
+    GateRun:
+      type: object
+      description: 一次门禁执行的留痕；label 中的反斜杠已折成正斜杠以保证是合法 JSON
+      properties:
+        ts:
+          type: string
+          format: date-time
+        commit:
+          type: string
+          description: 执行时的短提交号
+        label:
+          type: string
+          description: 被执行的命令
+        exit:
+          type: integer
+          description: 退出码（0 通过）
+        ms:
+          type: integer
+          description: 耗时（毫秒）
+      required: [ts, commit, label, exit, ms]
+
+    GateHistoryResponse:
+      type: object
+      properties:
+        trail:
+          type: string
+          description: 留痕文件路径（缺失时仍返回，readable=false）
+        readable:
+          type: boolean
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateRun'
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            inTail:
+              type: integer
+            failed:
+              type: integer
+            escapeRate:
+              type: number
+              description: 尾部样本中失败占比
+            lastRunAt:
+              type: string
+              format: date-time
+            lastOkAt:
+              type: string
+              format: date-time
+      required: [trail, readable, runs, summary]
 
     WorkshopItem:
       type: object
