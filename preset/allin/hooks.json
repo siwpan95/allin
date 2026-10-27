@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node platform/apps/mcp/src/hook-pretool.js",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
