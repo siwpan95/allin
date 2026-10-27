@@ -15,7 +15,17 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
-PY="${ALLIN_PYTHON:-E:/Python314/python.exe}"
+# 解释器不写死机器路径（g01 判据）：环境变量优先，其次按 PATH 探测 python3 / python。
+if [ -n "${ALLIN_PYTHON:-}" ]; then
+  PY="$ALLIN_PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+  PY=python3
+elif command -v python >/dev/null 2>&1; then
+  PY=python
+else
+  echo "ENV ERROR: 找不到 python3/python；可用 ALLIN_PYTHON 指定解释器" >&2
+  exit 3
+fi
 fail=0
 failures=()
 
