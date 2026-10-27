@@ -1,0 +1,22 @@
+name: platform-ci
+permissions:
+  contents: read
+on:
+  push:
+    paths:
+      - 'platform/**'
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: git clone --depth 1 "${GITEE_REPO_URL:-https://gitee.com/siwpan/allin.git}" .
+      - name: Set up Node
+        run: node --version && npm --version
+      - name: Install
+        run: cd platform && (npm ci || npm install)
+      - name: Lint/Check
+        run: cd platform && npm run check
+      - name: Test
+        run: cd platform && npm test

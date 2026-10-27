@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import subprocess
 
-from cordis import Service
+from kernel.cordis import Service
 
 from kernel.paths import PLATFORM_DIR, ROOT
 

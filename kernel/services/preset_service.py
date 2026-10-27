@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from cordis import Service
+from kernel.cordis import Service
 
 from kernel.paths import PRESET_DIR
 

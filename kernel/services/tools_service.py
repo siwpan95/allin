@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from cordis import Service
+from kernel.cordis import Service
 
 from kernel.paths import ROOT, TOOLS_DIR
 

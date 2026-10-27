@@ -1,0 +1,23 @@
+name: kernel-ci
+permissions:
+  contents: read
+on:
+  push:
+    paths:
+      - 'kernel/**'
+      - 'vendor/cordis/**'
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: git clone --depth 1 "${GITEE_REPO_URL:-https://gitee.com/siwpan/allin.git}" .
+      - name: Set up Python
+        run: python3 --version
+      - name: Syntax check（py_compile 全部 .py）
+        run: python3 -m compileall -q kernel
+      - name: 冒烟测试（需 vendored cordis 在 PYTHONPATH）
+        run: |
+          export PYTHONPATH="${PWD}:${PYTHONPATH}"
+          python3 -m unittest discover -s kernel/tests -p 'test_*.py' -v

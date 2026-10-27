@@ -14,7 +14,7 @@
     "allin": "node apps/cli/src/index.js",
     "check": "node scripts/check.mjs",
     "check:repos": "node scripts/check_repos.mjs",
-    "test": "node --test packages/core/test/*.test.mjs apps/portal/test/*.test.mjs apps/cli/test/*.test.mjs",
+    "test": "node --test packages/core/test/*.test.mjs apps/portal/test/*.test.mjs apps/cli/test/*.test.mjs test/*.test.mjs",
     "harness": "node harness/harness.mjs"
   },
   "engines": {
