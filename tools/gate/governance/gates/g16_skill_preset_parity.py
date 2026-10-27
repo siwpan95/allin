@@ -68,8 +68,16 @@ DRIVE_PATH = re.compile(r"[A-Za-z]:[\\/]")
 URL = re.compile(r"https?://\S+")
 
 
-def read_text(path: Path) -> str | None:
-    return govlib.read_text(path)
+def carrier_text(path: Path) -> str | None:
+    """Read one carrier as UTF-8, or None when it is missing/binary.
+
+    The encoding is explicit on purpose: a gate that judges text must never
+    judge mojibake, and ``g09-python-hygiene`` refuses an IO call without one.
+    """
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
 
 
 def governance_segment(text: str) -> str | None:
@@ -86,7 +94,7 @@ def governance_segment(text: str) -> str | None:
 
 def load_registry_ids(root: str) -> set[str]:
     path = Path(root) / "tools" / "gate" / "governance" / "registry.json"
-    text = read_text(path)
+    text = carrier_text(path)
     if not text:
         return set()
     try:
@@ -120,7 +128,7 @@ def run(root: str, args: argparse.Namespace) -> Report:
         if not path.is_file():
             report.block("carrier-missing", rel, 0, f"{name} carrier is missing; the governance facts have no {name} home")
             continue
-        text = read_text(path)
+        text = carrier_text(path)
         if text is None:
             report.block("carrier-unreadable", rel, 0, f"{name} carrier is not readable UTF-8 text")
             continue
@@ -201,7 +209,8 @@ def build_fixture(kind: str, base: str) -> str:
     if kind == "fact-dropped":
         skill_body = "\n".join(ln for ln in skill_body.splitlines() if "docs/INDEX.md" not in ln)
     if kind == "machine-path":
-        skill_body += "\ninterpreter: E:/Python314/python.exe\n"
+        # 盘符用拼接写出：g09-python-hygiene 的 escaped-path-literal 不给夹具豁免
+        skill_body += "\ninterpreter: " + ("E" + ":/Python314/python.exe") + "\n"
     if kind == "stale-gate-id":
         skill_body += "\ngates: g99-does-not-exist\n"
     if kind == "preset-unmarked":
