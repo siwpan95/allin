@@ -189,6 +189,17 @@
       "requires": ["python>=3.9", "git"],
       "baseline": "governance/baseline/g17-registry.txt",
       "selfcheck": true
+    },
+    {
+      "id": "g18-exceptions",
+      "title": "accepted risk is registered, reasoned, and expires",
+      "script": "governance/gates/g18_exceptions.py",
+      "tier": "P0",
+      "rules": ["ops-G5", "iron-2", "debug-46"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9", "PyYAML"],
+      "baseline": "governance/baseline/g18-exceptions.txt",
+      "selfcheck": true
     }
   ]
 }

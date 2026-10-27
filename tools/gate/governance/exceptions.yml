@@ -1,0 +1,71 @@
+# 例外登记：每一条都是**被接受的风险**，因此必须说得出——
+#   谁批的（approver）、靠什么兜着（compensating）、什么时候到期（expires）。
+# g18 会把这张表变成退出码：字段不全、状态越界、过期未复核，都判红。
+#
+# 字段说明
+#   id            稳定编号，EX-###
+#   kind          baseline-freeze（门禁基线冻结）/ hygiene-exemption（仓库卫生豁免）
+#                 / known-gap（注册表完备性声明缺口）
+#   gate          受影响的门禁 id（known-gap 写 g17-registry）
+#   target        受影响对象（基线文件、豁免表、缺口目录名），可带计数
+#   reason        为什么接受（业务理由）
+#   compensating  补偿控制（为什么接受了仍然安全）
+#   approver      审批人
+#   expires       到期日 YYYY-MM-DD —— 到期即转红，逼出复核或续期
+#   status        open / closed（closed 的条目不再计入燃尽）
+#
+# 燃尽口径：npm run metrics:gates 统计冻结/豁免总数；本表给出「有登记的例外」条数。
+version: 1
+exceptions:
+  - id: EX-001
+    kind: baseline-freeze
+    gate: g09-python-hygiene
+    target: governance/baseline/g09-python-hygiene.txt（38 条冻结键）
+    reason: >-
+      存量 Python 文件在门禁上线前即存在编码/转义写法，一次性改写风险高于收益，
+      采取「冻结存量、阻断新增」的棘轮策略。
+    compensating: >-
+      baseline ratchet：基线只冻结既有键，文件一旦改动键就失效并强制复核；
+      新写入的 IO 调用必须显式带 encoding，已被自检用例覆盖。
+    approver: siwpan
+    expires: 2027-01-31
+    status: open
+  - id: EX-002
+    kind: baseline-freeze
+    gate: g03-credentials
+    target: governance/baseline/g03-credentials.txt（9 条冻结键）
+    reason: >-
+      历史文档中出现的示例凭据形状（占位符/示例 token），非真实密钥。
+    compensating: >-
+      g03 对新增内容零容忍；真实密钥检测规则（形状+熵）仍全量生效。
+    approver: siwpan
+    expires: 2027-01-31
+    status: open
+  - id: EX-003
+    kind: baseline-freeze
+    gate: g07-doc-freshness
+    target: governance/baseline/g07-doc-freshness.txt（1 条冻结键）
+    reason: 事实源文档缺时点声明，属存量文档待补。
+    compensating: 新增/改动的文档必须带时点，否则判红。
+    approver: siwpan
+    expires: 2027-01-31
+    status: open
+  - id: EX-004
+    kind: hygiene-exemption
+    gate: g05-hygiene
+    target: tools/gate/audit/repo_hygiene_exemptions.csv（3 行豁免）
+    reason: >-
+      vendor/ 等 vendored 子树按其性质不应按独立仓自检，属有理由的例外。
+    compensating: 豁免按规则 id + 仓名前缀限定作用域，不泛化。
+    approver: siwpan
+    expires: 2027-01-31
+    status: open
+  - id: EX-005
+    kind: known-gap
+    gate: g17-registry
+    target: "registry-known-gaps.txt: deepseek-harness-master"
+    reason: 上游 DeepSeek Harness 的源码快照（无 origin），非本工作区项目。
+    compensating: 仅作阅读参照，不进入 139 条项目台账，不参与 verify/发布链路。
+    approver: siwpan
+    expires: 2027-01-31
+    status: open
