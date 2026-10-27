@@ -16,14 +16,34 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
 # 解释器不写死机器路径（g01 判据）：环境变量优先，其次按 PATH 探测 python3 / python。
+# 探测必须带 tkinter：tools/repocheck/main.py 启动即 import tkinter，托管的阉割版
+# Python 会直接 ModuleNotFoundError，门禁会假红。所以候选解释器要真测一下。
+# 候选必须真能 import tkinter：tools/repocheck/main.py 启动即 import tkinter，
+# 托管的阉割版 Python 会直接 ModuleNotFoundError，门禁会假红。
+can_tk() { "$1" -c "import tkinter" >/dev/null 2>&1; }
+
+PY=""
 if [ -n "${ALLIN_PYTHON:-}" ]; then
   PY="$ALLIN_PYTHON"
-elif command -v python3 >/dev/null 2>&1; then
-  PY=python3
-elif command -v python >/dev/null 2>&1; then
-  PY=python
 else
-  echo "ENV ERROR: 找不到 python3/python；可用 ALLIN_PYTHON 指定解释器" >&2
+  for cand in python3 python; do
+    if command -v "$cand" >/dev/null 2>&1 && can_tk "$cand"; then PY="$cand"; break; fi
+  done
+  # PATH 上的 python3/python 不可用时，再扫 PATH 里所有 python.exe（Windows）。
+  # 路径由系统给出，源码里不出现盘符 —— g01 判据不变。
+  if [ -z "$PY" ] && command -v where >/dev/null 2>&1; then
+    while IFS= read -r cand; do
+      cand="${cand%$'\r'}"
+      [ -n "$cand" ] || continue
+      if can_tk "$cand"; then PY="$cand"; break; fi
+    done <<EOF
+$(where python 2>/dev/null)
+EOF
+  fi
+fi
+if [ -z "$PY" ]; then
+  echo "ENV ERROR: 找不到能 import tkinter 的 python（repocheck 需要它）。" >&2
+  echo "          用 ALLIN_PYTHON=<完整解释器> bash scripts/run_all_gates.sh 指定。" >&2
   exit 3
 fi
 fail=0

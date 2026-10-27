@@ -167,6 +167,17 @@
       "requires": ["python>=3.9"],
       "baseline": "governance/baseline/g15-docs-contract.txt",
       "selfcheck": true
+    },
+    {
+      "id": "g16-skill-preset-parity",
+      "title": "the two governance carriers say the same thing",
+      "script": "governance/gates/g16_skill_preset_parity.py",
+      "tier": "P0",
+      "rules": ["iron-1", "iron-5", "debug-42", "ops-D4", "ops-D5"],
+      "platforms": ["nt", "posix"],
+      "requires": ["python>=3.9"],
+      "baseline": "governance/baseline/g16-skill-preset-parity.txt",
+      "selfcheck": true
     }
   ]
 }
