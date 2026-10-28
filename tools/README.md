@@ -15,6 +15,7 @@
 | **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
 | **`security/venv_ca_audit.py`** | **venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）** | `allin tools venv-audit scan G:/repos` |
 | **`verify_projects.py`** | **逐项无头验证 registry 项目（T1 `verify.command` / T2 启动命令 / T3 包导入，其余 T4）** | `python tools/verify_projects.py --workers 8` |
+| **`reposcan/`** | **`D:\projects\repos` 133 仓领域×技术栈分类工具链 + 交叉索引总表/热力表/CSV/XLSX 产物** | `python tools/reposcan/scan_repos.py` |
 
 ---
 
