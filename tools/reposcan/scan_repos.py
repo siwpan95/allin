@@ -3,7 +3,7 @@
 import os, json, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, data_path
 
 ROOT = repos_root()
 
@@ -103,7 +103,7 @@ def main():
             "top": top_entries(d),
             "readme_text": summary,
         })
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repos_meta.json")
+    out = data_path("repos_meta.json")
     with open(out, "w", encoding="utf-8") as fh:
         json.dump(result, fh, ensure_ascii=False, indent=1)
     print(f"scanned {len(result)} repos -> {out}")

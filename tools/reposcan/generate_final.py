@@ -4,14 +4,12 @@
 import json, re, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, read_json, out_path
 
 ROOT = repos_root()
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+meta = read_json("repos_meta.json")
+tech = read_json("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 
 # 修正后的领域分类：name -> (大类, 子类, 证据)
@@ -308,14 +306,14 @@ for title, fn in sections:
     lines.append("")
 
 out1 = "\n".join(lines)
-with open("repos_classification.md","w",encoding="utf-8") as fh:
+with open(out_path("repos_classification.md"),"w",encoding="utf-8") as fh:
     fh.write(out1)
 
 # 额外：技术栈分组单独文件（便于只看维度）
 tech_part = out1.split("# 技术栈维度分组",1)[1]
 tech_head = f"# {ROOT} 技术栈维度分组\n"
 out2 = tech_head + tech_part
-with open("repos_techstack.md","w",encoding="utf-8") as fh:
+with open(out_path("repos_techstack.md"),"w",encoding="utf-8") as fh:
     fh.write(tech_head + tech_part)
 
 print("repos_classification.md 行数:", out1.count(chr(10)))

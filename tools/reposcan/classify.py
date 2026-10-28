@@ -4,12 +4,11 @@
 import json, re, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, read_json, out_path
 
 ROOT = repos_root()
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    data = json.load(fh)
+data = read_json("repos_meta.json")
 
 # name -> (大类, 子类, 一句话证据)
 CAT = {
@@ -232,7 +231,7 @@ if unclassified:
     lines.append("")
 
 out = "\n".join(lines)
-with open("repos_classification.md", "w", encoding="utf-8") as fh:
+with open(out_path("repos_classification.md"), "w", encoding="utf-8") as fh:
     fh.write(out)
 print(f"已生成 repos_classification.md，未分类 {len(unclassified)} 个")
 if unclassified:

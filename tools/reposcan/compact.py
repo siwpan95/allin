@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import json, re
+import re, os, sys
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    data = json.load(fh)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import read_json
+
+data = read_json("repos_meta.json")
 
 def title_and_desc(text):
     title = ""
