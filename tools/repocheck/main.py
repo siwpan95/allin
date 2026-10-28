@@ -10,6 +10,9 @@
 --------
 * 仅在本文件 ``build_gui()`` 内实例化 ``Tk()``；无显示器环境下
   ``import main`` 不会创建 GUI，方便只测纯逻辑。
+* **tkinter 是 GUI 的可选依赖**：模块级导入用 try/except 包住，
+  没有 tkinter 的精简解释器（常见的 WorkBuddy 便携版）也能跑命令行模式
+  —— 只有图形界面会响亮报环境错（退出码 3）。
 * 纯标准库（tkinter / os / pathlib），不 import 其他工具目录
   （复制优于共享）。
 """
@@ -17,8 +20,13 @@
 from __future__ import annotations
 
 import os
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+import sys
+
+try:  # tkinter 只服务 GUI —— CLI 模式必须在没有 tkinter 的精简解释器上也能跑
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk
+except ModuleNotFoundError:  # 没有 tkinter 的解释器：命令行可用，图形界面不可用
+    tk = filedialog = messagebox = ttk = None
 
 import report
 import scanner
@@ -44,6 +52,10 @@ def _score_tag(score: float) -> str:
 
 def build_gui(initial_root: str | None = None) -> None:
     """构建并启动 repocheck 的图形界面。"""
+    if tk is None:
+        print("ENV ERROR: 当前解释器没有 tkinter，图形界面不可用；请用命令行模式"
+              "（repocheck/main.py <根目录> [--format json]）。", file=sys.stderr)
+        raise SystemExit(3)
     root = tk.Tk()
     root.title(f"repocheck · 仓库体检 v{scanner.__version__}")
     root.geometry("1040x600")
