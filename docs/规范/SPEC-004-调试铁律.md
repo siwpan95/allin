@@ -1,7 +1,7 @@
 # SPEC-004 · 调试铁律（1–69）
 
 > **编号** SPEC-004 ｜ **效力** 纪律（事故驱动沉淀，代价可量化） ｜ **状态** 生效
-> **生效** 2026-08-24 ｜ **最后修订** 2026-10-08 ｜ **适用面** 本工作区全部工程操作（PowerShell / Python / git / 门禁 / 盘与文件系统）
+> **生效** 2026-08-24 ｜ **最后修订** 2026-10-28 ｜ **适用面** 本工作区全部工程操作（PowerShell / Python / git / 门禁 / 盘与文件系统）
 > **承载体** 逐条见 `规范/README.md` §4.1–4.2 的「规则 → 门禁映射」；未机械化者在表中标注为流程纪律
 > **引用格式** SPEC-004 §调试铁律 19
 >
@@ -28,7 +28,7 @@
 13. **对比脚本的主键必须是 origin 仓名，不是目录名（2026-09-22 沉淀）**：本地目录名可与远端仓名不同（`G:\platform` ↔ 远端 `allin-platform`），以目录名为主键会漏配、导致总账不平（本次曾复现「116 ≠ 117」）。凡做「本地 ↔ 远端」对账，先由 `git config remote.origin.url` 解析出仓名再匹配。
 14. **DSH 会话内验证 Electron 会被 `ELECTRON_RUN_AS_NODE` 污染（2026-09-22 沉淀）**：本 harness 给子进程注入 `ELECTRON_RUN_AS_NODE=1`（**仅 Process 作用域，User/Machine 未设**），此时 `electron.exe --version` 打印的是内嵌 **Node** 版本（Electron 30 → `v20.16.0`）而非 Electron 版本，极易误判「装错版本」。验证 electron 必须 `Remove-Item Env:ELECTRON_RUN_AS_NODE` 或直接读 `dist/version`；同理，**在 DSH 会话里启动任何 Electron 应用前都要清掉该变量**，否则应用会以 Node 模式运行。
 15. **npm 重装大依赖会挂起（2026-09-22 复现）**：`npm uninstall electron` 在本机跑 13 分钟零输出（同「Node undici 大 tarball 不可靠」根因）。**外科式替代**：保留 `node_modules/<pkg>` 与声明，直接跑该包的 `install.js`（electron 从其 `%LOCALAPPDATA%\electron\Cache` 解包），10s 完成且不用动依赖树。
-16. **仓内 pre-commit/pre-push 门禁在 DSH 沙箱里会「假红」（2026-09-22 沉淀并已实证，private-radio-stations）**：钩子形如 `#!/bin/sh` → `node scripts/check.mjs --fast`，而 check 内部对每个文件再 `spawn('node')` 做语法检查——**沙箱禁止管道 stdio 的子进程**，于是逐文件报 `x syntax: …（node 无法执行：node；EBUSY）`、整体 `check FAILED: 60`，**极像「代码全坏」**（该仓 pre-commit 与 pre-push 各拦一次）。处置动作：① 用 PowerShell 逐文件 `node --check` 独立复核（本次 78/78 全绿）；② 据实以 `git commit --no-verify` / `git push --no-verify` 完成，并在**提交信息与交接文档里写明理由与证据**；③ 请用户在正常终端复跑门禁。**实证**：用户复跑 `npm run check` → **`check PASSED`**（syntax/cordis.yml/package.json/whitespace/unit tests 全绿），确认是环境边界而非代码缺陷。**结论：不要把沙箱边界当成代码缺陷去改代码。**
+16. **仓内 pre-commit/pre-push 门禁在 DSH 沙箱里会「假红」（2026-09-22 沉淀并已实证，private-radio-stations）**：钩子形如 `#!/bin/sh` → 执行该仓的 `private-radio-stations/scripts/check.mjs --fast`，而 check 内部对每个文件再 `spawn('node')` 做语法检查——**沙箱禁止管道 stdio 的子进程**，于是逐文件报 `x syntax: …（node 无法执行：node；EBUSY）`、整体 `check FAILED: 60`，**极像「代码全坏」**（该仓 pre-commit 与 pre-push 各拦一次）。处置动作：① 用 PowerShell 逐文件 `node --check` 独立复核（本次 78/78 全绿）；② 据实以 `git commit --no-verify` / `git push --no-verify` 完成，并在**提交信息与交接文档里写明理由与证据**；③ 请用户在正常终端复跑门禁。**实证**：用户复跑 `npm run check` → **`check PASSED`**（syntax/cordis.yml/package.json/whitespace/unit tests 全绿），确认是环境边界而非代码缺陷。**结论：不要把沙箱边界当成代码缺陷去改代码。**
 17. **PowerShell 变量名含 `?` 的静默 URL 陷阱（2026-09-22 沉淀，gitee API 实测）**：`"$repo?access_token=$tok"` 里 `?` 是**合法变量名字符**，PowerShell 会把 `repo?access_token` 当成**一个变量名**（未定义→空串），URL 静默变成 `…/repos/siwpan/<token>`，接口返回 **403 Forbidden**——报错完全指不到真因（看着像 token 失效或接口被封）。**规则：字符串里变量后紧跟 `?` `-` `:` `=` `.` 等字符时一律写 `${var}`**。本次 85 仓社区指标采集因此 100% 失败，加 `${}` 后同一端点立即正常。附带：**别用 `powershell`(5.1) 去跑 pwsh 写的无 BOM UTF-8 脚本**（中文路径会烤成乱码、报「Cannot find path」）——用 UTF-8 存脚本、并统一用 pwsh 执行。
 18. **批量正则改文档必须先 dry-run（2026-09-23 沉淀，85 仓 README 去本地化实测）**：把 `X:\…` 批量替换成占位符时，字符类的**排除集漏一个字符就吞掉正文**——本次两处实证：① 未排除全角 `（` → `/allin/docs/x.md（2026-08-25 用户拍板…` 被吃成 `<PATH> 用户拍板…`；② 未排除反引号 → `` `/allin/docs/x/ports.yaml` `` 的**收尾反引号被一并吃掉**，行内代码块破掉。另：尾部加 `(?<![\\/])` 防尾随斜杠反而让单独的 `G:\` 漏替换 → 改为替换后再清理 `<PATH>\`。**铁律：批量文本改写一律先 `-DryRun` 打印 before→after 样本，且排除集必须含 `（）「」《》【】、，。；：？！—=*` 与反引号/引号/尖括号/竖线**；改完必须回扫残留数 = 0 才算过。
 19. **改多仓时只 `git add <指定文件>`，绝不用 `git add -A`（2026-09-23 实证价值）**：批量改 85 仓 README 时，`foolproof-operation` 当时正有另一路会话在做 Cordis 架构重构（工作区里 `core/ plugins/ index/ tests/ docs/` 均为未提交在建内容）。因为脚本只 `git add README.md`，84 个提交**逐一核验均只含 README.md**，零卷入他人在建工作。**凡在多仓并发环境下操作，逐文件 add 是硬纪律**；提交后再用 `git show --name-only HEAD` 回扫确认提交面。
@@ -76,13 +76,13 @@
 
 39. **区分「链接期依赖目录」与「运行时目录」——别把脚本找错目录当成依赖坏了（2026-09-23 沉淀，pluginplayer/libass 实证并回头更正）**：libass 体检脚本原指向 `vendor/libass/bin`（32 个 DLL，**链接期**：include/lib + 部分 DLL，缺 MinGW 运行时三件套 libgcc/libstdc++/libwinpthread），报 `libass-9.dll` 加载失败 err=126；我当时判为「依赖链本身的既有问题」——**判断错误**。实测（新进程只加一个目录）：`pluginplayer/dist`（41 个 DLL，**运行时闭包**）单独可加载且 `ass_library_init` 成功；`build.py` 注释本就写明「运行时由 Windows 加载器从 dist/ 解析 libass-9.dll 及其闭包」。**纪律**：① 报「依赖缺失」前，先用「新进程 + 只加一个候选目录」逐个验证，并确认自己指的是**运行时**目录；② 修复方向应是**让脚本去对目录**（本次改为 `PP_LIBASS_BIN` → `dist/` → vendor 兜底 → fail-loud），而不是往链接期目录里塞运行时 DLL（`vendor/`、`dist/` 都不入库，塞了也不可复现）；③ 禁止为了「让它能跑」去依赖 mpv 之类跨盘外部目录——那是换机即坏类。
 
-> **libass 运行时闭包已纳入依赖准备（2026-09-23）**：`tools/fetch_deps.py` 现在会补齐 `vendor/libass/bin` 缺的 MinGW 运行时三件套（libgcc_s_seh-1/libstdc++-6/libwinpthread-1），取件优先级 `PP_LIBASS_RUNTIME_SRC`/`PP_MINGW_BIN` → `PP_GXX` 目录 → `/mingw64/mingw64/bin` → 本仓 `dist/`；新增 `--libass-only`（秒级补齐+加载体检）与 `--skip-libass`。至此**构建前**用 vendor 目录也能跑通 libass 体检（17/17），不必等 `build.py` 产出 dist。
+> **libass 运行时闭包已纳入依赖准备（2026-09-23）**：`pluginplayer/tools/fetch_deps.py` 现在会补齐 `vendor/libass/bin` 缺的 MinGW 运行时三件套（libgcc_s_seh-1/libstdc++-6/libwinpthread-1），取件优先级 `PP_LIBASS_RUNTIME_SRC`/`PP_MINGW_BIN` → `PP_GXX` 目录 → `/mingw64/mingw64/bin` → 本仓 `dist/`；新增 `--libass-only`（秒级补齐+加载体检）与 `--skip-libass`。至此**构建前**用 vendor 目录也能跑通 libass 体检（17/17），不必等 `build.py` 产出 dist。
 
 40. **批量改写的收尾动作必须「编译通过才允许提交」，不能只看日志里打印了什么（2026-09-23 沉淀，本轮真实事故）**：改写 `fetch_libass.py` 的提示语时把换行插进了 **f-string 字面量内部** → 该文件变成语法错误（`py_compile` exit 1）；而我的提交脚本**把 exit=1 打印出来后仍继续 `git commit` + `git push`**，于是坏文件进了远端，得再补一个修复提交。**纪律**：① 提交前对**本仓全部跟踪 .py**（不只改动文件）跑一次 `py_compile` 并**断言**全绿，不通过就中止；② f-string / 单行字符串里绝不能插换行（需要多行用三引号或先拼变量）；③ 日志里的 `exit=1` 必须被脚本判为失败——「打印了就继续」等于没有门禁。
 
 41. **自检/验证脚本的退出码必须如实，禁止「打印提示就返回 0」的假绿（2026-09-23 沉淀，`_verify_libass_load.py` 实证）**：`players-unified/pluginplayer/_verify_libass_load.py` 原来任何分支都以 `exit 0` 结束——DLL 只加载成功 12/20 时只打印一行提示就正常退出，只有全绿才打印 `[PASS]`。我用它做「拿走运行时三件套」的阴性对照时，输出明明是失败，`$LASTEXITCODE` 却是 **0**。**纪律**：① 验证/自检脚本的退出码 = 判定结果（数量不齐、`ass_library_init` 返回 NULL 等一律非 0），提示语只是补充；② 新增或改动任何「体检脚本」时，**同时跑阳性与阴性对照**（本例：全量 20/20 → exit 0；人工移除三件套 → loaded 12/20、exit 1），只跑阳性等于没验证；③ 阴性对照要拿**真实产物**做（本例直接删三件套），不要用「注释掉判断」的方式模拟。
 
-> **libass 运行时三件套改为默认随上游闭包抓取（2026-09-23；本段更新前一条 blockquote 里「刻意不抓」的口径）**：`tools/fetch_libass.py`（pluginplayer 与 players-unified/pluginplayer 两副本字节一致）里 `EXCLUDE_RUNTIME` → `RUNTIME_DLLS`，默认从上游 MSYS2 抓 `libgcc_s_seh-1.dll`/`libstdc++-6.dll`（同属 `mingw-w64-x86_64-gcc-libs`）与 `libwinpthread-1.dll`（`mingw-w64-x86_64-libwinpthread`），使得 `vendor/libass/bin` **在还没跑 build.py（无 dist/）时**即为完整可加载集（呼应 `build.py:328` 的「bin/ 下即完整可加载集」声明）；`--skip-runtime` 退回旧行为（三件套交 `fetch_deps.py --libass-only` 从本机工具链/dist 补齐，离线可用）。同时给传递依赖抓取阶段补上 `DOWNLOADS_SHA256` 钉死校验，并钉死 gcc-libs-16.2.0-3 / libwinpthread-14.0.0.r375 的实测哈希。**实测**：真实联网跑通（第 1 轮抓 gcc-libs → 第 2 轮抓 libwinpthread → 第 3 轮闭合），libass 闭包 17 → **20** 个 DLL；空 vendor + 空 tmp（无解包树、无 TOFU）从归档纯净重放后加载校验 **20/20 PASS**；`--skip-runtime` 路径 32 个 DLL、闭包完整、exit 0 且显式列出被跳过的两项；**篡改 gcc-libs 归档一字节 → 钉死校验硬失败 exit 1**。上游抓到的三件套与本机 MinGW 工具链版本**并非同一份二进制**（体积/哈希均不同：如 libgcc_s_seh-1 上游 150,998 B vs 工具链 142,336 B），两条来源路径都可用、不必互斥。提交：pluginplayer `dc8d6c3`（main）、players-unified `9ed3c93`（master），均已推送。
+> **libass 运行时三件套改为默认随上游闭包抓取（2026-09-23；本段更新前一条 blockquote 里「刻意不抓」的口径）**：`pluginplayer/tools/fetch_libass.py`（pluginplayer 与 players-unified/pluginplayer 两副本字节一致）里 `EXCLUDE_RUNTIME` → `RUNTIME_DLLS`，默认从上游 MSYS2 抓 `libgcc_s_seh-1.dll`/`libstdc++-6.dll`（同属 `mingw-w64-x86_64-gcc-libs`）与 `libwinpthread-1.dll`（`mingw-w64-x86_64-libwinpthread`），使得 `vendor/libass/bin` **在还没跑 build.py（无 dist/）时**即为完整可加载集（呼应 `build.py:328` 的「bin/ 下即完整可加载集」声明）；`--skip-runtime` 退回旧行为（三件套交 `fetch_deps.py --libass-only` 从本机工具链/dist 补齐，离线可用）。同时给传递依赖抓取阶段补上 `DOWNLOADS_SHA256` 钉死校验，并钉死 gcc-libs-16.2.0-3 / libwinpthread-14.0.0.r375 的实测哈希。**实测**：真实联网跑通（第 1 轮抓 gcc-libs → 第 2 轮抓 libwinpthread → 第 3 轮闭合），libass 闭包 17 → **20** 个 DLL；空 vendor + 空 tmp（无解包树、无 TOFU）从归档纯净重放后加载校验 **20/20 PASS**；`--skip-runtime` 路径 32 个 DLL、闭包完整、exit 0 且显式列出被跳过的两项；**篡改 gcc-libs 归档一字节 → 钉死校验硬失败 exit 1**。上游抓到的三件套与本机 MinGW 工具链版本**并非同一份二进制**（体积/哈希均不同：如 libgcc_s_seh-1 上游 150,998 B vs 工具链 142,336 B），两条来源路径都可用、不必互斥。提交：pluginplayer `dc8d6c3`（main）、players-unified `9ed3c93`（master），均已推送。
 
 42. **「把文件搬到别处」是一类会静默弄坏门禁与链接的结构变更；副本仓的门禁必须单独跑（2026-09-23 沉淀，players-unified/pluginplayer 副本实证）**：该副本导入时（`2f146bb`）把 `AGENTS.md`/`CLAUDE.md`/`DEPLOY.md`/`ENHANCEMENT_PLAN.md`/`THIRD_PARTY_NOTICES.md` 放进了 `docs/`，引用却没跟着改，于是**三条门禁长期红**（`third-party-notices` 永远「文件不存在」、`doc-links` 17 处断链、`docs-index` 缺 2 篇），而**源仓 `pluginplayer` 同三条全绿**——只看源仓会得出「一切正常」的错误结论。**纪律**：① 搬动/移动文件后必须同时核三处：**相对链接**（含 README 内链）、**生成器与门禁里写死的路径**（本例 `gen_third_party_notices.py` 的 `OUT=ROOT/…` 与 `verify.py`）、**索引文件**（如 `docs/README.md`）；② **副本/镜像仓要单独跑该仓自己的门禁**，源仓绿 ≠ 副本绿；③ 判断「是不是我改坏的」用 `git status`（本次只有 5 条 `R100` 改名，门禁输入没变 → 失败必属既有漂移）。**同族发现**：门禁若把环境依赖（如 `host-js/node_modules`）当作事实来源，**没装依赖的检出会判红**——这类红先做环境补齐（`npm install`）再看，别急着改文档或改代码。
 
@@ -483,7 +483,7 @@
     - **两种形态是两条命中集**：`git grep -F 'F:\Python314'` 只匹配**单反斜杠**形态（源码里能编译的普通路径、bat/ps1 里的真路径）；
       而 **docstring 里"给人看"的 `F:\\Python314\\...`（双反斜杠）在 `git grep -F` 下是一条也不匹配的**。
       2026-10-08 实证：`pluginplayer` 提交 `221c748` 声称「去死符盘 66 处」并据此写出「跟踪面命中 0」，
-      实测**仍有 8 行**（`tools/pp_cli.py:44,45`、`tools/verify.py:29,30`、`tools/dsh_open_ui.py:17,18`、
+      实测**仍有 8 行**（`pluginplayer/tools/pp_cli.py:44,45`、`pluginplayer/tools/verify.py:29,30`、`pluginplayer/tools/dsh_open_ui.py:17,18`、
       `tests/cli_check.py:10`、`tests/color_check.py:18`，全是 docstring 用法示例），另 3 行是**有意保留**的 C 类历史转录。
     - **纪律**：① 死路径复扫用**正则一次覆盖两种形态**（本仓门禁用的就是 `[A-Za-z]:[\\/]{1,2}`），
       **单形态精确串搜只能作辅助**，不能作"归零"的依据；② 写"命中 0/已归零"这类结论文档前，
@@ -510,7 +510,7 @@
       （`TABLE_ROW = ^\s*\|.*\|\s*$`）。判据示例（可复跑）：`python governance/gates/g08_deletion_evidence.py --root .`
       —— 通过时记 `exempted: deletion carries a surface-by-successor table=1`。
     - **它不读的东西**：交接文档、`docs/` 里的对照表、`docs/记录/` 里的说明 —— **一个都不读**。
-      2026-10-08 本仓删两个过期门禁副本（`tools/check_ps1_bom.py`、`tools/watchdog.py`）时，
+      2026-10-08 本仓删两个过期门禁副本（`tools/` 下的 `check_ps1_bom.py`、`watchdog.py`，二者现真身在 `tools/gate/`）时，
       先在提交信息里写了对照表 ⇒ 该提交免于阻断；同日复跑 `--selfcheck` 得 `caught 2 / clean 3 / 误报 0`。
     - **纪律**：① 删除类提交**先写对照表再提交**（提交信息里贴，不要只贴进交接）；
       ② 表格形如 `| 功能面 | 接任者 |`，每个被删文件至少一行，接任者要**可验证存在**（给路径，别写"已并入某处"）；

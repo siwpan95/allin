@@ -62,7 +62,7 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 ## 文档
 
 - [AGENTS.md](AGENTS.md) —— 常备命令 / 环境变量 / 纪律速览（agent 与新协作者入口）
-- [../docs/规范/SPEC-203-allin-platform契约.md](../docs/规范/SPEC-203-allin-platform契约.md) —— 架构地图 + 文档税表 + 清单规范（2026-10-26 由 `docs/architecture.md` 上提到本仓文档枢纽）
+- [../docs/规范/SPEC-203-allin-platform契约.md](../docs/规范/SPEC-203-allin-platform契约.md) —— 架构地图 + 文档税表 + 清单规范（2026-10-26 由原仓架构文档 `architecture.md` 上提到本仓文档枢纽）
 - [../docs/记录/决策/](../docs/记录/决策/) —— 冻结的决策记录（Problem/Decision/Alternatives/Consequences）
 - [../docs/记录/专题/DSH喂给allin-platform可行性分析_2026-09-24.md](../docs/记录/专题/DSH喂给allin-platform可行性分析_2026-09-24.md) —— 参照 DeepSeek Harness 的强化可行性分析与推进状态
 - [harness/spec.md](harness/spec.md) —— 编排 harness 契约（用例的单一真相来源）

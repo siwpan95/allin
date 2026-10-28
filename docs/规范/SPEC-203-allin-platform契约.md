@@ -1,10 +1,10 @@
 # SPEC-203 · allin-platform 契约（架构地图 + 清单规范）
 
 > **编号** SPEC-203 ｜ **效力** 准则（结构约定，可被 registry 校验引用）｜ **状态** 生效
-> **生效** 2026-10-26 ｜ **最后修订** 2026-10-26 ｜ **适用面** `platform/` 全部代码与 `platform/registry/` 数据面
+> **生效** 2026-10-26 ｜ **最后修订** 2026-10-28 ｜ **适用面** `platform/` 全部代码与 `platform/registry/` 数据面
 > **承载体** `platform/scripts/check.mjs`（注册表审计）、`platform/harness/`（黄金值门禁 exit 0）
 > **引用格式** SPEC-203 §关键不变量
-> **迁移记账** 本文由原独立仓 `siwpan/allin-platform` 的 `docs/architecture.md` 就地升级而来（2026-10-26 三仓整合）；
+> **迁移记账** 本文由原独立仓 `siwpan/allin-platform` 的架构文档 `architecture.md` 就地升级而来（2026-10-26 三仓整合）；
 > 原仓远端已随之删除。历次决策理由见 [`docs/记录/决策/`](../记录/决策/)（冻结，永不为现行权威）。本仓落户 `platform/` 后，文中模块路径一律以 `platform/` 为基准。
 
 ---

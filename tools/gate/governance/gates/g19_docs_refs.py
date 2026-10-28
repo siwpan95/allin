@@ -29,6 +29,12 @@ stay visible:
   ``path-ref`` on purpose: a dated audit that says ``tools/pp_cli.py`` is
   describing a sibling repository *as it was that day*. 规范 and 事实源 are the
   opposite -- they claim what is true *now*, so they are judged in full.
+* **A deprecated spec is evidence, not a promise.** SPEC-005 §121 fixes the
+  status vocabulary as ``生效 / 草案 / 冻结 / 已废弃`` and says plainly: *废弃不删除，
+  改状态并在正文首行写明替代者*. A spec marked ``已废弃`` is kept on purpose, and its
+  body still names files that no longer exist -- that is the point, it describes
+  something retired. Judging it would force the cruel choice between deleting
+  evidence and writing fiction, so it leaves the judged corpus and is counted.
 
 Resolution is deliberately generous before it is strict. A doc may write a
 command relative to the repository root, relative to its own directory, or with
@@ -67,6 +73,11 @@ SNAPSHOT_SCOPES = ("docs/记录/", "audit-fragments/")
 # it is describing output, not promising a file exists.
 RUNTIME_OUTPUT = ("tools/gate/audit/",)
 
+# SPEC-005 §121 的状态闭集：生效 / 草案 / 冻结 / 已废弃。
+DEPRECATED = "已废弃"
+STATUS = re.compile(r"\*\*状态\*\*\s*\*{0,2}([^\s*｜|]+)")
+STATUS_SCAN_LINES = 20          # 状态写在头部，前 20 行足够，不必全文扫
+
 FENCE = re.compile(r"^```([A-Za-z0-9]*)\s*$")
 SHELLISH = ("bash", "sh", "shell", "console", "python", "bat", "ps1", "powershell")
 # 扩展名按「长在前」排列 + 词尾边界：否则 `mcp-actions.jsonl` 会被 `js` 分支截成
@@ -87,6 +98,15 @@ def read_text(path: Path) -> str | None:
         return path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return None
+
+
+def declared_status(text: str) -> str:
+    """The status a 规范 declares in its header, or '' when it declares none."""
+    for line in text.splitlines()[:STATUS_SCAN_LINES]:
+        match = STATUS.search(line)
+        if match:
+            return match.group(1)
+    return ""
 
 
 def corpus(root: Path, files: list[str]) -> tuple[list[str], list[str]]:
@@ -171,6 +191,11 @@ def run(root: str, args: argparse.Namespace) -> Report:
     judged, snapshots = corpus(base, files)
     report.scanned = len(judged)
     for rel in judged:
+        head = read_text(base / rel) or ""
+        if declared_status(head) == DEPRECATED:
+            # 已废弃的规范是留档证据，不是当下承诺；判它等于逼人在「删证据」和「编内容」之间选。
+            report.exempt(f"deprecated spec ({rel})", 1)
+            continue
         scan_doc(base, rel, report, judge_paths=True)
     # A record may still promise a command; only its path references are a snapshot.
     for rel in snapshots:
@@ -198,11 +223,20 @@ npm run {script_name}
 See `docs/{doc}` for the detail.
 """
 
+# 一份已废弃的规范：正文里的失效路径是留档证据，不是当下的谎话。
+DEPRECATED_DOC = """# SPEC-901 fixture (deprecated)
+
+> **编号** SPEC-901 ｜ **效力** 操作规范 ｜ **状态** 已废弃
+
+本文描述的对象已退役，正文中这条路径指向已删除的东西：`tools/ghost.py`
+"""
+
 SELFCHECK_CASES = [
     ("clean", True),
     ("command-missing", False),
     ("npm-missing", False),
     ("path-missing", False),
+    ("deprecated-spec", True),
 ]
 
 
@@ -211,11 +245,15 @@ def build_fixture(kind: str, sandbox: govlib.Sandbox) -> None:
     script_name = "check" if kind != "npm-missing" else "nosuchscript"
     doc = "INDEX.md" if kind != "path-missing" else "GHOST.md"
     sandbox.write("package.json", json.dumps({"scripts": {"check": "echo hi"}}))
-    sandbox.write("docs/规范/SPEC-900-fixture.md",
-                  FIXTURE_DOC.format(script=script, script_name=script_name, doc=doc))
     sandbox.write("docs/INDEX.md", "# index\n")
     if kind != "command-missing":
         sandbox.write("tools/real.py", "print('hi')\n")
+    if kind == "deprecated-spec":
+        # 故意不建 tools/ghost.py：已废弃规范里的失效路径必须被豁免，而不是被修好。
+        sandbox.write("docs/规范/SPEC-901-deprecated.md", DEPRECATED_DOC)
+        return
+    sandbox.write("docs/规范/SPEC-900-fixture.md",
+                  FIXTURE_DOC.format(script=script, script_name=script_name, doc=doc))
 
 
 def selfcheck() -> int:

@@ -72,17 +72,23 @@ exceptions:
   - id: EX-006
     kind: baseline-freeze
     gate: g19-docs-refs
-    target: governance/baseline/g19-docs-refs.txt（20 条冻结键：17 条路径引用 + 3 条命令）
+    target: "governance/baseline/g19-docs-refs.txt（20 键，2026-10-28 已清零，基线现为空）"
     reason: >-
       存量引用分两类：一是「规范/事实源」里指向兄弟仓或已退役 DSH 分发版的路径
-      （tools/pp_cli.py、scripts/distribution-pin.json、docs/DISTRIBUTION.md 等），
+      （pluginplayer/tools/pp_cli.py、private-radio-stations/scripts/check.mjs 等，
+      当初写成了不带仓名的裸路径，看起来像本仓路径），
       二是 SPEC-104 里随 DSH 分发版一起退役的 start-dsh-web.py 命令。
-      改规范正文属独立动作，不该由新增门禁夹带执行。
+      改规范正文属独立动作，故先冻结（open）。
     compensating: >-
       棘轮：基线只冻结既有键，任何新增的失效引用立即判红；
       已当场修真错 10 处（tools/README.md 的 check_ps1_bom.py / watchdog.py、
       preset/README.md 的 g14_preset.py —— 三者都是文件搬过家后文档没跟上）。
       规范类修订走 ADR，不靠门禁顺手改。
+      **2026-10-28 已清零**：13 处别仓路径补上仓名前缀（并实测核对
+      private-radio-stations/scripts/*.mjs、foolproof-operation/docs/usn-indexer.md 真实存在）、
+      1 处历史陈述改为不写当下路径并补明现真身、1 处规范改指本仓真实落点、
+      SPEC-104 依 SPEC-005 §121 改状态为「已废弃」并写明替代者（g19 对已废弃规范免判，见 ADR-0005）。
+      基线随之写空，本条转为 closed 留档。
     approver: siwpan
     expires: 2027-01-31
-    status: open
+    status: closed

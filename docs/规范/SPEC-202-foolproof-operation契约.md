@@ -1,7 +1,7 @@
 # SPEC-202 · foolproof-operation 契约
 
 > **编号** SPEC-202 ｜ **效力** 准则（单仓契约） ｜ **状态** 生效
-> **生效** 2026-09-23 ｜ **最后修订** 2026-09-23 ｜ **适用面** `/repos/foolproof-operation` 一仓
+> **生效** 2026-09-23 ｜ **最后修订** 2026-10-28 ｜ **适用面** `/repos/foolproof-operation` 一仓
 > **承载体** `python -m unittest discover` 271/271、`ResourceWarning=error`、CLI 全子命令 exit 0；与 SPEC-004 §20–23 互锁
 > **引用格式** SPEC-202 §黄金值
 
@@ -17,7 +17,7 @@
 - **结构**：`core/`（Context/effect 逆序回滚/fork/isolate/事务化清单装配 + runtime/tasklog/audit）、
   `index/`（只读 USN 客户端 / FRN 路径还原 / SQLite 按卷分库 / 索引服务 / 基准探针）、
   `plugins/`（categories·pip·reqtxt·installer·search·scanner）、`foolproof.composition.json`（10 行清单）、
-  `tests/`（271 例）、`docs/usn-indexer.md`（原理/实测/踩坑）。
+  `tests/`（271 例）、`foolproof-operation/docs/usn-indexer.md`（原理/实测/踩坑）。
 - **黄金值（不设环境变量）**：`python -m unittest discover` 271/271；`ResourceWarning=error` 亦全绿；
   CLI 子命令 list/scan/envs/doctor/tasks/check/es 全 exit 0；`smoke_test.py` GUI 冒烟无 Traceback；
   便携 exe（`requirements.spec`）`list/doctor/envs` exit 0。
