@@ -63,3 +63,15 @@ bin-release/
 # 豁免是「这一条不是问题，因为……」的**显式判定**，**理由必填**，属于要评审、要留痕的治理物。
 # ⇒ 不能跟着 audit/ 一起被忽略，否则 DSH vendor/ 那类有理由的例外会随克隆丢失。
 !/tools/gate/audit/repo_hygiene_exemptions.csv
+
+# ===== reposcan 的本机生成物（2026-10-28）=====
+# 与 /目录索引.txt、/tools/gate/audit/* 同一口径：**可重生成 ⇒ 不入库**。
+# reposcan 的三层产物全是本机扫描的可再生物，不是仓内源码：
+#   repos_meta.json / tech_meta.json —— 扫描中间物（含各仓 README 摘录，嵌着他机路径快照）
+#   output/                          —— 交叉索引总表 / 热力表 / CSV / XLSX 的渲染结果
+# 真正的资产（133 仓人工核定的领域×技术栈判定表）在 build_master.py、build_matrix.py 的
+# CAT 字典里，随源码入库；渲染产物用 `python tools/reposcan/*.py` 在本机重跑即可再生。
+# 同族陷阱：父目录整体排除后无法再反向包含其中的文件 —— 故排除「目录内容」而非目录本身。
+/tools/reposcan/repos_meta.json
+/tools/reposcan/tech_meta.json
+/tools/reposcan/output/*

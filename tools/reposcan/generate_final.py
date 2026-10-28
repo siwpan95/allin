@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成：① 修正后的领域分类（含技术栈列）② 技术栈维度分组视图。"""
-import json, re
+import json, re, os, sys
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import out_path, read_data, repos_label
+
+meta = read_data("repos_meta.json")
+tech = read_data("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 
 # 修正后的领域分类：name -> (大类, 子类, 证据)
@@ -184,7 +185,7 @@ def tech_str(name):
 
 # ── Part 1: 领域分类（含技术栈）──
 lines = []
-lines.append("# D:\\projects\\repos 仓库分类报告（领域维度 + 技术栈）")
+lines.append(f"# {repos_label()} 仓库分类报告（领域维度 + 技术栈）")
 lines.append("")
 lines.append("> 扫描日期：2026-10-28 ｜ 仓库总数：**134** ｜ 依据：README + 语言/框架信号 + 深层源码确认（10 个边界仓已读源码核实）")
 lines.append("> 技术栈列格式：`语言 | GUI/形态 [+架构] [▸依赖引擎]`")
@@ -303,14 +304,14 @@ for title, fn in sections:
     lines.append("")
 
 out1 = "\n".join(lines)
-with open("repos_classification.md","w",encoding="utf-8") as fh:
+with open(out_path("repos_classification.md"),"w",encoding="utf-8") as fh:
     fh.write(out1)
 
 # 额外：技术栈分组单独文件（便于只看维度）
 tech_part = out1.split("# 技术栈维度分组",1)[1]
-out2 = "# D:\\projects\\repos 技术栈维度分组\n" + tech_part
-with open("repos_techstack.md","w",encoding="utf-8") as fh:
-    fh.write("# D:\\projects\\repos 技术栈维度分组\n" + tech_part)
+out2 = f"# {repos_label()} 技术栈维度分组\n" + tech_part
+with open(out_path("repos_techstack.md"),"w",encoding="utf-8") as fh:
+    fh.write(f"# {repos_label()} 技术栈维度分组\n" + tech_part)
 
 print("repos_classification.md 行数:", out1.count(chr(10)))
 print("repos_techstack.md 生成")

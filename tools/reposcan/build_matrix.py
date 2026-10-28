@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成：① 领域×技术栈矩阵热力表(HTML) ② CSV + Excel 导出（总表 + 矩阵双 sheet）。"""
-import json, csv, os
+import json, csv, os, sys
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import out_path, read_data, repos_label
+
+meta = read_data("repos_meta.json")
+tech = read_data("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 
 # 与 build_master.py 保持一致的 133 仓分类（已剔除 sin-virtue-game）
@@ -155,7 +156,7 @@ def cell_style(cnt, mx):
     return f"background:rgb({r},{g},{b});{col}"
 html=[]
 html.append("<!doctype html><html lang='zh'><head><meta charset='utf-8'>")
-html.append("<title>D:\\projects\\repos · 领域×技术栈矩阵热力表</title>")
+html.append(f"<title>{repos_label()} · 领域×技术栈矩阵热力表</title>")
 html.append("<style>body{font-family:-apple-system,Segoe UI,Roboto,'Microsoft YaHei',sans-serif;margin:24px;color:#1a1a2e;}")
 html.append("h1{font-size:20px;} .sub{color:#666;font-size:13px;margin-bottom:16px;}")
 html.append("table{border-collapse:collapse;font-size:12px;} th,td{border:1px solid #e3e6ea;padding:5px 7px;text-align:center;}")
@@ -165,7 +166,7 @@ html.append("td.dom{text-align:left;font-weight:600;background:#f8f9fb;position:
 html.append("td.tot{font-weight:700;background:#eef1f5;}")
 thr=("").join(f"<th class='col'>{c}</th>" for c in COLS)
 html.append("</style></head><body>")
-html.append("<h1>D:\\projects\\repos · 领域 × 技术栈 矩阵热力表</h1>")
+html.append(f"<h1>{repos_label()} · 领域 × 技术栈 矩阵热力表</h1>")
 html.append(f"<div class='sub'>共 {len(repos)} 仓（已剔除 sin-virtue-game）。单元格数字=该领域下命中所列技术属性的仓库数；颜色越深=数量越多（按列归一化）。</div>")
 html.append("<table><tr><th class='dom'>领域 \\ 技术属性</th>"+thr+"<th class='col'>合计</th></tr>")
 for c in ORDER:
@@ -178,7 +179,7 @@ html.append("</table>")
 # 图例 + 小节
 html.append("<div class='sub' style='margin-top:18px;'><b>读图示例：</b>Cordis 列中「游戏作品」格最深 → 多数游戏作品基于 Cordis；「音频栈」集中在音乐/音频与部分视频/特效；「CLI/无界面」多见于爬虫/引擎验证。</div>")
 html.append("</body></html>")
-open("repos_master_matrix.html","w",encoding="utf-8").write("\n".join(html))
+open(out_path("repos_master_matrix.html"),"w",encoding="utf-8").write("\n".join(html))
 
 # ── ② CSV ──
 def tech_flat(name):
@@ -190,7 +191,7 @@ def tech_flat(name):
     eng="/".join(sorted({x.split("/")[0].replace("3dworld/world3d","3dworld").replace("procgen/worldbuilder","procgen") for x in arch if x in ("allin_engine","3dworld/world3d","dse-core","procgen/worldbuilder")})) or "-"
     return lang, gui, fw, eng
 csv_cols=["仓库","领域","子类","语言","界面/形态","架构","依赖引擎","关键依赖","证据"]+FLAT_FLAGS
-with open("repos_master.csv","w",encoding="utf-8-sig",newline="") as fh:
+with open(out_path("repos_master.csv"),"w",encoding="utf-8-sig",newline="") as fh:
     w=csv.writer(fh); w.writerow(csv_cols)
     for n,dom,sub,attrs in sorted(repos,key=lambda x:(ORDER.index(x[1]),x[0].lower())):
         lang,gui,fw,eng=tech_flat(n)

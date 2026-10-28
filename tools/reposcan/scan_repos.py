@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import os, json, re, sys
 
-ROOT = "D:/projects/repos"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import data_path, repos_root
+
+ROOT = str(repos_root())
 
 LANGS = {
     "package.json": "Node/JS",
@@ -100,7 +103,7 @@ def main():
             "top": top_entries(d),
             "readme_text": summary,
         })
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repos_meta.json")
+    out = data_path("repos_meta.json")
     with open(out, "w", encoding="utf-8") as fh:
         json.dump(result, fh, ensure_ascii=False, indent=1)
     print(f"scanned {len(result)} repos -> {out}")

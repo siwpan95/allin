@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """增强扫描：提取每个仓库的技术栈信号（语言/GUI/架构/引擎依赖/关键三方库）。"""
-import os, re, json
+import os, re, json, sys
 
-ROOT = "D:/projects/repos"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import data_path, repos_root
+
+ROOT = str(repos_root())
 
 GUI_TOKENS = {
     "tkinter": [r"import\s+tkinter", r"from\s+tkinter", r"Tk\(\)"],
@@ -144,7 +147,7 @@ def main():
     repos = sorted([os.path.join(ROOT, d) for d in os.listdir(ROOT)
                     if os.path.isdir(os.path.join(ROOT, d))])
     out = [scan_repo(d) for d in repos]
-    with open("tech_meta.json", "w", encoding="utf-8") as fh:
+    with open(data_path("tech_meta.json"), "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)
     print(f"scanned {len(out)} -> tech_meta.json")
 

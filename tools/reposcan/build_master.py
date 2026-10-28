@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成单份带交叉索引的总表 repos_master.md：主总表(领域+技术栈全字段) + 领域分组 + 技术栈分组(标签后附领域)。"""
-import json
+import json, os, sys
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import out_path, read_data, repos_label
+
+meta = read_data("repos_meta.json")
+tech = read_data("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 META = {m["name"]: m for m in meta}
 
@@ -191,7 +192,7 @@ def tech_cols(name):
 
 # ── 主总表 ──
 L = []
-L.append("# D:\\projects\\repos 仓库总表（领域 × 技术栈 · 交叉索引）")
+L.append(f"# {repos_label()} 仓库总表（领域 × 技术栈 · 交叉索引）")
 L.append("")
 L.append("> 扫描日期：2026-10-28 ｜ 仓库总数：**133**（已同步删除远端/本地均移除的 `sin-virtue-game`）")
 L.append("> 依据：README + 语言/框架信号 + 10 个边界仓深层源码核实。技术栈列格式：`语言 | 界面/形态 | 架构 | 依赖引擎 | 关键依赖`")
@@ -291,6 +292,6 @@ for title, fn in sections:
     L.append("")
 
 out="\n".join(L)
-with open("repos_master.md","w",encoding="utf-8") as fh:
+with open(out_path("repos_master.md"),"w",encoding="utf-8") as fh:
     fh.write(out)
 print("repos_master.md 生成，总行数:", out.count("\n"), "| 主总表行数(含表头):", idx+2, "| 总数:", len(CAT))
