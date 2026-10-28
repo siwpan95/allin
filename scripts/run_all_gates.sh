@@ -115,6 +115,9 @@ echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
 run "$PY" tools/gate/docs_index.py
+# agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
+# registry 是否一致）。这组固定样例补的就是这一层 —— 改配置/提示词/工具面前后各跑一次。
+run "$PY" tools/gate/agent_regression.py
 run "$PY" tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error
 
 if [ "${1:-}" = "--with-platform" ]; then

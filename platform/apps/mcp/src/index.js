@@ -294,24 +294,50 @@ function callTool(name, args) {
     }
     case 'docs.search': {
       const docs = path.join(REPO, 'docs')
-      const hits = []
+      const q = String(a.query || '')
+      if (!q) return { isError: true, text: 'query 不能为空' }
+      const cap = Math.min(a.limit || 20, 100)
+      // 零依赖重排：没有 embedding，就用「命中次数 + 标题/就近小节/文件名加权」排序，
+      // 取代原来「按遍历顺序取前 N 条」——那样排在前面的常常只是碰巧先被读到的文件。
+      const scored = []
       const walk = (dir) => {
         for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
           if (name.name === 'md') continue
           const full = path.join(dir, name.name)
           if (name.isDirectory()) { walk(full); continue }
           if (!name.name.endsWith('.md')) continue
+          const rel = path.relative(REPO, full).replace(/\\/g, '/')
+          const nameBonus = name.name.includes(q) ? 2 : 0
+          const rootBonus = rel.split('/').length === 2 ? 0.5 : 0
           const lines = readLines(full)
+          let heading = ''
           lines.forEach((line, i) => {
-            if (line.includes(a.query)) {
-              hits.push({ file: path.relative(REPO, full).replace(/\\/g, '/'), line: i + 1, snippet: line.trim().slice(0, 160) })
-            }
+            const trimmed = line.trim()
+            if (trimmed.startsWith('#')) { heading = trimmed.replace(/^#+\s*/, ''); return }
+            if (!line.includes(q)) return
+            let score = line.split(q).length - 1
+            if (trimmed.startsWith('#')) score += 3
+            if (heading && heading.includes(q)) score += 2
+            score += nameBonus + rootBonus
+            scored.push({
+              score, file: rel, line: i + 1,
+              section: heading || null,
+              snippet: trimmed.slice(0, 160),
+            })
           })
-          if (hits.length >= Math.min(a.limit || 20, 100)) return
         }
       }
       try { walk(docs) } catch (e) { return { isError: true, text: String(e.message) } }
-      return { text: JSON.stringify({ query: a.query, hits: hits.slice(0, Math.min(a.limit || 20, 100)) }, null, 2) }
+      scored.sort((x, y) => (y.score - x.score) || x.file.localeCompare(y.file) || (x.line - y.line))
+      return {
+        text: JSON.stringify({
+          query: q,
+          matched: scored.length,
+          ranked: true,
+          scoring: '命中次数 + 标题×3 + 就近小节含词×2 + 文件名含词×2 + 根级文档×0.5',
+          hits: scored.slice(0, cap),
+        }, null, 2),
+      }
     }
     case 'project.status': {
       const entry = listEntries().find((e) => e.id === a.id)

@@ -240,6 +240,9 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 
 - 每个声明必须带**可复现证据**：命令 + 实际退出码 / 输出 / `file:line`，禁止「看起来能跑」「应该没问题」。
 - 门禁全绿才算过；门禁报红先修或显式记偏差（带实测依据），不静默跳过。
+- **改配置/提示词/工具面前后各跑一次 agent 行为回归样例集**：`python tools/gate/agent_regression.py`
+  （6 条固定样例：定位仓根 / 门禁数自述一致 / MCP 工具面 / MCP 自检 / 双载体一致 / 文档枢纽），
+  两次都绿才算没有行为漂移 —— 门禁判得了仓库，判不了 agent 行为，这一层由样例集补。
 - 跨机/CI 用 `PLATFORM_PATH_CHECK=absolute` 之类只校验形状的模式，不要 fail-loud 误杀。
 
 ---
