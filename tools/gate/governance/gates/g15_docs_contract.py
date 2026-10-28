@@ -30,6 +30,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -373,6 +374,31 @@ SELFCHECK_CASES = [
 ]
 
 
+def make_alias(alias_path: str, real_path: str) -> bool:
+    """建 ASCII 别名：POSIX 用符号链接；Windows 用 junction。
+
+    Windows 上 `os.symlink` 需要管理员权限或开发者模式，无权限时抛 OSError；
+    而 junction（`mklink /J`）免管理员即可用，故作兜底 —— 与仓内
+    `tools/gate/make_doc_aliases.ps1` 的做法一致（D6 判据是 `os.path.samefile`，
+    junction 与符号链接都能通过）。
+
+    建不出来时返回 False，由调用方响亮报出：静默吞掉会让「干净用例」被
+    D6 误判成不干净，正是自检假阳性的成因（2026-10-28 对账实测）。
+    """
+    try:
+        os.symlink(real_path, alias_path, target_is_directory=True)
+        return True
+    except OSError:
+        pass
+    if os.name == "nt":
+        result = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", alias_path, real_path],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if result.returncode == 0 and os.path.exists(alias_path):
+            return True
+    return False
+
+
 def build_fixture(kind: str, base: str) -> str:
     docs = os.path.join(base, "docs")
     for sub in ("规范", "事实源", "记录/交接", "记录/审计"):
@@ -441,10 +467,11 @@ def build_fixture(kind: str, base: str) -> str:
         ap, rp = os.path.join(docs, alias), os.path.join(docs, real)
         if os.path.exists(ap):
             continue
-        try:
-            os.symlink(rp, ap, target_is_directory=True)
-        except OSError:
-            pass
+        if not make_alias(ap, rp):
+            # 不得静默吞掉：别名建不出来 = 干净用例会被 D6 误判成不干净，
+            # 那正是「自检假阳性」的成因，必须响亮报出而不是默默带过。
+            print("WARN 夹具别名建不出来：docs/%s -> docs/%s（干净用例将因此误报）"
+                  % (alias, real))
     return docs
 
 
