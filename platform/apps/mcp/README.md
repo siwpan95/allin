@@ -43,7 +43,13 @@ node platform/apps/mcp/src/index.js --list-tools
   当月卷 `docs/记录/记忆/<YYYY-MM>.md`（未登记直接拒绝，避免 D1 打红）；开新卷属治理动作，
   由人（或走完整文档流程）完成。条目**只增不改**，纠错另起新条目注明取代关系。
 - **每次接受写操作都落审计** `tools/gate/audit/mcp-actions.jsonl`（ts / tool / file）。
-- 工具失败返回 `isError: true` + 原因，绝不返回空成功。
+- **工具失败返回 `isError: true` + 原因，绝不返回空成功。**
+- **调用成功 ≠ 任务完成**：`gate.run` / `registry.verify` 额外返回 `verified` 与 `verifiedBy`
+  —— 退出码 0 也要以实证为准（整套门禁须出现「N/N gate(s) clean」且两数相等；
+  验证项目须无 FAIL 行），否则 `verified=false` 并把 FAIL 行数报出来。
+- **检索口径诚实**：`docs.search` 只索引 Markdown，返回 `skippedNonText` 计数并声明
+  「PDF/表格/扫描件未索引」——专用解析引擎与本机零依赖原则冲突，**明确不做**，
+  但必须把跳过量报出来，避免 agent 误以为「搜过但没结果」。
 
 ## 自学习回路（memory.* 的用法契约）
 

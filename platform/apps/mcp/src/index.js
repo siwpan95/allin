@@ -265,8 +265,17 @@ function callTool(name, args) {
       if (a.all === true) {
         const res = run(process.platform === 'win32' ? 'npm.cmd' : 'npm',
           ['run', 'check:governance'], { timeout: a.timeoutMs || 300000 })
-        const clean = (res.output.match(/(\d+)\/(\d+) gate\(s\) clean/) || [])[0] || null
-        return { text: JSON.stringify({ exit: res.exit, ms: res.ms, cleanSummary: clean, tail: res.tail }, null, 2) }
+        const m = res.output.match(/(\d+)\/(\d+) gate\(s\) clean/)
+        const clean = m ? m[0] : null
+        // 调用成功 ≠ 任务完成：退出码 0 也必须以「N/N clean」这句实证为准。
+        const verified = res.exit === 0 && Boolean(m) && m[1] === m[2]
+        return {
+          text: JSON.stringify({
+            exit: res.exit, ms: res.ms, cleanSummary: clean, verified,
+            verifiedBy: verified ? 'exit=0 且输出含 N/N gate(s) clean 且两数相等' : '未同时满足：exit=0 + N/N clean',
+            tail: res.tail,
+          }, null, 2),
+        }
       }
       if (!a.gate) return { isError: true, text: '需要 gate 或 all=true' }
       const registry = readJson(path.join(GOVERNANCE, 'registry.json'))
@@ -274,7 +283,14 @@ function callTool(name, args) {
       if (!entry) return { isError: true, text: `未登记的门禁 id：${a.gate}` }
       const script = path.join(REPO, 'tools', 'gate', entry.script)
       const res = run(pythonBin(), [script, '--quiet'], { timeout: a.timeoutMs || DEFAULT_TIMEOUT_MS })
-      return { text: JSON.stringify({ gate: a.gate, exit: res.exit, ms: res.ms, output: res.tail }, null, 2) }
+      return {
+        text: JSON.stringify({
+          gate: a.gate, exit: res.exit, ms: res.ms,
+          verified: res.exit === 0,
+          verifiedBy: res.exit === 0 ? 'exit=0' : '退出码非 0，结论不成立',
+          output: res.tail,
+        }, null, 2),
+      }
     }
     case 'registry.query': {
       let entries = listEntries()
@@ -290,13 +306,27 @@ function callTool(name, args) {
       args.push('--limit', String(a.limit || 20))
       const res = run(pythonBin(), [path.join(REPO, 'tools', 'verify_projects.py'), ...args],
         { timeout: a.timeoutMs || 600000 })
-      return { text: JSON.stringify({ exit: res.exit, ms: res.ms, tail: res.tail }, null, 2) }
+      // 调用成功 ≠ 任务完成：脚本可能退出 0 但里面躺着 FAIL 行 —— 把行数算出来给 agent 看。
+      const failed = (res.output.match(/^\s*FAIL\b/gm) || []).length
+      const passed = (res.output.match(/^\s*PASS\b/gm) || []).length
+      return {
+        text: JSON.stringify({
+          exit: res.exit, ms: res.ms,
+          passed, failed,
+          verified: res.exit === 0 && failed === 0,
+          verifiedBy: res.exit === 0 && failed === 0
+            ? 'exit=0 且输出无 FAIL 行'
+            : `exit=${res.exit}，FAIL 行 ${failed} 条（NO_RUNNER 属噪声口径，见 verify_projects 说明）`,
+          tail: res.tail,
+        }, null, 2),
+      }
     }
     case 'docs.search': {
       const docs = path.join(REPO, 'docs')
       const q = String(a.query || '')
       if (!q) return { isError: true, text: 'query 不能为空' }
       const cap = Math.min(a.limit || 20, 100)
+      let skippedNonText = 0
       // 零依赖重排：没有 embedding，就用「命中次数 + 标题/就近小节/文件名加权」排序，
       // 取代原来「按遍历顺序取前 N 条」——那样排在前面的常常只是碰巧先被读到的文件。
       const scored = []
@@ -305,7 +335,10 @@ function callTool(name, args) {
           if (name.name === 'md') continue
           const full = path.join(dir, name.name)
           if (name.isDirectory()) { walk(full); continue }
-          if (!name.name.endsWith('.md')) continue
+          // 只索引 Markdown：PDF / 表格 / 扫描件等二进制一律跳过并如实计数 ——
+          // 专用解析引擎（如 RAGflow DeepDoc）与本机零依赖原则冲突，明确不做，
+          // 所以**必须把跳过量报出来**，避免 agent 误以为「搜过但没结果」。
+          if (!name.name.endsWith('.md')) { skippedNonText += 1; continue }
           const rel = path.relative(REPO, full).replace(/\\/g, '/')
           const nameBonus = name.name.includes(q) ? 2 : 0
           const rootBonus = rel.split('/').length === 2 ? 0.5 : 0
@@ -335,6 +368,10 @@ function callTool(name, args) {
           matched: scored.length,
           ranked: true,
           scoring: '命中次数 + 标题×3 + 就近小节含词×2 + 文件名含词×2 + 根级文档×0.5',
+          skippedNonText,
+          note: skippedNonText
+            ? `另有 ${skippedNonText} 个非 Markdown 文件未索引（PDF/表格/扫描件需专用解析引擎，与零依赖原则冲突，明确不做）`
+            : null,
           hits: scored.slice(0, cap),
         }, null, 2),
       }

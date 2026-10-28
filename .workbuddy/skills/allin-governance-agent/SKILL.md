@@ -87,6 +87,11 @@ agent_created: true
 召回时**默认隐藏被取代者**（`includeSuperseded=true` 才显示）。这解决了「只增不改」与
 「记忆会过期」的矛盾，不需要删除也不需要遗忘策略。
 
+**步数刹车（给 Agent 装上刹车）**：连续 **5 步**动作仍拿不到观察结论即停下自检；
+单任务动作预算 **25 步**，超限即停下向用户汇报，而不是继续猜；
+推送 / 建仓 / 删除 / 密钥操作 / 仓库结构变更属高风险动作，**不分档、逐项确认后才做**。
+工具分两级：只读工具可自主调用；两个写工具（`memory.append` / `record.append`）必须显式 `confirm=true`。
+
 **晋升通道（经验 → skill）**：同一 tag 的有效条目累计 **≥3 条** 即进入
 `mcp__allin-governance__memory.promotable` 候选，须走文档流程固化：
 建 `.workbuddy/skills/<名>/SKILL.md` → 同步双载体（本 skill ↔ preset 治理段）→ 过门禁 →
