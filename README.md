@@ -106,8 +106,8 @@ python tools/repocheck/main.py . --fail-on error   # 进 CI：有 error 级问�
 ```bash
 # A) 平台子件（排除中间目录 tools/）
 python tools/repocheck/main.py .     --exclude tools --skip-rules 1,7 --fail-on error
-# B) 体检器自身
-python tools/repocheck/main.py tools/ --exclude gate              --fail-on error
+# B) 体检器自身（排除中间目录 gate/）
+python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
 ```
 
 豁免与已知偏差（**每一条都经实测核对，不是随手跳过**）：
@@ -116,10 +116,18 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 | --- | --- | --- |
 | 规则 1「无版本控制」 | `--skip-rules 1` | monorepo 子件本就没有自己的 `.git`，属结构固有（因此健康分上限被压到 6.0） |
 | 规则 7「旧路径残留」 | `--skip-rules 7` | 唯一命中是 `tools/gate/scan_hardcoded.ps1` —— 它**本身就是路径门禁脚本**，内含 `X:\foo`、`G:/fake/` 等测试夹具与注释举例（第 228 行仅出现在注释说明里） |
+| 规则 2「无 README」 | B) `--skip-rules 2` | `tools/` 下只有两个子件：`tools/repocheck` **有** README；`tools/security` 是单文件标准库脚本（`venv_ca_audit.py`），其用法记在 `.workbuddy/skills/venv-ca-security-audit/` 与仓内文档 |
+| 规则 4「无依赖声明」 | B) `--skip-rules 4` | 同上：单文件脚本、只用标准库，无第三方依赖可声明（`tools/repocheck` 有 `pyproject.toml`） |
+| 规则 5「无 LICENSE」 | B) `--skip-rules 5` | 二者都是本仓的子目录（非独立仓），许可随**仓根 LICENSE** 覆盖（铁律 0/4 的「根 LICENSE 存在」已满足） |
 | 规则 3「无测试」 | 记偏差，暂不改工具 | `platform` 有 `apps/{cli,portal}/test/` 与 `packages/core/test/` 共 **7 个 `.test.mjs`**，但规则只查项目根下的 `tests/`/`test/`，对 monorepo workspace 会误报 |
 
-**现状**：`A)` `--fail-on error` 退出码 **0**（通过）；`B)` 仅剩规则 1 固有项。
+**现状**（2026-10-28 实测退出码）：`A)` **0**（通过）；`B)` **0**（豁免 1/2/4/5 四条结构固有项后通过）。
 `platform` 的 warn 级（无 SECURITY / CONTRIBUTING / CHANGELOG / CI 配置）为**真实待办**，本期不处理，留作下一批。
+
+> ⚠ **上表的口径是「实测出来的」，不是抄来的**：2026-10-28 对账时发现原「`B)` 仅剩规则 1 固有项」与实际不符 ——
+> B 实为 5 条 error（规则 1/2/4/5，命中 `tools/security` 单文件脚本），退出码 **1**。经逐条核对确认四条均属结构固有后，
+> 才按上表豁免并复验到退出码 0。**规则口径变了就要改命令、改依据、改现状，三者一起改。**
+
 
 ## 三仓整合（2026-10-26）：repocheck + allin-platform + deepseek-harness → allin
 
@@ -218,4 +226,4 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 
 ---
 
-*最后更新：2026-10-28（治理对账 `ef2a545`：订正门禁 15→19 的陈旧口径 3 处 + 规范门禁总表加口径提示；修 `g15-docs-contract` 自检假阳性——`os.symlink` 建别名需管理员、`except OSError: pass` 静默吞致 D6 误报，改 junction 兜底 + 响亮失败；新增 `docs/记录/审计/治理对账与门禁自检修复_2026-10-28.md` 并登记 REC-AU-17）*
+*最后更新：2026-10-28（治理对账 `ef2a545`：订正门禁 15→19 的陈旧口径 3 处 + 规范门禁总表加口径提示；修 `g15-docs-contract` 自检假阳性——`os.symlink` 建别名需管理员、`except OSError: pass` 静默吞致 D6 误报，改 junction 兜底 + 响亮失败；新增 `docs/记录/审计/治理对账与门禁自检修复_2026-10-28.md` 并登记 REC-AU-17。同日落地 REC-AU-17 的 4 条遗留建议：门禁解释器在 `run.ts` 发现链根部钉死为仓内 `.venv` 并由一键脚本 `export` 给门禁套件；`SELFCHECK` 输出格式契约化（`govlib` 紧凑分隔符 + 元门禁正则收紧到契约文本）；「提交前复跑门禁并贴实际退出码」双形态同步进 SKILL.md 与 DSH 治理段并刷新 bundle；`repocheck` 的 tkinter 降为 GUI 可选依赖，CLI 在无 tkinter 解释器上退出码 0；订正自检口径 B 条（原称「仅剩规则 1 固有项」实为退出码 1、5 条 error，逐条核对后豁免 1/2/4/5）；新增 `docs/记录/审计/治理遗留建议落地_2026-10-28.md` 并登记 REC-AU-18）*
