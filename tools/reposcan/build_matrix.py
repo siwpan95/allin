@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成：① 领域×技术栈矩阵热力表(HTML) ② CSV + Excel 导出（总表 + 矩阵双 sheet）。"""
-import json, csv, os
+import json, csv, os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 
 with open("repos_meta.json", encoding="utf-8") as fh:
     meta = json.load(fh)
@@ -155,7 +160,7 @@ def cell_style(cnt, mx):
     return f"background:rgb({r},{g},{b});{col}"
 html=[]
 html.append("<!doctype html><html lang='zh'><head><meta charset='utf-8'>")
-html.append("<title>D:\\projects\\repos · 领域×技术栈矩阵热力表</title>")
+html.append(f"<title>{ROOT} · 领域×技术栈矩阵热力表</title>")
 html.append("<style>body{font-family:-apple-system,Segoe UI,Roboto,'Microsoft YaHei',sans-serif;margin:24px;color:#1a1a2e;}")
 html.append("h1{font-size:20px;} .sub{color:#666;font-size:13px;margin-bottom:16px;}")
 html.append("table{border-collapse:collapse;font-size:12px;} th,td{border:1px solid #e3e6ea;padding:5px 7px;text-align:center;}")
@@ -165,7 +170,7 @@ html.append("td.dom{text-align:left;font-weight:600;background:#f8f9fb;position:
 html.append("td.tot{font-weight:700;background:#eef1f5;}")
 thr=("").join(f"<th class='col'>{c}</th>" for c in COLS)
 html.append("</style></head><body>")
-html.append("<h1>D:\\projects\\repos · 领域 × 技术栈 矩阵热力表</h1>")
+html.append(f"<h1>{ROOT} · 领域 × 技术栈 矩阵热力表</h1>")
 html.append(f"<div class='sub'>共 {len(repos)} 仓（已剔除 sin-virtue-game）。单元格数字=该领域下命中所列技术属性的仓库数；颜色越深=数量越多（按列归一化）。</div>")
 html.append("<table><tr><th class='dom'>领域 \\ 技术属性</th>"+thr+"<th class='col'>合计</th></tr>")
 for c in ORDER:

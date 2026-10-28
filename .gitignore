@@ -63,3 +63,8 @@ bin-release/
 # 豁免是「这一条不是问题，因为……」的**显式判定**，**理由必填**，属于要评审、要留痕的治理物。
 # ⇒ 不能跟着 audit/ 一起被忽略，否则 DSH vendor/ 那类有理由的例外会随克隆丢失。
 !/tools/gate/audit/repo_hygiene_exemptions.csv
+
+# reposcan 生成产物（脚本产出，不入版本控制；g01 会因内含机器路径报红，g05 判 output/ 为 artifact 目录）
+tools/reposcan/repos_meta.json
+tools/reposcan/tech_meta.json
+tools/reposcan/output/

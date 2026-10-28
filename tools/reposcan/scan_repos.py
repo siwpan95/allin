@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import os, json, re, sys
 
-ROOT = "D:/projects/repos"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 
 LANGS = {
     "package.json": "Node/JS",

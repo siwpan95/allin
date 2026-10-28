@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """依据 scan 阶段得到的 README 信号，对 134 个仓库做人工判定分类，产出 Markdown 报告。"""
-import json, re
+import json, re, os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 
 with open("repos_meta.json", encoding="utf-8") as fh:
     data = json.load(fh)
@@ -195,7 +200,7 @@ for d in data:
         unclassified.append(name)
 
 lines = []
-lines.append("# D:\\projects\\repos 仓库分类报告")
+lines.append(f"# {ROOT} 仓库分类报告")
 lines.append("")
 lines.append(f"> 扫描日期：2026-10-28 ｜ 仓库总数：**{len(data)}** ｜ 分类依据：各仓 README + 语言/框架信号（package.json / pyproject.toml / Cargo.toml / go.mod 等）+ 顶层文件")
 lines.append("")

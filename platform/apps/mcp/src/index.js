@@ -211,27 +211,40 @@ const TOOLS = [
   },
   {
     name: 'memory.read',
-    description: '召回 agent 长期记忆（docs/记录/记忆/ 按月卷）：默认最近 2 卷，可用 query 按关键词过滤行',
+    description: '召回 agent 长期记忆（docs/记录/记忆/ 按月卷）：默认最近 2 卷，可用 query 按关键词过滤行；默认隐藏已被 supersedes 取代的旧条目（只增不改 ⇒ 用覆盖代替删除），可用 includeSuperseded 显示、layer 按层过滤',
     inputSchema: {
       type: 'object',
       properties: {
         months: { type: 'number', description: '回看最近几个月卷，默认 2' },
         query: { type: 'string', description: '可选：只返回包含该关键词的行' },
+        layer: { type: 'string', description: '可选：临时 / 永久，只返回该层条目' },
+        includeSuperseded: { type: 'boolean', description: 'true 时连已被取代的旧条目一起返回' },
       },
       additionalProperties: false,
     },
   },
   {
     name: 'memory.append',
-    description: '向当月记忆卷追加一条带日期的经验（只增不改）——自学习回路的记账入口。写操作：需要 confirm=true，且当月卷必须已登记进 docs/INDEX.md。',
+    description: '向当月记忆卷追加一条带日期的经验（只增不改）——自学习回路的记账入口。写操作：需要 confirm=true，且当月卷必须已登记进 docs/INDEX.md。可选 layer（临时/永久）与 supersedes（取代某条旧条目）',
     inputSchema: {
       type: 'object',
       properties: {
         entry: { type: 'string', description: '一条可复用的经验，≤2000 字' },
         tag: { type: 'string', description: '可选短标签，如 gitee / windows / agent' },
+        layer: { type: 'string', description: '临时（默认，可被晋升）/ 永久（已固化为 skill 或长期事实）' },
+        supersedes: { type: 'string', description: '可选：被本条取代的旧条目日期（YYYY-MM-DD），旧条目不删除、召回时默认隐藏' },
         confirm: { type: 'boolean' },
       },
       required: ['entry'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'memory.promotable',
+    description: '记忆晋升看板（只读）：按 tag 统计有效条目数，把「同 tag ≥ 阈值条且未晋升」的列为固化成专项 skill 的候选，附建议流程',
+    inputSchema: {
+      type: 'object',
+      properties: { threshold: { type: 'number', description: '晋升阈值，默认 3（2–10）' } },
       additionalProperties: false,
     },
   },
@@ -395,14 +408,42 @@ function callTool(name, args) {
       const volumes = memoryVolumes()
       if (!volumes.length) return { isError: true, text: '记忆目录为空：docs/记录/记忆/ 下还没有月卷' }
       const picked = volumes.slice(-Math.min(a.months || 2, 12))
-      let content = picked
+      const raw = picked
         .map((f) => `### 记忆卷 ${f}\n` + fs.readFileSync(path.join(MEMORY_DIR, f), 'utf8'))
         .join('\n\n')
-      if (a.query) {
-        const lines = content.split('\n').filter((l) => l.includes(String(a.query)))
-        content = lines.length ? lines.join('\n') : `（最近 ${picked.length} 卷没有包含「${a.query}」的行）`
+      // 取代关系：被标注取代的旧条目默认不再召回（只增不改 ⇒ 用覆盖代替删除）。
+      const superseded = new Set()
+      for (const m of raw.matchAll(/（取代\s*([0-9]{4}-[0-9]{2}-[0-9]{2}[^）]*)）/g)) {
+        superseded.add(m[1].trim())
       }
-      return { text: JSON.stringify({ volumes: picked, query: a.query || null, content }, null, 2) }
+      let lines = raw.split('\n')
+      let hidden = 0
+      if (a.includeSuperseded !== true && superseded.size) {
+        lines = lines.filter((l) => {
+          const hit = l.startsWith('- **') && [...superseded].some((d) => l.startsWith(`- **${d}`))
+          if (hit) hidden += 1
+          return !hit
+        })
+      }
+      if (a.layer) {
+        const want = String(a.layer)
+        lines = lines.filter((l) => !l.startsWith('- **') || l.includes(`·${want}]`))
+      }
+      let content = lines.join('\n')
+      if (a.query) {
+        const q = String(a.query)
+        const kept = content.split('\n').filter((l) => l.includes(q))
+        content = kept.length ? kept.join('\n') : `（最近 ${picked.length} 卷没有包含「${q}」的行）`
+      }
+      return {
+        text: JSON.stringify({
+          volumes: picked,
+          query: a.query || null,
+          layer: a.layer || null,
+          hiddenSuperseded: hidden,
+          content,
+        }, null, 2),
+      }
     }
     case 'memory.append': {
       if (a.confirm !== true) {
@@ -411,6 +452,10 @@ function callTool(name, args) {
       const entry = String(a.entry || '').trim()
       if (!entry) return { isError: true, text: 'entry 不能为空' }
       if (entry.length > 2000) return { isError: true, text: `entry 过长（${entry.length} > 2000 字），拆成多条` }
+      const layer = a.layer === '永久' ? '永久' : '临时'
+      if (a.layer && a.layer !== '临时' && a.layer !== '永久') {
+        return { isError: true, text: `layer 只能是 临时 或 永久（收到「${a.layer}」）` }
+      }
       const now = new Date()
       const target = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`
       if (!memoryVolumes().includes(target)) {
@@ -421,7 +466,8 @@ function callTool(name, args) {
         return { isError: true, text: `当月卷 ${target} 尚未登记进 docs/INDEX.md（D1 会打红）；先登记再写入` }
       }
       const stamp = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
-      const line = `- **${stamp}** [${a.tag || 'note'}] ${entry.replace(/\s*\n\s*/g, ' ')}\n`
+      const supersede = a.supersedes ? `（取代 ${String(a.supersedes).trim()}）` : ''
+      const line = `- **${stamp}** [${a.tag || 'note'}·${layer}] ${entry.replace(/\s*\n\s*/g, ' ')}${supersede}\n`
       const file = path.join(MEMORY_DIR, target)
       fs.appendFileSync(file, line, 'utf8')
       auditWrite(name, file)
@@ -429,7 +475,43 @@ function callTool(name, args) {
         text: JSON.stringify({
           written: path.relative(REPO, file).replace(/\\/g, '/'),
           appended: line.trim(),
-          note: '条目只增不改；发现旧条目有错，另起新条目注明取代关系',
+          note: a.supersedes
+            ? '已标注取代：旧条目不删除、召回时默认隐藏（只增不改）'
+            : '条目只增不改；发现旧条目有错，另起新条目带 supersedes 注明取代关系',
+        }, null, 2),
+      }
+    }
+    case 'memory.promotable': {
+      const volumes = memoryVolumes()
+      if (!volumes.length) return { isError: true, text: '记忆目录为空：docs/记录/记忆/ 下还没有月卷' }
+      const threshold = Math.min(Math.max(a.threshold || 3, 2), 10)
+      const byTag = {}
+      for (const f of volumes) {
+        const text = fs.readFileSync(path.join(MEMORY_DIR, f), 'utf8')
+        for (const line of text.split('\n')) {
+          if (!line.startsWith('- **')) continue
+          const m = line.match(/\[([^\]·]+)(?:·([^\]]+))?\]/)
+          if (!m) continue
+          const tag = m[1].trim()
+          const superseded = line.includes('（取代')
+          byTag[tag] = byTag[tag] || { tag, count: 0, promoted: 0, samples: [] }
+          byTag[tag].count += 1
+          if (/\[已晋升|已固化为/.test(line)) byTag[tag].promoted += 1
+          if (!superseded && byTag[tag].samples.length < 3) {
+            byTag[tag].samples.push(line.replace(/^- \*\*[^*]+\*\* /, '').slice(0, 120))
+          }
+        }
+      }
+      const candidates = Object.values(byTag)
+        .filter((t) => t.count - t.promoted >= threshold)
+        .sort((x, y) => (y.count - y.promoted) - (x.count - x.promoted))
+      return {
+        text: JSON.stringify({
+          threshold,
+          volumes,
+          tags: Object.values(byTag).sort((x, y) => y.count - x.count),
+          promotable: candidates,
+          flow: '同 tag 有效条目 ≥ 阈值 ⇒ 走文档流程固化为专项 skill（建 .workbuddy/skills/<名>/SKILL.md → 同步双载体 → 过门禁），再在记忆卷追加一条「已晋升」条目',
         }, null, 2),
       }
     }
@@ -507,11 +589,13 @@ if (argv.includes('--selftest')) {
   handle({ id: 9, method: 'tools/call', params: { name: 'exceptions.list', arguments: {} } })
   handle({ id: 10, method: 'tools/call', params: { name: 'memory.read', arguments: { months: 1 } } })
   handle({ id: 11, method: 'tools/call', params: { name: 'memory.append', arguments: { entry: '自检探针' } } })
+  handle({ id: 12, method: 'tools/call', params: { name: 'memory.promotable', arguments: {} } })
+  handle({ id: 13, method: 'tools/call', params: { name: 'memory.append', arguments: { entry: 'x', layer: '瞎写的层', confirm: true } } })
   process.stdout.write = origWrite
   const msgs = captured.map((c) => JSON.parse(c.trim()))
   const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
   check('initialize 返回 protocolVersion', msgs[0]?.result?.protocolVersion === PROTOCOL)
-  check('tools/list 返回 12 个工具', msgs[1]?.result?.tools?.length === 12, `got ${msgs[1]?.result?.tools?.length}`)
+  check('tools/list 返回 13 个工具', msgs[1]?.result?.tools?.length === 13, `got ${msgs[1]?.result?.tools?.length}`)
   check('gate.list 返回门禁清单', textOf(2).includes('"gates"'))
   check('registry.query 返回结构', textOf(3).includes('"total"'))
   check('docs.search 命中', textOf(4).includes('hits'))
@@ -521,6 +605,8 @@ if (argv.includes('--selftest')) {
   check('exceptions.list 返回例外台账', textOf(8).includes('EX-'))
   check('memory.read 召回月卷', textOf(9).includes('volumes') || textOf(9).includes('记忆目录为空'))
   check('memory.append 未确认即拒绝', msgs[10]?.result?.isError === true)
+  check('memory.promotable 返回晋升看板', textOf(11).includes('promotable'))
+  check('memory.append 拒绝非法 layer', msgs[12]?.result?.isError === true)
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
   process.exit(failures === 0 ? 0 : 1)
 }

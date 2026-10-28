@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """增强扫描：提取每个仓库的技术栈信号（语言/GUI/架构/引擎依赖/关键三方库）。"""
-import os, re, json
+import os, re, json, sys
 
-ROOT = "D:/projects/repos"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 
 GUI_TOKENS = {
     "tkinter": [r"import\s+tkinter", r"from\s+tkinter", r"Tk\(\)"],

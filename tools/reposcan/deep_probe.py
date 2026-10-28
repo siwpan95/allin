@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, json
+import os, json, sys
 
-ROOT = "D:/projects/repos"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 TARGETS = ["haha","media-tools","players-unified","pluginplayer","write","imgproc",
            "board-replay","captcha-demo","music-prompt-generator","novel-reader"]
 

@@ -77,6 +77,8 @@
                 行动范式（ReAct，Reasoning + Acting）：每一步都走「推理 → 行动 → 观察」循环——先想清楚目标、已知与缺口（Thought），再做一步可验证的动作（Action），读完真实结果（Observation）再决定下一步；不做无观察的连环行动；收口前用门禁/测试的真实输出自检，禁止「看起来能跑」。
 
                 长期记忆（自学习回路）：记忆月账在 `docs/记录/记忆/`（按月分卷，条目只增不改）。会话开始与动手前，若挂载了 allin MCP server，用 `mcp__allin-governance__memory.read` 召回相关经验，没有 server 就直接读当月卷；门禁红、修复完成、踩坑、或用户要求记住时，用 `mcp__allin-governance__memory.append`（写操作，需 confirm=true）记账一条到当月卷；两样都不可用时写进会话交接卷。当月卷未建或未登记时不要自行建文件，先走文档流程登记。
+
+                记忆分层与取代：条目分 `临时`（默认，可被晋升）与 `永久`（已固化为 skill 或长期事实）两层；旧条目一律不删，纠错时另起新条目带 supersedes 注明被取代的日期，召回时**默认隐藏被取代者**（只增不改 ⇒ 用覆盖代替删除）。晋升通道：同一 tag 的有效条目累计 ≥3 条即进入 `mcp__allin-governance__memory.promotable` 候选，须走文档流程固化为专项 skill（建 skill → 同步双载体 → 过门禁），并在记忆卷追加一条「已晋升」条目。
                 <!-- GOVERNANCE:END -->
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'

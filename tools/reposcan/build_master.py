@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成单份带交叉索引的总表 repos_master.md：主总表(领域+技术栈全字段) + 领域分组 + 技术栈分组(标签后附领域)。"""
-import json
+import json, os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _root import repos_root
+
+ROOT = repos_root()
 
 with open("repos_meta.json", encoding="utf-8") as fh:
     meta = json.load(fh)
@@ -191,7 +196,7 @@ def tech_cols(name):
 
 # ── 主总表 ──
 L = []
-L.append("# D:\\projects\\repos 仓库总表（领域 × 技术栈 · 交叉索引）")
+L.append(f"# {ROOT} 仓库总表（领域 × 技术栈 · 交叉索引）")
 L.append("")
 L.append("> 扫描日期：2026-10-28 ｜ 仓库总数：**133**（已同步删除远端/本地均移除的 `sin-virtue-game`）")
 L.append("> 依据：README + 语言/框架信号 + 10 个边界仓深层源码核实。技术栈列格式：`语言 | 界面/形态 | 架构 | 依赖引擎 | 关键依赖`")
