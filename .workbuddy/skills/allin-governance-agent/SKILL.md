@@ -1,6 +1,6 @@
 ---
 name: allin-governance-agent
-description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/本机事实.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 15 道治理门禁（g00–g15）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、并把具体任务路由到本仓 15 个既有项目级 skill。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查。
+description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/本机事实.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 19 道治理门禁（g00–g19）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、把具体任务路由到本仓 15 个既有项目级 skill，并带 ReAct 行动范式与记忆月账自学习回路。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查、记忆召回。
 agent_created: true
 ---
 
@@ -47,6 +47,8 @@ agent_created: true
 | `docs/事实源/本机事实.md` | 盘位 / 工作区落点 / 运行时 / 工具链现值，机器类唯一事实源 | 涉及盘位/路径/工具前 |
 
 需要背景再读 `docs/记录/交接/` 的**最新月份卷**（逐轮事实流水）。
+**记忆召回**：动手前先看 agent 记忆月账 `docs/记录/记忆/` 的**最新卷**（自学习回路，见 §2.1），
+避免重踩已记账的坑。
 有具体项目时（`<工作区根>/repos/<仓名>`），动手前先读该项目自己的 `README.md`。
 
 除非用户明确说跳过，否则**不要先答复再补读**。
@@ -62,6 +64,23 @@ agent_created: true
 **治理准则（SPEC-003）**：创新 = 借鉴 + 调整 + 同步 + 记账；推倒重来只用于结构层，资产与历史永远保全。
 删除/归档前必过**冗余三查**（列功能面 → 逐面找实证接任者 → 无接任者不可删）。
 借鉴任何外部代码/配置/概念前先记录「来源 + 许可证 + 借用范围」。
+
+### 2.1 行动范式（ReAct）与长期记忆（自学习回路）
+
+**ReAct（Reasoning + Acting，当前最主流的 Agent 范式）**：每一步都走
+「推理 → 行动 → 观察」循环——先想清楚目标、已知与缺口（Thought），再做一步可验证的动作
+（Action），读完真实结果（Observation）再决定下一步；**不做无观察的连环行动**；
+收口前用门禁/测试的真实输出自检，禁止「看起来能跑」。
+
+**长期记忆回路**：记忆月账在 `docs/记录/记忆/`（按月分卷 `YYYY-MM.md`，条目**只增不改**）。
+
+- **召回**：会话开始与动手前——DSH 侧用 `mcp__allin-governance__memory.read`
+  （allin MCP server 共 12 工具：10 读 2 写），WorkBuddy 侧直接读当月卷。
+- **记账**：门禁红、修复完成、踩坑、或用户要求记住时——DSH 侧用
+  `mcp__allin-governance__memory.append`（写操作，需 `confirm=true`，只追加**已登记**的当月卷），
+  WorkBuddy 侧直接编辑当月卷追加一条带日期的条目。
+- **换月**：新月份开新卷属治理动作——建 `docs/记录/记忆/YYYY-MM.md` 并在 `docs/INDEX.md` §4
+  登记一行、更新份数自述（D1/D8 核对），然后才可写入。
 
 ---
 
@@ -92,10 +111,10 @@ allin preset list | show <n> | apply <n>
 ### 3.2 门禁与体检（治理的「监工」）
 
 ```bash
-bash scripts/run_all_gates.sh             # 一键跑齐：15 道治理门禁 + 文档索引契约 + 本仓 repocheck 自检
+bash scripts/run_all_gates.sh             # 一键跑齐：19 道治理门禁 + 文档索引契约 + 本仓 repocheck 自检
                                           #   追加 --with-platform 额外跑 platform 的 check/test/harness
 npm run check:governance                  # = npx tsx tools/gate/governance/run.ts
-                                         #   15 道门禁 g00-meta…g15-docs-contract，全绿 exit 0
+                                         #   19 道门禁 g00-meta…g19-docs-refs，全绿 exit 0
 npm run check:governance:selfcheck        # 门禁自证（无 selfcheck 的门禁等于没有门禁）
 python tools/gate/docs_index.py           # 文档索引契约 D1–D8（INDEX 份数/登记/头部/别名…）
 python tools/repocheck/main.py <根>       # 仓库体检：30 规则 / 0–10 分 / text·json·csv·html
@@ -163,7 +182,9 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 1. 读 `README.md`（铁律 1）→ 读 `docs/INDEX.md` 找相关 SPEC；
 2. 用 §0 定位仓根；涉及盘位/路径先看 `docs/事实源/本机事实.md`；
 3. 判任务档级（SPEC-002）：大任务走全流程，中任务问一句 + 简计划 + 执行，小任务直接做 + 汇报；
-4. **改动后过门禁**：`npm run check:governance` + `python tools/gate/docs_index.py` 必须全绿（新增文档尤甚）。
+4. **改动后过门禁**：`npm run check:governance` + `python tools/gate/docs_index.py` 必须全绿（新增文档尤甚）；
+5. **收口后记账**：本次任务若踩了新坑或得出可复用经验，按 §2.1 写一条进记忆月卷
+   （DSH 侧 `mcp__allin-governance__memory.append`，WorkBuddy 侧直接编辑当月卷）。
 
 ### 5.2 推送 / 发版（高风险，逐项确认）
 - 先 `git status --short` 确认范围；`git diff --stat` 看改动面。

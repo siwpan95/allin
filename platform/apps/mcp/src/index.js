@@ -5,11 +5,13 @@
 // `@deepseek-ai/dsh-mcp-client` and every other MCP client can spawn directly.
 //
 // Design rules, none of them optional:
-//   * read-only by default -- six of the seven tools only read;
-//   * the one write tool needs an explicit `confirm: true` and writes outside
-//     `docs/` (a file dropped into `docs/` without an INDEX.md registration
-//     would trip the D1 contract on the very next gate run), and every accepted
-//     write is appended to `tools/gate/audit/mcp-actions.jsonl`;
+//   * read-only by default -- ten of the twelve tools only read;
+//   * the two write tools need an explicit `confirm: true`: record.append drafts
+//     outside `docs/` (a file dropped into `docs/` without an INDEX.md registration
+//     would trip the D1 contract on the very next gate run); memory.append only
+//     appends to the *already INDEX-registered* current-month memory volume
+//     (`docs/记录/记忆/<YYYY-MM>.md`, the agent's long-term self-learning ledger);
+//     every accepted write is appended to `tools/gate/audit/mcp-actions.jsonl`;
 //   * paths are derived from this file's location, never hard-coded to a drive;
 //   * a tool that cannot do its work returns `isError: true` with a reason --
 //     never an empty success.
@@ -24,9 +26,10 @@ const REPO = path.join(__dirname, '..', '..', '..', '..')
 const GOVERNANCE = path.join(REPO, 'tools', 'gate', 'governance')
 const REGISTRY_DIR = path.join(REPO, 'platform', 'registry', 'projects')
 const AUDIT_DIR = path.join(REPO, 'tools', 'gate', 'audit')
+const MEMORY_DIR = path.join(REPO, 'docs', '记录', '记忆')
 
 const PROTOCOL = '2025-06-18'
-const SERVER_INFO = { name: 'allin-governance', version: '0.1.0' }
+const SERVER_INFO = { name: 'allin-governance', version: '0.2.0' }
 const DEFAULT_TIMEOUT_MS = 120000
 
 // ---------------------------------------------------------------- helpers
@@ -90,6 +93,15 @@ function listEntries() {
     const text = fs.readFileSync(path.join(REGISTRY_DIR, f), 'utf8').replace(/^﻿/, '')
     return { ...parseEntry(text), file: f }
   })
+}
+
+// Monthly memory volumes under docs/记录/记忆/ -- the agent's long-term ledger.
+function memoryVolumes() {
+  try {
+    return fs.readdirSync(MEMORY_DIR).filter((f) => /^\d{4}-\d{2}\.md$/.test(f)).sort()
+  } catch {
+    return []
+  }
 }
 
 // ---------------------------------------------------------------- tools
@@ -171,6 +183,55 @@ const TOOLS = [
         confirm: { type: 'boolean' },
       },
       required: ['title', 'body'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'gate.history',
+    description: '汇总门禁执行留痕（gate-runs.jsonl）：总次数 / 失败次数 / 各标签最近一次退出码 / 最近 N 条',
+    inputSchema: {
+      type: 'object',
+      properties: { limit: { type: 'number', description: '最近条数，默认 20' } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'metrics.snapshot',
+    description: '跑 gate_metrics.py --json：逃逸率 / 证据新鲜度 / 例外燃尽 / 门禁性能预算（只读，不落趋势文件）',
+    inputSchema: {
+      type: 'object',
+      properties: { timeoutMs: { type: 'number' } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'exceptions.list',
+    description: '读治理例外台账（exceptions.yml）：每条 id / kind / gate / status / expires，附 open / closed 计数',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'memory.read',
+    description: '召回 agent 长期记忆（docs/记录/记忆/ 按月卷）：默认最近 2 卷，可用 query 按关键词过滤行',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        months: { type: 'number', description: '回看最近几个月卷，默认 2' },
+        query: { type: 'string', description: '可选：只返回包含该关键词的行' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'memory.append',
+    description: '向当月记忆卷追加一条带日期的经验（只增不改）——自学习回路的记账入口。写操作：需要 confirm=true，且当月卷必须已登记进 docs/INDEX.md。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entry: { type: 'string', description: '一条可复用的经验，≤2000 字' },
+        tag: { type: 'string', description: '可选短标签，如 gitee / windows / agent' },
+        confirm: { type: 'boolean' },
+      },
+      required: ['entry'],
       additionalProperties: false,
     },
   },
@@ -279,9 +340,108 @@ function callTool(name, args) {
       return { text: JSON.stringify({ written: path.relative(REPO, file).replace(/\\/g, '/'),
         note: '草稿落在 audit/mcp-drafts/（不进 docs/）；要成为正式记录须由人移入 docs/记录/ 并在 INDEX.md 登记' }, null, 2) }
     }
+    case 'gate.history': {
+      const rows = readLines(path.join(AUDIT_DIR, 'gate-runs.jsonl'))
+        .filter((l) => l.trim())
+        .map((l) => { try { return JSON.parse(l) } catch { return null } })
+        .filter(Boolean)
+      if (!rows.length) return { isError: true, text: '留痕为空：先跑一次 bash scripts/run_all_gates.sh 再来' }
+      const byLabel = {}
+      for (const r of rows) byLabel[r.label] = r.exit
+      const limit = Math.min(a.limit || 20, 200)
+      return {
+        text: JSON.stringify({
+          total: rows.length,
+          failed: rows.filter((r) => r.exit !== 0).length,
+          byLabelLatest: byLabel,
+          recent: rows.slice(-limit),
+        }, null, 2),
+      }
+    }
+    case 'metrics.snapshot': {
+      const res = run(pythonBin(), [path.join(REPO, 'tools', 'gate', 'gate_metrics.py'), '--json'],
+        { timeout: a.timeoutMs || 120000 })
+      if (res.exit !== 0) return { isError: true, text: `gate_metrics --json 退出码 ${res.exit}\n${res.tail}` }
+      return { text: res.output.trim() || res.tail }
+    }
+    case 'exceptions.list': {
+      let text
+      try {
+        text = fs.readFileSync(path.join(GOVERNANCE, 'exceptions.yml'), 'utf8')
+      } catch {
+        return { isError: true, text: 'exceptions.yml 不可读' }
+      }
+      const entries = []
+      const re = /^\s*-\s*id:\s*(EX-\d+)([\s\S]*?)(?=\n\s*-\s*id:|\n\S|$)/gm
+      let m
+      while ((m = re.exec(text))) {
+        const pick = (k) => {
+          const x = m[2].match(new RegExp(`^\\s*${k}:\\s*(.+)$`, 'm'))
+          return x ? x[1].trim() : null
+        }
+        entries.push({ id: m[1], kind: pick('kind'), gate: pick('gate'), status: pick('status'), expires: pick('expires') })
+      }
+      if (!entries.length) return { isError: true, text: 'exceptions.yml 里没有解析到任何 EX-### 条目' }
+      return {
+        text: JSON.stringify({
+          total: entries.length,
+          open: entries.filter((e) => e.status === 'open').length,
+          closed: entries.filter((e) => e.status === 'closed').length,
+          entries,
+        }, null, 2),
+      }
+    }
+    case 'memory.read': {
+      const volumes = memoryVolumes()
+      if (!volumes.length) return { isError: true, text: '记忆目录为空：docs/记录/记忆/ 下还没有月卷' }
+      const picked = volumes.slice(-Math.min(a.months || 2, 12))
+      let content = picked
+        .map((f) => `### 记忆卷 ${f}\n` + fs.readFileSync(path.join(MEMORY_DIR, f), 'utf8'))
+        .join('\n\n')
+      if (a.query) {
+        const lines = content.split('\n').filter((l) => l.includes(String(a.query)))
+        content = lines.length ? lines.join('\n') : `（最近 ${picked.length} 卷没有包含「${a.query}」的行）`
+      }
+      return { text: JSON.stringify({ volumes: picked, query: a.query || null, content }, null, 2) }
+    }
+    case 'memory.append': {
+      if (a.confirm !== true) {
+        return { isError: true, text: '该工具会写文件：请带 confirm=true 再调用一次' }
+      }
+      const entry = String(a.entry || '').trim()
+      if (!entry) return { isError: true, text: 'entry 不能为空' }
+      if (entry.length > 2000) return { isError: true, text: `entry 过长（${entry.length} > 2000 字），拆成多条` }
+      const now = new Date()
+      const target = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`
+      if (!memoryVolumes().includes(target)) {
+        return { isError: true, text: `当月卷 ${target} 不存在：开新卷属治理动作，先创建文件并在 docs/INDEX.md §4 登记（D1/D8 会核对），再调用本工具` }
+      }
+      const indexText = fs.readFileSync(path.join(REPO, 'docs', 'INDEX.md'), 'utf8')
+      if (!indexText.includes(`记录/记忆/${target}`)) {
+        return { isError: true, text: `当月卷 ${target} 尚未登记进 docs/INDEX.md（D1 会打红）；先登记再写入` }
+      }
+      const stamp = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+      const line = `- **${stamp}** [${a.tag || 'note'}] ${entry.replace(/\s*\n\s*/g, ' ')}\n`
+      const file = path.join(MEMORY_DIR, target)
+      fs.appendFileSync(file, line, 'utf8')
+      auditWrite(name, file)
+      return {
+        text: JSON.stringify({
+          written: path.relative(REPO, file).replace(/\\/g, '/'),
+          appended: line.trim(),
+          note: '条目只增不改；发现旧条目有错，另起新条目注明取代关系',
+        }, null, 2),
+      }
+    }
     default:
       return { isError: true, text: `unknown tool: ${name}` }
   }
+}
+
+// 追加写工具共用的审计落痕（mcp-actions.jsonl）。
+function auditWrite(tool, file) {
+  fs.appendFileSync(path.join(AUDIT_DIR, 'mcp-actions.jsonl'),
+    JSON.stringify({ ts: new Date().toISOString(), tool, file: path.relative(REPO, file) }) + '\n', 'utf8')
 }
 
 // ---------------------------------------------------------------- JSON-RPC
@@ -343,15 +503,24 @@ if (argv.includes('--selftest')) {
   handle({ id: 5, method: 'tools/call', params: { name: 'docs.search', arguments: { query: '门禁', limit: 3 } } })
   handle({ id: 6, method: 'tools/call', params: { name: 'record.append', arguments: { title: 't', body: 'b' } } })
   handle({ id: 7, method: 'tools/call', params: { name: 'nope', arguments: {} } })
+  handle({ id: 8, method: 'tools/call', params: { name: 'gate.history', arguments: { limit: 3 } } })
+  handle({ id: 9, method: 'tools/call', params: { name: 'exceptions.list', arguments: {} } })
+  handle({ id: 10, method: 'tools/call', params: { name: 'memory.read', arguments: { months: 1 } } })
+  handle({ id: 11, method: 'tools/call', params: { name: 'memory.append', arguments: { entry: '自检探针' } } })
   process.stdout.write = origWrite
   const msgs = captured.map((c) => JSON.parse(c.trim()))
+  const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
   check('initialize 返回 protocolVersion', msgs[0]?.result?.protocolVersion === PROTOCOL)
-  check('tools/list 返回 7 个工具', msgs[1]?.result?.tools?.length === 7, `got ${msgs[1]?.result?.tools?.length}`)
-  check('gate.list 返回门禁清单', (msgs[2]?.result?.content?.[0]?.text || '').includes('"gates"'))
-  check('registry.query 返回结构', (msgs[3]?.result?.content?.[0]?.text || '').includes('"total"'))
-  check('docs.search 命中', (msgs[4]?.result?.content?.[0]?.text || '').includes('hits'))
+  check('tools/list 返回 12 个工具', msgs[1]?.result?.tools?.length === 12, `got ${msgs[1]?.result?.tools?.length}`)
+  check('gate.list 返回门禁清单', textOf(2).includes('"gates"'))
+  check('registry.query 返回结构', textOf(3).includes('"total"'))
+  check('docs.search 命中', textOf(4).includes('hits'))
   check('record.append 未确认即拒绝', msgs[5]?.result?.isError === true)
   check('未知工具报 isError', msgs[6]?.result?.isError === true)
+  check('gate.history 返回留痕汇总', textOf(7).includes('"total"') || textOf(7).includes('留痕为空'))
+  check('exceptions.list 返回例外台账', textOf(8).includes('EX-'))
+  check('memory.read 召回月卷', textOf(9).includes('volumes') || textOf(9).includes('记忆目录为空'))
+  check('memory.append 未确认即拒绝', msgs[10]?.result?.isError === true)
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
   process.exit(failures === 0 ? 0 : 1)
 }

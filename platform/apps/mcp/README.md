@@ -13,28 +13,49 @@ node platform/apps/mcp/src/index.js --selftest # 自检：脚本化会话走一�
 node platform/apps/mcp/src/index.js --list-tools
 ```
 
-自测覆盖 7 条断言（协议版本、工具数量、各工具返回结构、写工具未确认即拒绝、未知工具报错）。
+自测覆盖 11 条断言（协议版本、工具数量、各工具返回结构、两个写工具未确认即拒绝、未知工具报错）。
 
-## 工具（7 个，6 读 1 写）
+## 工具（12 个，10 读 2 写）
 
 | 工具 | 作用 | 是否写入 |
 | --- | --- | --- |
 | `gate.list` | 列出治理门禁（id / title / tier / 基线） | 只读 |
 | `gate.run` | 跑单个门禁（指定 `gate`）或整套聚合（`all=true`） | 只读（执行检查） |
+| `gate.history` | 汇总门禁执行留痕：总次数 / 失败 / 各标签最近退出码 / 最近 N 条 | 只读 |
+| `metrics.snapshot` | 跑 `gate_metrics.py --json`：逃逸率 / 证据新鲜度 / 例外燃尽 / 性能预算 | 只读 |
+| `exceptions.list` | 读例外台账（id / kind / gate / status / expires + open/closed 计数） | 只读 |
 | `registry.query` | 按 id / category 查项目注册表 | 只读 |
 | `registry.verify` | 无头验证登记项目（`only` / `category` / `limit`） | 只读（执行验证） |
 | `docs.search` | 文档枢纽全文检索（不含 `md/` 历史树） | 只读 |
 | `project.status` | 单项目登记信息 + 本地克隆最后提交天数 + 上次验证结论 | 只读 |
+| `memory.read` | 召回 agent 长期记忆（`docs/记录/记忆/` 按月卷，可按关键词过滤） | 只读 |
 | `record.append` | 起草治理记录 | **写**（必须 `confirm=true`） |
+| `memory.append` | 向当月记忆卷追加一条带日期的经验（自学习回路记账入口） | **写**（必须 `confirm=true`） |
 
 ### 安全边界
 
-- **只读默认**：除 `record.append` 外全部只读。
-- **写操作要显式确认**：`record.append` 不带 `confirm=true` 直接返回 `isError`。
-- **写入落在 `tools/gate/audit/mcp-drafts/`**，不进 `docs/`——否则会立刻触发文档索引契约
-  D1「文件未登记」；草稿要成为正式记录，须由人移入 `docs/记录/` 并在 `INDEX.md` 登记。
+- **只读默认**：除 `record.append` / `memory.append` 外全部只读。
+- **写操作要显式确认**：两个写工具不带 `confirm=true` 直接返回 `isError`。
+- **`record.append` 写在 `tools/gate/audit/mcp-drafts/`**，不进 `docs/`——否则会立刻触发
+  文档索引契约 D1「文件未登记」；草稿要成为正式记录，须由人移入 `docs/记录/` 并在 `INDEX.md` 登记。
+- **`memory.append` 只追加、不新建**：目标必须是**已存在且已在 `docs/INDEX.md` §4 登记**的
+  当月卷 `docs/记录/记忆/<YYYY-MM>.md`（未登记直接拒绝，避免 D1 打红）；开新卷属治理动作，
+  由人（或走完整文档流程）完成。条目**只增不改**，纠错另起新条目注明取代关系。
 - **每次接受写操作都落审计** `tools/gate/audit/mcp-actions.jsonl`（ts / tool / file）。
 - 工具失败返回 `isError: true` + 原因，绝不返回空成功。
+
+## 自学习回路（memory.* 的用法契约）
+
+```
+观察（gate.history / metrics.snapshot / 任务结果）
+  → 提炼一条可复用经验
+  → memory.append（confirm=true）记账到当月卷
+  → 下次会话 memory.read 召回，避免重踩
+```
+
+DSH 官方的外接记忆方案（`docs/user/guide/mcp-memory`）同样是「记忆经 MCP 暴露」；
+本服务器把记忆落在**受治理的文档月卷**里（git 版本化 + D1/D8 + g19 快照豁免），
+比第三方记忆服务的黑盒存储更符合本仓「文档即事实源」的口径。
 
 ## 接到 DeepSeek Harness
 
