@@ -218,4 +218,4 @@ python tools/repocheck/main.py tools/ --exclude gate              --fail-on erro
 
 ---
 
-*最后更新：2026-10-27（新增 `architecture/` 系统架构与设计文档含两张 SVG 架构图；`kernel/` 治理内核立档；README 增补「治理 Agent 与内核」章节；补 `platform/apps/portal/openapi.yaml`（OpenAPI 3.0.3）；repocheck 自检补全 `kernel/` 三件套；g01 门禁 8 条冻结项内容层清零）*
+*最后更新：2026-10-28（治理对账 `ef2a545`：订正门禁 15→19 的陈旧口径 3 处 + 规范门禁总表加口径提示；修 `g15-docs-contract` 自检假阳性——`os.symlink` 建别名需管理员、`except OSError: pass` 静默吞致 D6 误报，改 junction 兜底 + 响亮失败；新增 `docs/记录/审计/治理对账与门禁自检修复_2026-10-28.md` 并登记 REC-AU-17）*

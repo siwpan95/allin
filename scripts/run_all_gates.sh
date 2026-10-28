@@ -2,7 +2,7 @@
 # allin 治理门禁「一键跑齐」—— 由 allin-governance-agent 调用。
 #
 # 依次跑三类门禁：
-#   1) 15 道治理门禁 g00-meta…g15-docs-contract（npm run check:governance）
+#   1) 19 道治理门禁 g00-meta…g19-docs-refs（npm run check:governance）
 #   2) 文档索引契约 D1–D8（npm run check:docs = python tools/gate/docs_index.py）
 #   3) 本仓 monorepo 自检口径的 repocheck（README §本仓自检口径：排除 tools/，跳过规则 1/7）
 #
