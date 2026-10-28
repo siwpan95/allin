@@ -4,14 +4,12 @@
 import json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, read_json, out_path
 
 ROOT = repos_root()
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+meta = read_json("repos_meta.json")
+tech = read_json("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 META = {m["name"]: m for m in meta}
 
@@ -296,6 +294,6 @@ for title, fn in sections:
     L.append("")
 
 out="\n".join(L)
-with open("repos_master.md","w",encoding="utf-8") as fh:
+with open(out_path("repos_master.md"),"w",encoding="utf-8") as fh:
     fh.write(out)
 print("repos_master.md 生成，总行数:", out.count("\n"), "| 主总表行数(含表头):", idx+2, "| 总数:", len(CAT))

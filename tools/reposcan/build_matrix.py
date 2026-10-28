@@ -4,14 +4,12 @@
 import json, csv, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, read_json, out_path
 
 ROOT = repos_root()
 
-with open("repos_meta.json", encoding="utf-8") as fh:
-    meta = json.load(fh)
-with open("tech_meta.json", encoding="utf-8") as fh:
-    tech = json.load(fh)
+meta = read_json("repos_meta.json")
+tech = read_json("tech_meta.json")
 TECH = {t["name"]: t for t in tech}
 
 # 与 build_master.py 保持一致的 133 仓分类（已剔除 sin-virtue-game）
@@ -183,7 +181,7 @@ html.append("</table>")
 # 图例 + 小节
 html.append("<div class='sub' style='margin-top:18px;'><b>读图示例：</b>Cordis 列中「游戏作品」格最深 → 多数游戏作品基于 Cordis；「音频栈」集中在音乐/音频与部分视频/特效；「CLI/无界面」多见于爬虫/引擎验证。</div>")
 html.append("</body></html>")
-open("repos_master_matrix.html","w",encoding="utf-8").write("\n".join(html))
+open(out_path("repos_master_matrix.html"),"w",encoding="utf-8").write("\n".join(html))
 
 # ── ② CSV ──
 def tech_flat(name):
@@ -195,7 +193,7 @@ def tech_flat(name):
     eng="/".join(sorted({x.split("/")[0].replace("3dworld/world3d","3dworld").replace("procgen/worldbuilder","procgen") for x in arch if x in ("allin_engine","3dworld/world3d","dse-core","procgen/worldbuilder")})) or "-"
     return lang, gui, fw, eng
 csv_cols=["仓库","领域","子类","语言","界面/形态","架构","依赖引擎","关键依赖","证据"]+FLAT_FLAGS
-with open("repos_master.csv","w",encoding="utf-8-sig",newline="") as fh:
+with open(out_path("repos_master.csv"),"w",encoding="utf-8-sig",newline="") as fh:
     w=csv.writer(fh); w.writerow(csv_cols)
     for n,dom,sub,attrs in sorted(repos,key=lambda x:(ORDER.index(x[1]),x[0].lower())):
         lang,gui,fw,eng=tech_flat(n)
@@ -255,5 +253,5 @@ ws2.column_dimensions["A"].width=16
 for i in range(2,len(COLS)+2): ws2.column_dimensions[get_column_letter(i)].width=11
 ws2.column_dimensions[get_column_letter(len(COLS)+2)].width=8
 ws2.freeze_panes="B2"
-wb.save("repos_master.xlsx")
+wb.save(out_path("repos_master.xlsx"))
 print("OK -> repos_master_matrix.html / repos_master.csv / repos_master.xlsx | 仓数:",len(repos))

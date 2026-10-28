@@ -4,7 +4,7 @@
 import os, re, json, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _root import repos_root
+from _root import repos_root, data_path
 
 ROOT = repos_root()
 
@@ -147,9 +147,10 @@ def main():
     repos = sorted([os.path.join(ROOT, d) for d in os.listdir(ROOT)
                     if os.path.isdir(os.path.join(ROOT, d))])
     out = [scan_repo(d) for d in repos]
-    with open("tech_meta.json", "w", encoding="utf-8") as fh:
+    path = data_path("tech_meta.json")
+    with open(path, "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)
-    print(f"scanned {len(out)} -> tech_meta.json")
+    print(f"scanned {len(out)} -> {path}")
 
 if __name__ == "__main__":
     main()
