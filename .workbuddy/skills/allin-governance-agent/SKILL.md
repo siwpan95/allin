@@ -183,6 +183,9 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 2. 用 §0 定位仓根；涉及盘位/路径先看 `docs/事实源/本机事实.md`；
 3. 判任务档级（SPEC-002）：大任务走全流程，中任务问一句 + 简计划 + 执行，小任务直接做 + 汇报；
 4. **改动后过门禁**：`npm run check:governance` + `python tools/gate/docs_index.py` 必须全绿（新增文档尤甚）；
+   **用与 CI 同一个解释器复跑** —— `bash scripts/run_all_gates.sh` 会把解释器钉死（优先仓内 `.venv`）并传给门禁套件，
+   换台机器结论可能不同（便携 Python 无 PyYAML ⇒ `g18-exceptions` 假红，实测过）；
+   **把实际退出码贴进提交信息**，不写「应该绿了」——提交信息里的「全绿」不是证据，退出码才是。
 5. **收口后记账**：本次任务若踩了新坑或得出可复用经验，按 §2.1 写一条进记忆月卷
    （DSH 侧 `mcp__allin-governance__memory.append`，WorkBuddy 侧直接编辑当月卷）。
 
