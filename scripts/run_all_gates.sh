@@ -15,37 +15,57 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
-# 解释器不写死机器路径（g01 判据）：环境变量优先，其次按 PATH 探测 python3 / python。
-# 探测必须带 tkinter：tools/repocheck/main.py 启动即 import tkinter，托管的阉割版
-# Python 会直接 ModuleNotFoundError，门禁会假红。所以候选解释器要真测一下。
-# 候选必须真能 import tkinter：tools/repocheck/main.py 启动即 import tkinter，
-# 托管的阉割版 Python 会直接 ModuleNotFoundError，门禁会假红。
-can_tk() { "$1" -c "import tkinter" >/dev/null 2>&1; }
+# 解释器不写死机器路径（g01 判据）：ALLIN_PYTHON 显式指定优先，其次仓内 .venv，
+# 最后才按 PATH 探测 python3 / python。
+#
+# 为什么必须钉死同一个解释器：门禁套件（run.ts）与本脚本里的 Python 工具若各用各的
+# 解释器，同一次跑批的结论就不可复现。实测过的坑：PATH 上的便携 3.13.14 无 PyYAML，
+# 而 g18-exceptions 要解析 exceptions.yml —— 套件因此报出「ledger-unusable」假红，
+# 提交信息却写着「19/19 clean」。
+#
+# PyYAML 只有 g18-exceptions 需要；没有它的解释器仍可用（g18 自己会报环境错），
+# 所以只作优先项不作硬性要求 —— 宁可少跑一道，也别把 18 道已跑的门禁一起丢掉。
+can_yaml() { "$1" -c "import yaml" >/dev/null 2>&1; }
+can_run()  { "$1" -c "import sys; print(sys.version_info[:2] >= (3, 9))" >/dev/null 2>&1; }
 
 PY=""
+PY_HAS_YAML="no"
 if [ -n "${ALLIN_PYTHON:-}" ]; then
   PY="$ALLIN_PYTHON"
 else
-  for cand in python3 python; do
-    if command -v "$cand" >/dev/null 2>&1 && can_tk "$cand"; then PY="$cand"; break; fi
+  # 仓内 .venv：仓库自己钉住依赖集的唯一候选（含 PyYAML），换机/换人跑结论一致。
+  for cand in "$ROOT/.venv/Scripts/python.exe" "$ROOT/.venv/bin/python"; do
+    if [ -x "$cand" ]; then PY="$cand"; break; fi
   done
+  if [ -z "$PY" ]; then
+    for cand in python3 python; do
+      if command -v "$cand" >/dev/null 2>&1 && can_run "$cand"; then PY="$cand"; break; fi
+    done
+  fi
   # PATH 上的 python3/python 不可用时，再扫 PATH 里所有 python.exe（Windows）。
   # 路径由系统给出，源码里不出现盘符 —— g01 判据不变。
   if [ -z "$PY" ] && command -v where >/dev/null 2>&1; then
     while IFS= read -r cand; do
       cand="${cand%$'\r'}"
       [ -n "$cand" ] || continue
-      if can_tk "$cand"; then PY="$cand"; break; fi
+      if can_run "$cand"; then PY="$cand"; break; fi
     done <<EOF
 $(where python 2>/dev/null)
 EOF
   fi
 fi
 if [ -z "$PY" ]; then
-  echo "ENV ERROR: 找不到能 import tkinter 的 python（repocheck 需要它）。" >&2
+  echo "ENV ERROR: 找不到可用的 Python 3.9+。" >&2
   echo "          用 ALLIN_PYTHON=<完整解释器> bash scripts/run_all_gates.sh 指定。" >&2
   exit 3
 fi
+if can_yaml "$PY"; then
+  PY_HAS_YAML="yes"
+else
+  echo "WARN: 解释器缺 PyYAML（$PY）—— g18-exceptions 会报环境错，其余门禁照跑。" >&2
+fi
+# 让门禁套件用同一个解释器：run.ts 优先采纳 DSH_GOVERNANCE_PYTHON。
+export DSH_GOVERNANCE_PYTHON="$PY"
 fail=0
 failures=()
 
@@ -94,7 +114,7 @@ run() {
 echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
-run npm run check:docs
+run "$PY" tools/gate/docs_index.py
 run "$PY" tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error
 
 if [ "${1:-}" = "--with-platform" ]; then

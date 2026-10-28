@@ -326,7 +326,10 @@ class SelfCheck:
             self.clean += 1
 
     def finish(self) -> int:
-        payload = json.dumps({"caught": self.caught, "clean": self.clean, "misreports": self.misreports})
+        # 紧凑分隔符：契约（RULES.md §自证有效）写的是 `SELFCHECK {"caught":N,"clean":M,"misreports":K}`，
+        # json.dumps 的默认分隔符会带空格，与契约文本不一致。格式统一后元门禁才能按契约严格机检。
+        payload = json.dumps({"caught": self.caught, "clean": self.clean, "misreports": self.misreports},
+                             separators=(",", ":"))
         for failure in self.failures:
             print(f"  FAIL {failure}")
         print(f"SELFCHECK {payload}")

@@ -35,7 +35,9 @@ TITLE = "governance: gate contract self-verification"
 
 REQUIRED_FIELDS = ("id", "title", "script", "tier", "rules", "platforms", "requires", "selfcheck")
 REQUIRED_SWITCHES = ("--selfcheck", "--quiet", "--baseline", "--no-baseline", "--write-baseline", "--list-all")
-SELFCHECK_LINE = re.compile(r"^SELFCHECK (\{.*\})$", re.MULTILINE)
+# 契约要求的摘要格式：`SELFCHECK {"caught":N,"clean":M,"misreports":K}`（紧凑分隔符、无空格）。
+# 用契约文本本身当正则：格式偏差即判「没打印摘要」，不留「打印了就算」的模糊地带。
+SELFCHECK_LINE = re.compile(r'^SELFCHECK (\{"caught":\d+,"clean":\d+,"misreports":\d+\})$', re.MULTILINE)
 SELFCHECK_TIMEOUT_SECONDS = 600
 
 
@@ -191,7 +193,7 @@ def selfcheck() -> int:
     check = govlib.SelfCheck(gate=GATE)
     good_gate = _fixture_gate(
         "if args.selfcheck:\n"
-        "    print('SELFCHECK ' + json.dumps({'caught': 1, 'clean': 1, 'misreports': 0}))\n"
+        "    print('SELFCHECK ' + json.dumps({'caught': 1, 'clean': 1, 'misreports': 0}, separators=(',', ':')))\n"
         "sys.exit(0)\n"
     )
     bad_gate = _fixture_gate("sys.exit(1)\n")

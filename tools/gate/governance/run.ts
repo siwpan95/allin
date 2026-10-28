@@ -101,10 +101,30 @@ function probe(command: string, prefix: string[]): Interpreter | undefined {
  * Find the interpreter that runs the gates, or stop with a named cause.
  * @see governance/RULES.md -- the fail-loud clause of the gate contract
  */
+/**
+ * Interpreters inside the repository's own virtualenv, when it exists.
+ *
+ * The venv is the only dependency set the repository pins itself (it carries
+ * PyYAML, which `g18-exceptions` needs to parse the exception ledger), so it is
+ * the one candidate that yields the same verdict on every machine. Probing it
+ * before the PATH keeps "same commit, green here, red there" from coming back:
+ * the discovery order below otherwise lands on whatever `python3` the host
+ * happens to provide -- a trimmed build without PyYAML makes `g18` report a
+ * false blocker, and the run then contradicts the commit message.
+ */
+function venvInterpreters(): Array<{ command: string; prefix: string[] }> {
+  const venv = resolve(ROOT, '..', '..', '.venv')
+  return [
+    { command: resolve(venv, 'Scripts', 'python.exe'), prefix: [] },
+    { command: resolve(venv, 'bin', 'python'), prefix: [] },
+  ]
+}
+
 function discoverInterpreter(): Interpreter {
   const override = process.env.DSH_GOVERNANCE_PYTHON
   const candidates: Array<{ command: string; prefix: string[] }> = [
     ...(override === undefined || override === '' ? [] : [{ command: override, prefix: [] }]),
+    ...venvInterpreters(),
     { command: 'python3', prefix: [] },
     { command: 'python', prefix: [] },
     { command: 'py', prefix: ['-3'] },
