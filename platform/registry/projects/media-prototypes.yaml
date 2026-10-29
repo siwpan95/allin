@@ -1,0 +1,13 @@
+id: media-prototypes
+name: 媒体原型归档仓 · ③收敛合并落点
+category: media
+path: repos/media-prototypes
+status: archived
+manual: true
+note: 2026-10-29 分级索引「③ 收敛合并」的四个归档落点之一（原 private 仓，当日转 public 并补 MIT LICENSE / README）。实测：13 个子项 / 13 条 `archive/<仓>` 分支（一一对应）/ 默认分支 master / HEAD `1d5053e`（2026-10-30 去符盘提交）。**2026-10-30 补登记**：本地有克隆但 registry 无条目，g17 判 `unregistered-repo`；按门禁首选「add an entry」补条目而非声明缺口
+launch:
+  # 归档聚合仓：各子项自带入口，本仓没有单一运行入口；此命令仅列出归档子项
+  command: ls
+publish:
+  repo: siwpan/media-prototypes
+  branch: master

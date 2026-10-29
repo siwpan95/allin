@@ -6,7 +6,7 @@ version: 1.0.0
 path: repos/sin-virtue-game
 status: archived
 manual: true
-note: 趣味性优先的互动叙事游戏原型（前端引擎 + Node/Express 后端 + 12 卡数据，4 张 QTE、7 基础 + 3 覆盖结局）；含 docx 设计文档与生成脚本。**2026-10-28 已退役**（README 横幅）—— 0–100 轴规则由 sin-virtue-cordis-host 的 counter 模型取代，内容已并入该仓，本仓仅留历史（分级表 #123，③收敛合并）。**2026-10-29 工作树已移出 repos 根，归入归档区 `G:\archive\sin-virtue-game-retired-20261029`**（30 文件 / HEAD 4d5d132 / fsck 通过；归档唯一落点）；Gitee 远端已 404，GitHub 侧仍在
+note: 趣味性优先的互动叙事游戏原型（前端引擎 + Node/Express 后端 + 12 卡数据，4 张 QTE、7 基础 + 3 覆盖结局）；含 docx 设计文档与生成脚本。**2026-10-28 已退役**（README 横幅）—— 0–100 轴规则由 sin-virtue-cordis-host 的 counter 模型取代，内容已并入该仓，本仓仅留历史（分级表 #123，③收敛合并）。**2026-10-29 工作树已移出 repos 根，归入**仓外归档区** `archive/sin-virtue-game-retired-20261029`（盘符随机器，本批操作在 @`DESKTOP-8RSV60V` 完成）**（30 文件 / HEAD 4d5d132 / fsck 通过；归档唯一落点）；Gitee 远端已 404，GitHub 侧仍在
 launch:
   command: npm start
 publish:

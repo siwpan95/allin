@@ -5,7 +5,7 @@ version: 1.0.0
 path: repos/calculator
 status: archived
 manual: true
-note: 炼金术式解密终端。**2026-10-29 已收拢**——独立仓的包化新版（`calculator/` 包 + engine/controller/crypto/easter_eggs/snapshot + tests）已覆盖进 `repos/arcade/games/calculator`，本条目不再是独立实体；verify 覆盖面并入 arcade 的 selfcheck（`python selfcheck.py` 现会连带跑 games/calculator 自检，退出 0、单测 77 通过）。原工作树归入归档区 `G:\archive\calculator-retired-20261029`（589K），全引用 bundle 存 `G:\archive\calculator-2026-10-29.bundle`（65K，`git bundle verify` 报 complete history）；Gitee `siwpan/calculator` 与 GitHub `siwpan95/calculator` 远端均已于当日删除（复核 404）
+note: 炼金术式解密终端。**2026-10-29 已收拢**——独立仓的包化新版（`calculator/` 包 + engine/controller/crypto/easter_eggs/snapshot + tests）已覆盖进 `repos/arcade/games/calculator`，本条目不再是独立实体；verify 覆盖面并入 arcade 的 selfcheck（`python selfcheck.py` 现会连带跑 games/calculator 自检，退出 0、单测 77 通过）。原工作树归入**仓外归档区** `archive/calculator-retired-20261029`（盘符随机器，本批操作在 @`DESKTOP-8RSV60V` 完成；589K），全引用 bundle 存 `archive/calculator-2026-10-29.bundle`（65K，`git bundle verify` 报 complete history）；Gitee `siwpan/calculator` 与 GitHub `siwpan95/calculator` 远端均已于当日删除（复核 404）
 launch:
   command: python main.py
 verify:

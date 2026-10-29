@@ -6,7 +6,7 @@ version: 1.0.0
 path: repos/happy-childrens-day
 status: archived
 manual: true
-note: 六一主题的零食大闯关（无尽模式）。**2026-10-29 已收拢**——源码本与 `repos/arcade/games/sixone` 同版（10 个源文件名全对，共享文件行数逐一相等，faatt.py/_verify_maze.py 哈希相同），仓库独有的 selfcheck.py / CHANGELOG.md / README.en.md / LICENSE 已并入 arcade 侧。原工作树归入归档区 `G:\archive\happy-childrens-day-retired-20261029`（300M，大头为未入版本库的 build/dist 产物），全引用 bundle 存 `G:\archive\happy-childrens-day-2026-10-29.bundle`（62K，`git bundle verify` 报 complete history）；Gitee `siwpan/happy-childrens-day` 与 GitHub `siwpan95/happy-childrens-day` 远端均已于当日删除（复核 404）
+note: 六一主题的零食大闯关（无尽模式）。**2026-10-29 已收拢**——源码本与 `repos/arcade/games/sixone` 同版（10 个源文件名全对，共享文件行数逐一相等，faatt.py/_verify_maze.py 哈希相同），仓库独有的 selfcheck.py / CHANGELOG.md / README.en.md / LICENSE 已并入 arcade 侧。原工作树归入**仓外归档区** `archive/happy-childrens-day-retired-20261029`（盘符随机器，本批操作在 @`DESKTOP-8RSV60V` 完成；300M，大头为未入版本库的 build/dist 产物），全引用 bundle 存 `archive/happy-childrens-day-2026-10-29.bundle`（62K，`git bundle verify` 报 complete history）；Gitee `siwpan/happy-childrens-day` 与 GitHub `siwpan95/happy-childrens-day` 远端均已于当日删除（复核 404）
 launch:
   command: python main.py
 publish:
