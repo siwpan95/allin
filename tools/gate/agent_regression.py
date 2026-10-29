@@ -99,7 +99,7 @@ def case_mcp_selftest():
 
 
 def case_carrier_parity():
-    """样例 5 · 双载体一致：preset 治理段与 SKILL.md 说的是同一套事实。"""
+    """样例 5 · 多载体一致：preset 治理段、SKILL.md 与 agent.cordis.yml 说的是同一套事实。"""
     gate = ROOT / "tools" / "gate" / "governance" / "gates" / "g16_skill_preset_parity.py"
     if not gate.is_file():
         return False, f"g16 门禁脚本不存在：{gate}"
@@ -118,7 +118,7 @@ CASES = [
     ("门禁数自述一致", case_gate_count_says_same),
     ("MCP 工具面", case_mcp_tool_surface),
     ("MCP 自检", case_mcp_selftest),
-    ("双载体一致", case_carrier_parity),
+    ("多载体一致", case_carrier_parity),
     ("文档枢纽", case_docs_hub),
 ]
 

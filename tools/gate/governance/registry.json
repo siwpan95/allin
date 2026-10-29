@@ -337,7 +337,7 @@
     },
     {
       "id": "g16-skill-preset-parity",
-      "title": "the two governance carriers say the same thing",
+      "title": "every governance carrier says the same thing",
       "script": "governance/gates/g16_skill_preset_parity.py",
       "tier": "P0",
       "rules": [

@@ -40,32 +40,52 @@
 
       Use installed bundles for new plugin code. Package installation may require explicit user approval for build scripts. Preserve returned failures and pending states; only report success after observing the requested capability.
 
-      <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区根是 `G:\`。**开卷必读**：在回应第一个请求之前，先读这四份（按序）——
-      `/allin/docs/MEMORY.md`（铁律 0/1/2、创新三原则、调试铁律，唯一事实源）、
-      `/allin/docs/协作工作流程约定_2026-08-28.md`（任务分档与五阶段放行口径）、
-      `/allin/docs/会话交接_2026-08-27.md`（逐轮事实流水，读最近几节）、
-      `/allin/docs/新机配置汇总_2026-09-24.md`（本机与原型机差异、路径事实源）。
-      有项目时（`/repos/<仓名>`，107 仓），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
+      <!-- GOVERNANCE:BEGIN -->【工作区治理·铁律】工作区治理仓是 `allin`（2026-09-27 前目录名为 `allin_push`；路径因机而异，**禁止硬编码盘符**）。**开卷必读**：在回应第一个请求之前，先**定位仓根**再按序读这四份——
 
-      三条铁律（细节见 MEMORY.md）：
+      **定位仓根（命中即用，按序）**：
+      1. 环境变量 `ALLIN_ROOT` 已设且其下 `docs/MEMORY.md` 存在 → 用之；
+      2. 在会话工作目录 `{{cwd}}` 跑 `git rev-parse --show-toplevel`，若结果下 `docs/MEMORY.md` 存在 → 用之；
+      3. 否则运行随 preset 附带的 `locate-root.ps1`（它用自身位置 `$PSScriptRoot` 反推仓根，零配置跨机可用），取其打印的仓根；
+      4. 仍失败 → 用 `tool-fs-search` 搜 `allin.patch.yml` 定位 preset 目录，仓根为它的 `../../`。
+
+      四份（位于 `<仓根>/docs/`）：
+      `<仓根>/docs/INDEX.md`（**总目录**：全部文档一张表，先在这里找东西）、
+      `<仓根>/docs/规范/SPEC-001-铁律.md`（铁律 0/1/2，唯一事实源）、
+      `<仓根>/docs/规范/SPEC-002-协作工作流程.md`（任务分档与五阶段放行口径）、
+      `<仓根>/docs/事实源/本机事实.md`（盘位 / 工作区落点 / 运行时，机器类唯一事实源）。
+      需要背景时再读 `<仓根>/docs/记录/交接/` 的**最新月份卷**（逐轮事实流水）。
+      有项目时（项目盘 `/repos/<仓名>`），动手前先读该项目自己的 `README.md`。除非用户明确说跳过，否则不要先答复再补读。
+
+      三条铁律（细节见 `SPEC-001`）：
       0. **开源优先**：默认公开 + MIT；**私有仓即违规**。例外：发布物链接/随包 GPL/AGPL 上游时许可必须随上游。
       1. **README 优先**：动任何项目之前第一步先读它的 README；读不到才允许看结构扫描。README 与实测冲突时两边都核实。
       2. **协作流程**：先问 → 再计划 → 再 review → 后执行 → 复盘；一批 ≤4 问且给推荐项；计划须用户明确放行才动手；
          **推送、建仓、删除、密钥操作、仓库结构变更属高风险动作，不分档，逐项确认后才做**。
 
-      治理准则：**创新 = 借鉴 + 调整 + 同步 + 记账**；推倒重来只用于结构层，资产与历史永远保全。
+      治理准则（`SPEC-003`）：**创新 = 借鉴 + 调整 + 同步 + 记账**；推倒重来只用于结构层，资产与历史永远保全。
       删除/归档前必过**冗余三查**（列功能面 → 逐面找实证接任者 → 无接任者不可删）。
       借鉴任何外部代码/配置/概念前先记录「来源 + 许可证 + 借用范围」。
 
-      本机特有边界（易踩）：
-      - `/allin/docs/` **只放文档**；门禁脚本在 `/tools/gate/`，归档区 `/archive/`。
-      - 盘位：C:(内置NTFS) D:(外置exFAT) **F:(外置NTFS, 大依赖盘) G:(外置NTFS, 项目盘)**；pwsh 7 有 `/powershell/7/pwsh.exe` 与 `/PowerShell/7`（均不在 PATH）。
-      - `.ps1` 必须存成 **UTF-8 带 BOM**，否则 PowerShell 5.1 按 ANSI 解码中文、报一堆假语法错误（"一边绿一边红"是编码问题指纹）。
-      - **exFAT（D:）不支持硬链接与目录联接** → `write` 文件工具在 D: 上报 `EISDIR`；用 pwsh here-string 管道给 `python -c` 写盘并读回校验，或把工作区放 NTFS（外置 F 盘 / G 盘）。
+      本机特有边界（易踩；**判据**见 `SPEC-006`，**现值**见 `docs/事实源/本机事实.md`）：
+      - 文档枢纽 `docs/` 分四类：`规范/` `事实源/` `记录/` `历史(md/)`；**只放文档**，脚本在 `tools/gate/`。
+      - 工作区**跨两块盘**：代码盘（各仓在 `/repos/<仓名>`）＋ 数据盘（参考源码、归档区、临时区在其 `allin/` 下）。
+        **盘位是在位性动态事实** —— 涉及盘的动作前，用**真实文件读写**（而非只看 `Get-Volume`）验证目标卷可用，不要照抄文档。
+      - `.ps1` 必须存成 **UTF-8 带 BOM**，否则 PowerShell 5.1 按 ANSI 解码中文、报一堆假语法错误（"一边绿一边红"是编码指纹）。
+      - 数据盘是 **exFAT** → **不支持硬链接与目录联接**（文件写入工具在该卷会报 `EISDIR`）；仓与工作区放 NTFS 卷。
       - git 在本机报 `dubious ownership`，需 `git config --global --add safe.directory <路径>`。
       - PowerShell 会**枚举函数返回的集合**（HashSet 必须 `return ,$set`）；单引号里 `'\'` 是一个字符。
       - 中文 Windows 控制台默认 GBK：入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；JSON 读写显式 `encoding="utf-8"`。
-      - 工作区事实源：`/allin/docs/新机配置汇总_2026-09-24.md`。**本机与原型机是同一套工作区换硬件**（外置 F 盘 / G 盘两块已在新机上）。
+      治理内核（cordis 化粘合剂）：本工作区以 cordis 声明式 preset 为唯一可执行治理载体（`preset/allin/allin.patch.yml`），将 `docs/规范/`（约束）、`docs/事实源/`（现值）、`tools/gate/`（机械门禁）、`platform/`（编排）有机粘合为单一事实源；门禁树位于 `tools/gate/governance/`（`g00-meta` 元门禁 + `g01-paths`…`g19-docs-refs` 共 19 道），由 `run.ts` 聚合、经 `npm run check:governance`（`package.json` 的 `check:governance` 脚本）入口驱动；判据与 `docs/规范/` 同源，运行时事实见 `docs/事实源/本机事实.md`。任何内容并入或新建，必须先过 `check:governance` 与 `docs_index.py` 两道门禁。
+
+      门禁复跑（结论必须可复现）：改动后必须用**与 CI 同一个解释器**复跑门禁，并把**实际退出码**贴进提交信息——同一提交在不同解释器下结论会不同（便携 Python 无 PyYAML ⇒ `g18-exceptions` 报假红，实测过）；用 `bash scripts/run_all_gates.sh` 跑齐，它会把解释器钉死（优先仓内 `.venv`）并传给门禁套件；禁止只写「应该绿了」。
+
+      提交与记账同批（一次推送）：交接 / 记忆 / `docs/INDEX.md` 的记账**与代码改动进同一笔提交**，提交信息引用待推 sha，一次推送把整批送出去；禁止「先推代码 → 再补记账 → 又推一次」的两段式——每多一次推送就多一次「本地领先 N 笔」的中间态，而本仓 remote 配了**两条 `pushurl`**（Gitee + GitHub 镜像），`ls-remote` 双核也要多做一遍。推送结果随**下一批**改动一并记账，不为「记推送结果」单独开一次推送。
+
+      行动范式（ReAct，Reasoning + Acting）：每一步都走「推理 → 行动 → 观察」循环——先想清楚目标、已知与缺口（Thought），再做一步可验证的动作（Action），读完真实结果（Observation）再决定下一步；不做无观察的连环行动；收口前用门禁/测试的真实输出自检，禁止「看起来能跑」。**步数刹车**：连续 5 步动作仍拿不到观察结论即停下自检；单任务动作预算 25 步，超限即停下向用户汇报而不是继续猜；推送、建仓、删除、密钥操作、仓库结构变更属高风险动作，不分档、逐项确认后才做。改动配置、提示词或工具面之前与之后，各跑一次 `tools/gate/agent_regression.py` 的行为回归样例集，两次都绿才算没有行为漂移。
+
+      长期记忆（自学习回路）：记忆月账在 `docs/记录/记忆/`（按月分卷，条目只增不改）。会话开始与动手前，若挂载了 allin MCP server，用 `mcp__allin-governance__memory.read` 召回相关经验，没有 server 就直接读当月卷；门禁红、修复完成、踩坑、或用户要求记住时，用 `mcp__allin-governance__memory.append`（写操作，需 confirm=true）记账一条到当月卷；两样都不可用时写进会话交接卷。当月卷未建或未登记时不要自行建文件，先走文档流程登记。
+
+      记忆分层与取代：条目分 `临时`（默认，可被晋升）与 `永久`（已固化为 skill 或长期事实）两层；旧条目一律不删，纠错时另起新条目带 supersedes 注明被取代的日期，召回时**默认隐藏被取代者**（只增不改 ⇒ 用覆盖代替删除）。晋升通道：同一 tag 的有效条目累计 ≥3 条即进入 `mcp__allin-governance__memory.promotable` 候选，须走文档流程固化为专项 skill（建 skill → 同步双载体 → 过门禁），并在记忆卷追加一条「已晋升」条目。
       <!-- GOVERNANCE:END -->
 - id: agent-instructions
   name: '@deepseek-ai/dsh-agent-instructions'

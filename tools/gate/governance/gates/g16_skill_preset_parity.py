@@ -1,23 +1,30 @@
-"""Gate g16 -- the two governance carriers say the same thing.
+"""Gate g16 -- every governance carrier says the same thing.
 
-The governance facts reach an agent in two shapes that have to agree:
+The governance facts reach an agent in three shapes that have to agree:
 
 * ``.workbuddy/skills/allin-governance-agent/SKILL.md`` -- the WorkBuddy skill,
   loaded by an agent that runs inside this workspace;
 * the ``GOVERNANCE:BEGIN/END`` segment of ``preset/allin/allin.patch.yml`` --
-  the same facts injected into a DeepSeek Harness agent-preset.
+  the same facts injected into a DeepSeek Harness agent-preset;
+* the ``GOVERNANCE:BEGIN/END`` segment of ``preset/allin/agent.cordis.yml`` --
+  the archived directory-form preset kept for historical comparison. Nothing
+  loads it, which is exactly why it sat on a 2026-09 snapshot (hard-coded drive
+  root, retired document paths, "107 repos") and stayed invisible: no gate read
+  it. Judging it as a carrier costs nothing and stops the archive from teaching
+  a stale rule to whoever opens it next (added 2026-10-29).
 
 They drift because they are edited in different places, and the drift is
 invisible until an agent follows a command that no longer exists. This gate
-turns "keep the two in sync" from a rule written in prose into an exit code:
+turns "keep the carriers in sync" from a rule written in prose into an exit
+code:
 
-* both carriers exist and carry a non-empty governance surface;
-* the preset's governance segment is a well-formed marked pair;
+* every carrier exists and carries a non-empty governance surface;
+* each preset carrier's governance segment is a well-formed marked pair;
 * every **declared core fact** (the canonical command and the canonical hub
-  paths) appears on *both* sides -- one side alone is drift;
-* every gate id either carrier names exists in ``governance/registry.json``, so
-  neither side can advertise a check that is not shipped;
-* **neither carrier carries a machine drive path.** This is the gap that let a
+  paths) appears on *every* side -- one side alone is drift;
+* every gate id any carrier names exists in ``governance/registry.json``, so no
+  side can advertise a check that is not shipped;
+* **no carrier carries a machine drive path.** This is the gap that let a
   stale ``G:\\...`` interpreter live inside SKILL.md: ``g01-paths`` treats
   ``.md`` as report-only, so a drive letter in a Markdown carrier was reported
   but never blocked. URLs are stripped before the scan, so ``https://host`` is
@@ -44,19 +51,33 @@ import govlib  # noqa: E402  (path is fixed up immediately above)
 from govlib import EXIT_BLOCKING, EXIT_OK, EXIT_ENV, Report  # noqa: E402
 
 GATE = "g16-skill-preset-parity"
-TITLE = "governance: the skill and the DSH preset carry the same facts"
+TITLE = "governance: every governance carrier says the same facts"
 
-#: The WorkBuddy-side carrier and the DSH-side carrier.
-SKILL_REL = ".workbuddy/skills/allin-governance-agent/SKILL.md"
-PRESET_REL = "preset/allin/allin.patch.yml"
+#: Carriers that must agree, and how each one's governance surface is delimited.
+#: ``whole`` = the file is the governance surface; ``segment`` = only the marked
+#: ``GOVERNANCE:BEGIN/END`` body counts.
+CARRIERS: list[tuple[str, str, str]] = [
+    ("skill", ".workbuddy/skills/allin-governance-agent/SKILL.md", "whole"),
+    ("preset", "preset/allin/allin.patch.yml", "segment"),
+    ("agent", "preset/allin/agent.cordis.yml", "segment"),
+]
 
 GOV_BEGIN = "GOVERNANCE:BEGIN"
 GOV_END = "GOVERNANCE:END"
 
-#: Facts that must be provably present on *both* sides. Deliberately small and
+#: The real marker lines. Prose comments above a preset legitimately name the
+#: markers ("GOVERNANCE:BEGIN/END 段"), so the segment must be anchored on these
+#: comment lines, never on the first mention of the words: a substring search
+#: used to hand back the comment block above the segment, and the preset side
+#: then passed its fact check on a comment instead of the governance text
+#: (found 2026-10-29 by the third carrier, which has no such comments).
+MARKER_BEGIN_LINE = "<!-- " + GOV_BEGIN + " -->"
+MARKER_END_LINE = "<!-- " + GOV_END + " -->"
+
+#: Facts that must be provably present on *every* carrier. Deliberately small and
 #: canonical: a fact only one carrier happens to mention is normal, a fact the
-#: two carriers disagree about is drift.
-MUST_APPEAR_IN_BOTH: list[tuple[str, str]] = [
+#: carriers disagree about is drift.
+REQUIRED_FACTS: list[tuple[str, str]] = [
     ("command", "npm run check:governance"),
     ("path", "docs/INDEX.md"),
     ("path", "preset/allin/allin.patch.yml"),
@@ -81,15 +102,20 @@ def carrier_text(path: Path) -> str | None:
 
 
 def governance_segment(text: str) -> str | None:
-    """The GOVERNANCE:BEGIN/END body, or None when the pair is not well-formed."""
-    start = text.find(GOV_BEGIN)
-    if start < 0:
+    """The GOVERNANCE:BEGIN/END body, or None when the pair is not well-formed.
+
+    Anchored on the marker **lines**, so a prose comment above the segment cannot
+    become its start (see MARKER_BEGIN_LINE for the accident this prevents).
+    """
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if line.strip().startswith(MARKER_BEGIN_LINE)), None)
+    if start is None:
         return None
-    body_at = start + len(GOV_BEGIN)
-    end = text.find(GOV_END, body_at)
-    if end < 0:
+    stop = next((i for i, line in enumerate(lines[start + 1 :], start + 1)
+                 if line.strip().startswith(MARKER_END_LINE)), None)
+    if stop is None:
         return None
-    return text[body_at:end]
+    return "\n".join(lines[start : stop + 1])
 
 
 def load_registry_ids(root: str) -> set[str]:
@@ -120,19 +146,20 @@ def scan_drive_paths(report: Report, rel: str, text: str) -> None:
 
 def run(root: str, args: argparse.Namespace) -> Report:
     report = Report(title=TITLE)
-    sides: dict[str, str | None] = {"skill": None, "preset": None}
-    rels = {"skill": SKILL_REL, "preset": PRESET_REL}
+    sides: dict[str, str | None] = {}
 
-    for name, rel in rels.items():
+    for name, rel, mode in CARRIERS:
+        sides[name] = None
         path = Path(root) / rel
         if not path.is_file():
-            report.block("carrier-missing", rel, 0, f"{name} carrier is missing; the governance facts have no {name} home")
+            report.block("carrier-missing", rel, 0,
+                         f"{name} carrier is missing; the governance facts have no {name} home")
             continue
         text = carrier_text(path)
         if text is None:
             report.block("carrier-unreadable", rel, 0, f"{name} carrier is not readable UTF-8 text")
             continue
-        if name == "preset":
+        if mode == "segment":
             segment = governance_segment(text)
             if segment is None:
                 report.block("carrier-structure", rel, 0,
@@ -146,28 +173,29 @@ def run(root: str, args: argparse.Namespace) -> Report:
         report.scanned += 1
         scan_drive_paths(report, rel, text)
 
-    if sides["skill"] is None or sides["preset"] is None:
+    usable = [name for name, _rel, _mode in CARRIERS if sides[name] is not None]
+    if len(usable) != len(CARRIERS):
         report.skip("parity comparison (a carrier is unusable)")
         return report
 
-    for kind, value in MUST_APPEAR_IN_BOTH:
-        for name in ("skill", "preset"):
+    for kind, value in REQUIRED_FACTS:
+        for name, rel, _mode in CARRIERS:
             if value in (sides[name] or ""):
                 report.exempt(f"parity-{kind}")
             else:
-                report.block("parity-drift", rels[name], 0,
-                             f"{kind} '{value}' is missing from the {name} side while the other side carries it")
+                report.block("parity-drift", rel, 0,
+                             f"{kind} '{value}' is missing from the {name} carrier")
 
     known = load_registry_ids(root)
     if not known:
         report.skip("gate-id cross-check (registry.json unreadable)")
     else:
-        for name in ("skill", "preset"):
+        for name, rel, _mode in CARRIERS:
             for identifier in sorted(set(GATE_ID.findall(sides[name] or ""))):
                 if identifier in known:
                     report.exempt("gate-id-known")
                 else:
-                    report.block("stale-gate-id", rels[name], 0,
+                    report.block("stale-gate-id", rel, 0,
                                  f"names gate id '{identifier}', which governance/registry.json does not ship")
     return report
 
@@ -188,7 +216,7 @@ FIXTURE_REGISTRY = {
 
 
 def build_fixture(kind: str, base: str) -> str:
-    """Write a two-carrier fixture; ``kind`` selects the injected defect."""
+    """Write a three-carrier fixture; ``kind`` selects the injected defect."""
     skill_body = "\n".join([
         "# skill",
         "run `npm run check:governance`",
@@ -198,14 +226,15 @@ def build_fixture(kind: str, base: str) -> str:
         "gates: g00-meta",
     ])
     preset_body = "\n".join([
-        GOV_BEGIN,
+        MARKER_BEGIN_LINE,
         "run `npm run check:governance`",
         "index: docs/INDEX.md",
         "carrier: preset/allin/allin.patch.yml",
         "records: docs/记录/",
         "gates: g00-meta",
-        GOV_END,
+        MARKER_END_LINE,
     ])
+    agent_body = preset_body
     if kind == "fact-dropped":
         skill_body = "\n".join(ln for ln in skill_body.splitlines() if "docs/INDEX.md" not in ln)
     if kind == "machine-path":
@@ -214,15 +243,21 @@ def build_fixture(kind: str, base: str) -> str:
     if kind == "stale-gate-id":
         skill_body += "\ngates: g99-does-not-exist\n"
     if kind == "preset-unmarked":
-        preset_body = preset_body.replace(GOV_BEGIN, "").replace(GOV_END, "")
+        preset_body = preset_body.replace(MARKER_BEGIN_LINE, "").replace(MARKER_END_LINE, "")
+        agent_body = preset_body
+    if kind == "agent-drift":
+        agent_body = "\n".join(ln for ln in agent_body.splitlines() if "docs/记录/" not in ln)
+    if kind == "agent-machine-path":
+        agent_body = agent_body.replace(
+            MARKER_END_LINE, "root: " + ("D" + ":/projects/allin") + "\n" + MARKER_END_LINE)
 
-    skill_path = Path(base) / SKILL_REL
-    skill_path.parent.mkdir(parents=True, exist_ok=True)
-    if kind != "skill-missing":
-        skill_path.write_text(skill_body + "\n", encoding="utf-8", newline="\n")
-    preset_path = Path(base) / PRESET_REL
-    preset_path.parent.mkdir(parents=True, exist_ok=True)
-    preset_path.write_text(preset_body + "\n", encoding="utf-8", newline="\n")
+    bodies = {"skill": skill_body, "preset": preset_body, "agent": agent_body}
+    for name, rel, _mode in CARRIERS:
+        if kind == f"{name}-missing":
+            continue
+        path = Path(base) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(bodies[name] + "\n", encoding="utf-8", newline="\n")
 
     registry_path = Path(base) / "tools" / "gate" / "governance" / "registry.json"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
@@ -231,12 +266,15 @@ def build_fixture(kind: str, base: str) -> str:
 
 
 SELFCHECK_CASES = [
-    ("clean", "both carriers agree", True),
-    ("fact-dropped", "a core fact vanished from one side", False),
+    ("clean", "all carriers agree", True),
+    ("fact-dropped", "a core fact vanished from one carrier", False),
     ("machine-path", "a drive path entered the skill", False),
     ("stale-gate-id", "the skill names a gate that is not shipped", False),
     ("preset-unmarked", "the preset lost its governance markers", False),
     ("skill-missing", "the skill carrier is gone", False),
+    ("agent-missing", "the archived agent carrier is gone", False),
+    ("agent-drift", "the archived agent carrier lost a core fact", False),
+    ("agent-machine-path", "a drive path entered the archived agent carrier", False),
 ]
 
 

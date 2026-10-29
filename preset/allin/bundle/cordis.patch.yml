@@ -70,7 +70,7 @@
                 - git 在本机报 `dubious ownership`，需 `git config --global --add safe.directory <路径>`。
                 - PowerShell 会**枚举函数返回的集合**（HashSet 必须 `return ,$set`）；单引号里 `'\'` 是一个字符。
                 - 中文 Windows 控制台默认 GBK：入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；JSON 读写显式 `encoding="utf-8"`。
-                治理内核（cordis 化粘合剂）：本工作区以 cordis 声明式 preset 为唯一可执行治理载体（`preset/allin/allin.patch.yml`），将 `docs/规范/`（约束）、`docs/事实源/`（现值）、`tools/gate/`（机械门禁）、`platform/`（编排）有机粘合为单一事实源；门禁树位于 `tools/gate/governance/`（`g00-meta` 元门禁 + `g01-paths`…`g19-docs-refs` 共 19 道），由 `run.ts` 聚合、经 `package.json` 的 `check:governance` 入口驱动；判据与 `docs/规范/` 同源，运行时事实见 `docs/事实源/本机事实.md`。任何内容并入或新建，必须先过 `check:governance` 与 `docs_index.py` 两道门禁。
+                治理内核（cordis 化粘合剂）：本工作区以 cordis 声明式 preset 为唯一可执行治理载体（`preset/allin/allin.patch.yml`），将 `docs/规范/`（约束）、`docs/事实源/`（现值）、`tools/gate/`（机械门禁）、`platform/`（编排）有机粘合为单一事实源；门禁树位于 `tools/gate/governance/`（`g00-meta` 元门禁 + `g01-paths`…`g19-docs-refs` 共 19 道），由 `run.ts` 聚合、经 `npm run check:governance`（`package.json` 的 `check:governance` 脚本）入口驱动；判据与 `docs/规范/` 同源，运行时事实见 `docs/事实源/本机事实.md`。任何内容并入或新建，必须先过 `check:governance` 与 `docs_index.py` 两道门禁。
 
                 门禁复跑（结论必须可复现）：改动后必须用**与 CI 同一个解释器**复跑门禁，并把**实际退出码**贴进提交信息——同一提交在不同解释器下结论会不同（便携 Python 无 PyYAML ⇒ `g18-exceptions` 报假红，实测过）；用 `bash scripts/run_all_gates.sh` 跑齐，它会把解释器钉死（优先仓内 `.venv`）并传给门禁套件；禁止只写「应该绿了」。
 
