@@ -201,8 +201,12 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
    **用与 CI 同一个解释器复跑** —— `bash scripts/run_all_gates.sh` 会把解释器钉死（优先仓内 `.venv`）并传给门禁套件，
    换台机器结论可能不同（便携 Python 无 PyYAML ⇒ `g18-exceptions` 假红，实测过）；
    **把实际退出码贴进提交信息**，不写「应该绿了」——提交信息里的「全绿」不是证据，退出码才是。
-5. **收口后记账**：本次任务若踩了新坑或得出可复用经验，按 §2.1 写一条进记忆月卷
+5. **收口后记账 —— 与改动同一笔提交**：本次任务若踩了新坑或得出可复用经验，按 §2.1 写一条进记忆月卷
    （DSH 侧 `mcp__allin-governance__memory.append`，WorkBuddy 侧直接编辑当月卷）。
+   **记账（交接 / 记忆 / `docs/INDEX.md`）与代码改动进同一笔提交**，一次推送把整批送出去；
+   禁止「先推代码 → 再补记账 → 又推一次」的两段式 —— 每多一次推送就多一次「本地领先 N 笔」的中间态，
+   而本仓 remote 配了**两条 `pushurl`**（Gitee + GitHub 镜像），`ls-remote` 双核也要多做一遍。
+   推送结果随**下一批**改动一并记账，不为「记推送结果」单独开一次推送。
 
 ### 5.2 推送 / 发版（高风险，逐项确认）
 - 先 `git status --short` 确认范围；`git diff --stat` 看改动面。
