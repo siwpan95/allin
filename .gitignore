@@ -68,3 +68,12 @@ bin-release/
 tools/reposcan/repos_meta.json
 tools/reposcan/tech_meta.json
 tools/reposcan/output/
+
+# WorkBuddy 工作区运行记忆（2026-10-30 实测，@`SIWPAN`）
+# ⚠ 只忽略 `memory/`，**绝不能写成 `.workbuddy/`** —— `.workbuddy/skills/` 是**在库治理载体**：
+#   g16-skill-preset-parity 强制三载体一致，直接引用 `.workbuddy/skills/allin-governance-agent/SKILL.md`，
+#   实测 23 个 skills 文件 23 个全在库（`git ls-files .workbuddy` = 23/23）。
+#   整目录忽略会让**新写的 skill 被静默吞掉**（已入库文件虽不受影响，但语义错、且 g16 会失守）。
+#   对照：`moba_battle_platform` / `worldbuilder` 可以整目录忽略，它们的 `.workbuddy/` 里没有入库物。
+#   memory/ 则是 WorkBuddy 每次会话的运行记忆（本机私有，无治理意义），按产物处理。
+.workbuddy/memory/
