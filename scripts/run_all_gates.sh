@@ -122,7 +122,7 @@ run "$PY" tools/gate/agent_regression.py
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
 run "$PY" preset/allin/refresh-gov-block.py --check
-run "$PY" tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error
+run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"

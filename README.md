@@ -100,12 +100,12 @@ python tools/repocheck/main.py . --fail-on error   # 进 CI：有 error 级问�
 
 ### 本仓自检口径（治理别人先治理自己）
 
-本仓是 monorepo：`tools/` `docs/` 等是**仓库自身的中间目录**，不是独立项目，
+本仓是 monorepo：`tools/` `docs/` `preset/` 等是**仓库自身的中间目录**，不是独立项目，
 直接 `main.py .` 会把它们误当项目扫描。**自检只打真实子件**，两条命令：
 
 ```bash
-# A) 平台子件（排除中间目录 tools/）
-python tools/repocheck/main.py .     --exclude tools --skip-rules 1,7 --fail-on error
+# A) 平台子件（排除中间目录 tools/ vendor/ preset/）
+python tools/repocheck/main.py .     --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
 # B) 体检器自身（排除中间目录 gate/）
 python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
 ```
