@@ -8,7 +8,7 @@ note: 3dworld 引擎重构版；`main.py auto` 自动驾驶演示、`seed1234` �
 launch:
   command: python main.py
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/backroom
   branch: master
 verify:

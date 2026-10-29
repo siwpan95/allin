@@ -1,6 +1,7 @@
 # ensure-mirror.ps1 - make sure the local npm mirror proxy is up.
 #
-# The proxy (C:\Users\13122\.dsh\npm_local_mirror.py) is a loopback-only
+# The proxy ($env:USERPROFILE/.dsh/npm_local_mirror.py — 盘符与用户名随机器，
+# 不写死绝对路径) is a loopback-only
 # caching registry proxy on 127.0.0.1:8899; npm installs on this network
 # must go through it. This script probes the port, starts the proxy if it
 # is not listening, then waits (max 30s) until it really accepts

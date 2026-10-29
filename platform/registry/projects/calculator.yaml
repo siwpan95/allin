@@ -13,7 +13,7 @@ verify:
   # 2026-10-29：path 已随收拢消失，本命令现由 repos/arcade/selfcheck.py 代跑
   command: python selfcheck.py
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   # 2026-10-29：远端已删（gitee/github 双端 404），此字段仅留作历史记录
   repo: siwpan/calculator
   branch: master

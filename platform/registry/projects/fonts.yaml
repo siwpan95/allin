@@ -9,8 +9,8 @@ launch:
   command: run.bat
 publish:
   # 2026-10-26 技术债清偿：原 path 为 `assets/fonts`，而 resolvePath 只把 `repos/*` 解析到
-  # G:\repos，其余相对路径一律落到 G:\allin\ ⇒ 解析成 G:\allin\assets\fonts（根错配，恒不存在）。
-  # 真实位置是盘根 G:\assets\fonts（同一「非 repos/ 相对路径按盘根理解」的误解）。
-  # 处置：合并同类项迁入 G:\repos\fonts，建仓发布到 siwpan/fonts，path 改为 repos/fonts。
+  # repos/（仓库区，盘符随机器），其余相对路径一律落到仓根（allin/，盘符随机器）⇒ 解析成 allin/assets/fonts（根错配，恒不存在）。
+  # 真实位置是盘根 assets/fonts（同一「非 repos/ 相对路径按盘根理解」的误解）。
+  # 处置：合并同类项迁入 repos/fonts，建仓发布到 siwpan/fonts，path 改为 repos/fonts。
   repo: siwpan/fonts
   branch: master

@@ -10,6 +10,6 @@ note: 趣味性优先的互动叙事游戏原型（前端引擎 + Node/Express �
 launch:
   command: npm start
 publish:
-  # 2026-10-26 建仓归位：原在 G:\local\12test\sin_virtue_game（实验区），随该批归位入 G:\repos
+  # 2026-10-26 建仓归位：原在 local/12test\sin_virtue_game（实验区），随该批归位入 repos/（仓库区，盘符随机器）
   repo: siwpan/sin-virtue-game
   branch: master

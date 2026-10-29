@@ -8,7 +8,7 @@ note: 字典场景引擎的 Python 原生实现（发行名 dse-core / 导入名
 launch:
   command: dse
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/cordis-py
   branch: p1-core-engine
 verify:

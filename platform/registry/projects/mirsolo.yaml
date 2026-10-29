@@ -9,6 +9,6 @@ note: 三职业 / 地牢打宝 / 攻城复刻，但对手全是 AI；零外部�
 launch:
   command: python -m mirsolo.cli.smoke --ticks 20000
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/mirsolo
   branch: master

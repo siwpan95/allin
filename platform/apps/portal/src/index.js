@@ -30,7 +30,7 @@ const PUBLIC = path.join(__dirname, '..', 'public')
 const PLATFORM = path.join(__dirname, '..', '..', '..')
 const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(PLATFORM, 'registry', 'projects')
 // allin_engine 引擎视图：外部项目目录不进仓（聚合不融合）——env 未配置时引擎页报「未配置」
-// 而不是指向某台机器的硬编码路径（2026-09-24 强化：G:\repos 解绑）。
+// 而不是指向某台机器的硬编码路径（2026-09-24 强化：仓库区 repos/ 解绑，盘符随机器）。
 const ENGINE_CWD = process.env.PLATFORM_ALLIN_ENGINE_CWD || null
 const port = process.env.PORT !== undefined ? Number(process.env.PORT) : 9000
 

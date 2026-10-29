@@ -1,5 +1,5 @@
 // port.mjs — JSON-lines stdio 子进程端口（harness 层适配器）。
-// 对齐 E:\lab chess-cordis/src/ports/subprocess.mjs：行分隔 JSON、按 id 关联响应、
+// 对齐 lab/chess-cordis/src/ports/subprocess.mjs（lab 仓盘符随机器，按仓名定位）：行分隔 JSON、按 id 关联响应、
 // ready 握手、逐请求超时、stderr 抽干防死锁、dispose 时 kill 子进程（可逆效应）。
 import { spawn } from 'node:child_process'
 import { register, addEffect } from './registry.mjs'

@@ -9,7 +9,7 @@ note: Progress Quest v2 风格挂机桌游
 launch:
   command: python main.pyw
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/table-hanging-machine
   branch: master
 verify:

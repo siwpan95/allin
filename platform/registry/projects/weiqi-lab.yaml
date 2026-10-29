@@ -10,7 +10,7 @@ launch:
   command: node harness/host.mjs
 publish:
   # 2026-10-26 补登：该仓早已是 siwpan/weiqi_lab 上的公开仓，此前未入 registry；
-  # 另注：2026-10-26 之前本仓在 G:\repos 与 G:\local 双份并存（仅差 gitignore 的构建产物与
-  # .cache 人类棋谱归档，且 local 侧被 CRLF 化），已按「合并同类项」收敛为 G:\repos 单份。
+  # 另注：2026-10-26 之前本仓在 repos/（仓库区，盘符随机器） 与 local/（本地发布区，盘符随机器） 双份并存（仅差 gitignore 的构建产物与
+  # .cache 人类棋谱归档，且 local 侧被 CRLF 化），已按「合并同类项」收敛为 repos/（仓库区，盘符随机器） 单份。
   repo: siwpan/weiqi_lab
   branch: master

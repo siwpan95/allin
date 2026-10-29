@@ -1,5 +1,5 @@
 // registry.mjs — 跨组件唯一组合点（模块单例）。
-// 对齐 E:\lab chess-cordis/src/registry.mjs：组件注册表 + 众数共识/分歧分析。
+// 对齐 lab/chess-cordis/src/registry.mjs（lab 仓盘符随机器，按仓名定位）：组件注册表 + 众数共识/分歧分析。
 // 时间维回收：effects 栈 disposeAll 逆序执行（等价 Cordis Fiber effect 栈逆序串行回收）。
 const engines = new Map()
 const effects = []

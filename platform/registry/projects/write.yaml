@@ -12,7 +12,7 @@ verify:
   # 验证脚本无从谈起，按「非可运行项目」入册，而不是硬凑一个假自检。
   skip: 内容仓：纯文本创作工作区，无可运行入口
 publish:
-  # 2026-10-26 建仓并纳入治理：原非 git 仓（README 曾写"G:\local 为未发布区"），
-  # 已建仓发布并迁至 G:\repos
+  # 2026-10-26 建仓并纳入治理：原非 git 仓（README 曾写"local/（本地发布区，盘符随机器） 为未发布区"），
+  # 已建仓发布并迁至 repos/（仓库区，盘符随机器）
   repo: siwpan/write
   branch: master

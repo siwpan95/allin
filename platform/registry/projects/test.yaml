@@ -8,6 +8,6 @@ note: 荣格八功能 × 45 种经典人物原型的每日人格测试网页（�
 launch:
   command: test.html
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/test
   branch: master

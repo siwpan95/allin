@@ -8,6 +8,6 @@ note: 三维世界引擎（pyglet）；mcclone3d / mirsolo / backroom 等的上�
 launch:
   command: python scripts\check_imports.py
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/3dworld
   branch: master

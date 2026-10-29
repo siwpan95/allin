@@ -8,7 +8,7 @@ note: 文字冒险；入口在 game/ 子目录（2026-10-26 实测订正），`g
 launch:
   command: python game/play.py
 publish:
-  # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/ashen-beacon
   branch: master
 verify:

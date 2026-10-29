@@ -1,5 +1,6 @@
 // harness.mjs — 编排 harness 入口：黄金值用例 + 共识/分歧 + 退出码绑定。
-// 对齐 E:\lab chess-cordis/src/harness.mjs（GOLDEN_POSITIONS / analyzeDivergence / formatReport）。
+// 对齐 lab/chess-cordis/src/harness.mjs（GOLDEN_POSITIONS / analyzeDivergence / formatReport）；
+// lab 仓落点盘符随机器，按仓名定位而非盘符。
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

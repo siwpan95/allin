@@ -7,7 +7,7 @@ manual: true
 launch:
   command: python main.py
 publish:
-  # 2026-10-26 建仓并纳入治理：原发布区 G:\local\write 一类的本地区项目，
-  # 迁至 G:\repos 后统一在 allin registry 登记（去符盘纪律：只写 repos/<仓名>）
+  # 2026-10-26 建仓并纳入治理：原发布区 local/write 一类的本地区项目，
+  # 迁至 repos/（仓库区，盘符随机器） 后统一在 allin registry 登记（去符盘纪律：只写 repos/<仓名>）
   repo: siwpan/markdown
   branch: master

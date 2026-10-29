@@ -8,7 +8,7 @@ import { resolvePath } from './registry.js'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 // 平台根（data/ 等运行时状态落点）：env PLATFORM_ROOT 优先；缺失时回退仓库根
-// （2026-09-24 强化：G:\platform 绝对路径解绑——仓库克隆到任意目录即可跑，
+// （2026-09-24 强化：platform/ 绝对路径解绑（盘符随机器）——仓库克隆到任意目录即可跑，
 //  运行时状态落在仓内 data/，已在 .gitignore）。
 export const PLATFORM_ROOT = process.env.PLATFORM_ROOT || path.join(HERE, '..', '..', '..')
 export const DATA_DIR = path.join(PLATFORM_ROOT, 'data')
