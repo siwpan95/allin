@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-26），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-29），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 135 个仓库**（公开 135 · 私有 0）。
+**共 133 个仓库**（公开 133 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | [siwpan/3dworld](https://gitee.com/siwpan/3dworld.git) | — | 0 | 公开 | pyglet 三维世界与动画演出：48s 五幕编排 + kkrieger 96s 四幕 + 9 个单文件 demos，MIT |
 | [siwpan/3dworld-demos](https://gitee.com/siwpan/3dworld-demos.git) | — | 0 | 公开 | 3dworld 三维引擎的演示程序集（39 个演示 + 成片录制/exe 打包/批量验收工具；引擎本体在 siwpan/3dworld） |
-| [siwpan/3dworld-globe](https://gitee.com/siwpan/3dworld-globe.git) | — | 0 | 公开 | 交互地球仪：真实海岸线(Natural Earth) + 程序化地形/云层/大气/星空，跑在 pip 安装的 3dworld 引擎 DemoApp 上 |
+| [siwpan/3dworld-globe](https://gitee.com/siwpan/3dworld-globe.git) | — | 0 | 公开 | 交互地球仪：真实海岸线 + 177 国国界(Natural Earth)，真实 UTC 昼夜/城市夜灯，程序化地形/云层/大气；最新 v0.2.1 |
 | [siwpan/adventurelog](https://gitee.com/siwpan/adventurelog.git) | Python | 0 | 公开 | 探险日志 |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
@@ -27,9 +27,8 @@
 | [siwpan/backroom](https://gitee.com/siwpan/backroom.git) | Python | 0 | 公开 | 后室 |
 | [siwpan/bee](https://gitee.com/siwpan/bee.git) | — | 0 | 公开 | bee |
 | [siwpan/bilibili-helper-py](https://gitee.com/siwpan/bilibili-helper-py.git) | — | 0 | 公开 | B 站视频下载桌面版（Playwright 复用浏览器登录态）：合集批量、代理与日志系统 |
-| [siwpan/bloodmusic](https://gitee.com/siwpan/bloodmusic.git) | — | 0 | 公开 | 程序化音频合成引擎（BloodMusic v2）：BGM / SFX 实时生成，6 引擎 12 风格预设，零外部采样 |
+| [siwpan/bloodmusic](https://gitee.com/siwpan/bloodmusic.git) | — | 1 | 公开 | 程序化音频合成引擎（BloodMusic v2）：BGM / SFX 实时生成，6 引擎 12 风格预设，零外部采样 |
 | [siwpan/board-replay](https://gitee.com/siwpan/board-replay.git) | — | 0 | 公开 | Cordis 内核的围棋（SGF）复盘器：棋盘可视化 / 逐步复盘 / PNG 出图。复用 cordis-table-app/pomodmer 骨架。 |
-| [siwpan/calculator](https://gitee.com/siwpan/calculator.git) | Python | 0 | 公开 |  |
 | [siwpan/captcha-demo](https://gitee.com/siwpan/captcha-demo.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
 | [siwpan/cellular_automaton](https://gitee.com/siwpan/cellular_automaton.git) | — | 0 | 公开 | 细胞自动机壁纸（自 media-collection 拆分） |
 | [siwpan/cordis-py](https://gitee.com/siwpan/cordis-py.git) | — | 0 | 公开 | 字典场景引擎 Python 移植版（场景即字典，能力即插件） |
@@ -54,7 +53,6 @@
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
 | [siwpan/god-hand-](https://gitee.com/siwpan/god-hand-.git) | Python | 0 | 公开 | 十二试炼 |
 | [siwpan/haha](https://gitee.com/siwpan/haha.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
-| [siwpan/happy-childrens-day](https://gitee.com/siwpan/happy-childrens-day.git) | Python | 0 | 公开 | 六一礼物 |
 | [siwpan/hell-below](https://gitee.com/siwpan/hell-below.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
 | [siwpan/hushi_twrj](https://gitee.com/siwpan/hushi_twrj.git) | — | 0 | 公开 | 胡适留学日记全集抓取/OCR/校验归档（纯标准库，零第三方依赖）｜/repos/hushi_twrj |
 | [siwpan/Idle](https://gitee.com/siwpan/Idle.git) | — | 0 | 公开 | ??????(/local ???? 2,2026-08-27) |
@@ -124,7 +122,6 @@
 | [siwpan/shikonghuaban](https://gitee.com/siwpan/shikonghuaban.git) | — | 0 | 公开 | 时空画板（自 media-collection 拆分） |
 | [siwpan/sign-in-simulator](https://gitee.com/siwpan/sign-in-simulator.git) | Python | 0 | 公开 | 签到一下吧 |
 | [siwpan/sin-virtue-cordis-host](https://gitee.com/siwpan/sin-virtue-cordis-host.git) | — | 0 | 公开 | 七宗罪 VS 七美德 · Cordis「一切皆插件」宿主验证原型｜/repos/sin-virtue-cordis-host |
-| [siwpan/sin-virtue-game](https://gitee.com/siwpan/sin-virtue-game.git) | — | 0 | 公开 | 七宗罪 VS 七美德 · 互动叙事测试原型（前端引擎 + Node 后端 + 12 卡数据 + docx 设计文档）｜/repos/sin-virtue-game |
 | [siwpan/smile](https://gitee.com/siwpan/smile.git) | — | 0 | 公开 | smile 签到+表情包（自 sign-in-simulator#2.0 拆分） |
 | [siwpan/stay](https://gitee.com/siwpan/stay.git) | — | 0 | 公开 | Progress Quest 2 正统续作｜/repos/stay |
 | [siwpan/subtitle](https://gitee.com/siwpan/subtitle.git) | — | 0 | 公开 | 桌面字幕处理工具（Tkinter + ffmpeg）：提取、编辑、烧录，面向中文用户 |
@@ -143,6 +140,7 @@
 | [siwpan/weor](https://gitee.com/siwpan/weor.git) | — | 0 | 公开 | weor（自 ai-collection 拆分） |
 | [siwpan/worldbuilder](https://gitee.com/siwpan/worldbuilder.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
 | [siwpan/write](https://gitee.com/siwpan/write.git) | — | 0 | 公开 | 网文创作与素材工作区（多部连载网文正文/设定/素材）｜/repos/write |
+| [siwpan/write-agent](https://gitee.com/siwpan/write-agent.git) | — | 0 | 公开 | 智能小说创作 Agent：大纲/章节生成、多轮润色、续写改写风格切换、剧情走向调整、基于工作区素材的知识库问答（逐条标注依据）。Python FastAPI + 原生前端，OpenAI 兼容接口，MIT 开源。 |
 | [siwpan/yasuo](https://gitee.com/siwpan/yasuo.git) | — | 0 | 公开 | 文件加密与压缩工具：AES-256-GCM / CBC + zlib / lzma / bz2，GUI 与 CLI 双入口 |
 | [siwpan/yuanbao](https://gitee.com/siwpan/yuanbao.git) | — | 0 | 公开 | 细胞工厂（自 media-collection 拆分） |
 | [siwpan/zhuangtaiji](https://gitee.com/siwpan/zhuangtaiji.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |

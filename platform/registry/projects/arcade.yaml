@@ -5,6 +5,7 @@ gameplay: [arcade]
 version: 1.0.0
 path: repos/arcade
 manual: true
+note: 10 游戏选单壳（一仓一目录，子进程隔离）。**2026-10-29 收拢**：原独立仓 siwpan/calculator → games/calculator（包化新版覆盖旧快照）、siwpan/happy-childrens-day → games/sixone（补入 selfcheck/CHANGELOG/README.en/LICENSE）；两仓本地工作树与 gitee/github 远端均已撤销，登记条目标 status archived。其余 8 玩法收拢前已无独立仓
 launch:
   command: python main.py
 publish:
@@ -12,4 +13,5 @@ publish:
   branch: master
 verify:
   # 2026-10-26 补：无头 selfcheck.py（子代理编写，verify_projects.py 复核退出 0）
+  # 2026-10-29 扩：并入 games/calculator 自检，独立仓撤销后 verify 覆盖面不缩水
   command: python selfcheck.py

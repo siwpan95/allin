@@ -3,14 +3,17 @@ name: Calculator ∞ Alchemia 解密终端
 category: tool
 version: 1.0.0
 path: repos/calculator
+status: archived
 manual: true
-note: 炼金术式解密终端
+note: 炼金术式解密终端。**2026-10-29 已收拢**——独立仓的包化新版（`calculator/` 包 + engine/controller/crypto/easter_eggs/snapshot + tests）已覆盖进 `repos/arcade/games/calculator`，本条目不再是独立实体；verify 覆盖面并入 arcade 的 selfcheck（`python selfcheck.py` 现会连带跑 games/calculator 自检，退出 0、单测 77 通过）。原工作树归入归档区 `G:\archive\calculator-retired-20261029`（589K），全引用 bundle 存 `G:\archive\calculator-2026-10-29.bundle`（65K，`git bundle verify` 报 complete history）；Gitee `siwpan/calculator` 与 GitHub `siwpan95/calculator` 远端均已于当日删除（复核 404）
 launch:
   command: python main.py
 verify:
   # 2026-10-26 补：无头自检（四则运算状态机 + 除零彩蛋 + 表达式行），实测退出 0。
+  # 2026-10-29：path 已随收拢消失，本命令现由 repos/arcade/selfcheck.py 代跑
   command: python selfcheck.py
 publish:
   # 2026-10-26 补登记：此前 G:\repos 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
+  # 2026-10-29：远端已删（gitee/github 双端 404），此字段仅留作历史记录
   repo: siwpan/calculator
   branch: master
