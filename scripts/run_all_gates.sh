@@ -118,6 +118,10 @@ run "$PY" tools/gate/docs_index.py
 # agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
 # registry 是否一致）。这组固定样例补的就是这一层 —— 改配置/提示词/工具面前后各跑一次。
 run "$PY" tools/gate/agent_regression.py
+# 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
+# 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
+# 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
+run "$PY" preset/allin/refresh-gov-block.py --check
 run "$PY" tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error
 
 if [ "${1:-}" = "--with-platform" ]; then

@@ -8,13 +8,14 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "check": "npm run check:governance && npm run check:docs && npm run check:ps1",
+    "check": "npm run check:governance && npm run check:docs && npm run check:ps1 && npm run check:preset-sync",
     "check:governance": "node tools/gate/governance/run.ts --no-profile",
     "check:governance:selfcheck": "node tools/gate/governance/run.ts --selfcheck-all",
     "check:precommit": "node tools/gate/governance/run.ts --no-profile --tier P0,P1",
     "check:docs": "python tools/gate/docs_index.py",
     "check:ps1": "python tools/gate/check_ps1_bom.py --root .",
     "check:agent": "python tools/gate/agent_regression.py",
+    "check:preset-sync": "python preset/allin/refresh-gov-block.py --check",
     "verify:projects": "python tools/verify_projects.py --workers 8",
     "metrics:gates": "python tools/gate/gate_metrics.py --snapshot",
     "sbom": "python tools/sbom.py",

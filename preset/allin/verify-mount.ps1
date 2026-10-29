@@ -156,6 +156,37 @@ function Parse-Patch($filePath) {
 }
 
 # ---------- 重装 / 兜底 段落（须在调用前定义） ----------
+function Get-GovBlock([string]$text) {
+  # 取 <!-- GOVERNANCE:BEGIN ... <!-- GOVERNANCE:END 段并归一化（去公共缩进 / 行尾空白 / CRLF）。
+  # 锚定「标记整行」而不是子串首次出现：正文上方的注释里也会写 GOVERNANCE:BEGIN/END 段，
+  # 用子串定位会把块起点拉到注释上（2026-10-29 g16 侧踩过同一个坑）。
+  if (-not $text) { return $null }
+  $lines = $text -split "`r?`n"
+  $start = -1; $stop = -1
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    $trimmed = $lines[$i].TrimStart()
+    if ($start -lt 0) {
+      if ($trimmed.StartsWith('<!-- GOVERNANCE:BEGIN')) { $start = $i }
+    } elseif ($trimmed.StartsWith('<!-- GOVERNANCE:END')) { $stop = $i; break }
+  }
+  if ($start -lt 0 -or $stop -lt 0) { return $null }
+  $block = @(); for ($i = $start; $i -le $stop; $i++) { $block += $lines[$i].TrimEnd() }
+  $min = -1
+  foreach ($ln in $block) {
+    if ($ln.Trim().Length -eq 0) { continue }
+    $indent = $ln.Length - $ln.TrimStart().Length
+    if ($min -lt 0 -or $indent -lt $min) { $min = $indent }
+  }
+  if ($min -lt 0) { $min = 0 }
+  $normalized = @()
+  foreach ($ln in $block) {
+    if ($ln.Trim().Length -eq 0) { $normalized += '' }
+    elseif ($ln.Length -ge $min) { $normalized += $ln.Substring($min) }
+    else { $normalized += $ln.TrimStart() }
+  }
+  return ($normalized -join "`n")
+}
+
 function Render-Remediation {
   Write-Host ""
   Write-Host "──── 重装 allin（三选一，推荐 1）────" -ForegroundColor Magenta
@@ -303,6 +334,39 @@ if ($portFail) {
   exit 2
 }
 
+# ---------- ② 再续：同源层（2026-10-29）—— 挂载段必须等于仓内规范段 ----------
+# 「挂上了且完好」不等于「是最新一代」：2026-10-29 实测挂载层仍写「15 道门禁」，
+# 而仓内正文早已 19 道，新建会话读到的正是旧的那份。这一层只比内容，不碰文件。
+Write-Step "② 再续：同源层（挂载段 vs 仓内规范段）"
+$sameOrigin = $null
+$sourcePatch = Join-Path $PSScriptRoot 'allin.patch.yml'
+if (-not (Test-Path -LiteralPath $sourcePatch)) {
+  Write-Info "仓内正文不可得（同目录没有 allin.patch.yml，可能从 bundle 副本运行）—— 跳过同源检查。"
+} elseif (-not $hasGov) {
+  Write-Info "治理段缺失，同源比较无对象（上面已报 WARN）。"
+} else {
+  $installedText = [System.IO.File]::ReadAllText($target.Path, [System.Text.Encoding]::UTF8)
+  $canonicalText = [System.IO.File]::ReadAllText($sourcePatch, [System.Text.Encoding]::UTF8)
+  $installedGov = Get-GovBlock $installedText
+  $canonicalGov = Get-GovBlock $canonicalText
+  if ($null -eq $installedGov -or $null -eq $canonicalGov) {
+    Write-Warn "同源检查跳过：挂载段或规范段的标记不成对。"
+  } elseif ([string]::Equals($installedGov, $canonicalGov, 'Ordinal')) {
+    Write-Ok "挂载段与仓内规范段同源一致（$(($installedGov -split "`n").Count) 行 / $($installedGov.Length) 字符）。"
+    $sameOrigin = $true
+  } else {
+    $sameOrigin = $false
+    $installedLines = $installedGov -split "`n"
+    $canonicalLines = $canonicalGov -split "`n"
+    $lineNo = -1
+    for ($i = 0; $i -lt [Math]::Min($installedLines.Count, $canonicalLines.Count); $i++) {
+      if (-not [string]::Equals($installedLines[$i], $canonicalLines[$i], 'Ordinal')) { $lineNo = $i + 1; break }
+    }
+    if ($lineNo -lt 0) { $lineNo = [Math]::Min($installedLines.Count, $canonicalLines.Count) + 1 }
+    Write-Warn "挂载段落后于仓内规范段（首个差异在第 $lineNo 行；挂载 $($installedLines.Count) 行 / $($installedGov.Length) 字符，规范 $($canonicalLines.Count) 行 / $($canonicalGov.Length) 字符）：新建会话读到的仍是旧规则。刷新：python preset/allin/refresh-gov-block.py --write，然后重启 DSH。"
+  }
+}
+
 # ---------- ③ 漂移层（尽力而为） ----------
 Write-Step "③ 漂移层：比对随包 cordis preset 的 capability 集合"
 $shippedPaths = @(
@@ -358,8 +422,12 @@ if (-not $hasGov) {
   & Render-Remediation
   exit 2
 }
-if ($drift.Count -gt 0) {
-  Write-Warn "WARN：allin 已挂载且治理段完好，但存在上游破坏性变更指纹。"
+if ($drift.Count -gt 0 -or $sameOrigin -eq $false) {
+  if ($sameOrigin -eq $false) {
+    Write-Warn "WARN：allin 已挂载、治理段完好，但**挂载段落后于仓内规范段**（同源层未过）。刷新后重启 DSH 即生效。"
+  } else {
+    Write-Warn "WARN：allin 已挂载且治理段完好，但存在上游破坏性变更指纹。"
+  }
   & Render-Fallback
   exit 1
 }

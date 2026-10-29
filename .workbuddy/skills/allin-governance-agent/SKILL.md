@@ -207,6 +207,11 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
    禁止「先推代码 → 再补记账 → 又推一次」的两段式 —— 每多一次推送就多一次「本地领先 N 笔」的中间态，
    而本仓 remote 配了**两条 `pushurl`**（Gitee + GitHub 镜像），`ls-remote` 双核也要多做一遍。
    推送结果随**下一批**改动一并记账，不为「记推送结果」单独开一次推送。
+6. **改了治理段就同步派生副本**：治理段是**一份正文**（`preset/allin/allin.patch.yml`）＋
+   **三份派生副本**（`preset/allin/agent.cordis.yml` 存档、npm bundle、**已挂载的 profile 层**）。
+   改完跑 `python preset/allin/refresh-gov-block.py --write`，再 `--check` 判新鲜（落后 exit 3）；
+   bundle 另跑 `preset/allin/make-bundle.ps1`。**别手抄**：2026-10-29 实测挂载层落后了整整一代
+   （仍写「15 道门禁」），而它正是新建会话读的那份。
 
 ### 5.2 推送 / 发版（高风险，逐项确认）
 - 先 `git status --short` 确认范围；`git diff --stat` 看改动面。
