@@ -3,10 +3,10 @@
 import subprocess, os, sys
 
 TARGETS = [
-    (r"G:\local\_tier3_work\game-prototypes", 34),  # gov-paths: allow
-    (r"G:\local\_tier3_work\media-prototypes", 13),  # gov-paths: allow
-    (r"G:\local\_tier3_work\music-prototypes", 3),  # gov-paths: allow
-    (r"G:\local\_tier3_work\dev-toolkit", 13),  # gov-paths: allow
+    (r"G:\local\_tier3_work\game-prototypes", 34),
+    (r"G:\local\_tier3_work\media-prototypes", 13),
+    (r"G:\local\_tier3_work\music-prototypes", 3),
+    (r"G:\local\_tier3_work\dev-toolkit", 13),
     (r"G:\repos\players-unified", 4),
     (r"G:\repos\sin-virtue-cordis-host", 1),
 ]

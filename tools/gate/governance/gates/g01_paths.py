@@ -46,6 +46,7 @@ SKIP_PREFIXES = (
     "lib/",
     "node_modules/",
     "tmp/",
+    "tools/tier_archive/",  # 2026-10-29 落实分级索引时跑过脚本的历史追溯存档，不可执行、仅供复核
     "vendor/",
 )
 
