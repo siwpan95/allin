@@ -1,0 +1,15 @@
+id: write-agent
+name: write-agent · 小说创作智能 Agent
+category: ai
+path: repos/write-agent
+manual: true
+note: 中文网文创作 Agent —— 依题材/风格生成大纲与章节、多轮对话润色、续写改写与风格切换，并内置带严格引用的知识库问答（逐条标注文档名+片段+行号，检索无依据明确回「未查到」）；FastAPI 后端 + 静态前端，默认接 DeepSeek（MOCK_LLM=true 可离线演示）
+launch:
+  # 2026-10-29 补登记：本机 @DESKTOP-8RSV60V 新建并推送（Gitee + GitHub 双远端），
+  # 此前未进 registry，g17 判红 unregistered-repo，本次按门禁要求补条目。
+  command: python -m app.main
+publish:
+  repo: siwpan/write-agent
+  branch: master
+verify:
+  command: make ci
