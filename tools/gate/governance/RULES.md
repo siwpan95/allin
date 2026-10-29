@@ -41,7 +41,7 @@
 | `g00-meta` | 调试铁律 30 / 41、OPS-G15、OPS-P3 | 读注册表，逐个校验契约、跑 `--selfcheck`、核对 RULES.md 收录 | 无（必须恒绿） |
 | `g01-paths` | 铁律 5、调试铁律 26 / 34 / 53、OPS-E3 | 判「路径的父目录是否存在」得出死路径；按平台归属判「写死本机路径」；命中三分（**只有 CODE 有效行阻断**；`.md/.html` 等文档扩展名只报告不阻断）；每类豁免与跳过都计数打印 | `governance/baseline/g01-paths.txt`（当前为空：存量已清零） |
 | `g03-credentials` | 铁律 0、治理准则·敏感信息、调试铁律 52、OPS-P1 / OPS-E8 | 判 `git grep --cached` 的**索引内容**（不是可能有部分暂存的落盘文件）：私有密钥块、厂商令牌形态、URL userinfo、Bearer 头、密钥型赋值；另扫 `.git/config` **全文**（含 `branch.*.remote` 里的令牌与 `credential.*.helper` 空值） | `governance/baseline/g03-credentials.txt`（9 条历史存量：门禁与 `repo_hygiene.py` 的自测夹具、交接记录里引用的合成串，均已复核为误报） |
-| `g04-push-evidence` | 铁律 3、调试铁律 25 / 37 / 47、OPS-P8 / OPS-E8 | 远端 URL 无凭据；同步状态**只由 `git ls-remote` 判定**（`IN_SYNC` / `LOCAL_AHEAD` / `REMOTE_AHEAD` / `DIVERGED`）；`DIVERGED` 阻断（分叉后下一步通常是强推），本地领先与远端领先只记账；网络不可达记 **SKIP（不是通过）** | `governance/baseline/g04-push-evidence.txt`（当前为空） |
+| `g04-push-evidence` | 铁律 3、调试铁律 25 / 37 / 47、OPS-P8 / OPS-E8 | 远端 URL 无凭据；同步状态**只由 `git ls-remote` 判定**（`IN_SYNC` / `LOCAL_AHEAD` / `REMOTE_AHEAD` / `DIVERGED`）；**远端提交对象不在本克隆时先补取该分支的远端跟踪 ref 再判**（只动 `refs/remotes/*`，本地分支、索引、工作树一律不动；2026-10-29 起），补取失败记 `UNVERIFIED` + **SKIP（不是通过）**，绝不把「没 fetch 过」报成分叉；`DIVERGED` 阻断（分叉后下一步通常是强推），本地领先与远端领先只记账；网络不可达记 **SKIP（不是通过）** | `governance/baseline/g04-push-evidence.txt`（当前为空） |
 | `g05-hygiene` | 铁律 0 / 4、治理准则·敏感信息、调试铁律 54、OPS-P2 / C3 / C4 / G3 | 只判**被跟踪**面：根三件套（LICENSE / README.md / .gitignore）、`.gitignore` 必须覆盖凭据面（`.env` / `*.pem` / `*.key` / `__pycache__/`）、无产物目录与字节码/日志/`*.egg-info` 入索引、无超阈值大文件（阈值按本仓实测定为 5 MiB，最大文件 ~2.3 MB）、归档目录必须有 README/MANIFEST | `governance/baseline/g05-hygiene.txt`（当前为空） |
 | `g06-numbering` | 调试铁律 45、OPS-G4 / G5 / D7 | 序号版本文件（`v0.*`、`v1.*`…）必须从最小号起连续；中英配对文档的**列表形状必须逐项相等**（列表数、编号标签、条目数），代码围栏内不计 | `governance/baseline/g06-numbering.txt`（当前为空） |
 | `g07-doc-freshness` | 调试铁律 57 / 58、OPS-D6 | 文档在**开头 20 行内第一人称自称**环境事实源/快照时，必须带时点；自称「快照」的还必须带失效或「以…为准」条款；Agent Notes 与 vendor 整体排除 | `governance/baseline/g07-doc-freshness.txt`（1 条：2026-08 交接卷自称快照却缺失效条款，已复核） |
@@ -103,7 +103,8 @@
 4. **样例主机与样例账号不算泄露**：`example.*`、`*.invalid`、`*.test`、`localhost` 上的 userinfo，以及 `user:password` 这类文档配对，一律豁免；userinfo 的密码位是 `${TOKEN}` 这类**环境展开**时同样豁免（与赋值口径一致）。
 5. **行内注记必须与样本同一行**：`gov-credentials: allow` 只豁免它所在的那一行；夹具文件（`*.example`、`*.sample`、`*.template`）整文件豁免。
 6. **同步状态只信远端**：`origin/BR` 是缓存，任何一次用 URL 直推都会让它过期；判定必须走 `git ls-remote`，并把方向（本地领先 / 远端领先 / 分叉）分别报出来。
-7. **自检夹具要落在被扫的位置**：`g04` 用**真实的本地裸仓**跑通 `IN_SYNC → LOCAL_AHEAD → DIVERGED` 三态；`g03` 的夹具注记必须写进夹具文件内容里（写在生成夹具的代码行上只豁免门禁自身）。
+7. **「没 fetch 过」不等于「分叉」**：`merge-base --is-ancestor` 对「不是祖先」与「本地没这个对象」返回同一个非零退出码。凡远端 sha 不在本地对象库，**先补取该分支的远端跟踪 ref 再判**（`git fetch <remote> +refs/heads/<BR>:refs/remotes/<remote>/<BR>`，不动本地分支/索引/工作树）；补取失败就记 `UNVERIFIED` + SKIP 并打印原因。2026-10-29 实证：本仓落后 origin/master **3 笔**却被旧判据报成 `DIVERGED`，提示去 rebase —— 方向反了。
+8. **自检夹具要落在被扫的位置**：`g04` 用**真实的本地裸仓**跑通 `IN_SYNC → LOCAL_AHEAD → DIVERGED → REMOTE_AHEAD`（第四态是「克隆后从未 fetch」的回归夹具）；`g03` 的夹具注记必须写进夹具文件内容里（写在生成夹具的代码行上只豁免门禁自身）。
 
 ## 四、规则 → 机械保障 总表
 

@@ -7,7 +7,17 @@ Three judgments, each closing a recorded accident class:
 * **authoritative sync state** -- ``origin/BR`` is a cache that goes stale as soon
   as anyone pushes with a URL or from another machine; the only trustworthy
   answer is ``git ls-remote``. The state is reported as one of ``IN_SYNC``,
-  ``LOCAL_AHEAD``, ``REMOTE_AHEAD``, ``DIVERGED``, or ``NO_UPSTREAM``.
+  ``LOCAL_AHEAD``, ``REMOTE_AHEAD``, ``DIVERGED``, ``NO_UPSTREAM``, or
+  ``UNVERIFIED``.
+* **an unknown remote tip is fetched before it is judged** -- ``merge-base
+  --is-ancestor`` answers "not an ancestor" and "never heard of that object"
+  with the same non-zero exit, so a remote commit this clone never fetched used
+  to read as a divergence the gate could not actually see (2026-10-29: a
+  checkout three commits behind reported ``DIVERGED``). The gate now fetches
+  that one branch as a remote-tracking ref -- no local branch, index, or
+  work-tree file is touched -- and judges again; when the fetch fails the state
+  is ``UNVERIFIED`` and the gate skips with its cause instead of inventing a
+  verdict.
 * **divergence blocks** -- a diverged branch means a plain push will be rejected,
   and the tempting next move is a force push. ``LOCAL_AHEAD`` and
   ``REMOTE_AHEAD`` are ordinary states for a distribution checkout and are
@@ -58,6 +68,29 @@ def current_branch(root: Path) -> str:
     return "" if name in ("HEAD", "") else name
 
 
+def object_present(root: Path, sha: str) -> bool:
+    """True when this clone already holds that commit.
+
+    ``merge-base --is-ancestor`` needs both commits in the object store; without
+    this probe a missing object is indistinguishable from an unrelated history.
+    """
+    return govlib.run_git_result(["cat-file", "-e", f"{sha}^{{commit}}"], root).returncode == 0
+
+
+def fetch_branch_ref(root: Path, remote: str, branch: str, sha: str) -> bool:
+    """Fetch one branch into ``refs/remotes/<remote>/<branch>`` and confirm it landed.
+
+    Only the remote-tracking ref moves: no local branch, no index entry, no
+    work-tree file. Prompting is already disabled by ``govlib.git_env``, so an
+    unreachable or credential-less remote fails fast instead of hanging.
+    """
+    completed = govlib.run_git_result(
+        ["fetch", "--no-tags", "--quiet", remote, f"+refs/heads/{branch}:refs/remotes/{remote}/{branch}"],
+        root,
+    )
+    return completed.returncode == 0 and object_present(root, sha)
+
+
 def classify_sync(root: Path, remote: str, branch: str) -> tuple[str, str, str]:
     """Return ``(state, local_sha, remote_sha)`` using `git ls-remote` as evidence."""
     local = govlib.run_git(["rev-parse", "HEAD"], root, check=False).strip()
@@ -71,6 +104,10 @@ def classify_sync(root: Path, remote: str, branch: str) -> tuple[str, str, str]:
         return ("NO_UPSTREAM", local, "")
     if remote_sha == local:
         return ("IN_SYNC", local, remote_sha)
+    if not object_present(root, remote_sha) and not fetch_branch_ref(root, remote, branch, remote_sha):
+        # Still no object: ancestry cannot be proven either way, so never call it
+        # a divergence the gate cannot see. The caller reports this as a SKIP.
+        return ("UNVERIFIED", local, remote_sha)
     local_only = govlib.run_git_result(["merge-base", "--is-ancestor", remote_sha, "HEAD"], root).returncode == 0
     remote_only = govlib.run_git_result(["merge-base", "--is-ancestor", "HEAD", remote_sha], root).returncode == 0
     if local_only and not remote_only:
@@ -105,6 +142,10 @@ def scan(root: Path, *, remote: str, branch: str, offline: bool) -> Report:
         report.skip(f"remote probe unavailable: {state[5:].strip()}", 1)
         return report
     report.note(f"{chosen}/{resolved_branch}: {state} (local {local[:12] or '-'}, remote {remote_sha[:12] or '-'})")
+    if state == "UNVERIFIED":
+        report.skip(f"remote commit {remote_sha[:12]} is absent from this clone and could not be fetched: "
+                    "push readiness cannot be proven", 1)
+        return report
     if state == "DIVERGED":
         report.block("diverged-branch", f".git/refs/heads/{resolved_branch}", 0,
                      f"{chosen}/{resolved_branch} diverged: rebase on the remote before pushing")
@@ -143,6 +184,33 @@ def selfcheck() -> int:
 
         report = scan(sandbox.path, remote="origin", branch="main", offline=False)
         check.detects("divergence blocks", any(finding.kind == "diverged-branch" for finding in report.findings))
+
+    # 2026-10-29 事故的回归夹具：落后但从未 fetch 的检出，远端提交对象不在本地。
+    # 修复前 `merge-base --is-ancestor` 两端都返回非零 ⇒ 误判 DIVERGED（本机实际
+    # 落后 3 笔却被报成「分叉」，提示去 rebase）。真值应是 REMOTE_AHEAD。
+    with govlib.Sandbox() as sandbox:
+        bare = sandbox.path / "origin.git"
+        govlib.run_git(["init", "-q", "--bare", str(bare)], sandbox.path)
+        sandbox.write("src/app.ts", "export const app = 1\n")
+        govlib.run_git([*identity, "commit", "-q", "-m", "initial"], sandbox.path)
+        govlib.run_git(["remote", "add", "origin", str(bare)], sandbox.path)
+        govlib.run_git(["push", "-q", "origin", "HEAD:main"], sandbox.path)
+
+        follower = sandbox.path / "follower"
+        govlib.run_git(["clone", "-q", str(bare), str(follower)], sandbox.path)
+        govlib.run_git([*identity, "checkout", "-q", "-B", "main", "origin/main"], follower)
+        sandbox.write("src/app.ts", "export const app = 2\n")
+        govlib.run_git([*identity, "commit", "-q", "-am", "remote work"], sandbox.path)
+        govlib.run_git([*identity, "push", "-q", "origin", "HEAD:main"], sandbox.path)
+        moved_sha = govlib.run_git(["rev-parse", "HEAD"], sandbox.path).strip()
+        check.detects("the stale clone really lacks the remote commit",
+                      not object_present(follower, moved_sha))
+        state, _local, _remote = classify_sync(follower, "origin", "main")
+        check.detects("an unfetched remote commit reads as remote ahead, never as divergence",
+                      state == "REMOTE_AHEAD")
+        report = scan(follower, remote="origin", branch="main", offline=False)
+        check.quiet("an unfetched remote commit does not block the push check",
+                    any(finding.kind == "diverged-branch" for finding in report.findings))
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/app.ts", "export const app = 1\n")
