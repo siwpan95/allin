@@ -4,8 +4,9 @@ category: game
 gameplay: [arcade]
 version: 1.0.0
 path: repos/arcade
+status: archived
 manual: true
-note: 10 游戏选单壳（一仓一目录，子进程隔离）。**2026-10-29 收拢**：原独立仓 siwpan/calculator → games/calculator（包化新版覆盖旧快照）、siwpan/happy-childrens-day → games/sixone（补入 selfcheck/CHANGELOG/README.en/LICENSE）；两仓本地工作树与 gitee/github 远端均已撤销，登记条目标 status archived。其余 8 玩法收拢前已无独立仓
+note: 10 游戏选单壳（一仓一目录，子进程隔离）。**2026-10-29 收拢**：原独立仓 siwpan/calculator → games/calculator（包化新版覆盖旧快照）、siwpan/happy-childrens-day → games/sixone（补入 selfcheck/CHANGELOG/README.en/LICENSE）；两仓本地工作树与 gitee/github 远端均已撤销，登记条目标 status archived。其余 8 玩法收拢前已无独立仓。**同日 11:47 另有一笔归档声明 `905c15d`**（README 首屏横幅：迁入 game-prototypes、历史见 archive/arcade、Do not commit here），但实测 `siwpan/game-prototypes` 与 `siwpan95/game-prototypes` **双端 404**、**`archive/arcade` 分支不存在** ⇒ 落点待建，本仓暂为「已声明归档的冻结仓」；18:3x 的 3 笔收拢提交（`5233a48`/`af12da8`/`a9784f2`）经用户拍板合入冻结仓，随 `archive/arcade` 一并迁出
 launch:
   command: python main.py
 publish:
