@@ -21,7 +21,8 @@ python tools/facts/measure.py
 python tools/facts/measure.py --out /tmp/facts.md
 
 # 只判定 —— 解析头部「日期最新的时点块」，校验 PATH-EXISTS 与 COUNT
-python tools/facts/verify_facts.py
+python tools/facts/verify_facts.py                 # 默认只验**当前机器**那份（与 g20 同口径）
+python tools/facts/verify_facts.py --all           # 显式校验全部机器文件（跨机诊断）
 python tools/facts/verify_facts.py --file <某份.md>   # 单文件校验
 python tools/facts/verify_facts.py --json
 python tools/facts/verify_facts.py --selftest         # 造必错样本，证明它真能报
@@ -31,6 +32,11 @@ python tools/facts/verify_facts.py --selftest         # 造必错样本，证明
 | --- | --- |
 | `measure.py` | 0 成功 / 2 用法错 / 3 环境错（非 Windows、找不到仓根） |
 | `verify_facts.py` | **0 干净 / 1 有 finding** / 2 用法错 / 3 环境错 |
+
+**机器过滤（2026-10-30，与 g20 门禁同口径）**：分区文件描述一台机器的磁盘，
+在本机验别机文件 = 拿错盘对账、永远假红。默认只验文件名 = 当前主机名（大小写
+不敏感）的那份，其余 `[skip]` 留待该机自验；`--all` 显式跨机诊断——其 finding
+只说明「该路径在本机不存在」，**不代表别机事实有错**。
 
 **为什么不合一个**：采集不做判断，所以永远可信；判定会被质疑，所以必须能自检。
 合并会让人分不清「数据错了」还是「判据错了」。
