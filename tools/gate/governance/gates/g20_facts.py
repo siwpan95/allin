@@ -26,8 +26,19 @@ gets switched off, so everything else is left to humans:
 * ``count`` -- an absolute path followed by ``**N**`` or ``N 项`` must really hold
   N entries. The unit decides the counting mode: ``项`` counts every entry
   (archive directories hold loose files), while no unit or ``个仓`` / ``个目录``
-  counts directories only -- ``G:\\repos`` holds 136 directories *plus* 4 files,
-  and counting everything yields 140, i.e. a false drift.
+  counts directories only -- ``<盘>:\\repos`` may hold 136 directories *plus*
+  4 files, and counting everything yields 140, i.e. a false drift.
+
+Machine scoping (2026-10-30, cross-machine fix)
+-----------------------------------------------
+A partition file describes **one** machine's disk. Judging another machine's
+file on this machine compares its claims against the wrong disk and blocks
+forever (observed 2026-10-30: a PowerShell 7 install path that exists on the
+machine that wrote the file does not exist here). The
+gate therefore judges **only the partition file of the machine it runs on**
+(filename stem vs current hostname, case-insensitive); the other machines'
+files are exempted with a note -- each machine verifies its own file when its
+agent runs the suite there.
 
 Scope is the header block(s) carrying the **newest** ``> **时点**`` date. Older
 blocks are history: judging them would force people to rewrite the past, and a
@@ -50,6 +61,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import re
 import sys
 import tempfile
@@ -193,19 +205,36 @@ def evaluate_staleness(stamp: str) -> str:
     return f"时点：{stamp}（{age} 天前，{'⚠ 超 ' + str(STALE_DAYS) + ' 天' if age > STALE_DAYS else '在窗口内'}）"
 
 
+def current_machine() -> str:
+    """Current hostname, lowercased (Windows hostnames are case-insensitive)."""
+    return platform.node().lower()
+
+
 def scan(root: Path) -> Report:
     report = Report(title=TITLE)
     target = root / TARGET_DIR
     if not target.is_dir():
         report.skip("no machine fact directory")
         return report
+    me = current_machine()
+    own: Path | None = None
     for path in sorted(target.glob("*.md")):
+        if path.stem.lower() == me:
+            own = path
+            continue
         report.scanned += 1
-        text = path.read_text(encoding="utf-8", errors="replace")
-        findings, stamp = check_text(text, path.name)
-        report.note(f"{path.name}: {evaluate_staleness(stamp)}")
-        for fd in findings:
-            report.block(fd["kind"].lower(), fd["file"], fd["line"], fd["claim"])
+        report.exempt("another machine's facts (each machine verifies its own file)")
+        report.note(f"skip {path.name}: 非当前机器（{me}）的分区文件，留待该机自验")
+    if own is None:
+        report.note(f"当前机器（{me}）在 {TARGET_DIR} 下无同名分区文件 —— 无可判定对象"
+                    f"（新增机器流程见 机器分区索引.md §1）")
+        return report
+    report.scanned += 1
+    text = own.read_text(encoding="utf-8", errors="replace")
+    findings, stamp = check_text(text, own.name)
+    report.note(f"{own.name}: {evaluate_staleness(stamp)}")
+    for fd in findings:
+        report.block(fd["kind"].lower(), fd["file"], fd["line"], fd["claim"])
     return report
 
 
