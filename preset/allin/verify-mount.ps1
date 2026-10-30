@@ -317,7 +317,7 @@ if (Test-Path $locate) {
     $root = & $locate -ErrorAction SilentlyContinue
     if ($LASTEXITCODE -eq 0 -and $root) {
       Write-Ok "自发现仓根：$root"
-      $four = @('docs/INDEX.md', 'docs/规范/SPEC-001-铁律.md', 'docs/规范/SPEC-002-协作工作流程.md', 'docs/事实源/本机事实.md')
+      $four = @('docs/INDEX.md', 'docs/规范/SPEC-001-铁律.md', 'docs/规范/SPEC-002-协作工作流程.md', 'docs/事实源/机器分区索引.md')
       $missing = @()
       foreach ($f in $four) { if (-not (Test-Path (Join-Path $root $f))) { $missing += $f } }
       if ($missing.Count -eq 0) { Write-Ok "四份事实源在仓根齐全（agent 开卷必读可用）。" }

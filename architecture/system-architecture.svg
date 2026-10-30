@@ -28,7 +28,7 @@
   <text x="60" y="110" class="ts" fill="#1e3a8a">唯一事实来源：约束 · 现值 · 审计证据</text>
   <g>
     <rect x="60" y="120" width="262" height="26" rx="6" class="chip"/><text x="72" y="138" class="chip-t">规范/  SPEC-001…203（铁律/流程/契约）</text>
-    <rect x="334" y="120" width="220" height="26" rx="6" class="chip"/><text x="346" y="138" class="chip-t">事实源/  本机事实（盘位·运行时）</text>
+    <rect x="334" y="120" width="220" height="26" rx="6" class="chip"/><text x="346" y="138" class="chip-t">事实源/  机器分区（盘位·运行时）</text>
     <rect x="566" y="120" width="300" height="26" rx="6" class="chip"/><text x="578" y="138" class="chip-t">记录/  审计·决策·交接（只增不改）</text>
     <rect x="878" y="120" width="300" height="26" rx="6" class="chip"/><text x="890" y="138" class="chip-t">INDEX.md  总目录（文档索引契约面）</text>
   </g>

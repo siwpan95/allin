@@ -46,7 +46,7 @@ END = "<!-- GOVERNANCE:END -->"
 DRIVE_PATH = re.compile(r"[A-Za-z]:[\\/]")
 PLUGIN_NAME = re.compile(r"^\s+name: '([^']+)'\s*$", re.MULTILINE)
 GATE_ID = re.compile(r"`(g\d\d-[a-z-]+)`")
-REQUIRED_REFERENCES = ("docs/INDEX.md", "docs/规范/SPEC-001-铁律.md", "docs/规范/SPEC-002-协作工作流程.md", "docs/事实源/本机事实.md")
+REQUIRED_REFERENCES = ("docs/INDEX.md", "docs/规范/SPEC-001-铁律.md", "docs/规范/SPEC-002-协作工作流程.md", "docs/事实源/机器分区索引.md")
 REQUIRED_DECLARATIONS = ("- id: preset-allin", "name: '@deepseek-ai/dsh-agent-preset'", "id: allin", "order: 5")
 
 #: Profile location probed for installed bundles: it lives outside the repository,
@@ -219,7 +219,7 @@ def selfcheck() -> int:
         "              prefix: |-\n"
         "                base text\n"
         f"                {BEGIN}governance text naming `docs/INDEX.md`, `docs/规范/SPEC-001-铁律.md`, "
-"`docs/规范/SPEC-002-协作工作流程.md`, `docs/事实源/本机事实.md` and `g00-meta`\n"
+"`docs/规范/SPEC-002-协作工作流程.md`, `docs/事实源/机器分区索引.md` and `g00-meta`\n"
         f"                {END}\n"
         "          - id: agent-instructions\n"
         "            name: '@deepseek-ai/dsh-agent-instructions'\n"
@@ -243,7 +243,7 @@ def selfcheck() -> int:
         box.write("docs/INDEX.md", "# index\n")
         box.write("docs/规范/SPEC-001-铁律.md", "# spec\n")
         box.write("docs/规范/SPEC-002-协作工作流程.md", "# spec\n")
-        box.write("docs/事实源/本机事实.md", "# facts\n")
+        box.write("docs/事实源/机器分区索引.md", "# facts\n")
         box.write("tools/gate/governance/registry.json", json.dumps(registry))
         box.write(SHIPPED, shipped)
         return box
