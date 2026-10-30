@@ -477,7 +477,7 @@ D: 侧                                          =  未记账（转移中）
   `remote.origin.url` = `https://gitee.com/siwpan/allin.git`；`--get-all remote.origin.pushurl` **2 条**
   （Gitee + `git@github.com:siwpan95/allin.git`）；独立 `github` remote 仍在；一次 `git push` 依次打两条。
   ⇒ 本条**无订正**，与 `@DESKTOP-KQABATS` 侧（pushurl 0 条）**仍是对照口径，勿套用**。
-- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6。
+- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §7。
 
 ---
 

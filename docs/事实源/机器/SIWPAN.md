@@ -110,7 +110,7 @@
 | 推送口径 | **只推 Gitee 单核**，`git push` 走默认 url |
 | 核对口径 | 只核 Gitee 一侧（`ls-remote origin` + `rev-list --left-right --count` 0/0 + 工作树干净） |
 
-- **作业口径**与 [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6 相同（该机亦 0 条 pushurl）；
+- **作业口径**与 [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §7 相同（该机亦 0 条 pushurl）；
   GitHub 镜像由 [`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 那台推送（pushurl 2 条），本机**不要求 GitHub 侧可见**，也**不补配** pushurl。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端两次被其它机推进
   （`5a1d767→c9586d3` DIVERGED、`8b46e67→7f3fecc` PURE_BEHIND）——
