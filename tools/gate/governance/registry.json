@@ -419,6 +419,25 @@
       ],
       "baseline": "governance/baseline/g19-docs-refs.txt",
       "selfcheck": true
+    },
+    {
+      "id": "g20-facts",
+      "title": "machine fact sources still match reality",
+      "script": "governance/gates/g20_facts.py",
+      "tier": "P1",
+      "rules": [
+        "debug-57",
+        "debug-58",
+        "ops-G5"
+      ],
+      "platforms": [
+        "nt"
+      ],
+      "requires": [
+        "python>=3.9"
+      ],
+      "baseline": "governance/baseline/g20-facts.txt",
+      "selfcheck": true
     }
   ]
 }

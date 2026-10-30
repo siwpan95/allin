@@ -87,7 +87,7 @@
 ### 4.2 DSH 分发版门禁（`governance/`，18 条，随 `siwpan/deepseek-harness` 分发）
 
 > **口径提示（2026-10-28 对账补）**：本表是 **DSH 分发侧**的 18 条；**本仓侧** `tools/gate/governance/`
-> 现有 **19 道**（`g00-meta`…`g19-docs-refs`），其中 `g16`–`g19` 是本仓扩展，**与上表 g16–g18 同号不同义**
+> 现有 **20 道**（`g00-meta`…`g20-facts`），其中 `g16`–`g20` 是本仓扩展，**与上表 g16–g18 同号不同义**
 > （本仓：`g16-skill-preset-parity` / `g17-registry` / `g18-exceptions` / `g19-docs-refs`）。
 > 本仓侧权威清单以 `tools/gate/governance/registry.json` 为准，别用本表反推。
 > 另：`siwpan/deepseek-harness` 远端已于 2026-10-26 三仓整合后删除，治理内核并入本仓。

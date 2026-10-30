@@ -1,6 +1,6 @@
 ---
 name: allin-governance-agent
-description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/机器分区索引.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 19 道治理门禁（g00–g19）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、把具体任务路由到本仓 15 个既有项目级 skill，并带 ReAct 行动范式与记忆月账自学习回路。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查、记忆召回。
+description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/机器分区索引.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 20 道治理门禁（g00–g20）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、把具体任务路由到本仓 15 个既有项目级 skill，并带 ReAct 行动范式与记忆月账自学习回路。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查、记忆召回。
 agent_created: true
 ---
 
@@ -126,10 +126,10 @@ allin preset list | show <n> | apply <n>
 ### 3.2 门禁与体检（治理的「监工」）
 
 ```bash
-bash scripts/run_all_gates.sh             # 一键跑齐：19 道治理门禁 + 文档索引契约 + 本仓 repocheck 自检
+bash scripts/run_all_gates.sh             # 一键跑齐：20 道治理门禁 + 文档索引契约 + 本仓 repocheck 自检
                                           #   追加 --with-platform 额外跑 platform 的 check/test/harness
 npm run check:governance                  # = npx tsx tools/gate/governance/run.ts
-                                         #   19 道门禁 g00-meta…g19-docs-refs，全绿 exit 0
+                                         #   20 道门禁 g00-meta…g20-facts，全绿 exit 0
 npm run check:governance:selfcheck        # 门禁自证（无 selfcheck 的门禁等于没有门禁）
 python tools/gate/docs_index.py           # 文档索引契约 D1–D8（INDEX 份数/登记/头部/别名…）
 python tools/repocheck/main.py <根>       # 仓库体检：30 规则 / 0–10 分 / text·json·csv·html

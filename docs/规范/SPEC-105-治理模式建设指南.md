@@ -287,7 +287,7 @@
 
 - 文档（`docs/规范/` 约束、`docs/事实源/` 现值）是**文字事实源**；工具（`tools/gate/` 机械门禁）是**可执行判据**；`platform/` 是**编排层**。三者各自演化，问题出在「改文档不更新门禁」「加工具不登记契约」「platform 扩却不备案」。
 - cordis preset 是唯一**随会话/随仓可重装**的载体：它把「开卷必读四份 + 铁律 + 治理准则 + 本机边界」写进 agent 的 persona 段（`<!-- GOVERNANCE:BEGIN -->`…`<!-- GOVERNANCE:END -->` 标记块），**每次会话启动即生效**，不依赖人记得去读。
-- 治理门禁树（`tools/gate/governance/`，`g00-meta` 元门禁 + `g01-paths`…`g19-docs-refs` 共 19 道）反过来**守住这条 preset**：块必须成对有序、段内无盘符路径、引用的仓内文件必须存在、提到的门禁 id 必须已注册（`g14-preset`）。
+- 治理门禁树（`tools/gate/governance/`，`g00-meta` 元门禁 + `g01-paths`…`g20-facts` 共 20 道）反过来**守住这条 preset**：块必须成对有序、段内无盘符路径、引用的仓内文件必须存在、提到的门禁 id 必须已注册（`g14-preset`）。
 
 ### 9.2 粘合契约（判据同源、实现不同）
 

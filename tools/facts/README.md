@@ -71,12 +71,26 @@ python tools/facts/verify_facts.py --selftest         # 造必错样本，证明
 
 **采集值是原始值，不是事实。** 未经复测裁决的采集结果不得直接覆盖旧值。
 
+## 判据在哪（2026-10-30 12:35 起）
+
+判据**不在本目录**，在门禁 `tools/gate/governance/gates/g20_facts.py`。
+`verify_facts.py` 只是把它包成 CLI，通过 `import g20_facts` 复用。
+
+**依赖方向是刻意反过来的**：
+
+- 门禁必须**自包含** —— `g00-meta` 把每个 `--selfcheck` 放进只有 `governance/` 的沙箱里跑，
+  够不到 `tools/facts/`；判据放这边会在沙箱里报「not importable」；
+- 而判据**只能有一份** —— 两套会同时报绿、冲突时无人判定谁为准（`SPEC-003 §新建三查`）。
+
+所以：**门禁定义判据，CLI 复用门禁。** 改判据改 `g20_facts.py`，别在这里加第二份。
+
 ## 已知边界（不掩盖）
 
-- 只判头部时点块；章节体内的表格（如 `§1 盘位表`）不判
+- 只判头部最新的时点块；章节体内的表格（如 `§1 盘位表`）不判
 - 只判 `PATH-EXISTS` / `COUNT`；**版本号、行为观测、语义判断不判**
 - **不查章节引用完整性** —— `§5` 悬空那类问题（路径引用 `g19` 管，章节引用无人管）本工具不管
-- 未接入 `scripts/run_all_gates.sh`；升格为 `g20-facts` 需同步改 6 处以上「19 道」自述，另立批次
+- **Windows 专属**：判据基于盘符绝对路径，`platforms: ["nt"]`；非 Windows 直接 `ENV ERROR` 退出 3
+- 已接入 `scripts/run_all_gates.sh`（作为 `g20-facts`，`tier P1`）
 
 ## 自检记录（2026-10-30）
 
