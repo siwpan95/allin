@@ -131,7 +131,7 @@ score = 10 × log1p(通过项权重之和) / log1p(全部项权重之和)
 
 | # | 规则 | 判定依据 | 需 git |
 | --- | --- | --- | --- |
-| 3 | 无测试 | 无 `tests/` 或 `test/` 目录，也无 `test_*.py` / `*_test.py` | |
+| 3 | 无测试 | 无 `tests/` 或 `test/` 目录（含嵌套），也无 `test_*.py` / `*_test.py` / `*.test.*` / `*.spec.*` | 2026-10-30 扩口：monorepo workspace 的嵌套 `test/` 与 JS/TS 测试文件不再误报「无测试」 |
 | 6 | 疑似 import 断裂风险 | AST 静态扫描：顶层模块不在项目内 / 标准库 / 常见第三方清单 | |
 | 8 | 内联引擎副本缺 `engine.patch.yaml` | 存在 `alloy/` `allin_engine/` `tools/alloy/` `vendor/alloy/` 但无 patch 记录 | |
 | 9 | 许可证不可识别 | LICENSE 内容匹配不上常见开源许可证特征句（MIT/Apache-2.0/BSD/GPL/MPL/ISC 等） | |

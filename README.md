@@ -119,10 +119,11 @@ python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail
 | 规则 2「无 README」 | B) `--skip-rules 2` | `tools/` 下只有两个子件：`tools/repocheck` **有** README；`tools/security` 是单文件标准库脚本（`venv_ca_audit.py`），其用法记在 `.workbuddy/skills/venv-ca-security-audit/` 与仓内文档 |
 | 规则 4「无依赖声明」 | B) `--skip-rules 4` | 同上：单文件脚本、只用标准库，无第三方依赖可声明（`tools/repocheck` 有 `pyproject.toml`） |
 | 规则 5「无 LICENSE」 | B) `--skip-rules 5` | 二者都是本仓的子目录（非独立仓），许可随**仓根 LICENSE** 覆盖（铁律 0/4 的「根 LICENSE 存在」已满足） |
-| 规则 3「无测试」 | 记偏差，暂不改工具 | `platform` 有 `apps/{cli,portal}/test/` 与 `packages/core/test/` 共 **7 个 `.test.mjs`**，但规则只查项目根下的 `tests/`/`test/`，对 monorepo workspace 会误报 |
+| 规则 3「无测试」 | ✅ **已修（2026-10-30）** | 原「规则只查项目根下的 `tests/`/`test/`，对 monorepo workspace 误报」的盲区已扩口：嵌套 `test/`/`tests/` 目录（路径段精确匹配）与 `*.test.*`/`*.spec.*`（任意层级）均被认可，`platform` 的 7 个 `.test.mjs` 不再需要记偏差；回归用例 4 条，套件 60 项全绿（见 `tools/repocheck/CHANGELOG.md` Unreleased） |
 
-**现状**（2026-10-28 实测退出码）：`A)` **0**（通过）；`B)` **0**（豁免 1/2/4/5 四条结构固有项后通过）。
-`platform` 的 warn 级（无 SECURITY / CONTRIBUTING / CHANGELOG / CI 配置）为**真实待办**，本期不处理，留作下一批。
+**现状**（2026-10-30 @`SIWPAN` 复测退出码）：`A)` **0**（通过）；`B)` **0**（豁免 1/2/4/5 四条结构固有项后通过）。
+`platform` 的 warn 级（无 SECURITY / CONTRIBUTING / CHANGELOG / CI 配置）**已于 2026-10-27 清零**
+（`419eb7e` / `de14746`，REC-AU-14 治理巡检，四件套 + dependabot 均已入库）；复跑 repocheck 0 问题、exit 0。
 
 > ⚠ **上表的口径是「实测出来的」，不是抄来的**：2026-10-28 对账时发现原「`B)` 仅剩规则 1 固有项」与实际不符 ——
 > B 实为 5 条 error（规则 1/2/4/5，命中 `tools/security` 单文件脚本），退出码 **1**。经逐条核对确认四条均属结构固有后，

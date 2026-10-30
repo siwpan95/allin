@@ -131,6 +131,32 @@ def test_no_tests(tmp_path):
     assert st[3] == "fail"
 
 
+def test_nested_workspace_test_dir_recognized(tmp_path):
+    """2026-10-30 扩口：嵌套 test/ 目录（monorepo workspace）应被规则 3 认可。"""
+    files = {k: v for k, v in good().items() if not k.startswith("tests/")}
+    files["packages/core/test/helper.py"] = "x = 1\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[3] == "pass", f"嵌套 test/ 目录应使规则 3 通过，实际 {st[3]}"
+
+
+def test_nested_js_test_file_recognized(tmp_path):
+    """2026-10-30 扩口：JS/TS 惯例 *.test.mjs / *.spec.js（任意层级）应被认可。"""
+    files = {k: v for k, v in good().items() if not k.startswith("tests/")}
+    files["apps/cli/test/smoke.test.mjs"] = 'import { test } from "node:test";\n'
+    files["lib/util.spec.js"] = "// spec\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[3] == "pass", f"*.test.mjs / *.spec.js 应使规则 3 通过，实际 {st[3]}"
+
+
+def test_lookalike_dirs_do_not_satisfy_rule_3(tmp_path):
+    """形近目录不误放行：contest/ 与 tests_helper/ 不是测试目录。"""
+    files = {k: v for k, v in good().items() if not k.startswith("tests/")}
+    files["contest/foo.py"] = "x = 1\n"
+    files["tests_helper/bar.py"] = "x = 1\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[3] == "fail", "contest/ / tests_helper/ 不应被当作测试目录"
+
+
 def test_broken_import(tmp_path):
     files = good()
     files["app.py"] = "import totally_missing_mod_xyz\n"

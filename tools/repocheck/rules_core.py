@@ -93,7 +93,15 @@ def _check_readme(ctx: "ProjectContext") -> CheckResult:
 
 
 def _check_tests(ctx: "ProjectContext") -> CheckResult:
-    """规则 3：应有 tests/ 或 test/ 目录，或 test_*.py / *_test.py。"""
+    """规则 3：应有 tests/ 或 test/ 目录，或 test_*.py / *_test.py。
+
+    2026-10-30 扩口（monorepo workspace 盲区）：workspace 项目的测试常在
+    嵌套 ``test/`` 目录里（如 platform 的 ``apps/*/test/``、``packages/*/test/``
+    的 ``.test.mjs``），只查项目根会把「有测试」误报成「无测试」。新增两类判据：
+    ① 任意层级 ``test/`` / ``tests/`` 目录下的文件（按路径段精确匹配，``contest/``
+       等形近目录不误放行）；
+    ② JS/TS 测试惯例 ``*.test.*`` / ``*.spec.*`` 文件（任意层级）。
+    """
     for name in ("tests", "test"):
         if ctx.has_dir(name):
             return CheckResult.ok()
@@ -101,7 +109,13 @@ def _check_tests(ctx: "ProjectContext") -> CheckResult:
         base = path.rsplit("/", 1)[-1]
         if base.endswith(".py") and (base.startswith("test_") or base.endswith("_test.py")):
             return CheckResult.ok()
-    return CheckResult.bad("无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py")
+        parts = path.split("/")
+        if len(parts) >= 2 and any(seg in ("test", "tests") for seg in parts[:-1]):
+            return CheckResult.ok()
+        if base.endswith((".test.js", ".test.mjs", ".test.ts", ".test.jsx", ".test.tsx",
+                          ".spec.js", ".spec.mjs", ".spec.ts", ".spec.jsx", ".spec.tsx")):
+            return CheckResult.ok()
+    return CheckResult.bad("无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*")
 
 
 def _check_deps(ctx: "ProjectContext") -> CheckResult:
@@ -254,7 +268,7 @@ RULES_CORE: tuple[Rule, ...] = (
          Severity.ERROR, _check_vcs),
     Rule(2, "docs.readme_missing", "无 README", "目录自身无 README* 文件",
          Severity.ERROR, _check_readme),
-    Rule(3, "test.missing", "无测试", "无 tests/ 或 test/ 目录，且无 test_*.py / *_test.py",
+    Rule(3, "test.missing", "无测试", "无 tests/ 或 test/ 目录（含嵌套），且无 test_*.py / *_test.py / *.test.* / *.spec.*",
          Severity.WARN, _check_tests),
     Rule(4, "deps.missing", "无依赖声明",
          "无 requirements.txt / pyproject.toml / package.json / Cargo.toml",
