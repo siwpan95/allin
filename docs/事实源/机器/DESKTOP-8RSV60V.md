@@ -456,7 +456,7 @@ D: 侧                                          =  未记账（转移中）
   `GITEE_TOKEN` = **未设置**（`gitee_release.py` 必须显式 `--token` / `--token-file`，与 §3 凭据链一致）。
 - ⚠ **机器归属**：本节记的是 **`DESKTOP-8RSV60V` 那台**的现状；另一台（`DESKTOP-KQABATS`）的
   `KONTAKT_TRANSCODE_ROOT` **无消费者**（该机 musickit 检出较旧，2026-08-21），差异见
-  [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §5。
+  [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6。
 
 ---
 
