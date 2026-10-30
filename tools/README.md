@@ -12,6 +12,7 @@
 | `build_portfolio.py` | 从 Gitee API 生成 [`../PORTFOLIO.md`](../PORTFOLIO.md) | `python tools/build_portfolio.py --apply` |
 | `repo_hygiene.py` | 仓库卫生巡检 | 见文末 |
 | `gate/` | 工作区门禁集合（文档索引契约等） | 见 `gate/README.md` |
+| **`facts/`** | **机器事实的采集与判定**（`measure.py` 只采集 / `verify_facts.py` 只判定），补 `g07`/`g19`/`g01` 三者都没覆盖的「事实源断言过期」 | `python tools/facts/verify_facts.py --selftest` |
 | **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
 | **`security/venv_ca_audit.py`** | **venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）** | `allin tools venv-audit scan G:/repos` |
 | **`verify_projects.py`** | **逐项无头验证 registry 项目（T1 `verify.command` / T2 启动命令 / T3 包导入，其余 T4）** | `python tools/verify_projects.py --workers 8` |
