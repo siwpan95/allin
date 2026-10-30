@@ -17,8 +17,10 @@
 >   ⑧ `G:\local` 已清理至 **3 项**（原记"含 markdown / cordis-player 等本地仓"不再成立）
 >   ⑨ G 盘顶层 **54 项**，已非纯工作区：含 `SteamLibrary`、`Work_area`（471 项）、`found.000`–`found.009`（chkdsk 恢复碎片）等
 > **时点** 2026-10-29（**@`DESKTOP-8RSV60V` 现场复测订正 5 处** —— `$env:COMPUTERNAME` 实测**为空**
->   （原记 = 机器名；KQABATS 亦为空 ⇒ 该变量**不能**用来区分机器）、系统 10.0.**26300**（原 26200）、
->   `D:` **NTFS**（原 exFAT）、Node 现役 **22.22.2-6**（原 22.22.2-3）、`G:\repos` **135 仓**（原 117）；
+>   （原记 = 机器名；KQABATS 亦为空 ⇒ 该变量**不能**用来区分机器。⚠ **该条已被上条 ① 限定为「仅在 DSH 宿主内成立」**）、
+>   系统 10.0.**26300**（原 26200）、
+>   `D:` **NTFS**（原 exFAT）、Node 现役 **22.22.2-6**（原 22.22.2-3；⚠ **该条已被上条 ④ 改写为「三份并存、PATH 首选 `.old.56124`」**）、
+>   `G:\repos` **135 仓**（原 117；⚠ **已被上条 ⑤ 更新为 136**）；
 >   原 §9「pushurl 0 条」系 `@DESKTOP-KQABATS` 单机事实被写成通用条款，该机实测 **2 条**。）
 > **观测工具** `Get-Volume` · `Get-Disk` · `Get-CimInstance Win32_*` ·
 >   `git config --get remote.origin.url` · `Test-Path` 真实路径读写 · Gitee API 匿名查询 ·
