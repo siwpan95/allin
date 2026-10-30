@@ -2,6 +2,20 @@
 
 > **时点** 2026-10-30（**本文件由 `本机事实.md` 按机器分区建立** —— 原 §0–§9 中属该机的内容迁入，
 >   **章节编号保持不变**（§1 盘位仍是 §1），历史引用只需换文件路径、章节号自动对应。）
+> **时点** 2026-10-30 11:50（**@`DESKTOP-8RSV60V` 本机全量复测，P7 执行** —— 订正 9 处、新增 5 处。
+>   观测宿主 = **WorkBuddy PowerShell 7.6.6**；凡与 DSH 会话内实测不一致者，一律标注为**宿主差异**，不写成机器常量）
+>   ① `$env:COMPUTERNAME` **本宿主内实测非空**（= `DESKTOP-8RSV60V`），与 2026-10-29 DSH 会话内实测「空」**相反**
+>   ⇒ 该变量**随宿主而异**，仍**不可**用于区分机器（原结论"不是机器区分特征"仍成立，理由需换）
+>   ② **`D:\powershell\7\pwsh.exe` 现已存在**（完整安装，`pwsh.exe` 301,360 B）—— 原记"实测不存在…R5 卡住的物理成因"**作废**；
+>   两处 pwsh 并存，`Get-Command pwsh -All` 顺序为 **`G:\powershell\7` 在前、`D:\powershell\7` 在后**
+>   ③ git 实为 **`G:\Git\cmd\git.exe` / `2.55.0.windows.2`**（原记 PortableGit `2.55.0.windows.5`）
+>   ④ Node **三份并存**：`.old.56124`（v22.22.2，PATH **首选**）/ `22.22.2-6`（v22.22.2）/ **`G:\nodejs\node.exe`（v26.10.0，本文件此前未记）**；
+>   `versions/current` 实测为**空目录**（非符号链接、非 junction，`LinkType`/`Target` 均空）—— 原记"`current` 指向 22.22.2-6"**作废**
+>   ⑤ `G:\repos` **136**（原 135），差额可逐项对账：**−3 已收拢/归档 + 4 归档聚合仓**
+>   ⑥ `G:\archive` **43 项**（原 39），新增 4 项可点名
+>   ⑦ **D: 侧工作区落点整表作废**：`D:\allin` 现仅 `dabao` 1 项；素材归集实际在 **`G:\assets`（6 项）**
+>   ⑧ `G:\local` 已清理至 **3 项**（原记"含 markdown / cordis-player 等本地仓"不再成立）
+>   ⑨ G 盘顶层 **54 项**，已非纯工作区：含 `SteamLibrary`、`Work_area`（471 项）、`found.000`–`found.009`（chkdsk 恢复碎片）等
 > **时点** 2026-10-29（**@`DESKTOP-8RSV60V` 现场复测订正 5 处** —— `$env:COMPUTERNAME` 实测**为空**
 >   （原记 = 机器名；KQABATS 亦为空 ⇒ 该变量**不能**用来区分机器）、系统 10.0.**26300**（原 26200）、
 >   `D:` **NTFS**（原 exFAT）、Node 现役 **22.22.2-6**（原 22.22.2-3）、`G:\repos` **135 仓**（原 117）；
@@ -36,10 +50,13 @@
 | 电池 | 有（Lion 57750 mWh） | 无（台式机） |
 | 系统安装 / 最近启动 | 2026-07-13 / 2026-09-24 | 2026-07-28 / 2026-09-27 |
 
-- **该机身份（`DESKTOP-8RSV60V`）**：`Win32_ComputerSystem.Name = DESKTOP-8RSV60V`（⚠ **`$env:COMPUTERNAME` 实测为「空」**
-  —— 原记「= DESKTOP-8RSV60V」有误，2026-10-29 @同机复测；KQABATS 亦为空，故该变量**不是**机器区分特征），
+- **该机身份（`DESKTOP-8RSV60V`）**：`Win32_ComputerSystem.Name = DESKTOP-8RSV60V`
+  （⚠ **`$env:COMPUTERNAME` 随宿主而异，不可用于区分机器**：2026-10-29 在 **DSH 会话内**实测为「空」，
+  2026-10-30 在 **WorkBuddy PowerShell 7.6.6 宿主内**实测 = `DESKTOP-8RSV60V`（= 机器名，非空）。
+  同一台机器、同一变量、两种宿主两种结果 ⇒ 原记「实测为空」只在 DSH 宿主下成立，**不能写成机器特征**；
+  KQABATS 在 DSH 宿主内亦为空 —— 三条观测同源，结论仍是「不可靠」），
   用户 `psw`（`C:\Users\psw`），Windows 11 专业版 10.0.**26300**（原 10.0.26200，累积更新后上浮；
-  2026-10-29 @同机复测）。
+  2026-10-29 @同机复测；**2026-10-30 复测仍为 26300，未变**）。
 - **变化点（2026-09-28）**：旧机那份导出件**原先没有"旧机"标识**（文件名与正文都无），已改名为
   `siwpan旧机电脑硬件信息 - 腾讯电脑管家检测结果.txt`，与"新机"那份成对，避免日后误用。
   该改名以 `git mv` 语义入库（`R` 记录），并已在 commit 说明中留痕。
@@ -58,11 +75,31 @@
 
 **2026-10-29 @`DESKTOP-8RSV60V` 复测实测**：`C:` NTFS 465 GB / `D:` `save` **NTFS** 7452 GB / `F:` `trash` NTFS 3726 GB / `G:` `allin` NTFS 3726 GB —— 四卷齐全、卷标未变，**唯一变化是 `D:` 的文件系统**（exFAT → NTFS）。
 
+**2026-10-30 11:50 @`DESKTOP-8RSV60V` 复测（新增：可用空间 + 物理盘映射）**
+
+| 盘 | 卷标 | 文件系统 | 容量 GB | 可用 GB | 对应物理盘（`Get-Disk`） |
+| --- | --- | --- | --- | --- | --- |
+| `C:` | （系统） | NTFS | 465 | 268 | #0 `GALAX BA1M0500F` NVMe 466 GB |
+| `D:` | `save` | NTFS | 7,452 | 6,773 | #1 `SanDisk Desk SSD` USB 7,452 GB |
+| `F:` | `trash` | NTFS | 3,726 | 1,049 | #2 `WD Game Drive` USB 3,726 GB |
+| `G:` | `allin` | NTFS | 3,726 | 2,170 | #3 `WD Game Drive` USB 3,726 GB |
+
+- 四卷齐全、卷标未变、`D:` 仍为 NTFS ⇒ 本节主表结论维持。
+- ⚠ **订正「外置盘」口径**：§0 判据表记「闪迪 8001G + 西数 Game Drive 4000G ×2」，那是硬件导出件的**标称值**；
+  `Get-Disk` 实测 **7,452 / 3,726 / 3,726 GB** ⇒ **提容量一律以 `Get-Volume` 实测为准**，标称值只作型号线索。
+- ⚠ **`F:` 可用仅 1,049 GB（剩 28%）**，四卷中最紧，而它承担「大依赖盘」角色（Python / models / VS2022 / mingw64 / node）。
+  涉及往 `F:` 写大件（模型、依赖、构建产物）前先看这一行。
+
 > ⚠ **本节与两份 09-24 快照矛盾，以本节为准**（见 §5 冲突裁决）。
 
 ---
 
-## 2. 工作区落点：**跨 G: 与 D: 两块盘**（2026-09-28 实测）
+## 2. 工作区落点：**代码在 G:；数据侧已收缩**（2026-09-28 实测；2026-10-30 复测订正）
+
+> **⚠ 2026-10-30 复测：本节标题原为「跨 G: 与 D: 两块盘」，现已不成立。**
+> `D:\allin` 只剩 `dabao` 1 项，`D:` 侧**不再承担工作区数据根职能**；素材归集回到 **`G:\assets`**（6 项）。
+> `D:` 目前只保留两处**仍在位**的外部资产：`D:\deepseek-harness`（70 项）、`D:\deepseek harness GitHub`（69 项）。
+> 详见 **§2.2 顶部订正块**。
 
 > ⚠ 文档里"整个工作区在 G:\ 一块盘上、目录契约一项不缺"的表述**已过期**。实测：**代码在 G:，数据在 D:。**
 
@@ -70,13 +107,51 @@
 
 | 目录 | 内容 |
 | --- | --- |
-| `G:\repos` | **135 个仓**（`仓名 = 目录名`，每个都有 `.git`）—— 项目主落点。**2026-10-29 @`DESKTOP-8RSV60V` 复测**：135 目录 / 135 含 `.git`。（原 **117**，2026-10-14：117 目录 / 117 含 `.git` / 116 含 origin，唯一无 origin 的是 `pomdmer`；更早 116（2026-10-06）、114（2026-09-28））⇒ **15 天净增 18 个**；其中 2 个尚未进 `组合分级决策索引`（FACT-08，133 仓口径）：`write-agent`（2026-10-29 新建）、`sin-virtue-game`（已标退役、内容并入 `sin-virtue-cordis-host`，目录仍未归档） |
+| `G:\repos` | **136 个仓**（`仓名 = 目录名`，每个都有 `.git`）—— 项目主落点。**2026-10-30 @`DESKTOP-8RSV60V` 复测**：**136 目录 / 136 含 `.git` / 136 含 origin**（原 2026-10-29 记 135/135）。（原 **117**，2026-10-14：117 目录 / 117 含 `.git` / 116 含 origin，唯一无 origin 的是 `pomdmer`；更早 116（2026-10-06）、114（2026-09-28））⇒ **15 天净增 18 个**；其中 2 个尚未进 `组合分级决策索引`（FACT-08，133 仓口径）：`write-agent`（2026-10-29 新建）、`sin-virtue-game`（已标退役、内容并入 `sin-virtue-cordis-host`，目录仍未归档） |
 | `G:\allin` | **本仓**（索引 / 治理 / 文档枢纽 / preset 载体），远端 `siwpan/allin`。**保留在仓根**：它是 preset 载体的自发现基准，搬它风险最高、收益最小（见 §6 P1） |
 | `G:\local` | **纯本地区**（2026-09-28 用户明确）：本地专用、**默认不对外发布**。含 `markdown`、`test\cordis-player` 等**本地仓**及若干暂存/归档目录。**要公开发布必须先迁到 `/repos/<仓名>` 并在那里建远端仓**（判据见 `SPEC-006 §3`） |
 | `G:\tools` | 工作区工具（**非仓**，含 `gate/`） |
 | `G:\Python314` `G:\nodejs` `G:\Git` `G:\go` `G:\cargo` | 运行时与工具链 |
 
-### 2.2 `D:\`（数据盘，**exFAT**）—— 工作区数据根 = `D:\allin\`
+> **2026-10-30 新增观察：`G:\` 顶层已有 54 项，不再是"纯工作区盘"**
+> 工作区之外还混着四类内容，判"某物在哪"时容易被它们干扰：
+> 1. **游戏/下载**：`SteamLibrary`、`BaiduNetdiskDownload`
+> 2. **磁盘检查恢复碎片**：`found.000`–`found.009`（共 **10 个**；`found.000` 12 项、`found.005` 2 项、`found.006` 3 项，其余空）
+>    —— 这是**文件系统曾出过错的物证**，不是工作区内容，不要误当项目目录扫
+> 3. **`_` 前缀临时/备份区**：`__archive_before_cleanup_20261026`、`_git_backup`、`_go_tmp`、`_safety_backup`、
+>    `_guard_trash_test.txt`、`_tmp_<pid>_<hash>` ×5
+> 4. **`Work_area`（471 项）**：含 `_INCIDENT-home-delete-2026-10-09.log`、`_RETRO-cordis-sync-and-incident.md` 等历史事故留证
+> ⇒ 凡做"全盘扫描 / 去符盘 / 仓数统计"，**必须以 `G:\repos` 为根，不能以 `G:\` 为根**。
+
+### 2.1.1 `G:\repos` **136** 的差额对账（2026-10-30，双向差集实测）
+
+把 `组合分级决策索引` 的 135 条数据行与本机 136 个目录做**双向差集**，两侧都没有"无法解释"的余项：
+
+| 方向 | 项 | 解释 |
+| --- | --- | --- |
+| 分级表有 · 本机无（**3**） | `calculator`、`happy-childrens-day` | 2026-10-29 收拢进 `arcade`（`games/calculator`、`games/sixone`），远端仓已删（HTTP 204，复核 404） |
+| | `sin-virtue-game` | 2026-10-29 目录移入归档区 `archive/sin-virtue-game-retired-20261029`（**移动非删除**，历史保全） |
+| 本机有 · 分级表无（**4**） | `dev-toolkit`、`game-prototypes`、`media-prototypes`、`music-prototypes` | 2026-10-29 新建的**归档聚合仓**（③ 收敛落点，承载 68 条 `archive/<仓>` 分支中的 63 条）。它们是③的**容器**、不是被分级对象，故不入 135 行表；已由 `platform/registry/` 登记为 `status: archived` |
+
+⇒ **136 = 135 − 3 + 4**，双向差集**零缺项**。
+
+> ⚠ **方法**：只做单向差集会把"已收拢/已归档"误判成"分级表出错"，也会把"新建聚合仓"误判成"漏登记"。
+> 必须先跑双向差集，逐项给出**处置来源**（收拢 / 归档 / 新建），才能说这个数是干净的 —— 同 `记录/记忆/2026-10.md` 2026-10-29「未分级要先用双向差集定性」条。
+
+### 2.2 `D:\`（数据盘，**NTFS**；原记 exFAT）—— ⚠ 工作区数据根**已不在** `D:\allin\`
+
+> **⚠ 2026-10-30 复测：本节下表整表作废（历史留档）**
+> `D:\allin` 现**仅剩 1 项 `dabao`**。下表所列 `D:\allin\{archive,assets,web,workbuddy,Temp,tmp,logs,job,_job,shurufa,venvs,powershell}`
+> **全部不存在**（`Test-Path` 逐项实测 MISSING）。
+>
+> **现行落点（2026-10-30 实测）**：
+> - **素材归集 = `G:\assets`（6 项）**：`csmusic_stems` / `musicdown` / `musickit_transcode` / `radio_music_stems` / `transcode_work` / `yasuobao`
+> - **归档区 = `G:\archive`（43 项）** —— 唯一落点，见 §2.2 末行与 §6 P3
+> - **参考源码 = `F:\notpython`（46 项 = 44 目录 + 2 文件）** —— 与旧记一致，仍在位
+> - `D:\deepseek-harness`（70 项）、`D:\deepseek harness GitHub`（69 项）—— **仍在位**，与本表一致
+> - `G:\web`、`G:\notpython`、`G:\platform` —— 三者 `Test-Path` 均 **MISSING**（`G:\platform` 已于 2026-09-28 并入 `G:\repos\platform`，见 §6 P1）
+>
+> ⇒ **判"东西在哪"必须看目录，不能看文档说它在哪** —— 本表的"D 侧旧称/新称"两列都建立在"D:\allin 是数据根"这个已失效前提上。
 
 | 目录 | 内容 | 文档里的旧称 |
 | --- | --- | --- |
@@ -105,7 +180,9 @@
 > **✅ 现行口径（2026-10-30 更新）**：
 > - **远端仓总数 = 137** —— 跨机共识值，**唯一登记处**见 [`../机器分区索引.md`](../机器分区索引.md) §5
 >   （2026-10-30 @`DESKTOP-KQABATS` 匿名 API 全量实测；本节以下的 115 / 118 / 121 **全为历史时点值**）。
-> - **本机 `G:\repos` 顶层 = 135**（2026-10-29 @`DESKTOP-8RSV60V` 复测：135 目录 / 135 含 `.git`）。
+> - **本机 `G:\repos` 顶层 = 136**（2026-10-30 @`DESKTOP-8RSV60V` 复测：**136 目录 / 136 含 `.git` / 136 含 origin**；
+>   原 2026-10-29 记 135/135。差额对账见 **§2.1.1**：−3 已收拢/归档 + 4 归档聚合仓，双向差集零缺项）。
+> - **远端仓总数 = 137 复核有效**（2026-10-30 11:50 @`DESKTOP-8RSV60V` 匿名 API 分页实测：page1=100 / page2=37 / page3=0）。
 > - 提「远端仓数」一律查索引 §5；提「`/repos` 顶层」一律**现场实测**（随各机检出情况而变）。
 
 > **2026-10-06 · 凭据落点（现行唯一事实源位置）**：本机凭据**只由 Windows 凭据管理器持有**
@@ -159,11 +236,11 @@ D: 侧                                          =  未记账（转移中）
 | 工具 | 现值 | 备注 |
 | --- | --- | --- |
 | Python | **本机主 Python = `F:\Python\pythoncore-3.14-64\python.exe` → 3.14.6**；共 3 台，见 **§4.1 解释器清单** | 选型见 `SPEC-004 §48/§49`；**tkinter 是关键判据** |
-| Node | `C:\Users\psw\.workbuddy\binaries\node\versions\22.22.2-6\node.exe`（v22.22.2） | 随 WorkBuddy 便携工具链。**2026-10-29 @`DESKTOP-8RSV60V` 订正**：原记 `22.22.2-3` 已于 2026-10-15 降级改名为 `22.22.2-3.old.56124`，现役 `22.22.2-6`（`versions/current` 指向它）。⚠ 该机 shell PATH 里的 `npm` 仍解析到 `.old.56124` 目录、`node` 命令未解析到任何版本 ⇒ 跑 `npm run ...` 时用的是**旧目录**的 npm，排查门禁问题先看这一条 |
+| Node | **三份并存**，PATH 顺序即下列次序：① `...\node\versions\22.22.2-3.old.56124\node.exe`（v22.22.2，**`node` 命令首选**）② `...\node\versions\22.22.2-6\node.exe`（v22.22.2）③ **`G:\nodejs\node.exe`（v26.10.0）** | 随 WorkBuddy 便携工具链 ×2 + G 盘独立安装 ×1。**2026-10-30 @`DESKTOP-8RSV60V` 复测重写**：<br>⚠ **原记「`versions/current` 指向 22.22.2-6」作废** —— `current` 实测为**空目录**（`LinkType`/`Target` 均空、`Attributes=Archive`），不是符号链接也不是 junction，**不能拿它判现役版本**。<br>⚠ **原记「`node` 命令未解析到任何版本」作废** —— 现实测 `Get-Command node` 首命中即 `.old.56124`（旧目录），`node -v` = v22.22.2、`npm -v` = 10.9.7 **均来自旧目录**。<br>⚠ **本文件此前完全未记 `G:\nodejs\node.exe` = v26.10.0** —— 它是全机最高版本，排 PATH 第三，`npm run` 不会用到它，但直接调绝对路径会拿到 v26 ⇒ 版本相关故障先确认走的是哪一份。<br>⇒ 纪律：**判现役 Node 一律 `Get-Command node -All` 看顺序 + 逐个 `& <exe> -v`，不看 `current`、不看 PATH 单值** |
 | npm | 同上目录 | |
 | pnpm / tsx | `D:\deepseek-harness\node_modules\.bin\` | 由 DSH checkout 提供，非全局。**2026-10-08 复测订正**：现役 checkout 是 `D:\deepseek-harness`（原值 `G:\repos\deepseek-harness` 那次检出仍在盘上，但已不是运行中的那份，且它带着一个从 G: 启动的 esbuild 子进程）。|
-| pwsh | `G:\powershell\7\pwsh.exe` | 7.x（**全机唯一**）。**2026-10-08 复测订正**：原值 `D:\powershell\7\pwsh.exe` **实测不存在** —— 这正是 R5 卡住的物理成因（G: 上的 pwsh 映像钉住卷）。DSH 的每条命令都从该路径启动，所以**对 G: 做离线修复前必须先确认它没在跑**。|
-| git | `C:\Users\psw\.workbuddy\binaries\PortableGit\versions\2.55.0\cmd\git.exe` | 2.55.0.windows.5 |
+| pwsh | **两处并存**：`G:\powershell\7\pwsh.exe`（PATH **首选**）、`D:\powershell\7\pwsh.exe` | 7.6.6。**2026-10-30 @`DESKTOP-8RSV60V` 复测重写**：⚠ **原记「`D:\powershell\7\pwsh.exe` 实测不存在 —— 这正是 R5 卡住的物理成因」整条作废** —— `D:\powershell\7` 现存**完整安装**（`pwsh.exe` 301,360 B + 全套 `System.*.dll`），`Get-Command pwsh -All` 返回两条，顺序是 **G: → D:**。<br>⇒ R5 风险的**准确表述**应改为：**PATH 首选 `G:` 侧 pwsh**，DSH 每条命令都从该映像启动，因此**对 G: 做离线修复前必须先确认 G: 侧 pwsh 没在跑**；这与「D: 侧缺失」无关（D: 侧是可用的备用/第二安装，不是不存在） |
+| git | **`G:\Git\cmd\git.exe`** | **2.55.0.windows.2**。**2026-10-30 复测订正**：原记 `C:\Users\psw\.workbuddy\binaries\PortableGit\versions\2.55.0\cmd\git.exe`、版本 `2.55.0.windows.5` —— **路径与版本双错**。<br>⇒ 凡脚本里写死 PortableGit 路径的，在该机上会指向**非实际使用的**那份；判 git 一律 `Get-Command git` + `git --version` |
 
 ### 4.1 Python 解释器清单（**2026-10-08 实测**；选型前先测 `import tkinter`）
 
@@ -173,6 +250,21 @@ D: 侧                                          =  未记账（转移中）
 | `G:\Python314\python.exe` | 3.14.7 | **有**（Tk 9.0） | 9.1.1 | ⚠ 含 `SPEC-004 §48` 的 CPython 缺陷；`foolproof-operation/.venv` 用的就是它 |
 | `C:\Users\psw\.workbuddy\binaries\python\versions\3.13.12\python.exe`（**目录名如此，实际 3.13.14**） | 3.13.14 | **无** | 无 | WorkBuddy 便携工具链；**精简构建**。⚠ 路径里的 `3.13.12` 是**目录名**，不是版本 —— 判版本一律 `python -V`（`SPEC-004 §49`） |
 | `F:\Python314_embed_backup\python.exe` | 3.14.6 | **有**（Tk 8.6） | 有（pip 26.2.1） | **旧路径 `F:\Python314` 的备份/对应物**（embeddable 布局：带 `python314.zip` + `._pth`；44 项 / 1626 MB） |
+
+**2026-10-30 11:50 @`DESKTOP-8RSV60V` 逐台复测（`-V` + `import tkinter` 双验）**——四台全部在位、版本与 tkinter 状态**与上表完全一致**，无订正：
+
+| 解释器 | 实测版本 | tkinter |
+| --- | --- | --- |
+| `F:\Python\pythoncore-3.14-64\python.exe` | 3.14.6 | tk 8.6 ✅ |
+| `G:\Python314\python.exe` | 3.14.7 | tk 9.0 ✅ |
+| `C:\Users\psw\.workbuddy\binaries\python\versions\3.13.12\python.exe` | 3.13.14 | **`ModuleNotFoundError: No module named 'tkinter'`** ❌（本次直接复现） |
+| `F:\Python314_embed_backup\python.exe` | 3.14.6 | tk 8.6 ✅ |
+
+- ⚠ **新增（PATH 口径）**：`Get-Command python -All` 只命中 **`G:\Python314\python.exe`** 与
+  `C:\Users\psw\AppData\Local\Microsoft\WindowsApps\python.exe`（**Microsoft Store 存根**，不是真解释器）。
+  ⇒ **`F:\Python` 那台虽是"用户指认的主 Python"，却不在 PATH 首位、根本不在 PATH 里**；
+  裸跑 `python` 拿到的是 **3.14.7（G: 侧）**，不是 3.14.6。
+  ⇒ 纪律：**凡要用「主 Python 3.14.6」，必须写绝对路径或 `sys.executable`，不能靠 `python` 二字**。
 
 - ⚠ **`.workbuddy` 的 3.13.14 没有 tkinter ⇒ 依赖 tkinter 的项目不要用它**。
   实证（2026-10-08）：`foolproof-operation` 用它建 venv 后 `smoke_test.py` / `gui.py` 直接
@@ -235,7 +327,7 @@ D: 侧                                          =  未记账（转移中）
 | P4 | `本机硬件与差异摘要` / `新机配置汇总` 两份快照的订正块是否加"本条与实测相反"批注 | 未改（按历史保全原则；裁决已记录在 §5.1） | 待定 |
 | P5 | `novel-run` 的 `.gitignore` 漏覆盖 `_prov_tmp/` `_sec_out/` `_sec_poc/` | ✅ **已执行**（`novel-run` 提交 `c6b29b4` 并推送）：补 4 组规则，`git check-ignore` 逐条验证 —— 8 项应忽略全部忽略、2 份交付物正确纳入跟踪。⚠ 顺带实测到一个 gitignore 锚定陷阱（含内部斜杠的模式锚定在 .gitignore 所在目录），已写进文件注释 | 已办 |
 | P6 | `allin-platform` 的既有门禁阻断 2 条（H8 行尾假改动、H6 借鉴记账缺项） | 未动（建议单独排期；H8 的真因是 `core.autocrlf=true` 而仓内无 `.gitattributes`） | 待定 |
-| **P7** | **补录各机独有观测** —— 分区结构已于 2026-10-30 建立（索引 + 每机一件，见 [`../机器分区索引.md`](../机器分区索引.md)） | **已完成结构**：本文件承接原 §0–§9 中属 `DESKTOP-8RSV60V` 的内容，**章节号保持不变**；原 §0.1 的两机表与 §9 推送口径已拆到各机文件；§3 的过期口径已按实测订正（远端 137）。**仍待补录**：各机的工作区落点细节、`/repos` 仓数、运行时与解释器清单、跨仓环境变量 —— **`DESKTOP-KQABATS` 侧已于 2026-10-30 全量补录**（见该机文件 §1–§5）；**本机（8RSV60V）侧的复测**待排期 | **待定（需用户排期）** |
+| **P7** | **补录各机独有观测** —— 分区结构已于 2026-10-30 建立（索引 + 每机一件，见 [`../机器分区索引.md`](../机器分区索引.md)） | ✅ **已完成（2026-10-30 11:50 @`DESKTOP-8RSV60V` 全量复测）** —— 本机侧订正 9 处、新增 5 处：<br>① `$env:COMPUTERNAME` 改为**宿主观测**（DSH 空 / WorkBuddy 非空）；② `D:\powershell\7\pwsh.exe` **现存**，R5 表述改写；③ git 路径+版本双订正；④ Node 三份并存 + `current` 为空目录 + 新记 `G:\nodejs` v26.10.0；⑤ `G:\repos` **136** 并附 §2.1.1 差额对账；⑥ `G:\archive` **43**；⑦ **D 侧落点整表作废**，素材归 `G:\assets`；⑧ `G:\local` 已清理至 3 项；⑨ G 盘顶层 54 项非纯工作区。<br>另新增：盘位可用空间 + 物理盘映射（§1）、Python PATH 口径（§4.1）、44/46 项复核（§2.2） | **已办** |
 
 ---
 
@@ -265,12 +357,18 @@ D: 侧                                          =  未记账（转移中）
 | `D:\local\{repos,platform,assets}` | 空目录 | **可删** |
 | `D:\local\archive\allin-preset-retired-20260924` | 1 项 | 建议随存档一并并入 `D:\allin\archive\` |
 
-### 7.3 无远端的本地仓（3 个）
+### 7.3 无远端的本地仓（原 3 个 → **2026-10-30 复测：实际已不成立**）
 
-| 路径 | 实测 | 判定 |
+> **2026-10-30 @`DESKTOP-8RSV60V` 复测订正**：本表前两行的仓**已不在盘上**。
+> `G:\local` 现存 **3 项**：`_CLEANUP_MANIFEST_20261026.md`（清理清单）、`archived\localplayer.pem`（1 个 pem）、
+> `miu2d\`（**有 origin、非本机自有**：`https://github.com/luckyyyyy/miu2d.git`，`main` 分支，404 提交）。
+> ⇒ `G:\local\markdown` 与 `G:\local\test\cordis-player` 的"唯一副本、不可删"约束**随之解除**（已按清单处置），
+> 原判定仅作历史留档。**第三行 `musickit\archived\tools-music-git-backup` 未复核**（不在 `G:\local` 范围，待单独查）。
+
+| 路径 | 实测（2026-09-28） | 判定（历史，⚠ 前两行已失效） |
 | --- | --- | --- |
-| `G:\local\markdown` | 2 提交、无 origin | **不可删**：是唯一副本。建议先建远端仓（铁律 0/4）再谈归置 |
-| `G:\local\test\cordis-player` | 6 提交、无 origin、最后提交 2026-09-28 | **不可删**：同上 |
+| `G:\local\markdown` | 2 提交、无 origin | **不可删**：是唯一副本。建议先建远端仓（铁律 0/4）再谈归置 —— ⚠ **2026-10-30 复测：目录已不存在** |
+| `G:\local\test\cordis-player` | 6 提交、无 origin、最后提交 2026-09-28 | **不可删**：同上 —— ⚠ **2026-10-30 复测：目录已不存在** |
 | `G:\repos\musickit\archived\tools-music-git-backup` | 1 提交、无 origin、`archived/` 下 | **不可删**：同上；且已在归档目录内，处置优先级最低 |
 
 ### 7.4 远端 `*-legacy`（7 个，本地均未检出）—— **内容级查重已完成**
@@ -346,6 +444,10 @@ D: 侧                                          =  未记账（转移中）
   —— **0 处定义点、0 处读取点**。在找到真实读取点之前**不写进任何仓文档**，避免为不存在的变量造文档。
 - **宿主不可回滚**：`F:\notpython\kontakt_transcode` **不是 git 仓**（无 `.git`），改它之前先按 §0 口径备份。
 - 读法约定：跨仓脚本引用数据根时**优先环境变量、未设则按 cwd 相对解析**（与 `调试铁律 5`「去符盘」同一口径）。
+- **2026-10-30 11:50 @`DESKTOP-8RSV60V` 现值实测（三者均未设置）**：
+  `KONTAKT_TRANSCODE_ROOT` = **空**（未设置 ⇒ 回落 `kontakt_transcode` 相对 cwd 解析）；
+  `RIME_SRC` = **空**（仍未获证实，与 2026-10-08 结论一致）；
+  `GITEE_TOKEN` = **未设置**（`gitee_release.py` 必须显式 `--token` / `--token-file`，与 §3 凭据链一致）。
 - ⚠ **机器归属**：本节记的是 **`DESKTOP-8RSV60V` 那台**的现状；另一台（`DESKTOP-KQABATS`）的
   `KONTAKT_TRANSCODE_ROOT` **无消费者**（该机 musickit 检出较旧，2026-08-21），差异见
   [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §5。
@@ -365,6 +467,10 @@ D: 侧                                          =  未记账（转移中）
 - **作业口径**：`git rev-parse HEAD` 与 **Gitee 与 GitHub 两侧** `git ls-remote` 均逐字符相等、
   `rev-list --left-right --count` 为 0/0、工作树干净。
 - **它正是上游 `bab074d` 所说的「远端侧」**，GitHub 镜像由它推送。
+- **2026-10-30 11:50 @`DESKTOP-8RSV60V` 复测：上表四项全部维持** ——
+  `remote.origin.url` = `https://gitee.com/siwpan/allin.git`；`--get-all remote.origin.pushurl` **2 条**
+  （Gitee + `git@github.com:siwpan95/allin.git`）；独立 `github` remote 仍在；一次 `git push` 依次打两条。
+  ⇒ 本条**无订正**，与 `@DESKTOP-KQABATS` 侧（pushurl 0 条）**仍是对照口径，勿套用**。
 - **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6。
 
 ---
