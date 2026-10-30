@@ -414,8 +414,8 @@ def build_fixture(kind: str, base: str) -> str:
     with io.open(os.path.join(docs, "规范", spec_name), "w", encoding="utf-8") as f:
         f.write(spec)
 
-    with io.open(os.path.join(docs, "事实源", "本机事实.md"), "w", encoding="utf-8") as f:
-        f.write("# 本机事实\n\n> **时点** 2026-09-28\n")
+    with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
+        f.write("# 机器分区索引\n\n> **时点** 2026-09-28\n")
 
     vol1 = "2026-08.md"
     vol2 = "2026-09.md"
@@ -450,16 +450,16 @@ def build_fixture(kind: str, base: str) -> str:
              "| HUB-01 | [README.md](README.md) |",
              "| HUB-02 | [INDEX.md](INDEX.md) |",
              "| SPEC-001 | [铁律](规范/%s) |" % spec_name,
-             "| FACT-01 | [本机事实](事实源/本机事实.md) |",
+             "| FACT-01 | [机器分区索引](事实源/机器分区索引.md) |",
              "| REC-AU-01 | [盘点](记录/审计/%s) |" % rec,
              "| REC-HO-01 | [2026-08](记录/交接/%s) |" % vol1,
              "| REC-HO-02 | [%s](记录/交接/%s) |" % (vol2[:-3], vol2)]
     if kind == "missing-registration":
-        lines = [ln for ln in lines if "本机事实" not in ln]
+        lines = [ln for ln in lines if "机器分区索引" not in ln]
     if kind == "dangling-index":
         lines.append("| REC-XX-99 | [不存在](记录/审计/根本不存在_2026-01-01.md) |")
     if kind == "category-mismatch":
-        lines = [ln.replace("(事实源/本机事实.md)", "(规范/本机事实.md)") for ln in lines]
+        lines = [ln.replace("(事实源/机器分区索引.md)", "(规范/机器分区索引.md)") for ln in lines]
     with io.open(os.path.join(docs, "INDEX.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 

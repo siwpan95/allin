@@ -71,7 +71,7 @@
   <text x="680" y="96" class="ttl" fill="#6d28d9">B · 治理放行链路（Agent）</text>
 
   <rect x="680" y="110" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>
-  <text x="694" y="135" class="box-t">① 开卷读四事实源（INDEX→SPEC-001→002→本机事实）</text>
+  <text x="694" y="135" class="box-t">① 开卷读四事实源（INDEX→SPEC-001→002→机器分区索引）</text>
   <path d="M930,150 L930,166" stroke="#6d28d9" stroke-width="2" marker-end="url(#db)"/>
 
   <rect x="680" y="166" width="500" height="40" rx="8" class="box" stroke="#7c3aed"/>

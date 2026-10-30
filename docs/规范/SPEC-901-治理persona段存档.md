@@ -87,7 +87,7 @@ $seg = [regex]::Match($raw, '(?s)<!-- GOVERNANCE:BEGIN -->.*?<!-- GOVERNANCE:END
 | `/allin/docs/MEMORY.md` | `<仓根>/docs/INDEX.md`（总目录）+ `<仓根>/docs/规范/SPEC-001-铁律.md` |
 | `/allin/docs/协作工作流程约定_2026-08-28.md` | `<仓根>/docs/规范/SPEC-002-协作工作流程.md` |
 | `/allin/docs/会话交接_2026-08-27.md` | `<仓根>/docs/记录/交接/`（按月分卷，读最新卷） |
-| `/allin/docs/新机配置汇总_2026-09-24.md` | `<仓根>/docs/事实源/本机事实.md` |
+| `/allin/docs/新机配置汇总_2026-09-24.md` | `<仓根>/docs/事实源/机器分区索引.md` |
 
 - **上面的存档段按原样保留**（它是**出厂那份文件**的逐字节基线，段长与 SHA256 仍与之对应，用于升级时核对）。
 - **活载体是 [`../../preset/allin/allin.patch.yml`](../../preset/allin/allin.patch.yml) 与 `bundle/cordis.patch.yml`**（两者治理段逐字节一致）——

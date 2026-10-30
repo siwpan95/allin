@@ -44,7 +44,7 @@
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
 - **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork；原独立 gitee 仓
   `siwpan/deepseek-harness` **已于 2026-10-26 整合后删除**——治理内核并入本仓（见「三仓整合」第 6 条），
-  工具本体现役在 `D:\deepseek-harness`（同日的旧检出 `G:\repos\deepseek-harness` 已移除，见 [`docs/事实源/本机事实.md`](docs/事实源/本机事实.md)）。
+  工具本体现役在 `D:\deepseek-harness`（同日的旧检出 `G:\repos\deepseek-harness` 已移除，见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)）。
 - 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `roleplayer` `music-master` `ncmturnmp3` `D20`。
 - 以上 13 个为本机已克隆的**成员子集**；全量 135 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
 

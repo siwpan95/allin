@@ -6,7 +6,7 @@
 
 - **触发**：用户要求「挂载 agent 跑一遍管理治理」，并按 SPEC-005 记账本次巡检结果；同时要求顺手处理 repocheck 在 `G:\allin` 根扫到的两个子件（`kernel/`、`platform/`）的 warn 待办。
 - **范围**：`G:\allin` 治理仓（远程 `gitee.com/siwpan/allin`，默认分支 `master`）。
-- **巡检执行**：按 `allin-governance-agent` SKILL 工作流——开卷读四事实源（INDEX / SPEC-001 铁律 / 本机事实）+ 跑 `scripts/run_all_gates.sh`（15 道门禁 g00–g15 + 文档索引契约 D1–D8 + repocheck 自检）+ 仓库卫生。
+- **巡检执行**：按 `allin-governance-agent` SKILL 工作流——开卷读四事实源（INDEX / SPEC-001 铁律 / 机器分区索引）+ 跑 `scripts/run_all_gates.sh`（15 道门禁 g00–g15 + 文档索引契约 D1–D8 + repocheck 自检）+ 仓库卫生。
 
 ## 二、门禁结果（巡检当日）
 
@@ -18,7 +18,7 @@
 | 推送就绪（g04） | `origin/master` **IN_SYNC**，local=remote=`6e98dbcb01f2` |
 | git 状态 | 干净；HEAD 与 `ls-remote` 逐字符相等 |
 
-> 环境坑（已记入 `本机事实 §4.1`）：repocheck 顶层 `import tkinter`，WorkBuddy 便携 3.13.14 无 tkinter，须用 `G:\Python314`。
+> 环境坑（已记入 `机器/DESKTOP-8RSV60V.md §4.1`）：repocheck 顶层 `import tkinter`，WorkBuddy 便携 3.13.14 无 tkinter，须用 `G:\Python314`。
 
 ## 三、repocheck 原始 findings（修复前）
 
