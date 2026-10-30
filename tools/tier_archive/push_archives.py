@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
-"""推送归档仓的 master + 全部 archive/* 分支，并核对远端分支数。"""
+"""推送归档仓的 master + 全部 archive/* 分支，并核对远端分支数（一次性脚本）。
+
+落点环境变量化（铁律 5）：TIER3_WORK / TIER3_REPOS 随机器传入，不写死盘符。
+"""
 import subprocess, os, sys
+from pathlib import Path
+
+_WORK = os.environ.get("TIER3_WORK", "")
+_REPOS = os.environ.get("TIER3_REPOS", "")
+if not (_WORK and _REPOS):
+    sys.exit("缺少 TIER3_WORK / TIER3_REPOS 环境变量（落点随机器，不再写死盘符）")
 
 TARGETS = [
-    (r"G:\local\_tier3_work\game-prototypes", 34),
-    (r"G:\local\_tier3_work\media-prototypes", 13),
-    (r"G:\local\_tier3_work\music-prototypes", 3),
-    (r"G:\local\_tier3_work\dev-toolkit", 13),
-    (r"G:\repos\players-unified", 4),
-    (r"G:\repos\sin-virtue-cordis-host", 1),
+    (os.path.join(_WORK, "game-prototypes"), 34),
+    (os.path.join(_WORK, "media-prototypes"), 13),
+    (os.path.join(_WORK, "music-prototypes"), 3),
+    (os.path.join(_WORK, "dev-toolkit"), 13),
+    (os.path.join(_REPOS, "players-unified"), 4),
+    (os.path.join(_REPOS, "sin-virtue-cordis-host"), 1),
 ]
 
 

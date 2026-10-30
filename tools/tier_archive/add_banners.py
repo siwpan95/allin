@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
-"""为 Tier③ / Tier④ 源仓 README 顶部加状态横幅，提交并推送（幂等）。
+"""为 Tier③ / Tier④ 源仓 README 顶部加状态横幅，提交并推送（幂等，一次性脚本）。
 
 用法: python _banners.py [--apply]
   不带 --apply 只打印计划。
+
+落点环境变量化（铁律 5）：BANNER_PLAN 指向 _banner_plan.json
+（一次性工作产物，不入库，路径随机器）。
 """
 import io, json, os, re, subprocess, sys
 from pathlib import Path
 
-PLAN = r"G:\allin\docs\事实源\_banner_plan.json"
+PLAN = os.environ.get("BANNER_PLAN", "")
+if not PLAN:
+    sys.exit("缺少 BANNER_PLAN 环境变量（指向 _banner_plan.json；"
+             "该文件为一次性工作产物不入库，路径随机器，不再写死盘符）")
 APPLY = "--apply" in sys.argv
 
 B3 = (

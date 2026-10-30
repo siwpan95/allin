@@ -1,10 +1,24 @@
 # -*- coding: utf-8 -*-
-"""为 Tier③ 归档仓补建 archive/<原仓> 分支（幂等）。"""
+"""为 Tier③ 归档仓补建 archive/<原仓> 分支（幂等，一次性脚本）。
+
+落点环境变量化（铁律 5：不写死盘符，跨机可用）：
+- TIER3_INDEX   组合分级决策索引.md 路径；缺省按本仓 docs/事实源/ 推导
+- TIER3_WORK    收拢工作区（各目标归档仓克隆所在处）；必填
+- TIER3_REPOS   源仓发布区根（<root>/<仓名>）；必填
+- TIER3_ARCHIVE 归档区根（<root>/<仓名>-retired-<日期>）；必填
+"""
 import os, subprocess, re, io, sys
 from collections import Counter
+from pathlib import Path
 
-W = r"G:\local\_tier3_work"
-IDX = r"G:\allin\docs\事实源\组合分级决策索引.md"
+_REPO = Path(__file__).resolve().parents[2]
+IDX = os.environ.get("TIER3_INDEX") or str(_REPO / "docs" / "事实源" / "组合分级决策索引.md")
+W = os.environ.get("TIER3_WORK", "")
+REPOS = os.environ.get("TIER3_REPOS", "")
+ARCHIVE = os.environ.get("TIER3_ARCHIVE", "")
+if not (W and REPOS and ARCHIVE):
+    sys.exit("缺少 TIER3_WORK / TIER3_REPOS / TIER3_ARCHIVE 环境变量"
+             "（落点随机器，不再写死盘符；见模块 docstring）")
 
 rows = []
 for line in io.open(IDX, encoding="utf-8"):
@@ -27,14 +41,14 @@ def hasref(p, ref):
 
 
 def srcpath(n):
-    for c in (rf"G:\repos\{n}", rf"G:\archive\{n}-retired-20261029"):
+    for c in (os.path.join(REPOS, n), os.path.join(ARCHIVE, f"{n}-retired-20261029")):
         if os.path.isdir(os.path.join(c, ".git")):
             return c
     return None
 
 
 def tgtpath(t):
-    for c in (os.path.join(W, t), rf"G:\repos\{t}"):
+    for c in (os.path.join(W, t), os.path.join(REPOS, t)):
         if os.path.isdir(os.path.join(c, ".git")):
             return c
     return None
