@@ -1,11 +1,17 @@
-# allin —— 个人全项目治理索引仓库（`/projects/allin`）
+# allin —— 个人全项目治理索引仓库
+
+> **仓根随机器而异**（本仓多机检出、多端共写）：三台接入机器的仓根 / 发布区落点、盘位、运行时各不相同，
+> **唯一事实源 = [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)**（每机一件分区文件，
+> 由 `tools/facts/measure.py` 采集、g20-facts 门禁对账）。本 README 只写**跨机共识**，不写单一机器的路径与数值。
 
 一个**单一索引仓库**承载工作区治理说明、文档枢纽入口与 DeepSeek Harness 治理模式的**可重装载体**：
 游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等全部个人项目的事实源与约定都从这里索引出去。
 
-> **⚠️ 盘位已变更（2026-09-24）**：原整盘工作区（盘符已撤销）的代码统一归置到 **`/projects/`**（13 个成员项目）。
-> 本仓原先挂在 `/allin`（旧盘根），2026-09-24 起落在 `/projects/`，2026-09-27 由 `allin_push` 改名为 **`allin`**（目录名与远端仓名一致）；其文档里仍会出现一些历史路径，以"当时的事实"保留，新项目一律走 `/projects/`。
-> 接手完整背景请读本仓 [`docs/README.md`](docs/README.md) 与 [`docs/新机配置汇总_2026-09-24.md`](docs/记录/快照/新机配置汇总_2026-09-24.md)。
+> **📜 盘位沿革（历史事实，保留备查）**：原整盘工作区（盘符已撤销）的代码曾统一归置到 `/projects/`（13 个成员项目）；
+> 本仓曾挂在旧盘根 `/allin`，2026-09-27 由 `allin_push` 改名为 **`allin`**（目录名与远端仓名一致）。
+> 上述斜杠路径是**当时那台机器**的写法，**不是现行通用口径**；现行各机落点见机器分区索引，仓内文档里
+> 出现的历史路径以"当时的事实"保留。
+> 接手完整背景请读本仓 [`docs/README.md`](docs/README.md) 与 [`docs/记录/快照/新机配置汇总_2026-09-24.md`](docs/记录/快照/新机配置汇总_2026-09-24.md)。
 
 > **📖 文档枢纽在最前面**：[`docs/`](docs/README.md) —— 整个工作区的文档入口（**开发过程透明可读、可复跑、可接手续做**）。
 > 接手请按顺序读：[`docs/MEMORY.md`](docs/MEMORY.md)（铁律与约定）→ [`docs/规范/SPEC-002-协作工作流程.md`](docs/规范/SPEC-002-协作工作流程.md)（流程与放行口径）→
@@ -14,7 +20,7 @@
 
 ## 命名约定（重要）
 
-- **allin** = 本仓（索引 + 治理说明 + [文档枢纽 `docs/`](docs/README.md) + 审核证据 `audit-fragments/`），本机检出在 `/allin`（原 `/projects/allin`；2026-09-27 前名为 `allin_push`）。
+- **allin** = 本仓（索引 + 治理说明 + [文档枢纽 `docs/`](docs/README.md) + 审核证据 `audit-fragments/`）。检出目录名 = 远端仓名 `allin`（2026-09-27 前名为 `allin_push`，历史）；**检出路径随机器而异**，见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)。
 - **一仓一目录**：每个 gitee 仓库对应 `<项目盘>/<仓名>` 一个目录，仓名 = 目录名。
 - **alloy** = 统一游戏引擎（原 allin_engine，2026-08-23 改名；仓库 siwpan/an-engine）。
 - **复制优于共享**：项目内联引擎/字体/资源副本是**有意为之**，不算冗余；缓存（__pycache__/.venv/node_modules/build/dist）不算重复。
@@ -34,19 +40,21 @@
 | `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
 
-> 历史 README 还列过 `repos/ platform/ local/ assets/ archive/ notpython/` 等目录 —— 那是 `/` 整盘时期的形态；
-> 盘位归并到 `/projects/` 后，各项目已各自成为 `/projects/<仓名>` 独立子仓，不再以"子目录"形式寄存在本仓内。
+> 历史 README 还列过 `repos/ platform/ local/ assets/ archive/ notpython/` 等目录 —— 那是旧整盘时期的形态（历史事实，保留备查）；
+> 此后各项目已各自成为发布区 `<工作区根>/repos/<仓名>` 独立子仓，不再以"子目录"形式寄存在本仓内。
 
-## 核心项目速览（现盘 `/projects/` 成员）
+## 核心项目速览（成员项目示例）
 
 - **alloy**（an-engine）：统一游戏引擎——ECS + EventBus + Context 可逆装配内核 + preset + WorldLog 事件日志 + sync/dump 审计 CLI。
 - **private-radio-stations**：Node.js + Cordis 插件式转播站（radio/video/portal 三簇）。
 - **musickit**（repos/musickit）：phonk 混音项目（真实采样 + 授权分级治理）。
-- **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本机 fork；原独立 gitee 仓
-  `siwpan/deepseek-harness` **已于 2026-10-26 整合后删除**——治理内核并入本仓（见「三仓整合」第 6 条），
-  工具本体现役在 `D:\deepseek-harness`（同日的旧检出 `G:\repos\deepseek-harness` 已移除，见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)）。
+- **deepseek-harness-master**：DeepSeek Harness（`@deepseek-ai/dsh-root` 0.1.7-rc.1）本地 fork；原独立 gitee 仓
+  `siwpan/deepseek-harness` **已于 2026-10-26 整合后删除**——治理内核并入本仓（见「三仓整合」第 6 条）。
+  工具本体是**仓外现役 checkout，落点随机器而异**（如 `@DESKTOP-8RSV60V` 在其数据盘 `deepseek-harness/`，
+  同日旧检出 `G:\repos\deepseek-harness` 已移除）；各机有无检出及现值见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)。
 - 其余成员：`webcopier` `cordis-table-app` `foolproof-operation` `lab` `moba_battle_platform` `roleplayer` `music-master` `ncmturnmp3` `D20`。
-- 以上 13 个为本机已克隆的**成员子集**；全量 135 个 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md)。
+- 以上 13 个为**成员示例子集**；各机检出规模不同（现值唯一事实源 = 机器分区索引），
+  全量 Gitee 仓库见 [`PORTFOLIO.md`](PORTFOLIO.md) 与下节「Gitee 项目组合全量索引」。
 
 ## DeepSeek-Harness 治理落地（2026-09-26）
 
@@ -86,12 +94,13 @@
 
 ## 仓库体检工具：`tools/repocheck/`（2026-10-26 由原独立仓并入）
 
-离线只读体检：**不联网、不执行被测代码、零第三方依赖**（纯标准库）。对一个根目录（默认 `/repos/`）下的每个项目
+离线只读体检：**不联网、不执行被测代码、零第三方依赖**（纯标准库）。对一个根目录（典型为各机发布区
+`<工作区根>/repos/`，路径随机器见机器分区索引）下的每个项目
 按 **30 条规则**打分（0–10 健康分），支持 text / JSON / CSV / HTML 四种导出，可进 CI。
 
 ```bash
 python tools/repocheck/main.py            # 无参数 = GUI
-python tools/repocheck/main.py /repos     # 命令行体检整个发布区
+python tools/repocheck/main.py <发布区>    # 命令行体检整个发布区（如 <工作区根>/repos）
 python tools/repocheck/main.py . --fail-on error   # 进 CI：有 error 级问题就失败
 ```
 
@@ -165,7 +174,8 @@ python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail
    而本次要的是它的**治理智慧**而非代码体积，故分三个提交提取并入：
    `479793f`（cordis 粘合剂 · 治理内核）→ `2448135`（治理哲学）→ `d11c47f`（通用架构原则，填补 allin 粘合剂叙事缺口），
    落点全在 `docs/记录/` 与 `docs/规范/`。**代码本体不并入**，理由有三：
-   - 它是**现役运行工具**（本地 `D:\deepseek-harness`，版本 `1.1.0`，末次提交 2026-10-09），
+   - 它是**现役运行工具**（仓外 checkout，落点随机器——`@DESKTOP-8RSV60V` 侧在其数据盘 `deepseek-harness/`，
+     版本 `1.1.0`，末次提交 2026-10-09；各机有无检出见机器分区索引），
      `start-dsh-web.py` 与 `.dsh-home/` 会话数据都在，删了工具即断供；
    - 用户定性：**dsh 最重要的就是 API key，也就是付费接口** —— 移入 allin 只是治理归位，
      不影响原有功能继续发挥，功能性资产无需搬迁；
@@ -194,17 +204,19 @@ python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail
 > `repos/...` → `<工作区根>` 之下；其它相对值 → 治理仓根 `allin/` 之下（如平台自身的 `platform`）。
 > 可用 `PLATFORM_REPOS_ROOT` 覆盖发布区根。
 
-## Gitee 项目组合全量索引（135 仓）
+## Gitee 项目组合全量索引（137 仓）
 
-全量 **135 个 Gitee 仓库**（公开 135 · 私有 0，2026-10-26 实测 API 核实：整合删去 `repocheck`、`allin-platform`、
-`deepseek-harness` 三仓，并补齐此前未入索引的新项目）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
+全量 **137 个 Gitee 仓库**（公开 137 · 私有 0，2026-10-30 API 匿名分页实测；
+2026-10-26 口径为 135：整合删去 `repocheck`、`allin-platform`、`deepseek-harness` 三仓并补齐新项目，
+此后净增 2 仓）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
 按仓库名排序，含语言 / Star / 简介 / 可见性。该文件由脚本从 Gitee API 自动生成，是**索引而非源码镜像**。
 
-**治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本地 `/projects/<仓名>`；
-不预先克隆全量 135 仓。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
+**治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本机发布区
+（`<工作区根>/repos/<仓名>`；落点随机器，现值见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)）；
+不强制预先克隆全量 137 仓（各机按需，全量检出与部分检出并存）。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
 以及**治理动脉**：两件已并入库的子件（`platform/` 集成平台、`tools/repocheck/` 体检器）
 加上 `deepseek-harness` 的治理内核（仅文档层，见第 6 条）；
-其余 **134 个仓库各自独立**（135 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
+其余 **136 个仓库各自独立**（137 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
 `PORTFOLIO.md` 随远端变化而过期，需刷新时重跑生成脚本。
 
 ## 治理准则（2026-08-27 深度审核固化）
@@ -227,4 +239,4 @@ python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail
 
 ---
 
-*最后更新：2026-10-28（治理对账 `ef2a545`：订正门禁 15→19 的陈旧口径 3 处 + 规范门禁总表加口径提示；修 `g15-docs-contract` 自检假阳性——`os.symlink` 建别名需管理员、`except OSError: pass` 静默吞致 D6 误报，改 junction 兜底 + 响亮失败；新增 `docs/记录/审计/治理对账与门禁自检修复_2026-10-28.md` 并登记 REC-AU-17。同日落地 REC-AU-17 的 4 条遗留建议：门禁解释器在 `run.ts` 发现链根部钉死为仓内 `.venv` 并由一键脚本 `export` 给门禁套件；`SELFCHECK` 输出格式契约化（`govlib` 紧凑分隔符 + 元门禁正则收紧到契约文本）；「提交前复跑门禁并贴实际退出码」双形态同步进 SKILL.md 与 DSH 治理段并刷新 bundle；`repocheck` 的 tkinter 降为 GUI 可选依赖，CLI 在无 tkinter 解释器上退出码 0；订正自检口径 B 条（原称「仅剩规则 1 固有项」实为退出码 1、5 条 error，逐条核对后豁免 1/2/4/5）；新增 `docs/记录/审计/治理遗留建议落地_2026-10-28.md` 并登记 REC-AU-18）*
+*最后更新：2026-10-30（README 去单机化——标题与正文不再写死 `/projects/allin` 等单一机器路径，仓根/发布区/检出规模统一指向 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)；Gitee 组合口径 135 → **137**（2026-10-30 API 实测）并重跑 `build_portfolio.py --apply` 刷新 PORTFOLIO.md；DSH 仓外 checkout 落点标注随机器。@`SIWPAN` 实测。前史：2026-10-28 治理对账 `ef2a545`（订正门禁 15→19 陈旧口径、修 g15 自检假阳性、落地 REC-AU-17/18））*

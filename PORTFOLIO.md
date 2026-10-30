@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-29），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-30），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 133 个仓库**（公开 133 · 私有 0）。
+**共 137 个仓库**（公开 137 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -41,6 +41,7 @@
 | [siwpan/daily_player](https://gitee.com/siwpan/daily_player.git) | — | 0 | 公开 | 基于 libVLC 的日常视频播放器：字幕、播放列表、快捷键与托盘 |
 | [siwpan/darksouls](https://gitee.com/siwpan/darksouls.git) | Python | 0 | 公开 | 黑暗之魂 |
 | [siwpan/ddd2](https://gitee.com/siwpan/ddd2.git) | — | 0 | 公开 | ??????(/local ???? 4,2026-08-27) |
+| [siwpan/dev-toolkit](https://gitee.com/siwpan/dev-toolkit.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/diablo](https://gitee.com/siwpan/diablo.git) | Python | 0 | 公开 | 私服版本 |
 | [siwpan/dict-scene-engine](https://gitee.com/siwpan/dict-scene-engine.git) | — | 0 | 公开 | 字典场景引擎 —— 基于 Cordis 4.0 插件架构的文字冒险游戏引擎（场景即字典，能力即插件） |
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
@@ -50,6 +51,7 @@
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
 | [siwpan/fonts](https://gitee.com/siwpan/fonts.git) | — | 0 | 公开 | 中文字体资源库 + Tkinter 字体浏览/复制工具（字体本体本地保留，不入库）｜/repos/fonts |
 | [siwpan/foolproof-operation](https://gitee.com/siwpan/foolproof-operation.git) | Python | 0 | 公开 | 按需下载 |
+| [siwpan/game-prototypes](https://gitee.com/siwpan/game-prototypes.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/gan](https://gitee.com/siwpan/gan.git) | — | 0 | 公开 | gan（自 ai-collection 拆分） |
 | [siwpan/god-hand-](https://gitee.com/siwpan/god-hand-.git) | Python | 0 | 公开 | 十二试炼 |
 | [siwpan/haha](https://gitee.com/siwpan/haha.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
@@ -75,6 +77,7 @@
 | [siwpan/mathematical-formula-renderer](https://gitee.com/siwpan/mathematical-formula-renderer.git) | Python | 0 | 公开 | 类教学工具 |
 | [siwpan/mc-clone](https://gitee.com/siwpan/mc-clone.git) | — | 0 | 公开 | MCclone（自 game-collection 拆分） |
 | [siwpan/mcclone3d](https://gitee.com/siwpan/mcclone3d.git) | — | 0 | 公开 | 《我的世界》风格 3D 体素沙盒（基于 3dworld 引擎）：确定性体素世界 / 世界级 UV 投影贴图 / 第一人称挖掘放置 / 存档 |
+| [siwpan/media-prototypes](https://gitee.com/siwpan/media-prototypes.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/media-tools](https://gitee.com/siwpan/media-tools.git) | — | 0 | 公开 | 媒体/视觉小工具集：软件光栅化 / PNG 构造 / 风扇仿真 / 动态壁纸 / 壁纸设置｜/repos/media-tools |
 | [siwpan/midi](https://gitee.com/siwpan/midi.git) | — | 0 | 公开 | midi（自 media-collection 拆分） |
 | [siwpan/midjourney_video](https://gitee.com/siwpan/midjourney_video.git) | — | 0 | 公开 | Midjourney Explore 视频抓取下载工具（Playwright），CLI + GUI 双入口 |
@@ -83,6 +86,7 @@
 | [siwpan/mp](https://gitee.com/siwpan/mp.git) | — | 0 | 公开 | mp（自 media-collection 拆分） |
 | [siwpan/music-player](https://gitee.com/siwpan/music-player.git) | — | 0 | 公开 | 本地音乐播放器：tkinter + python-vlc 全功能版 + Cordis Node host 内核重构（零依赖 Web UI + JSON-RPC），MIT |
 | [siwpan/music-prompt-generator](https://gitee.com/siwpan/music-prompt-generator.git) | — | 0 | 公开 | 音乐提示词生成器（自 music#master 拆分） |
+| [siwpan/music-prototypes](https://gitee.com/siwpan/music-prototypes.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/musickit](https://gitee.com/siwpan/musickit.git) | — | 0 | 公开 | phonk 混音工程：真实采样 + 本地混音引擎（24 位混音师签名链）+ 授权分层治理 |
 | [siwpan/ncmturnmp3](https://gitee.com/siwpan/ncmturnmp3.git) | — | 0 | 公开 | 加密音乐格式转换：ncm / qmc / kgm 等解密并转码 mp3 / flac / wav / ogg / m4a，纯本地运行 |
 | [siwpan/niulai](https://gitee.com/siwpan/niulai.git) | — | 0 | 公开 | 《牛来》双引擎复刻：world3d(3dworld) 渲染演出 + allin_engine 逻辑智能，86 分钟同人学习性复刻（不商用） |
