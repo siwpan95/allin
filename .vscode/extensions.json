@@ -1,0 +1,12 @@
+{
+  "//": "allin 治理仓的推荐编辑器配置（对应 docs/新人开发上手指南.md 附录 A 第 2 条）。本文件是给新人的建议，不是门禁判据；删掉不影响任何检查。",
+  "recommendations": [
+    "ms-python.python",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.powershell",
+    "batisteo.vscode-delve-debug-python",
+    "ms-azuretools.vscode-docker"
+  ],
+  "//python": "解释器选仓内 .venv（bootstrap.sh 会建）；不选的话门禁会因解释器不一致报假红，见 FAQ 第 2 条。"
+}

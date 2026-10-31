@@ -1,0 +1,113 @@
+# allin 治理门禁 · Gitee Go 流水线
+#
+# 这条流水线回答一个问题：**「治理模式自己能不能在一台陌生机器上跑绿？」**
+# —— 即 SPEC-105 承诺的「可复制」是否成立。此前 allin 的 20 道门禁只在作者
+# 本机的三台机器上跑过，**从没有任何一次外部可复现的证据**（REC-AU-20 §F5
+# 单点断层的核心缺口）。这条流水线是那个证据的载体。
+#
+# 为什么需要它（对应 docs/新人开发上手指南.md 附录 A 第 4 条）：
+# 本仓此前**没有任何 CI 配置**。门禁只在本地跑 ⇒ 「20/20 全绿」这一结论
+# 只有作者自己能看到，外部无法复核 ⇒ 治理体系的可信度无法被外部验证。
+#
+# ⚠ 启用前提（**这一步必须手动做，API 做不到**）：
+#   Gitee 仓库页 → DevOps → Gitee Go → 同意并开通 → 新建流水线 → 代码视图 →
+#   粘贴本文件内容 → 保存。开通后 Gitee Go 会接管本文件。
+#   （实测：Gitee API v5 无「流水线」端点，`/pipelines` 与 `/pipeline` 均 404，
+#     故流水线只能走 Web 控制台开通与保存；本文件是开通后的「代码视图」内容源。）
+#   文件命名按 Gitee Go 惯例放在 `.workflow/` 下，本仓用 `pipeline.yml`。
+#
+# 关键设计（每条都有判据，不是随手写的）：
+#   1. **门禁在 Linux 上跑 19 道，不跑 g20-facts** —— g20-facts 是 Windows 专属
+#      （registry.json 里 platforms=["nt"]），判的是本机磁盘路径的存在性声称，
+#      在 CI 上没有对应语义。跑它等于跑一个「假装有本机磁盘」的假检查。
+#   2. **g17-registry 在 CI 上必然 SKIP（not a pass）** —— 它判发布区每个仓是否
+#      已登记，而发布区（repos/）不在本仓内。门禁契约规定 SKIP ≠ 通过，
+#      所以 CI 不能声称「20/20 全绿」，只能声称「19 道跨平台门禁全绿 +
+#      1 道按平台跳过」。
+#   3. **不用 --profile** —— g14-preset 的 profile 探针读的是 DSH 部署面
+#      （$DSH_HOME/profiles/...），CI 上不存在。跑纯仓内自检（--no-profile）。
+#   4. **别名不重建** —— docs/spec 等 ASCII 别名是 junction/symlink，不入库；
+#      Linux 上用 --no-aliases 跳过 D6（见 docs_index.py 的该开关）。
+#   5. **用清华镜像装依赖** —— CI 机器在境内，默认 PyPI 源常超时；换源不是
+#      优化，是让流水线能跑完的前提。
+#
+# 失败时怎么办：先看是哪一道门禁红了，再对照 tools/gate/governance/RULES.md
+# 里那道门禁的「判定依据」列 —— 那里写清了它到底在判什么、基线在哪。
+
+version: "1.0"
+name: allin-governance-gates
+displayName: allin 治理门禁（20 道）
+
+stages:
+  - name: gates
+    displayName: 门禁全量
+    strategy: fast
+    trigger: auto
+    steps:
+      - step: build@python
+        name: install_deps
+        displayName: 装 Python 依赖
+        pythonVersion: "3.13"
+        commands:
+          - python3 -m venv .venv
+          - .venv/bin/python -m pip install --upgrade pip
+          - .venv/bin/python -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements-dev.txt
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@nodejs
+        name: run_gates
+        displayName: 治理门禁（19 道跨平台；g20-facts 为 Windows 专属，按平台跳过）
+        nodeVersion: "22"
+        commands:
+          - node --version
+          - export ALLIN_PYTHON="$PWD/.venv/bin/python"
+          - node tools/gate/governance/run.ts --no-profile
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@python
+        name: check_docs_index
+        displayName: 文档索引契约（Linux 无 junction，跳过 D6）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python tools/gate/docs_index.py --no-aliases
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@python
+        name: repocheck_self
+        displayName: 本仓 monorepo 自检（README §本仓自检口径）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python tools/repocheck/main.py . --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+triggers:
+  trigger: auto
+  push:
+    branches:
+      precise:
+        - master
+  pr:
+    branches:
+      precise:
+        - master
+
+notify: []
+
+strategy:
+  blocking: true

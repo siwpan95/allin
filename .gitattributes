@@ -1,0 +1,58 @@
+# 行尾与编码策略 —— 让「换台机器跑出同样结论」成立。
+#
+# 为什么需要这个文件（背景）：
+#   本仓此前**没有** .gitattributes，而开发机 `core.autocrlf=true`。
+#   后果是：Windows 检出时 *.sh 会变成 CRLF，Linux CI 检出时是 LF，
+#   **同一份脚本在两台机器上字节不同**。对 bash 脚本这是实打实的故障：
+#   shebang 行变成 `#!/usr/bin/env bash\r` → 直接执行报
+#   `env: 'bash\r': No such file or directory`。
+#   门禁要在 CI 上跑，就必须让行尾由仓库说了算，而不是由各人的 git 配置说了算。
+#
+# 判据（三条都来自实际会坏的地方，不是风格偏好）：
+#   1. *.sh / *.ps1：shell 与 PowerShell 脚本必须 LF。
+#      PowerShell 侧另有 BOM 纪律（tools/gate/check_ps1_bom.py 管），
+#      本文件只管行尾，两条纪律互不重叠。
+#   2. *.md / *.yml / *.yaml / *.json / *.txt：文本一律 LF（跨平台 diff 稳定）。
+#   3. *.bat / *.cmd：Windows 批处理必须 CRLF —— cmd.exe 对 LF-only 的
+#      批处理脚本解析会出错（label/goto 的行尾处理不可靠）。
+#
+# 为什么要显式写 `text eol=lf` 而不是只写 `text`：
+#   `text` 只保证**入库**时归一化（这一点 autocrlf 已经做了），
+#   `eol=lf` 额外保证**检出**时也是 LF —— 后者才是 CI 与本机一致的关键。
+
+# ---- 默认：文本文件入库归一为 LF，检出保持 LF ----
+* text=auto eol=lf
+
+# ---- 明确必须 LF 的 ----
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.py text eol=lf
+*.ts text eol=lf
+*.mjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+
+# ---- 明确必须 CRLF 的（Windows 原生） ----
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# ---- 二进制：不作行尾处理 ----
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.whl binary
+*.pyc binary
+*.so binary
+*.dll binary
+*.exe binary
+*.ico binary

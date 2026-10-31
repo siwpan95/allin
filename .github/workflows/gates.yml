@@ -1,0 +1,105 @@
+# allin 治理门禁 · GitHub Actions（GitHub 镜像侧）
+#
+# 与 .workflow/pipeline.yml（Gitee Go）跑**同一套命令** —— 两边必须同绿，
+# 否则「主仓绿、镜像红」本身就是一个没人发现的矛盾。
+#
+# 为什么两侧都要有：
+#   Gitee 是主仓（铁律 0：公开 + MIT），但 Gitee Go 的流水线**只能手动在
+#   Web 控制台开通**（API 无流水线端点，实测 /pipelines 与 /pipeline 均 404），
+#   且 Gitee 侧无 PR 讨论生态；
+#   GitHub 镜像承载了 Issues / PR / Discussions 这条外部反馈通道
+#   （REC-AU-20 §F3 反馈断层的整改落点），外部人的第一个 PR 会开在这里。
+#
+# 判据（与 Gitee Go 侧一致，两边不允许漂移）：
+#   1. Linux 上跑 19 道门禁；g20-facts 是 Windows 专属（platforms=["nt"]），
+#      判本机磁盘路径存在性，CI 上无语义，按平台跳过而不是假装通过。
+#   2. g17-registry 在 CI 上必然 SKIP（not a pass）——发布区不在本仓内。
+#      SKIP ≠ 通过，所以这个 job 不声称「20/20 全绿」。
+#   3. --no-profile：g14-preset 的 profile 探针读 DSH 部署面，CI 上不存在。
+#   4. --no-aliases：docs/spec 等 ASCII 别名是 junction/symlink，不入库。
+#   5. Windows job 补跑 g20-facts —— 那一道只有 Windows 能判，且它判的正是
+#      「本机事实声称与磁盘是否一致」，在 Windows runner 上才有本机磁盘。
+#      这是本仓唯一「两套 runner 各跑一部分」的分工，两边合起来才是 20 道。
+
+name: governance-gates
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates-posix:
+    name: 治理门禁（Linux · 19 道跨平台）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # g12-integrity 要解析 HEAD 可达对象；浅克隆会让它判不全
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: 治理门禁（g20-facts 按平台跳过）
+        env:
+          ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+          node tools/gate/governance/run.ts --no-profile
+
+      - name: 文档索引契约（Linux 无 junction，跳过 D6）
+        run: .venv/bin/python tools/gate/docs_index.py --no-aliases
+
+      - name: 本仓 monorepo 自检
+        run: |
+          .venv/bin/python tools/repocheck/main.py . \
+            --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
+
+  gates-windows:
+    name: 治理门禁（Windows · 补跑 g20-facts）
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 装依赖
+        run: |
+          python -m venv .venv
+          .venv/Scripts/python -m pip install --upgrade pip
+          .venv/Scripts/python -m pip install -r requirements-dev.txt
+
+      - name: 治理门禁（含 g20-facts 本机事实核验）
+        env:
+          ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
+        run: node tools/gate/governance/run.ts --no-profile
+
+      - name: 文档索引契约（Windows 有 junction，完整判 D6）
+        run: .venv/Scripts/python.exe tools/gate/docs_index.py

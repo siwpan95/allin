@@ -1,0 +1,29 @@
+# allin 治理仓的 Python 依赖（开发/门禁用）
+#
+# 为什么有这个文件（对应 docs/新人开发上手指南.md 附录 A 第 1 条）：
+# 本仓的内核依赖以 vendor/cordis 内联形式提供（离线、可审计），**不装**；
+# 门禁与治理脚本只需要下面两个第三方包。此前新人只能从报错信息反推该装什么，
+# 这个文件把依赖集固定下来，让「换台机器跑出同样结论」成立。
+#
+# 安装（推荐走一键脚本，它会建 .venv 并装这里）：
+#   bash scripts/bootstrap.sh
+#
+# 手动装：
+#   python -m venv .venv
+#   .venv/Scripts/python -m pip install -r requirements-dev.txt     # Windows
+#   .venv/bin/python    -m pip install -r requirements-dev.txt     # Linux/macOS
+#
+# 严格程度说明：这两包都是「宽松下限」，不钉死小版本 —— 门禁关心的是
+# 「能不能解析 YAML」与「cordis 能不能热重载」，不是某个具体小版本的补丁差异。
+
+# PyYAML —— 硬依赖。
+# g18-exceptions 要解析 governance/exceptions.yml；kernel/tree.py 要读
+# cordis 配置树（kernel/configs/cordis.allin.yml）。缺它时门禁会报
+# ledger-unusable 假红，而提交信息常写成「19/19 clean」—— 这是一个真实踩过的坑。
+PyYAML>=6.0
+
+# watchdog —— cordis 的 hmr 可选增强（等价于 cordis[hmr]）。
+# 缺它 cordis 不崩，会退回 mtime 轮询实现；装上则文件变更能实时触发重载。
+# 装它是為了让「改 preset / 配置后热重载」这条路在本地开发时更顺手，
+# 不是门禁的硬前提。
+watchdog>=4.0
