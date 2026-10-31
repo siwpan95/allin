@@ -155,7 +155,8 @@
 | 核对口径 | 只核 Gitee 一侧（`ls-remote origin` + `rev-list --left-right --count` 0/0 + 工作树干净） |
 
 - **作业口径**：**不要求 GitHub 侧在该机可见**；该机**不补配** GitHub pushurl（用户 2026-10-29 明确交代）。
-  GitHub 镜像由 [`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 那台推送（pushurl 2 条）。
+  GitHub 镜像由**两台**推：[`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 与 [`./SIWPAN.md`](./SIWPAN.md) §7
+  （均 pushurl 2 条；`@SIWPAN` 于 2026-10-31 经用户指令补配，提交 `2a6da31`）⇒ **本机单核 ≠ 镜像无人推**。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端多次被其它机推进
   （`8b46e67→7f3fecc` PURE_BEHIND、`705f888→e245410` PURE_BEHIND）⇒ **动手前 fetch 对齐是硬纪律**，
   DIVERGED 时 `g04` 会拦。
