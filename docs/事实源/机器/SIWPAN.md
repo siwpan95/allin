@@ -123,7 +123,7 @@
 
 - **首推实测（2026-10-31）**：配置后 `git push origin master` 两行 `Everything up-to-date`（exit 0）；
   随后的记账提交经双通道真实推送，双侧 `ls-remote` 与 `rev-parse HEAD` 逐字符相等。
-- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6（该机 pushurl 0 条、
+- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §7「推送与远端镜像」（该机 pushurl 0 条、
   用户 2026-10-29 明确不补配——**逐机指令，不外推**）。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端两次被其它机推进
   （`5a1d767→c9586d3` DIVERGED、`8b46e67→7f3fecc` PURE_BEHIND）——
