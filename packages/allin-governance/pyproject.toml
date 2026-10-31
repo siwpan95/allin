@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# allin-governance —— 把 allin 治理中枢的可复用面装成一个包。
+#
+# 为什么是这个形态（REC-AU-21 D1.1/D1.2）：
+#   REC-AU-20 的结论是「库形产品是唯一被验证过的出口」，但它把 allin 当成目录、
+#   把 repos 当成商品。方向修正后，要装的是 **allin 自己**：门禁 + 文档契约 +
+#   仓库体检。而体检器 repocheck 本来就是零依赖、有 pyproject、有 CLI 入口的
+#   完整包（实测 30 条规则），只差一个出口 —— 所以它收为子命令，**不单独发版**。
+#
+# ★ 关键设计：repocheck 的源码**不复制**。
+#   下面 package-dir 把仓内 tools/repocheck 直接映射为 allin_governance._repocheck，
+#   打 wheel 时源文件被收进包、仓内仍只有一份。
+#   为什么不复制：本仓 MEMORY 有一条「派生副本手抄必漂」的教训 ——
+#   两份代码必然漂移，而漂移的判定成本比省下的打包麻烦高得多。
+#   实测：跨目录 package-dir 可正常进 wheel（不是假设）。
+
+[project]
+name = "allin-governance"
+version = "0.0.0a0"
+description = "工作区治理中枢：可执行门禁 + 文档枢纽契约 + 仓库体检，面向一人多仓与 AI 协作者"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT-0" }
+authors = [{ name = "siwpan" }]
+keywords = [
+  "governance", "policy-as-code", "repo-hygiene", "audit", "gates",
+  "ai-collaboration", "single-source-of-truth", "offline",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+# 运行时零第三方依赖 —— 这是刻意的，不是巧合：
+# 治理工具要在「一台什么都没装的机器」上跑起来，才谈得上「可复制」。
+# （PyYAML 只有仓内门禁套件 g18 需要，属开发依赖，不进 runtime）
+dependencies = []
+
+[project.optional-dependencies]
+# repocheck 的可选增强：装了用更严格的库做二次校验，不装走内置实现，结论口径一致。
+full = [
+  "license-expression>=30.0",
+  "detect-secrets>=1.5",
+  "markdown-it-py>=3.0",
+  "requirements-parser>=0.11",
+  "packaging>=23.0",
+]
+dev = ["pytest>=8.0", "PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://siwpan95.github.io/allin/"
+Repository = "https://gitee.com/siwpan/allin"
+Issues = "https://gitee.com/siwpan/allin/issues"
+Changelog = "https://gitee.com/siwpan/allin/blob/master/CHANGELOG.md"
+
+[project.scripts]
+# 单一入口，子命令分派：`allin-governance repocheck <目录>`
+allin-governance = "allin_governance.cli:main"
+
+[tool.setuptools]
+packages = ["allin_governance", "allin_governance._repocheck"]
+
+[tool.setuptools.package-dir]
+"allin_governance" = "src/allin_governance"
+# 指向仓内真身：一份源码，两处消费（仓内 tools/repocheck + 包内 _repocheck）
+"allin_governance._repocheck" = "../../tools/repocheck"
+
+[tool.setuptools.package-data]
+"allin_governance._repocheck" = ["README.md", "LICENSE", "CHANGELOG.md"]

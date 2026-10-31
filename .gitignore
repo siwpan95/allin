@@ -8,6 +8,20 @@ __pycache__/
 # ===== allin 统一调度内核的本地 venv（绝不入库；含 cordis/pyyaml/watchdog） =====
 .venv/
 
+# ===== Python 打包产物（2026-10-31 补：packages/allin-governance 引入后必需） =====
+# 起因：新增 packages/allin-governance 后，`pip wheel .` 会就地生成 build/ 与 *.egg-info/，
+# 而 g05-hygiene 把这两类判为「产物入库」直接阻断。忽略它们是**正确**的处置，
+# 不是为了让门禁闭嘴：这两个目录是构建副产物，由 pyproject.toml 随时可重建，
+# 入库只会带来噪音与漂移。
+*.egg-info/
+*.egg-link
+build/
+dist/
+# 但 build/ 与 dist/ 在 scripts/ 下是**源码名**（如 scripts/release/），
+# 所以只锚定在 Python 包目录内（与 g05 的 ARTIFACT_SEGMENTS_SCOPED 口径一致）。
+!/scripts/build/
+!/scripts/release/
+
 # ===== 凭证（明文含 gitee / deepseek 令牌，禁止上传远程） =====
 私人令牌.txt
 *.token

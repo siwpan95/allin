@@ -122,7 +122,15 @@ run "$PY" tools/gate/agent_regression.py
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
 run "$PY" preset/allin/refresh-gov-block.py --check
-run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
+run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset,packages --skip-rules 1,7 --fail-on error
+# packages/ 是 monorepo 的中间目录（与 tools/ 同类），故上一行排除它；
+# 它内部的单个包按「子件」口径单独体检 —— 与 README §本仓自检口径 B) 同一做法：
+# 排除中间层（src/tests）、跳过 1/2/4/5 四条「一个独立仓才该有」的规则。
+# packages/ 当前只有一个包；新增包时要在这里补一行（或改成循环）。
+if [ -d packages/allin-governance ]; then
+  run "$PY" tools/repocheck/main.py packages/allin-governance \
+      --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
+fi
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"

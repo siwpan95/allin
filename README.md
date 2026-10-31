@@ -53,6 +53,7 @@
 | `tools/` | 工作区门禁与工具（死根路径 + AST 未定义名 + **文档索引契约** + 别名重建，见其 README） |
 | `platform/` | **全项目集成平台**（2026-10-26 由原 `siwpan/allin-platform` 整仓并入）：门户 + 内核 + 注册表 + harness 黄金值门禁。入口 [`platform/README.md`](platform/README.md)，契约 [`SPEC-203`](docs/规范/SPEC-203-allin-platform契约.md) |
 | `kernel/` | **治理内核**（2026-10-27 立档）：Python/Cordis 服务图 + `allin` CLI 前门（`allin_cli.py`），四大支柱 `docs/platform/preset/tools` 经 `kernel/configs/cordis.allin.yml` 配置树挂载。说明见 [`kernel/README.md`](kernel/README.md) |
+| `packages/` | **可安装包**（2026-10-31 立档）：把本仓**通用**的部分装成外部可直接消费的产物。当前一个包 [`allin-governance`](packages/allin-governance/)（PyPI 名，**占位版本 `0.0.0a0`**），子命令 `repocheck` 的源码映射自 `tools/repocheck/`（**不复制**，一份源码两处消费） |
 | `architecture/` | **系统架构与设计文档**（2026-10-27）：组件级架构图 [`system-architecture.svg`](architecture/system-architecture.svg) + 数据流图 [`data-flow.svg`](architecture/data-flow.svg) + 设计说明。刻意置于 `docs/` 之外以避开文档索引契约 |
 | `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
@@ -115,26 +116,54 @@
 `<工作区根>/repos/`，路径随机器见机器分区索引）下的每个项目
 按 **30 条规则**打分（0–10 健康分），支持 text / JSON / CSV / HTML 四种导出，可进 CI。
 
+**两种用法，同一份源码**（2026-10-31 起）：
+
 ```bash
+# ① 仓内形态（脚本直跑，无需安装）
 python tools/repocheck/main.py            # 无参数 = GUI
-python tools/repocheck/main.py <发布区>    # 命令行体检整个发布区（如 <工作区根>/repos）
+python tools/repocheck/main.py <发布区>
 python tools/repocheck/main.py . --fail-on error   # 进 CI：有 error 级问题就失败
+
+# ② 包形态（装出来用，入口统一为 allin-governance 的子命令）
+pip install allin-governance
+allin-governance repocheck <目录> --fail-on error
 ```
+
+> **为什么是「子命令」而不是独立发一个包**：PyPI 上的 `repocheck` 属他人
+> （Dario Giovannetti 的 `github.com/kynikos/repocheck`，2026-10-31 实测），
+> 本组合从未拥有该名字。与其改名重发、多维护一个发布面，不如收进
+> [`packages/allin-governance`](packages/allin-governance/) 做子命令。
+>
+> **源码只有一份，不存在副本漂移**：包的 `pyproject.toml` 用 `package-dir`
+> 把**本目录**（`tools/repocheck/`）映射成包内的 `_repocheck/`。打包时文件被收进
+> wheel，仓内仍只有这一份。实测：安装后的 6 个核心模块与仓内 **SHA-256 逐字节相同**。
 
 规则清单（error/warn/info 三级共 30 条）、五档退出码口径、健康分算法与 45 条命令行参数见
 [`tools/repocheck/README.md`](tools/repocheck/README.md)；变更记录见其 `CHANGELOG.md`，Agent 维护说明见其 `SKILL.md`。
 
 ### 本仓自检口径（治理别人先治理自己）
 
-本仓是 monorepo：`tools/` `docs/` `preset/` 等是**仓库自身的中间目录**，不是独立项目，
-直接 `main.py .` 会把它们误当项目扫描。**自检只打真实子件**，两条命令：
+本仓是 monorepo：`tools/` `docs/` `preset/` `packages/` 等是**仓库自身的中间目录**，不是独立项目，
+直接 `main.py .` 会把它们误当项目扫描。**自检只打真实子件**，三条命令：
 
 ```bash
-# A) 平台子件（排除中间目录 tools/ vendor/ preset/）
-python tools/repocheck/main.py .     --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
+# A) 平台子件（排除中间目录 tools/ vendor/ preset/ packages/）
+python tools/repocheck/main.py .     --exclude tools,vendor,preset,packages --skip-rules 1,7 --fail-on error
 # B) 体检器自身（排除中间目录 gate/）
 python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
+# C) 可安装包本身（packages/ 里的单个包；排除 src/ 与 tests/ 两个中间层）
+python tools/repocheck/main.py packages/allin-governance --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
 ```
+
+> **为什么 C) 要排除 `src,tests`**：二者是**包的内部布局**，不是子项目。
+> 不排除时扫描器会把 `src/`（里面有 .py）当成项目根，于是报出「无 README / 无依赖声明」
+> 这类假红 —— 它们其实都在包根的上一层。这是扫描器认项目根方式的已知边界
+> （只认「含 marker 或子树有 .py 的一级子目录」），用排除给出**真实的那一层**，
+> 不是为了让门禁闭嘴。
+>
+> **为什么 C) 跳过 1/2/4/5**：与 B) 同理 —— 包不是独立仓，没有自己的 `.git`、
+> README/LICENSE/依赖声明由包根统一提供。跳过的是「一个独立仓才该有」的四条，
+> 其余 26 条照常判。
 
 豁免与已知偏差（**每一条都经实测核对，不是随手跳过**）：
 
