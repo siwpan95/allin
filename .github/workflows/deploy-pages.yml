@@ -50,11 +50,8 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: 装依赖
-        run: |
-          python -m venv .venv
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/python -m pip install -r requirements-dev.txt
+      - name: bootstrap（建别名，否则 g15 的 D6 会假红）
+        run: bash scripts/bootstrap.sh
 
       - name: 发布前复跑门禁（保证「发出去的」与「验过的」是同一份）
         env:
