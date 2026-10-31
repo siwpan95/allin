@@ -69,16 +69,16 @@ from pathlib import Path
 
 from . import _stdio
 
-__all__ = ["main", "build_plan", "GATE_IDS", "suite_dir"]
+__all__ = ["main", "verify_main", "build_plan", "GATE_IDS", "OPTIONAL_GATES", "suite_dir"]
 
 #: 套件在目标仓里的落点。**必须与 allin 自身一致**：`run.ts` 用
 #: `resolve(import.meta.dirname, '..')` 当 ROOT，注册表的 `script` 字段又是相对 ROOT 的，
 #: 换布局等于让聚合器与门禁的相对定位同时失效。
 SUITE_RELATIVE = Path("tools") / "gate" / "governance"
 
-#: 随套装出厂的门禁（2026-10-31 在空仓库上逐个实测通过的那批，除去需 PyYAML 的 g18）。
-#: 顺序即生成 RULES.md 的顺序；改这里等于改产品的默认治理面，要有实测背书。
-GATE_IDS: tuple[str, ...] = (
+#: 出厂门禁的**规范顺序**（含可选件）。顺序即生成 RULES.md 的顺序：
+#: 它按判据的亲缘排，不按加入时间排 —— 读者是按"我在查什么"找门禁的。
+GATE_ORDER: tuple[str, ...] = (
     "g00-meta",
     "g01-paths",
     "g03-credentials",
@@ -92,8 +92,18 @@ GATE_IDS: tuple[str, ...] = (
     "g11-undef-names",
     "g12-integrity",
     "g13-docs-only",
+    "g18-exceptions",
     "g20-facts",
 )
+
+#: `--with-exceptions` 才会出厂的可选门禁。
+#: 单独列出而不是直接塞进 GATE_IDS，是因为它会把「零第三方依赖」这条承诺打破一半：
+#: g18 需要 PyYAML 才能解析台账。默认不给，让选择权留在使用者手里。
+OPTIONAL_GATES: tuple[str, ...] = ("g18-exceptions",)
+
+#: 默认出厂清单 = 规范顺序里去掉可选件。
+#: 2026-10-31 在空仓库上把 20 道逐个跑过：这 14 道 exit 0 且不依赖第三方库。
+GATE_IDS: tuple[str, ...] = tuple(g for g in GATE_ORDER if g not in OPTIONAL_GATES)
 
 #: 每道门禁的中文一句话判据。写进生成物，因为 registry.json 的 title 是英文、
 #: 且只说「判什么」不说「为什么」，而新用户第一天最需要的是后者。
@@ -111,6 +121,7 @@ GATE_SUMMARY: dict[str, str] = {
     "g11-undef-names": "AST 找出「读了但全文件从未定义」的名字",
     "g12-integrity": "`HEAD` 可解析，且可达对象逐个可读（`--deep` 追加连通性检查）",
     "g13-docs-only": "`docs/` 只放文档扩展名；脚本、二进制、可执行位一律阻断",
+    "g18-exceptions": "例外台账：字段齐全、状态合法、到期即转红（**需 PyYAML**）",
     "g20-facts": "机器事实源与实况对账（Windows 专属，其他平台记 SKIP 而非通过）",
 }
 
@@ -120,7 +131,7 @@ GATE_EXCLUDED: dict[str, str] = {
     "g15-docs-contract": "判 allin 文档枢纽的四分类与 ASCII 别名，属本仓文档契约",
     "g16-skill-preset-parity": "判 allin 的三处治理载体互相对齐，属本仓多载体一致性",
     "g17-registry": "判 allin 的发布区 registry 与分级索引，属本仓资产台账",
-    "g18-exceptions": "例外台账判据，**需要 PyYAML**；本包承诺零运行时依赖，故列为按需添加",
+    "g18-exceptions": "例外台账判据，**需要 PyYAML**；本包承诺零运行时依赖，故默认不发 —— 加 `--with-exceptions` 可一并生成",
     "g19-docs-refs": "判 allin 文档里的路径引用是否可解析，依赖本仓目录结构",
 }
 
@@ -129,6 +140,26 @@ IGNORE_FRAGMENTS: tuple[str, ...] = (".env", "*.pem", "*.key", "__pycache__/")
 
 #: 除契约要求外一并写上的忽略项，都是「入索引即噪音」的产物。
 IGNORE_EXTRA: tuple[str, ...] = ("*.pyc", "*.egg-info/", ".venv/", "build/", "dist/", "node_modules/")
+
+EXCEPTIONS_TEMPLATE = """# 例外登记：每一条都是**被接受的风险**，因此必须说得出
+#   谁批的（approver）、靠什么兜着（compensating）、什么时候到期（expires）。
+# `g18-exceptions` 会把这张表变成退出码：字段不全、状态越界、过期未复核，都判红。
+#
+# 字段（九个，缺一即红）
+#   id            稳定编号，EX-###
+#   kind          baseline-freeze / hygiene-exemption / known-gap
+#   gate          受影响的门禁 id
+#   target        受影响对象（可带计数）
+#   reason        为什么接受（业务理由，不是"没时间"）
+#   compensating  补偿控制：为什么接受了仍然安全
+#   approver      审批人
+#   expires       到期日 YYYY-MM-DD —— 到期即转红，逼出复核或续期
+#   status        open / closed（closed 的条目不计入燃尽）
+#
+# 空表 = 全部通过。加一条意味着「我确认这条风险我接受，并且它会到期」。
+version: 1
+exceptions: []
+"""
 
 BASELINE_HEADER = """# Baseline ratchet for this gate. One finding key per line.
 # 棘轮只允许单向收紧：基线里的条目是**已复核并接受**的存量，
@@ -171,14 +202,20 @@ def _sha256(path: Path) -> str:
 # --------------------------------------------------------------------------- #
 # 生成物正文
 # --------------------------------------------------------------------------- #
-def rules_markdown(version: str, generated_at: str) -> str:
+def rules_markdown(version: str, generated_at: str, gate_ids: tuple[str, ...]) -> str:
     """生成 `RULES.md`：把「规则 → 退出码」的映射落成可读的一张表。
 
     `g00-meta` 的判据只是「门禁 id 出现在本文件里」，所以内容可以极简；
     但**不该**只是极简 —— 这是新用户唯一能读懂「我的仓在被什么管着」的地方。
+
+    `gate_ids` 是**本次实际出厂**的清单，不是模块常量：`--with-exceptions`
+    会把 g18 加进来，那时它必须同时出现在注册表和本文件里，否则 `g00` 立刻红。
+    用常量会让「加进来了但没写进表」这个错误在生成期就埋下。
     """
-    rows = "\n".join(f"| `{gid}` | {GATE_SUMMARY[gid]} |" for gid in GATE_IDS)
-    excluded = "\n".join(f"| `{gid}` | {reason} |" for gid, reason in GATE_EXCLUDED.items())
+    rows = "\n".join(f"| `{gid}` | {GATE_SUMMARY[gid]} |" for gid in gate_ids)
+    excluded = "\n".join(
+        f"| `{gid}` | {reason} |" for gid, reason in GATE_EXCLUDED.items() if gid not in gate_ids
+    )
     return f"""# 治理规则 → 机械保障（RULES.md）
 
 > 生成物，由 `allin-governance {version}` 于 {generated_at} 写出。
@@ -203,7 +240,7 @@ def rules_markdown(version: str, generated_at: str) -> str:
 **SKIP 不是通过。** 跑不了的判据必须打印 `SKIPPED (not a pass)` 并计数，
 不得静默返回 0 —— 这是这套系统里最容易被破坏、也最值钱的一条。
 
-## 二、已注册门禁（{len(GATE_IDS)} 道）
+## 二、已注册门禁（{len(gate_ids)} 道）
 
 | 门禁 id | 判据要点 |
 | --- | --- |
@@ -222,8 +259,14 @@ def rules_markdown(version: str, generated_at: str) -> str:
 """
 
 
-def suite_readme(version: str, generated_at: str) -> str:
+def suite_readme(version: str, generated_at: str, gate_ids: tuple[str, ...]) -> str:
     """生成套装 README：怎么跑、跑不了时算什么、升级怎么走。"""
+    extra_deps = (
+        "\n> ⚠ 本次带了 `g18-exceptions`，它**需要 PyYAML** 才能解析例外台账"
+        "（`pip install pyyaml`）。缺它时 g18 会报 `ledger-unusable` 并阻断 —— "
+        "这是刻意的：判据跑不了就不许装作通过。\n"
+        if "g18-exceptions" in gate_ids else ""
+    )
     return f"""# `tools/gate/governance/` —— 可执行门禁
 
 > 生成物，由 `allin-governance {version}` 于 {generated_at} 写出。
@@ -244,7 +287,7 @@ python tools/gate/governance/gates/g00_meta.py --selfcheck    # 证明它还能�
 ```
 
 **依赖**：`npm run check:governance` 需要 **Node >= 22.18**（原生 TypeScript 类型擦除，
-不需要 `tsx`）与 **Python >= 3.9**。门禁本体零第三方依赖，单跑只要 Python。
+不需要 `tsx`）与 **Python >= 3.9**。门禁本体零第三方依赖，单跑只要 Python。{extra_deps}
 
 ## 二、第一次跑会看到 SKIP，那是正常的
 
@@ -375,22 +418,22 @@ def _gate_script_name(gate_id: str) -> str:
     return gate_id.replace("-", "_") + ".py"
 
 
-def _registry_subset(source: Path) -> dict:
+def _registry_subset(source: Path, gate_ids: tuple[str, ...]) -> dict:
     """从套件自带注册表里裁出出厂子集。
 
     不从零手写注册表：字段约束（八个必填、`requires` 的词法、`tier` 的取值）
     都写在 `g00-meta` 里，手写一份等于把同一套约束再实现一次，迟早对不上。
     """
     raw = json.loads((source / "registry.json").read_text(encoding="utf-8"))
-    gates = [entry for entry in raw.get("gates", []) if entry.get("id") in GATE_IDS]
+    gates = [entry for entry in raw.get("gates", []) if entry.get("id") in gate_ids]
     found = {entry.get("id") for entry in gates}
-    missing = [gid for gid in GATE_IDS if gid not in found]
+    missing = [gid for gid in gate_ids if gid not in found]
     if missing:
         raise SystemExit(
             "ENV ERROR: 套装注册表缺少门禁 " + ", ".join(missing)
             + "\n  说明安装包与 init 的期望不一致，请重装或升级 allin-governance。"
         )
-    order = {gid: index for index, gid in enumerate(GATE_IDS)}
+    order = {gid: index for index, gid in enumerate(gate_ids)}
     gates.sort(key=lambda entry: order[str(entry["id"])])
     return {
         "version": raw.get("version", 1),
@@ -544,8 +587,11 @@ def _generation_stamp(manifest_path: Path, version: str) -> str:
 
 
 def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | None,
-               dry_run: bool = False) -> Plan:
+               dry_run: bool = False, with_exceptions: bool = False) -> Plan:
     plan = Plan(target=target, dry_run=dry_run)
+    gate_ids: tuple[str, ...] = tuple(
+        g for g in GATE_ORDER if with_exceptions or g not in OPTIONAL_GATES
+    )
     suite = suite_dir()
     if not (suite / "run.ts").is_file():
         raise SystemExit(
@@ -563,18 +609,27 @@ def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | N
     if esm.is_file():
         plan.copy(f"{root}/package.json", esm, force=force)
     plan.copy(f"{root}/runtime/govlib.py", suite / "runtime" / "govlib.py", force=force)
-    for gate_id in GATE_IDS:
+    for gate_id in gate_ids:
         name = _gate_script_name(gate_id)
         plan.copy(f"{root}/gates/{name}", suite / "gates" / name, force=force)
         plan.write(f"{root}/baseline/{gate_id}.txt",
                    BASELINE_HEADER.format(gate=gate_id.replace("-", "_")), force=force)
 
     # 2) 注册表与规则映射
-    registry = _registry_subset(suite)
+    registry = _registry_subset(suite, gate_ids)
     plan.write(f"{root}/registry.json",
                json.dumps(registry, ensure_ascii=False, indent=2) + "\n", force=force)
-    plan.write(f"{root}/RULES.md", rules_markdown(version, generated_at), force=force)
-    plan.write(f"{root}/README.md", suite_readme(version, generated_at), force=force)
+    plan.write(f"{root}/RULES.md", rules_markdown(version, generated_at, gate_ids), force=force)
+    plan.write(f"{root}/README.md", suite_readme(version, generated_at, gate_ids), force=force)
+    if with_exceptions:
+        plan.write(f"{root}/exceptions.yml", EXCEPTIONS_TEMPLATE, force=force)
+
+    # 2b) 例外台账模板（仅 --with-exceptions）
+    if with_exceptions:
+        plan.notes.append(
+            "已带 g18-exceptions：它需要 PyYAML（pip install pyyaml）。"
+            "例外台账在 tools/gate/governance/exceptions.yml，空表即全部通过"
+        )
 
     # 3) 生成清单：把「快照 vs 上游」的差异变成可逐字节判的事实
     manifest = {
@@ -582,7 +637,7 @@ def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | N
         "version": version,
         "generated_at": generated_at,
         "note": "快照清单。sha256 对不上 = 该文件被手改或被别的版本覆盖过。升级用 init --force。",
-        "gates": list(GATE_IDS),
+        "gates": list(gate_ids),
         "files": {relative: f"sha256:{digest}" for relative, digest in sorted(plan.hashes.items())},
     }
     plan.write(f"{root}/GENERATED.json",
@@ -703,6 +758,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--license", default="MIT-0", metavar="ID",
                         help="目标缺 LICENSE 时生成的许可证标识（默认 MIT-0；传 none 则不生成）")
     parser.add_argument("--dry-run", action="store_true", help="只打印计划，不落盘")
+    parser.add_argument("--with-exceptions", action="store_true",
+                        help="额外带上 g18-exceptions 与例外台账模板（**需要 PyYAML**）")
     args = parser.parse_args(argv)
 
     target = Path(args.target).expanduser().resolve()
@@ -715,7 +772,8 @@ def main(argv: list[str] | None = None) -> int:
         target.mkdir(parents=True, exist_ok=True)
 
     plan = build_plan(target, force=args.force, with_git=not args.no_git,
-                      license_id=license_id, dry_run=args.dry_run)
+                      license_id=license_id, dry_run=args.dry_run,
+                      with_exceptions=args.with_exceptions)
 
     print(f"allin-governance init -> {target}")
     if args.dry_run:
@@ -734,6 +792,95 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  cd {target}")
     print("  npm run check:governance                                      # 需要 Node >= 22.18")
     print(f"  python {SUITE_RELATIVE.as_posix()}/gates/g00_meta.py --selfcheck   # 单道自证，不需要 Node")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# verify：按 GENERATED.json 复核快照
+# --------------------------------------------------------------------------- #
+def verify_main(argv: list[str] | None = None) -> int:
+    """核对目标仓里的套装快照是否仍与生成清单一致。
+
+    **为什么需要它**：`init` 拷的是快照，而快照的全部价值在于「能不能被核对」。
+    没有复核命令时，`GENERATED.json` 只是一份没人读的元数据；
+    有了它，「这个文件是不是原样」从一句话变成一个退出码。
+
+    三种结果，语义分明：
+
+    * 一致 → 0；
+    * 改动/缺失 → 1（**这不一定是坏事**：可能是你有意改的，但那就意味着它不再是快照，
+      下次 `init --force` 会覆盖。命令要把这句话说出来，而不是只报个数字）；
+    * 清单不可用 → 3（环境/前提错误，不是判据结论）。
+
+    未登记在清单里的门禁脚本**不计入不一致**：使用者给自己的仓加门禁是完全正常的，
+    把它算成漂移会训练人忽略这个命令。
+    """
+    _stdio.configure()
+    parser = argparse.ArgumentParser(
+        prog="allin-governance verify",
+        description="复核 init 生成的套装快照是否仍与 GENERATED.json 记载的一致",
+    )
+    parser.add_argument("target", nargs="?", default=".", help="目标目录（默认当前目录）")
+    parser.add_argument("--quiet", action="store_true", help="只打印结论行")
+    args = parser.parse_args(argv)
+
+    target = Path(args.target).expanduser().resolve()
+    manifest_path = target / SUITE_RELATIVE / "GENERATED.json"
+    if not manifest_path.is_file():
+        print(f"ENV ERROR: 找不到生成清单：{manifest_path}", file=sys.stderr)
+        print("  这里不是 allin-governance init 生成的骨架，或清单被删了。", file=sys.stderr)
+        return 3
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        print(f"ENV ERROR: 清单不是合法 JSON：{error}", file=sys.stderr)
+        return 3
+    files = manifest.get("files")
+    if not isinstance(files, dict) or not files:
+        print("ENV ERROR: 清单里没有 files 段，无法复核", file=sys.stderr)
+        return 3
+
+    changed: list[str] = []
+    missing: list[str] = []
+    intact = 0
+    for relative, expected in sorted(files.items()):
+        path = target / relative
+        if not path.is_file():
+            missing.append(relative)
+            continue
+        if f"sha256:{_sha256(path)}" == expected:
+            intact += 1
+        else:
+            changed.append(relative)
+
+    gates_dir = target / SUITE_RELATIVE / "gates"
+    extra: list[str] = []
+    if gates_dir.is_dir():
+        for script in sorted(gates_dir.glob("*.py")):
+            relative = (SUITE_RELATIVE / "gates" / script.name).as_posix()
+            if relative not in files:
+                extra.append(script.name)
+
+    if not args.quiet:
+        print(f"allin-governance verify -> {target}")
+        print(f"  清单：{manifest.get('generator')} {manifest.get('version')}"
+              f"，生成于 {manifest.get('generated_at')}")
+        print(f"  一致 {intact}；改动 {len(changed)}；缺失 {len(missing)}")
+        for item in changed:
+            print(f"    改动  {item}")
+        for item in missing:
+            print(f"    缺失  {item}")
+        if extra:
+            print(f"  未登记在清单里的门禁脚本 {len(extra)} 个（自己加的门禁属正常）：")
+            for item in extra:
+                print(f"    + {item}")
+
+    if changed or missing:
+        print("  ⇒ 快照与清单不一致。")
+        print("     若是你有意改的：它已经不再是快照，下次 init --force 会覆盖它；")
+        print("     想长期保留，请把它挪成你自己的门禁（新 id + 新脚本 + 注册 + 写进 RULES.md）。")
+        return 1
+    print("  快照未被改动。")
     return 0
 
 

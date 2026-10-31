@@ -104,6 +104,24 @@
 **系统架构图**：组件分层 [`architecture/system-architecture.svg`](architecture/system-architecture.svg) · 数据流 [`architecture/data-flow.svg`](architecture/data-flow.svg) · 设计说明 [`architecture/README.md`](architecture/README.md)。
 > 该目录刻意置于 `docs/` 之外——新增文档若进 `docs/` 必须在 [`docs/INDEX.md`](docs/INDEX.md) 登记（文档索引契约 D1/D8），而架构图是工程视图、不属于四分类文档体系，故不入枢纽。
 
+## 对外文档与参与入口
+
+**Gitee Wiki = 对外讲解面**（本仓是「方法与实现」，Wiki 是「给要采用的人看的东西」）：
+<https://gitee.com/siwpan/allin/wikis>
+
+| Wiki 页面 | 内容 | 源文件（唯一真身） |
+| --- | --- | --- |
+| 目录 | 三行分流：先看是什么 / 装到自己仓 / 参与 | [`wiki/Home.md`](wiki/Home.md) |
+| 一条命令上手 | `init` 全部开关、生成物清单、SKIP 语义、退出码、加自己的门禁 | [`wiki/一条命令上手.md`](wiki/一条命令上手.md) |
+| 给 AI 协作者装上规矩 | 长文：四次翻车、最小可用治理的真实边界、三条设计约束 | [`wiki/给AI协作者装上规矩.md`](wiki/给AI协作者装上规矩.md) |
+| 参与与反馈 | 提 issue / 提 PR 的约定、回应预期、最需要什么反馈 | [`wiki/参与与反馈.md`](wiki/参与与反馈.md) |
+
+> Wiki 只能网页编辑（Gitee 无 wiki API、也无 `<repo>.wiki.git` 远端，2026-10-31 实测），
+> 所以 `wiki/` 目录是**唯一真身**，Wiki 页面是它的发布副本。改文案改这里，再同步过去。
+
+**参与入口**：`.gitee/ISSUE_TEMPLATE.zh-CN.md` / `ISSUE_TEMPLATE.en.md` / `PULL_REQUEST_TEMPLATE.zh-CN.md`
+（约定与回应预期见 [`docs/规范/SPEC-103-社区协作规范.md`](docs/规范/SPEC-103-社区协作规范.md) §7）。
+
 ## 发布面（gitee）
 
 - 全部仓库公开 + MIT（铁律 0）；一项目一仓，主分支 master，发行版 tag `<项目>-v<版本>`。
@@ -149,7 +167,7 @@ allin-governance repocheck <目录> --fail-on error   # 离线仓库体检
 
 ```bash
 # A) 平台子件（排除中间目录 tools/ vendor/ preset/ packages/）
-python tools/repocheck/main.py .     --exclude tools,vendor,preset,packages --skip-rules 1,7 --fail-on error
+python tools/repocheck/main.py .     --exclude tools,vendor,preset,packages,scripts --skip-rules 1,7 --fail-on error
 # B) 体检器自身（排除中间目录 gate/）
 python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
 # C) 可安装包本身（packages/ 里的单个包；排除 src/ 与 tests/ 两个中间层）

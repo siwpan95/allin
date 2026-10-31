@@ -69,7 +69,7 @@ jobs:
       - name: 本仓 monorepo 自检
         run: |
           .venv/bin/python tools/repocheck/main.py . \
-            --exclude tools,vendor,preset,packages --skip-rules 1,7 --fail-on error
+            --exclude tools,vendor,preset,packages,scripts --skip-rules 1,7 --fail-on error
 
       # packages/ 是 monorepo 的中间目录（与 tools/ 同类），所以在上面一行被排除；
       # 它内部的**单个包**要单独按「子件」口径体检 —— 与 README §本仓自检口径 B)

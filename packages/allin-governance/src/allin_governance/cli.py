@@ -8,6 +8,7 @@ github.com/kynikos/repocheck），而它本来是本仓零依赖、30 条规则�
     allin-governance repocheck <目录>      # 仓库体检（30 条规则）
     allin-governance repocheck --help
     allin-governance init [目录]           # 生成可跑的最小治理骨架（14 道门禁）
+    allin-governance verify [目录]         # 复核快照是否仍与生成清单一致
     allin-governance --version
 
 设计约束（都是本仓纪律的直接落地）：
@@ -107,6 +108,13 @@ def _cmd_repocheck(argv: list[str]) -> int:
     return _run_repocheck(argv)
 
 
+def _cmd_verify(argv: list[str]) -> int:
+    """复核 `init` 生成的快照是否仍与 GENERATED.json 一致。"""
+    from . import init as init_module
+
+    return init_module.verify_main(argv)
+
+
 def _cmd_init(argv: list[str]) -> int:
     """生成治理骨架。
 
@@ -122,6 +130,7 @@ def _cmd_init(argv: list[str]) -> int:
 SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "repocheck": ("离线仓库体检：30 条规则，给出 0-10 健康分与 error/warn/info 三级问题", _cmd_repocheck),
     "init": ("生成可跑的最小治理骨架：14 道门禁 + 文档四分类 + registry + 基线", _cmd_init),
+    "verify": ("复核 init 生成的套装快照是否仍与 GENERATED.json 记载的一致", _cmd_verify),
 }
 
 

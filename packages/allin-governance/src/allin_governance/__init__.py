@@ -24,7 +24,8 @@ from __future__ import annotations
 __all__ = ["__version__"]
 
 #: 与 pyproject 的 project.version 保持一致。
-#: 0.0.0a1 仍是**占位版本系列**（REC-AU-21 D1.3）：先是 0.0.0a0 占住名字，
-#: a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码，见 `_stdio`）。
+#: 仍是**占位版本系列**（REC-AU-21 D1.3），版本递增对应可复述的差异：
+#:   a0 占住名字；a1 修掉 cp1252 控制台崩溃（见 `_stdio`）；
+#:   a2 加 `verify` 与 `init --with-exceptions`，并让 sdist 变成自包含（物化构建）。
 #: 仍不承诺 API 稳定；正式形态按实际演进再发。
-__version__ = "0.0.0a1"
+__version__ = "0.0.0a2"

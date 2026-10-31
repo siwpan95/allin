@@ -1,0 +1,20 @@
+# 发版期依赖（不是开发依赖，也不进 CI 的常规门禁路径）
+#
+# 为什么单列一个文件：
+#   bootstrap.sh 装的是 requirements-dev.txt，那是一台机器"能跑门禁"的最小集。
+#   这里是"能出包"的最小集 —— 只有真去发版的人才需要，
+#   让每个开发者的 venv 都装 build + twine 只是把 30 秒的等待分摊给所有人。
+#
+# 装法：
+#   .venv/Scripts/python -m pip install -r requirements-release.txt    # Windows
+#   .venv/bin/python   -m pip install -r requirements-release.txt      # POSIX
+#
+# 用法：
+#   python scripts/build_dist.py     # 物化映射树 → sdist + wheel → 自校验
+#   twine check packages/allin-governance/dist/*
+#   twine upload packages/allin-governance/dist/*
+#     ↑ 只在上面的 check 与「干净 venv 装一遍」都过了之后才敲。
+#       PyPI 的版本号写进去就删不掉，发布前的验证之所以值得花时间，正因为没有回头路。
+
+build>=1.2          # python -m build：出 sdist 与 wheel
+twine>=5.0          # 上传与元数据校验（twine check）

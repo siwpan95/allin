@@ -180,3 +180,59 @@ def test_survives_a_cp1252_console(tmp_path: Path) -> None:
         )
         assert completed.returncode == 0, (args, completed.stderr[-600:])
     assert (tmp_path / "tools/gate/governance/run.ts").is_file()
+
+
+def test_with_exceptions_adds_g18_and_ledger(tmp_path: Path) -> None:
+    """`--with-exceptions` 必须把 g18 加进注册表、生成台账、并写进 RULES.md。
+
+    三处缺一，`g00-meta` 立刻红：注册了但没写进 RULES.md = 规则不可溯；
+    注册了但脚本没拷 = 注册表成了愿望清单。所以这条测的是「三处一起动」。
+    """
+    assert _run(tmp_path, "--with-exceptions") == 0
+
+    payload = json.loads(
+        (tmp_path / "tools/gate/governance/registry.json").read_text(encoding="utf-8")
+    )
+    ids = [entry["id"] for entry in payload["gates"]]
+    assert "g18-exceptions" in ids
+    assert len(ids) == len(GATE_IDS) + 1
+
+    assert (tmp_path / "tools/gate/governance/gates/g18_exceptions.py").is_file()
+    ledger = (tmp_path / "tools/gate/governance/exceptions.yml").read_text(encoding="utf-8")
+    assert "exceptions: []" in ledger
+
+    rules = (tmp_path / "tools/gate/governance/RULES.md").read_text(encoding="utf-8")
+    assert "g18-exceptions" in rules
+
+
+def test_without_flag_g18_stays_out(tmp_path: Path) -> None:
+    """默认不出厂 g18：它需要 PyYAML，与本包「零运行时依赖」的承诺冲突。"""
+    assert _run(tmp_path) == 0
+    payload = json.loads(
+        (tmp_path / "tools/gate/governance/registry.json").read_text(encoding="utf-8")
+    )
+    assert "g18-exceptions" not in [entry["id"] for entry in payload["gates"]]
+    assert not (tmp_path / "tools/gate/governance/exceptions.yml").exists()
+
+
+def test_verify_reports_clean_snapshot(tmp_path: Path) -> None:
+    assert _run(tmp_path) == 0
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 0
+
+
+def test_verify_detects_tampering_and_missing(tmp_path: Path) -> None:
+    """改动与缺失都必须退出 1 —— 这是「快照可核对」的唯一硬证据。"""
+    assert _run(tmp_path) == 0
+    gate = tmp_path / "tools/gate/governance/gates/g05_hygiene.py"
+    gate.write_text(gate.read_text(encoding="utf-8") + "\n# hand edit\n", encoding="utf-8")
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 1
+
+    assert _run(tmp_path, "--force") == 0  # 恢复快照
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 0
+    (tmp_path / "tools/gate/governance/run.ts").unlink()
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 1
+
+
+def test_verify_without_manifest_is_an_env_error(tmp_path: Path) -> None:
+    """没有清单 ≠ 快照有问题。前者是前提不成立（3），后者是判据结论（1）。"""
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 3

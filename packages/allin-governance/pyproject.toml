@@ -19,7 +19,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allin-governance"
-version = "0.0.0a1"
+version = "0.0.0a2"
 description = "工作区治理中枢：可执行门禁 + 文档枢纽契约 + 仓库体检，面向一人多仓与 AI 协作者"
 readme = "README.md"
 requires-python = ">=3.11"
