@@ -6,7 +6,7 @@
 本门禁是它的可执行落地，判据与 allin 仓的 `tools/gate/docs_index.py` **同源**（两处落点、各自自包含）。
 本仓没有 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` —— 该契约为选用制，不强制每个仓采用。
 
-判据（D1–D8）：
+判据（D1–D11）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -15,7 +15,13 @@
   D6 ASCII 别名 —— 四个别名目录存在且指向正确（Windows 用 junction；非 Windows 可 ln -s）
   D7 卷号连续 —— 记录/交接/<YYYY-MM>.md 无空洞，且每卷首行声明覆盖区间
   D8 自述一致 —— INDEX.md 头部那行「**覆盖** 根 N + 规范 N + 事实源 N + 记录 N = **M 份**」逐项与实际相符
-                  （2026-09-28 曾出现「头部写 51 ／ 实际 49」这类只有人眼能发现的漂移）
+  D9 章节锚点 —— 指向性 `§N` 引用必须落在真实章节上（g19 只解析文件路径、不查章节锚点）
+  D10 区间随文 —— 交接卷卷首声明的覆盖区间，必须覆盖正文里出现的最新日期
+  D11 两处计数 —— INDEX 头部覆盖行与各节标题里的「N 份」必须一致（同一文档两处计数各漂各的）
+
+  ⚠ **D9–D11 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
+  本门禁与仓内 `tools/gate/docs_index.py` **import 同一份** ⇒ 结构上杜绝两份判据漂移
+  （`SPEC-004` 调试铁律 64 的同一教训：两份都能跑、都"看着对"，差异只有人工 diff 才看得见）。
 
 契约（与本仓其它门禁一致）：
   退出码 0 干净 / 1 基线之外的新阻断 / 2 用法错误 / 3 环境错误
@@ -38,6 +44,7 @@ import tempfile
 # (run.ts spawns this gate from tools/gate, not from the repo root).
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime"))
 import govlib  # noqa: E402  (path is fixed up immediately above)
+import docs_contract  # noqa: E402  —— D9/D10/D11 判据的**唯一实现**（与仓内 docs_index.py 同源一份）
 
 EXIT_OK, EXIT_FAIL, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
 
@@ -309,6 +316,9 @@ def run(root: str, args) -> Report:
     check_d6(docs, rep, enabled=not args.no_aliases)
     check_d7(docs, rep)
     check_d8(docs, files, rep)
+    docs_contract.check_d9(docs, root, files, rep)
+    docs_contract.check_d10(docs, rep)
+    docs_contract.check_d11(docs, rep)
     return rep
 
 
@@ -498,6 +508,10 @@ def selfcheck() -> int:
                     print("MISSED case not caught: %s" % kind)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+    extra = docs_contract.selfcheck_extra()
+    caught += extra["caught"]
+    clean += extra["clean"]
+    misreports += extra["misreports"]
     print('SELFCHECK {"caught":%d,"clean":%d,"misreports":%d}' % (caught, clean, misreports))
     return EXIT_OK if (caught >= 1 and clean >= 1 and misreports == 0) else EXIT_FAIL
 
