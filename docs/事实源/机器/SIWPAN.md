@@ -1,5 +1,10 @@
 # 机器事实 · `SIWPAN`（第三台接入机器，曾改名）
 
+> **时点** 2026-10-31（**@`SIWPAN` 推送配置升级** —— 用户指令「配 GitHub 侧镜像推送」：
+> origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 `@DESKTOP-8RSV60V` §9 同款口径。
+> ⚠ 旧值「本机不补配 pushurl」作废 —— 那是 2026-10-29 对 `DESKTOP-KQABATS` 的交代，被错误外推到本机；
+> 各机推送配置以用户逐机指令为准。SSH 前提实测：`id_ed25519` 认证通过（`Hi siwpan95!`），
+> 双通道首推两行 up-to-date、双侧 ls-remote 与 HEAD 逐字符相等。）
 > **时点** 2026-10-30（**@`SIWPAN` 全量复测补录** —— `tools/facts/measure.py` 采集 + 人工裁决；
 >   本次补齐盘位卷标、工作区落点、仓数口径、运行时与解释器清单、推送口径，
 >   并按 [`机器分区索引.md`](../机器分区索引.md) §0 归属规则只写本机事实。）
@@ -105,18 +110,21 @@
 
 - **读法约定**：跨仓脚本引用数据根时**优先环境变量、未设则按 cwd 相对解析**（铁律 5 同口径）。
 
-## 7. 推送与远端镜像（@`SIWPAN` 侧，2026-10-30 实测）
+## 7. 推送与远端镜像（@`SIWPAN` 侧，2026-10-31 实测）
 
 | 项 | 现值 |
 | --- | --- |
 | `remote.origin.url` | `https://gitee.com/siwpan/allin.git` |
-| `remote.origin.pushurl` 条数 | **0**（`git config --get-all remote.origin.pushurl` 无输出） |
-| 独立 remote | 无（`git remote -v` 只有 origin） |
-| 推送口径 | **只推 Gitee 单核**，`git push` 走默认 url |
-| 核对口径 | 只核 Gitee 一侧（`ls-remote origin` + `rev-list --left-right --count` 0/0 + 工作树干净） |
+| `remote.origin.pushurl` 条数 | **2**：Gitee + `git@github.com:siwpan95/allin.git`（2026-10-31 用户指令补配，与 `@DESKTOP-8RSV60V` §9 同款） |
+| 独立 remote | `github` = `git@github.com:siwpan95/allin.git`（fetch/push） |
+| SSH 前提 | `~/.ssh/id_ed25519` 认证通过（`Hi siwpan95!`）；`~/.ssh/config` 含 `ssh.github.com:443` 备用口 |
+| 推送口径 | **一次 `git push` 依次打两条**（Gitee + GitHub 镜像） |
+| 核对口径 | **Gitee 与 GitHub 两侧 `ls-remote` 都要核**（与 KQABATS 的单核口径不同，勿跨机套用） |
 
-- **作业口径**与 [`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §7 相同（该机亦 0 条 pushurl）；
-  GitHub 镜像由 [`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 那台推送（pushurl 2 条），本机**不要求 GitHub 侧可见**，也**不补配** pushurl。
+- **首推实测（2026-10-31）**：配置后 `git push origin master` 两行 `Everything up-to-date`（exit 0）；
+  随后的记账提交经双通道真实推送，双侧 `ls-remote` 与 `rev-parse HEAD` 逐字符相等。
+- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §6（该机 pushurl 0 条、
+  用户 2026-10-29 明确不补配——**逐机指令，不外推**）。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端两次被其它机推进
   （`5a1d767→c9586d3` DIVERGED、`8b46e67→7f3fecc` PURE_BEHIND）——
   **动手前 fetch 对齐是硬纪律**，DIVERGED 时 g04 会拦。
