@@ -44,6 +44,40 @@ const EXIT_ENV = 3
 
 const MINIMUM_PYTHON = [3, 9] as const
 
+/**
+ * 本机在 registry 的 `platforms` 词汇里的代号。
+ *
+ * registry 用 *文件内* 的稳定词汇（`nt` / `posix`），而不是 Node 的
+ * `process.platform`（`win32` / `linux` / `darwin`）—— 因为前者是写在
+ * JSON 里的契约数据，换 Node 版本不会变。这里只做一次映射。
+ */
+const HOST_PLATFORM = process.platform === 'win32' ? 'nt' : 'posix'
+
+/**
+ * 平台不匹配的门禁在本机**不适用**，必须跳过（记为 SKIPPED），而不是跑它。
+ *
+ * 起因（2026-10-31 真实 CI 事故，两次踩到同一个根因的两面）：
+ *   `g20-facts` 在 registry 里声明 `platforms: ["nt"]`（它判 Windows 本机
+ *   磁盘路径的存在性声称）。但本调度器**从不读 platforms 字段** —— 它只是
+ *   在 interface 里声明了一下就再没用过。于是 Linux CI 上照样调起 g20，
+ *   g20 自己判 `sys.platform != "win32"` 后打一行 ENV ERROR 并 exit 3，
+ *   聚合器把 3 当失败 ⇒ 「19/20 clean; failed: g20-facts」⇒ 整条流水线红。
+ *
+ *   而真实结论只是「这道门禁在 Linux 上不适用」。把「不适用」报成「失败」，
+ *   与把「跳过」报成「通过」是同一种病：结论与事实不符。
+ *
+ * 口径（与门禁契约「SKIP ≠ 通过」一致）：平台不匹配 → 不调起、记 SKIPPED、
+ * 在汇总行里单列。这样 Linux 的诚实结论是「19 clean + 1 skipped (platform)」。
+ *
+ * ⚠ 与 `--only` 的关系：显式点名（`--only g20-facts`）时**不跳过**，
+ * 因为那时用户的意图就是「我就要在这台机器上试它」，跳过会掩盖真实报错。
+ */
+function onHostPlatform(gate: GateEntry): boolean {
+  const platforms = gate.platforms
+  if (!Array.isArray(platforms) || platforms.length === 0) return true
+  return platforms.includes(HOST_PLATFORM)
+}
+
 interface Interpreter {
   command: string
   prefix: string[]
@@ -260,7 +294,14 @@ function main(argv: string[]): number {
         : ''))
   }
   const outcomes: GateOutcome[] = []
+  // 平台不匹配的门禁：不调起、记 SKIPPED（见 onHostPlatform 的说明）。
+  // `--only` 显式点名时不跳过 —— 用户点名的意图就是「我就要试它」。
+  const platformSkipped: GateEntry[] = []
   for (const gate of selected) {
+    if (options.only === undefined && !onHostPlatform(gate)) {
+      platformSkipped.push(gate)
+      continue
+    }
     const args = options.selfcheckAll
       ? ['--selfcheck']
       : [...options.forwarded, ...(profileGates.includes(gate) ? ['--no-profile'] : [])]
@@ -273,6 +314,17 @@ function main(argv: string[]): number {
   const failed = outcomes.filter(outcome => outcome.code !== EXIT_OK)
   console.log(`governance: ${outcomes.length - failed.length}/${outcomes.length} gate(s) clean`
     + (failed.length === 0 ? '' : `; failed: ${failed.map(outcome => outcome.gate.id).join(', ')}`))
+  if (platformSkipped.length > 0) {
+    // 单独一行，且明写 SKIPPED (not a pass) —— 不让「跳过的」混进「干净的」分子里。
+    console.log(`governance: SKIPPED (not a pass) on ${HOST_PLATFORM}: `
+      + platformSkipped.map(gate => `${gate.id} (declares ${gate.platforms.join('|')})`).join(', '))
+  }
+  // 「一个都没跑」不等于「一个都没问题」。若所有选中的门禁都因平台被跳过，
+  // 此时退出 0 就是在用「没验」冒充「验过」—— 判环境错误，让调用方看见。
+  if (outcomes.length === 0 && platformSkipped.length > 0) {
+    console.error(`governance: every selected gate is inapplicable on ${HOST_PLATFORM}; nothing was judged`)
+    return EXIT_ENV
+  }
   return aggregate(outcomes)
 }
 
