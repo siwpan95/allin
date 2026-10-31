@@ -1,0 +1,74 @@
+# allin 门面站点 · GitHub Pages 部署
+#
+# 目的：把 `site/` 目录发布成 https://siwpan95.github.io/allin/ ——
+# 让「外部的人第一次看到 allin」时，落地页直接讲清三件事：
+# 这是什么 / 10 分钟怎么跑起来 / 哪些东西可以直接拿走。
+#
+# 为什么用 Actions 部署而不是「从分支直接发布」：
+#   GitHub Pages 的 source/path 只接受 `/` 或 `/docs`（实测 API 报错：
+#   "Invalid property /source/path: `/site` is not a possible value"），
+#   而 `site/` 放在仓根是刻意选择 —— `docs/` 下放 .html 会被 g13-docs-only
+#   门禁拦（docs/ 只允许文档类扩展名），所以门面不能放进 docs/。
+#   Actions 部署绕开这个限制，且能顺手在发布前再跑一次门禁。
+#
+# 与 gates.yml 的分工：gates.yml 负责**验证**（门禁全绿才谈得上发布），
+# 本文件负责**发布**。两者独立，但本文件在部署前会重跑一次门禁，
+# 保证「发出去的东西」和「验过的东西」是同一份。
+
+name: deploy-pages
+
+on:
+  push:
+    branches: [master]
+    paths: ['site/**', '.github/workflows/deploy-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: 发布门面站点
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 装依赖
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements-dev.txt
+
+      - name: 发布前复跑门禁（保证「发出去的」与「验过的」是同一份）
+        env:
+          ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: node tools/gate/governance/run.ts --no-profile
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传站点产物（只发 site/ 目录）
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: 发布
+        id: deployment
+        uses: actions/deploy-pages@v4
