@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -153,3 +155,28 @@ def test_every_shipped_gate_script_reaches_the_target(tmp_path: Path, gate_id: s
     assert _run(tmp_path) == 0
     script = tmp_path / f"tools/gate/governance/gates/{gate_id.replace('-', '_')}.py"
     assert script.is_file(), script
+
+
+def test_survives_a_cp1252_console(tmp_path: Path) -> None:
+    """回归：Windows 的 cp1252 控制台上，中文输出不得让命令失败。
+
+    2026-10-31 真实 CI 事故：`init` 在 `windows-latest` 上抛
+    `UnicodeEncodeError: 'charmap' codec can't encode`，文件都已经写好了，
+    命令却以 exit 1 收场 —— 用户看到失败、磁盘上是成功，这是最坏的一种信号。
+
+    用子进程 + `PYTHONIOENCODING=cp1252` 复现那个环境，而不是 mock：mock 掉
+    `sys.stdout` 测不到「真实解释器怎么处理编码」，而这正是事故的发生点。
+    """
+    env = {
+        **os.environ,
+        "PYTHONIOENCODING": "cp1252",
+        "PYTHONPATH": str(Path(__file__).resolve().parent.parent / "src"),
+    }
+    for args in (["--help"], []):
+        completed = subprocess.run(
+            [sys.executable, "-m", "allin_governance", "init", str(tmp_path), *args],
+            capture_output=True, text=True, env=env, check=False,
+            encoding="utf-8", errors="replace",
+        )
+        assert completed.returncode == 0, (args, completed.stderr[-600:])
+    assert (tmp_path / "tools/gate/governance/run.ts").is_file()

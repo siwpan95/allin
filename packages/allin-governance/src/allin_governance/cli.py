@@ -25,9 +25,11 @@ import argparse
 import sys
 from pathlib import Path
 
-__all__ = ["main", "SUBCOMMANDS"]
+from . import _stdio, __version__
 
-__version__ = "0.0.0a0"
+# `__version__` 从包根取，**不在这里再定义一次**：两处各写一个版本号
+# 迟早对不上，而「包说 a1、CLI 说 a0」这种漂移没人会在发布前发现。
+__all__ = ["main", "SUBCOMMANDS"]
 
 
 def _repocheck_dir() -> Path:
@@ -138,6 +140,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # 第一件事：把控制台编码钉成 UTF-8。
+    # 起因见 `_stdio` 的模块注释 —— Windows 上 cp1252 控制台遇到中文会
+    # 在**打印阶段**抛 UnicodeEncodeError，于是「文件已经写好了」却以 exit 1 收场。
+    # 放在这里而不是各子命令里：`--help` 与所有子命令共用同一条出口。
+    _stdio.configure()
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
     if not argv:

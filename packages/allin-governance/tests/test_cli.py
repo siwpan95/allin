@@ -30,8 +30,8 @@ from allin_governance.cli import _repocheck_dir, main  # noqa: E402
 
 
 def test_version_string_is_a_placeholder_release() -> None:
-    """版本号必须是占位版本 0.0.0a0 —— 它只用来占名，不是功能承诺。"""
-    assert __version__ == "0.0.0a0"
+    """版本号必须仍是 0.0.0aN 占位系列 —— 它只用来占名，不是功能承诺。"""
+    assert __version__.startswith("0.0.0a")
 
 
 def test_no_arguments_prints_help_and_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:

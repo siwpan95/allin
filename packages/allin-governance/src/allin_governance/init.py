@@ -67,6 +67,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import _stdio
+
 __all__ = ["main", "build_plan", "GATE_IDS", "suite_dir"]
 
 #: 套件在目标仓里的落点。**必须与 allin 自身一致**：`run.ts` 用
@@ -680,6 +682,9 @@ def _package_version() -> str:
 # CLI
 # --------------------------------------------------------------------------- #
 def main(argv: list[str] | None = None) -> int:
+    # 直接调用本模块（测试、或 `python -m allin_governance.init`）时没有经过
+    # `cli.main`，这里要自己兜一次编码 —— 本函数每一行都在打中文。
+    _stdio.configure()
     parser = argparse.ArgumentParser(
         prog="allin-governance init",
         description="在一个目录里生成可跑的最小治理骨架（门禁 + 文档四分类 + registry）",

@@ -135,6 +135,7 @@ pip install allin-governance[full]      # 加严格校验的附加依赖
 
 ## 状态
 
-`0.0.0a0` 是**占位版本**，只用于先占住 `allin-governance` 这个名字。
-正式形态仍在演进，见 allin 仓的
+`0.0.0a1` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
+a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码）。
+两版都不承诺 API 稳定。正式形态仍在演进，见 allin 仓的
 [`REC-AU-21`](https://gitee.com/siwpan/allin/blob/master/docs/记录/审计/allin自身做大做强方向修正_2026-10-31.md)。

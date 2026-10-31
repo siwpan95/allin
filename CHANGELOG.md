@@ -3,6 +3,28 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 0.0.0a1 —— 2026-10-31
+
+**只修一个会让命令假装失败的缺陷，其余与 a0 相同。**
+
+`init` 在 **cp1252 控制台**（西文 Windows、以及 GitHub Actions 的
+`windows-latest` runner）上会抛 `UnicodeEncodeError`：
+
+```
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 2-3
+```
+
+原因不是逻辑错了，是**输出的默认编码跟着终端走** —— 这套工具的每一行提示都是中文。
+最坏的后果不是崩溃本身，而是它发生在**打印阶段**：文件全部写好了，命令却以
+exit 1 收场，用户看到「失败」、磁盘上是成功。
+
+修法：新增 `_stdio.configure()`，把 stdout/stderr 钉成 UTF-8（`errors="replace"`），
+在 `cli.main()` 入口统一调用 —— 所有子命令与 `--help` 共用同一条出口。
+回归测试用**子进程 + `PYTHONIOENCODING=cp1252`** 复现那个环境，而不是 mock 流。
+
+顺带：`cli.py` 里重复定义的 `__version__` 已删掉，改为从包根取 ——
+两处各写一个版本号，「包说 a1、CLI 说 a0」这种漂移没人会在发布前发现。
+
 ## `allin-governance` 0.0.0a0 —— 2026-10-31
 
 **占位版本，但可运行。** 发它的直接目的是占住 PyPI 名字（REC-AU-21 D1.3），
