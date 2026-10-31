@@ -21,6 +21,12 @@ dist/
 # 所以只锚定在 Python 包目录内（与 g05 的 ARTIFACT_SEGMENTS_SCOPED 口径一致）。
 !/scripts/build/
 !/scripts/release/
+# 2026-10-31 实测踩到：在本目录跑 `python -m build --sdist` 会**在仓内留下**
+# packages/tools/{gate,repocheck} —— setuptools 把 package-dir 里的 `../../tools/...`
+# 按 sdist 暂存根重算，落到上一层而不是仓根。那是构建器的副产物、不是源码，
+# 而且它产出的 sdist 本身也是坏的（不含这两棵树，见 REC-AU-21 §7.4）。
+# 忽略 + 记为已知缺陷；根治做法是物化后再打包，不是把这段永久留着。
+/packages/tools/
 
 # ===== 凭证（明文含 gitee / deepseek 令牌，禁止上传远程） =====
 私人令牌.txt

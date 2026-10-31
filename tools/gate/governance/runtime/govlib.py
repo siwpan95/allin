@@ -150,8 +150,19 @@ def blob_of(root: Path, path: str) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def read_text(path: Path, limit_bytes: int | None = None) -> str | None:
-    """Read UTF-8 text, or return ``None`` for missing, binary, or oversized input."""
+def read_text(path: Path, limit_bytes: int | None = None) -> str | None:  # gov-python: allow
+    """Read UTF-8 text, or return ``None`` for missing, binary, or oversized input.
+
+    Why the annotation: `g09-python-hygiene` flags any `read_text(` that does not
+    spell ``encoding=`` on the same line, because the stdlib `Path.read_text`
+    defaults to the locale codec. This one is a **wrapper**: it reads bytes and
+    decodes explicitly below, so the locale never gets a vote. The gate's
+    local-helper heuristic only recognises a helper whose body contains
+    ``encoding=`` (it looks for the keyword, not for ``.decode("utf-8")``), so
+    this safe wrapper reads as a defect. Annotating is the mechanism the gate
+    itself documents for that gap; broadening the heuristic is the better fix
+    and is left as a known limitation (2026-10-31).
+    """
     try:
         data = path.read_bytes()
     except OSError:
@@ -263,6 +274,7 @@ class Baseline:
 
     def load(self) -> "Baseline":
         if self.path.is_file():
+            # gov-python: allow —— 调的是本文件的 read_text 包装，编码已写死。
             for entry in read_text(self.path, limit_bytes=4 * 1024 * 1024).splitlines() or []:
                 entry = entry.strip()
                 if entry and not entry.startswith("#"):

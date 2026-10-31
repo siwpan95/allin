@@ -87,8 +87,8 @@ POSIX_PATH = re.compile(r'(?<![A-Za-z0-9_./-])/(Users|home|Volumes|mnt|media)/[A
 #: Directory prefixes that are legitimately system-owned on each platform.
 SYSTEM_PREFIXES_POSIX = ("/Applications", "/Library", "/System", "/bin", "/dev", "/etc", "/lib", "/nix",
                          "/opt", "/proc", "/run", "/sbin", "/snap", "/sys", "/tmp", "/usr", "/var")
-SYSTEM_PREFIXES_NT = ("c:\\program files", "c:\\program files (x86)", "c:\\programdata", "c:\\users\\public",
-                      "c:\\windows")
+SYSTEM_PREFIXES_NT = ("c:\\program files", "c:\\program files (x86)", "c:\\programdata", "c:\\users\\public",  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
+                      "c:\\windows")  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
 
 #: Placeholders and annotations that make a sample line legitimate by construction.
 PLACEHOLDER_MARKERS = ("<", ">", "$", "%", "{{", "}}", "...", "…", "~")
@@ -234,20 +234,20 @@ def selfcheck() -> int:
     check = govlib.SelfCheck(gate=GATE)
     clean_source = (
         "const local = join(import.meta.dirname, 'config.json')\n"
-        "const url = 'https://example.invalid/C:/not/a/path'\n"
+        "const url = 'https://example.invalid/C:/not/a/path'\n"  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
         "const template = `report:\\n${local}`\n"
         "const escaped = /\\d+\\/\\w+/\n"
         "const home = '~/.dsh/profiles'\n"
         "// gov-paths: allow - sample without a real machine\n"
-        "// const sample = 'D:\\\\work\\\\project'\n"
+        "// const sample = 'D:\\\\work\\\\project'\n"  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
     )
     with govlib.Sandbox() as sandbox:
         # The injected paths are deliberate fixtures. The inline annotation is the documented
         # exemption, and it has to sit on the same line as the sample it excuses.
         sandbox.write("src/clean.ts", clean_source)
-        sandbox.write("src/dead_windows.ts", "const root = 'D:\\\\gov-selfcheck-missing\\\\work'\n")  # gov-paths: allow
+        sandbox.write("src/dead_windows.ts", "const root = 'D:\\\\gov-selfcheck-missing\\\\work'\n")  # gov-paths: allow; gov-python: allow
         sandbox.write("src/dead_posix.ts", "const root = '/Users/gov-selfcheck-missing/work'\n")  # gov-paths: allow
-        sandbox.write("src/fixture.spec.ts", "const fake = 'D:\\\\gov-selfcheck-missing\\\\fixture'\n")  # gov-paths: allow
+        sandbox.write("src/fixture.spec.ts", "const fake = 'D:\\\\gov-selfcheck-missing\\\\fixture'\n")  # gov-paths: allow; gov-python: allow
         sandbox.write("docs/sample.md", "Config lives in `/Users/gov-selfcheck-missing/work`.\n")  # gov-paths: allow
 
         nt_report = scan(sandbox.path, platform="nt", include_docs=False, deep=True)
@@ -266,7 +266,7 @@ def selfcheck() -> int:
         baseline.write(nt_report.findings)
         baseline.load()
         check.quiet("baseline covers frozen findings", bool(baseline.filter_new(nt_report.findings)))
-        sandbox.write("src/dead_windows_extra.ts", "const extra = 'D:\\\\gov-selfcheck-missing\\\\more'\n")  # gov-paths: allow
+        sandbox.write("src/dead_windows_extra.ts", "const extra = 'D:\\\\gov-selfcheck-missing\\\\more'\n")  # gov-paths: allow; gov-python: allow
         refreshed = scan(sandbox.path, platform="nt", include_docs=False, deep=True)
         check.detects("a new finding escapes the baseline", len(baseline.filter_new(refreshed.findings)) == 1)
 

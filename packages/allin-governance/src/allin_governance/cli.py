@@ -7,6 +7,7 @@ github.com/kynikos/repocheck），而它本来是本仓零依赖、30 条规则�
 
     allin-governance repocheck <目录>      # 仓库体检（30 条规则）
     allin-governance repocheck --help
+    allin-governance init [目录]           # 生成可跑的最小治理骨架（14 道门禁）
     allin-governance --version
 
 设计约束（都是本仓纪律的直接落地）：
@@ -104,9 +105,21 @@ def _cmd_repocheck(argv: list[str]) -> int:
     return _run_repocheck(argv)
 
 
+def _cmd_init(argv: list[str]) -> int:
+    """生成治理骨架。
+
+    延迟导入 `init`：它要 import 一套模板常量，而 `--version` / `--help`
+    这些高频短路径不该为此付启动成本（也避免与 `_package_version()` 形成环）。
+    """
+    from . import init as init_module
+
+    return init_module.main(argv)
+
+
 #: 子命令表。新增能力只需在这里加一行，**不要**新开一个顶层入口点。
 SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "repocheck": ("离线仓库体检：30 条规则，给出 0-10 健康分与 error/warn/info 三级问题", _cmd_repocheck),
+    "init": ("生成可跑的最小治理骨架：14 道门禁 + 文档四分类 + registry + 基线", _cmd_init),
 }
 
 

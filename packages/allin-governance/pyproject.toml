@@ -66,12 +66,26 @@ Changelog = "https://gitee.com/siwpan/allin/blob/master/CHANGELOG.md"
 allin-governance = "allin_governance.cli:main"
 
 [tool.setuptools]
-packages = ["allin_governance", "allin_governance._repocheck"]
+packages = [
+  "allin_governance",
+  "allin_governance._repocheck",
+  # 治理门禁套件：`init` 把这份快照拷进目标仓。同样**不复制源码**，
+  # 由下面的 package-dir 把仓内 tools/gate/governance 映射进来。
+  "allin_governance._gatesuite",
+  "allin_governance._gatesuite.gates",
+  "allin_governance._gatesuite.runtime",
+]
 
 [tool.setuptools.package-dir]
 "allin_governance" = "src/allin_governance"
 # 指向仓内真身：一份源码，两处消费（仓内 tools/repocheck + 包内 _repocheck）
 "allin_governance._repocheck" = "../../tools/repocheck"
+"allin_governance._gatesuite" = "../../tools/gate/governance"
+"allin_governance._gatesuite.gates" = "../../tools/gate/governance/gates"
+"allin_governance._gatesuite.runtime" = "../../tools/gate/governance/runtime"
 
 [tool.setuptools.package-data]
 "allin_governance._repocheck" = ["README.md", "LICENSE", "CHANGELOG.md"]
+# run.ts 与 registry.json 是套件的入口与事实源，baseline/*.txt 是棘轮空壳；
+# preset/ 不随包（g14/g16 判的是 allin 自己的载体，已在 init 的排除清单里说明）。
+"allin_governance._gatesuite" = ["*.ts", "*.json", "RULES.md", "README.md", "baseline/*.txt"]

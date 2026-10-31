@@ -97,6 +97,22 @@ stages:
         strategy:
           retry: "0"
 
+      # D1.1 的验收判据：装 wheel → 在与仓无关的临时目录里 init → 门禁必须 exit 0。
+      # 与 GitHub 侧同一条判据：两边都跑，否则「主仓绿、镜像红」就是一个没人发现的矛盾。
+      # 整条链写在一个 command 里：Gitee Go 的多个 command 不保证共享同一个 shell 会话，
+      # 拆开写会让 `cd` 与上一行的 venv 丢掉。
+      - step: build@python
+        name: init_e2e
+        displayName: 可安装包 init 端到端（生成骨架 → 跑门禁）
+        pythonVersion: "3.13"
+        commands:
+          - python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet packages/allin-governance && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
 triggers:
   trigger: auto
   push:

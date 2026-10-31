@@ -80,9 +80,22 @@ jobs:
           .venv/bin/python tools/repocheck/main.py packages/allin-governance \
             --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
 
-      - name: 可安装包单测（allin-governance CLI 包装边界）
+      - name: 可安装包单测（allin-governance CLI 包装边界 + init 边界）
         run: |
           .venv/bin/python -m pytest packages/allin-governance -q
+
+      # D1.1 的验收判据就在这里：装 wheel → 在一个**与仓无关**的目录里 init →
+      # 那条 `npm run check:governance` 必须 exit 0。
+      # 刻意不测「代码写了什么」而测「陌生人拿到包能不能跑起来」：
+      # 目标目录建在 $RUNNER_TEMP，不继承仓内任何文件、别名或 venv。
+      - name: 可安装包 init 端到端（生成骨架 → 跑门禁）
+        run: |
+          python -m venv "$RUNNER_TEMP/ag"
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet --upgrade pip
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet packages/allin-governance
+          "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
+          cd "$RUNNER_TEMP/scaffold"
+          npm run check:governance
 
   gates-windows:
     name: 治理门禁（Windows · 完整 20 道，含 g20-facts）
@@ -117,3 +130,17 @@ jobs:
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
         run: bash scripts/run_all_gates.sh
+
+      # 同一条验收判据在 Windows 上再跑一次。这不是重复劳动：
+      # 这套门禁的判据里有一部分（盘符字面量、CRLF、junction）只在 Windows 上有语义，
+      # 「一个骨架在 Linux 上绿」推不出「在 Windows 上也绿」—— 本仓已经因为
+      # 「只有一台机器验过」吃过四次亏（见 REC-AU-21 §7.2）。
+      - name: 可安装包 init 端到端（Windows）
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/ag"
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet --upgrade pip
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet packages/allin-governance
+          "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
+          cd "$RUNNER_TEMP/scaffold"
+          npm run check:governance

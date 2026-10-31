@@ -263,7 +263,7 @@ def selfcheck() -> int:
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/ok.ts", "export const answer = 42\n")
-        (sandbox.path / ".git" / "config").write_text(
+        (sandbox.path / ".git" / "config").write_text(  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
             "[remote \"origin\"]\n\turl = https://gitee.com/owner/name.git\n"
             "[branch \"main\"]\n\tremote = https://owner:8f14e45fceea167a5a36dedd4bea2543@gitee.com/owner/name.git\n",  # gov-credentials: allow
             encoding="utf-8")

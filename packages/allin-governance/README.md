@@ -7,6 +7,7 @@
 pip install allin-governance
 
 allin-governance --version
+allin-governance init <目录>               # 生成可跑的最小治理骨架
 allin-governance repocheck <目录>          # 离线仓库体检
 allin-governance repocheck --help
 ```
@@ -27,6 +28,9 @@ allin-governance repocheck --help
 ## 用法（Usage）
 
 ```bash
+# 给一个空目录装上治理骨架（或装进已有仓：只合并不覆盖）
+allin-governance init <目录>
+
 # 体检当前目录（最常用）
 allin-governance repocheck .
 
@@ -56,6 +60,36 @@ allin-governance repocheck --dump-profile            # 列出全部 30 条规则
 
 ## 当前能力
 
+### `init` —— 生成可跑的最小治理骨架
+
+```bash
+allin-governance init <目录>
+cd <目录> && npm run check:governance     # 需要 Node >= 22.18；实测 14/14 exit 0
+```
+
+生成 **14 道可执行门禁** + 文档四分类 + `registry.json` + 基线棘轮 + 生成清单。
+判据不是「写了多少文件」，而是：**一个陌生目录 init 完，那条命令必须 exit 0。**
+
+为什么是 14 道而不是全部 20 道 —— 这是实测出来的边界，不是拍脑袋：
+
+| | 门禁 | 原因 |
+| --- | --- | --- |
+| 出厂 | `g00` `g01` `g03` `g04` `g05` `g06` `g07` `g08` `g09` `g10` `g11` `g12` `g13` `g20` | 纯标准库，在空仓库上逐个实测通过 |
+| 不发 | `g14` `g15` `g16` `g17` `g19` | 判的是 allin 自己的 preset / 文档契约 / 平台台账，别的仓没有对应物 |
+| 按需 | `g18` | 需要 PyYAML；本包对运行时的承诺是零第三方依赖 |
+
+三条设计约束：
+
+- **门禁脚本必须物理在仓里。** `g00-meta` 的第一条判据就是「注册表里的 script
+  必须在仓内」（注册表不是愿望清单）。所以 `init` 拷**快照**，不是让门禁住在
+  `site-packages` —— 否则 `git log` 看不到判据的变更史，`pip install -U` 会
+  静默改变你的裁决结果。
+- **快照可核对。** `GENERATED.json` 记下生成器版本与每个文件的 sha256，
+  任何一处被手改或被别的版本覆盖都能逐字节判出来。
+- **用户内容永不被覆盖。** `--force` 只升级 `tools/gate/governance/**`；
+  `README.md` / `LICENSE` / `docs/**` 只在缺失时创建。
+  `package.json` 与 `.gitignore` 只做合并。
+
 ### `repocheck` —— 离线仓库体检
 
 **30 条规则**，给出 0–10 健康分与 `error` / `warn` / `info` 三级问题；
@@ -76,10 +110,15 @@ allin-governance repocheck . --fail-on error    # 进 CI：有 error 级问题�
 
 ## 与 allin 仓的关系
 
-本包的 `repocheck` **源码只有一份**：真身在
-[`allin`](https://gitee.com/siwpan/allin) 仓的 `tools/repocheck/`，
-打包时由 `pyproject.toml` 的 `package-dir` 映射进来，**不复制**。
-理由很实际：两份代码必然漂移，而判断哪份是准的成本，远高于省下的打包麻烦。
+本包的 `repocheck` 与治理门禁套件 **源码只有一份**：真身在
+[`allin`](https://gitee.com/siwpan/allin) 仓的 `tools/repocheck/` 与
+`tools/gate/governance/`，打包时由 `pyproject.toml` 的 `package-dir` 映射进来，
+**不复制**。理由很实际：两份代码必然漂移，而判断哪份是准的成本，
+远高于省下的打包麻烦。
+
+`init` 是唯一的例外，而且它就该是例外：它把套件**拷进目标仓**。
+那不是镜像，是交付物 —— 有版本、有清单（`GENERATED.json`）、覆盖要显式 `--force`。
+门禁必须住在被治理的仓里，否则治理的证据链断在安装目录。
 
 ## 安装
 

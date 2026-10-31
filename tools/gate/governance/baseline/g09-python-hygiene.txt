@@ -10,16 +10,6 @@ tools/gate/check_ps1_bom.py|83c04aa02f7bfab4|io-without-encoding
 tools/gate/check_ps1_bom.py|86115f6b0927e5a4|io-without-encoding
 tools/gate/check_ps1_bom.py|cd4d23b804382e2b|io-without-encoding
 tools/gate/check_ps1_bom.py|f13342edb7b1c2ed|io-without-encoding
-tools/gate/governance/gates/g01_paths.py|177e0b139411f03b|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|23e7b7b07fd0520e|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|7c7a6d9ce1656cf1|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|a74b92b516bfe30b|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|e49e079338017de9|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|ee9dcddd27de7dc2|escaped-path-literal
-tools/gate/governance/gates/g01_paths.py|f3c959a15469ced6|escaped-path-literal
-tools/gate/governance/gates/g03_credentials.py|886800f2e36c1efc|io-without-encoding
-tools/gate/governance/runtime/govlib.py|425af647f24a0433|io-without-encoding
-tools/gate/governance/runtime/govlib.py|936c7a9be3aa3d34|io-without-encoding
 tools/gate/watchdog.py|4fe4deb68de944cc|io-without-encoding
 tools/gate/watchdog.py|6d2ed85459b52d72|io-without-encoding
 tools/gate/watchdog.py|89330a04c4c51547|io-without-encoding
@@ -31,7 +21,6 @@ tools/repo_hygiene.py|60542aa5ba66ad97|escaped-path-literal
 tools/repo_hygiene.py|a5564c28ae575477|io-without-encoding
 tools/repo_hygiene.py|edf027ef7a394b94|io-without-encoding
 tools/repo_hygiene.py|f1f00d02039580dc|io-without-encoding
-tools/repocheck/cli.py|13bedb21f1f60698|escaped-path-literal
 tools/repocheck/scanctx.py|ab69cfdd5f7c58aa|io-without-encoding
 tools/repocheck/test_fixtures.py|1caa9936c9f03792|escaped-path-literal
 tools/repocheck/test_scanner.py|1caa9936c9f03792|escaped-path-literal
