@@ -72,7 +72,7 @@ jobs:
             --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error
 
   gates-windows:
-    name: 治理门禁（Windows · 补跑 g20-facts）
+    name: 治理门禁（Windows · 完整 20 道，含 g20-facts）
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,16 +87,20 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: 装依赖
-        run: |
-          python -m venv .venv
-          .venv/Scripts/python -m pip install --upgrade pip
-          .venv/Scripts/python -m pip install -r requirements-dev.txt
+      # Windows job 必须与 Linux 走**同一条**上手路径，否则会出现
+      # 「Linux 绿、Windows 红」这种最难查的不一致 —— 2026-10-31 就发生过一次：
+      # 该 job 原先直接跑裸门禁、不跑 bootstrap，于是 docs/spec 等 junction
+      # 从未被创建，g15 的 D6 报 4 条红，Windows job 挂在一个纯属「步骤顺序」
+      # 的问题上，与门禁本身无关。
+      - name: bootstrap（按上手指南的三条命令）
+        shell: bash
+        run: bash scripts/bootstrap.sh
 
-      - name: 治理门禁（含 g20-facts 本机事实核验）
+      # Windows 是**唯一能跑全 20 道**的平台：g20-facts 声明 platforms=["nt"]，
+      # 判的是本机磁盘路径的存在性声称。Linux job 会把它记为 SKIPPED。
+      # 两个 job 合起来才是「已知的全部判据都被跑过」。
+      - name: 全部门禁（Windows 完整 20 道）
+        shell: bash
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
-        run: node tools/gate/governance/run.ts --no-profile
-
-      - name: 文档索引契约（Windows 有 junction，完整判 D6）
-        run: .venv/Scripts/python.exe tools/gate/docs_index.py
+        run: bash scripts/run_all_gates.sh
