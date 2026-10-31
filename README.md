@@ -1,5 +1,9 @@
 # allin —— 个人全项目治理索引仓库
 
+[![governance-gates](https://github.com/siwpan95/allin/actions/workflows/gates.yml/badge.svg)](https://github.com/siwpan95/allin/actions/workflows/gates.yml)
+[![门面站](https://img.shields.io/badge/%E9%97%A8%E9%9D%A2%E7%AB%99-siwpan95.github.io%2Fallin-1f6feb)](https://siwpan95.github.io/allin/)
+[![license](https://img.shields.io/badge/license-MIT--0-blue)](LICENSE)
+
 > **do it better than future**
 >
 > 本仓的标语，出自对扎克伯格那句 **「Done is better than perfect.」（完成比完美更重要）** 的延伸感悟 ——
@@ -12,6 +16,10 @@
 > **仓根随机器而异**（本仓多机检出、多端共写）：三台接入机器的仓根 / 发布区落点、盘位、运行时各不相同，
 > **唯一事实源 = [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)**（每机一件分区文件，
 > 由 `tools/facts/measure.py` 采集、g20-facts 门禁对账）。本 README 只写**跨机共识**，不写单一机器的路径与数值。
+
+> **10 分钟上手**（一条命令，CI 在 Linux 与 Windows 上各复跑一次）：
+> `git clone` → `bash scripts/bootstrap.sh` → `bash scripts/run_all_gates.sh`，期望「全部门禁通过。」。
+> 详见 [`docs/新人开发上手指南.md`](docs/新人开发上手指南.md) 第 0 章。
 
 一个**单一索引仓库**承载工作区治理说明、文档枢纽入口与 DeepSeek Harness 治理模式的**可重装载体**：
 游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等全部个人项目的事实源与约定都从这里索引出去。
