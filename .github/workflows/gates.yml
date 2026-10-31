@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   gates-posix:
-    name: 治理门禁（Linux · 19 道跨平台）
+    name: 治理门禁（Linux · 19 道跨平台 + 别名）
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,21 +53,18 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: 装依赖
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
+      # 这一步刻意**完全按上手指南的三条命令来跑**：
+      #   bash scripts/bootstrap.sh  →  bash scripts/run_all_gates.sh
+      # 因为它同时验证了两件事：① 20 道门禁在陌生 Linux 机器上跑绿；
+      # ② 指南里写的那条「10 分钟上手」路径**真的能跑**（否则指南就是空头承诺）。
+      # 若这里失败，说明的不是「CI 环境有问题」，而是「用户照文档做会失败」。
+      - name: bootstrap（按上手指南的三条命令）
+        run: bash scripts/bootstrap.sh
 
-      - name: 治理门禁（g20-facts 按平台跳过）
+      - name: 全部门禁（与本地同一条命令）
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
-        run: |
-          python -m venv .venv
-          .venv/bin/python -m pip install -r requirements-dev.txt
-          node tools/gate/governance/run.ts --no-profile
-
-      - name: 文档索引契约（Linux 无 junction，跳过 D6）
-        run: .venv/bin/python tools/gate/docs_index.py --no-aliases
+        run: bash scripts/run_all_gates.sh
 
       - name: 本仓 monorepo 自检
         run: |

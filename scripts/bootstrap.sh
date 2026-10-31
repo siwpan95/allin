@@ -86,8 +86,40 @@ fi
 
 # ---------------------------------------------------------------- 4) ASCII 别名
 say "4/4 建 docs/ ASCII 别名"
+# 别名是 junction（Windows）/ symlink（POSIX），**不入库**（.gitignore 已屏蔽），
+# 换机或克隆后必须重建。不建的话门禁 g15 的 D6 会报「别名缺失」。
+#
+# 两条路径：
+#   Windows：走权威实现 tools/gate/make_doc_aliases.ps1（junction，不需要管理员）
+#   POSIX  ：直接 ln -s（原生支持，不需要 pwsh）—— 这条是 2026-10-31 补的：
+#            此前脚本只在有 pwsh 时才建别名，导致 Linux CI 上 D6 必然红，
+#            而 D6 本来在 Linux 上是**能真正判**的（symlink 天然支持）。跳过它
+#            等于用 --no-aliases 把一个能判的判据关掉，属于「假绿」的另一种形态。
+# 判定宿主是 Windows（Git Bash/MSYS/Cygwin）还是 POSIX（Linux/macOS 原生）
+IS_WINDOWS=0
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=1 ;;
+esac
+
 if [ "$SKIP_ALIASES" = "1" ]; then
   echo "   已按参数跳过（--no-aliases）"
+elif [ "$IS_WINDOWS" = "0" ]; then
+  # POSIX：docs/<别名> -> docs/<真身>，已存在且指向正确的跳过（幂等）
+  created=0; kept=0; failed=0
+  for pair in "spec:规范" "facts:事实源" "records:记录" "历史:md"; do
+    alias_name="${pair%%:*}"; real_name="${pair##*:}"
+    ap="$ROOT/docs/$alias_name"; rp="$ROOT/docs/$real_name"
+    if [ ! -d "$rp" ]; then
+      echo "   !! 真身目录缺失：docs/$real_name"; failed=$((failed+1)); continue
+    fi
+    if [ -L "$ap" ] && [ "$(readlink "$ap" 2>/dev/null)" = "$rp" ]; then
+      kept=$((kept+1)); continue
+    fi
+    rm -rf "$ap" 2>/dev/null || true
+    if ln -s "$rp" "$ap" 2>/dev/null; then created=$((created+1)); else echo "   !! 建别名失败：docs/$alias_name"; failed=$((failed+1)); fi
+  done
+  echo "   已建 $created 个、已存在 $kept 个、失败 $failed 个（POSIX symlink）"
+  [ "$failed" = "0" ] || die "别名重建有失败项（见上）"
 elif command -v pwsh >/dev/null 2>&1; then
   # 权威实现：tools/gate/make_doc_aliases.ps1（Windows 用 junction，管理员不需要）
   pwsh -File "$ROOT/tools/gate/make_doc_aliases.ps1" || die "别名重建失败（Windows 上若因权限失败，看 FAQ 第 6 条）"

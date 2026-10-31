@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -32,6 +33,10 @@ from govlib import EXIT_BLOCKING, EXIT_OK, GateError, Report  # noqa: E402
 
 GATE = "g00-meta"
 TITLE = "governance: gate contract self-verification"
+
+#: 当前平台代号，取值与 registry 的 ``platforms`` 字段同一套词汇（``nt`` / ``posix``）。
+#: 用它决定「这道门禁在本机能不能自证」—— 见下方 selfcheck 段的说明。
+CURRENT_PLATFORM = "nt" if os.name == "nt" else "posix"
 
 REQUIRED_FIELDS = ("id", "title", "script", "tier", "rules", "platforms", "requires", "selfcheck")
 REQUIRED_SWITCHES = ("--selfcheck", "--quiet", "--baseline", "--no-baseline", "--write-baseline", "--list-all")
@@ -145,6 +150,23 @@ def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> R
             report.block("contract", str(script.relative_to(root)), 0,
                          f"{identifier}: registry does not claim a self-check")
             continue
+        # 平台不匹配的门禁不能要求它在**本机**自证。
+        # 起因（2026-10-31，真实 CI 事故）：`g20-facts` 在 registry 里声明
+        # ``platforms: ["nt"]``（它判的是 Windows 本机磁盘路径的存在性声称），
+        # 但本循环此前**不看 platforms 字段**，一律跑 `--selfcheck`。
+        # 于是 Linux CI 上 g20 的自检必然红：它注入的「破坏用例」需要在 NT 上
+        # 才成立，在 posix 上连用例本身都跑不起来 → selfcheck 报
+        # 「injected no defect it could catch」+「2 false positive(s)」→ g00 红
+        # → 整条流水线红，而真正的结论是「这道门禁在 Linux 上不适用」。
+        #
+        # 处置口径（与 SPEC-002 / 门禁契约的「SKIP ≠ 通过」一致）：
+        # **记 SKIP 并计数，不算通过、也不算失败**。这样 Linux CI 的结论是
+        # 「19 道自证 + 1 道按平台跳过」，而不是假装 20 道全过。
+        platforms = entry.get("platforms") or []
+        if platforms and CURRENT_PLATFORM not in platforms:
+            report.skip(f"{identifier}: not applicable on {CURRENT_PLATFORM} "
+                        f"(declares {','.join(str(p) for p in platforms)})")
+            continue
         code, output = run_gate_script(python, script, ["--selfcheck"], root)
         match = SELFCHECK_LINE.search(output)
         if match is None:
@@ -206,23 +228,31 @@ def selfcheck() -> int:
             "version": 1,
             "gates": [
                 {"id": "ok", "title": "ok", "script": "governance/gates/ok_gate.py", "tier": "P0",
-                 "rules": ["r1"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True},
+                 "rules": ["r1"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
                 {"id": "bad", "title": "bad", "script": "governance/gates/bad_gate.py", "tier": "P0",
-                 "rules": ["r2"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True},
+                 "rules": ["r2"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
                 {"id": "silent", "title": "silent", "script": "governance/gates/silent_gate.py", "tier": "P0",
-                 "rules": ["r3"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True},
+                 "rules": ["r3"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
                 {"id": "undocumented", "title": "undocumented", "script": "governance/gates/ok_gate.py",
-                 "tier": "P0", "rules": ["r4"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True},
+                 "tier": "P0", "rules": ["r4"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
                 {"id": "incomplete", "title": "incomplete", "script": "governance/gates/ok_gate.py"},
                 # Claims to read the host profile while exposing no way to stop.
                 {"id": "profile-claim", "title": "profile-claim", "script": "governance/gates/ok_gate.py",
-                 "tier": "P0", "rules": ["r5"], "platforms": ["posix"], "requires": ["python"],
+                 "tier": "P0", "rules": ["r5"], "platforms": ["nt", "posix"], "requires": ["python"],
                  "selfcheck": True, "profileProbe": True},
+                # 声明一个「非本机」的平台：它必须被跳过并留痕，而不是判红。
+                # 平台取反而不是写死 posix —— 因为夹具要在两种宿主上都跑得通。
+                {"id": "other-platform", "title": "other-platform", "script": "governance/gates/ok_gate.py",
+                 "tier": "P0", "rules": ["r6"],
+                 "platforms": ["posix" if CURRENT_PLATFORM == "nt" else "nt"],
+                 "requires": ["python"], "selfcheck": True},
             ],
         }
         sandbox.write("governance/registry.json", json.dumps(registry, indent=2) + "\n")
         sandbox.write("governance/RULES.md",
-                      "# Rules\n\n| id | rules |\n| --- | --- |\n| ok | r1 |\n| bad | r2 |\n| silent | r3 |\n| incomplete | r5 |\n| profile-claim | r5 |\n")
+                      "# Rules\n\n| id | rules |\n| --- | --- |\n| ok | r1 |\n| bad | r2 |\n"
+                      "| silent | r3 |\n| incomplete | r5 |\n| profile-claim | r5 |\n"
+                      "| other-platform | r6 |\n")
 
         report = inspect(sandbox.path, sandbox.path / "governance/registry.json",
                          sandbox.path / "governance/RULES.md", sys.executable)
@@ -236,6 +266,12 @@ def selfcheck() -> int:
                       any(kind.startswith("registry:incomplete") for kind in blocked))
         check.detects("a gate claiming a profile probe it cannot disable",
                       any("profile-claim" in finding.text for finding in report.findings))
+        # 平台跳过自证（2026-10-31 新增）：声明「不支持本机平台」的门禁必须被
+        # **跳过而不是判红**，且跳过要留痕（SKIP ≠ 通过）。
+        # 这个夹具补的是一个真实事故：g20-facts 声明 platforms=["nt"]，
+        # 而本循环曾不看该字段 → Linux CI 上它的自检必然红，整条流水线跟着红。
+        check.detects("platform skip leaves a trace",
+                      any("not applicable on" in reason for reason in report.skipped))
         check.quiet("compliant gate", any(kind.startswith(("selfcheck:ok", "contract:ok", "rules-map:ok"))
                                           for kind in blocked))
 
@@ -244,7 +280,7 @@ def selfcheck() -> int:
         sandbox.write("governance/RULES.md", "# Rules\n\n| ok |\n")
         sandbox.write("governance/registry.json", json.dumps({"version": 1, "gates": [
             {"id": "ok", "title": "ok", "script": "governance/gates/ok_gate.py", "tier": "P0",
-             "rules": ["r1"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
+             "rules": ["r1"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
         clean = inspect(sandbox.path, sandbox.path / "governance/registry.json",
                         sandbox.path / "governance/RULES.md", sys.executable)
         check.quiet("a fully compliant registry", bool(clean.findings))
@@ -256,7 +292,7 @@ def selfcheck() -> int:
         sandbox.write("governance/RULES.md", "# Rules\n\n| ok |\n")
         sandbox.write("governance/registry.json", json.dumps({"version": 1, "gates": [
             {"id": "ok", "title": "ok", "script": "governance/gates/ok_gate.py", "tier": "P0",
-             "rules": ["r1"], "platforms": ["posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
+             "rules": ["r1"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
         report = inspect(sandbox.path, sandbox.path / "governance/registry.json",
                          sandbox.path / "governance/RULES.md", sys.executable)
         check.detects("a support module missing from the index",

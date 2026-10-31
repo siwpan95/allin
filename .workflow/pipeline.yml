@@ -74,10 +74,11 @@ stages:
 
       - step: build@python
         name: check_docs_index
-        displayName: 文档索引契约（Linux 无 junction，跳过 D6）
+        displayName: 文档别名 + 文档索引契约（D6 完整判）
         pythonVersion: "3.13"
         commands:
-          - .venv/bin/python tools/gate/docs_index.py --no-aliases
+          - bash scripts/bootstrap.sh
+          - .venv/bin/python tools/gate/docs_index.py
         settings: []
         caches: []
         notify: []
