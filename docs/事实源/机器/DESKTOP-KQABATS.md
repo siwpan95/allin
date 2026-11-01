@@ -45,6 +45,7 @@
 | 系统 | Microsoft Windows 11 家庭版 中文版 10.0.26300（build 26300） | `Win32_OperatingSystem`（measure.py 一致） |
 | 物理盘 | 1 块 NVMe `TWSC TSC3AN1T0-F6Q10S`（954 GB）+ 2 个 USB 读不到容量 | `Get-Disk`（measure.py） |
 | 本仓仓根 | `E:\projects\allin` | `git rev-parse --show-toplevel` |
+| **受管凭据库** | `C:\Users\13122\.dsvault\vault.enc`（**DPAPI CurrentUser 信封加密**，密文与本用户+本机绑定；工具 `~/.dsvault/dsvault.py`；**明文零落盘**，取用走子进程 stdout、退出即清） | `dsvault.py list` / `selftest` |
 | 发布区 | `E:\projects\repos` | 与仓根同级 |
 
 ## 2. 盘位（2026-10-30 实测）
