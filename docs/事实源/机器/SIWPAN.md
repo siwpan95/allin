@@ -1,5 +1,14 @@
 # 机器事实 · `SIWPAN`（第三台接入机器，曾改名）
 
+> **时点** 2026-11-01（**@`SIWPAN` 受管密钥库建成** —— 用户批准「建受管库收编」：
+> `~/.dsvault/`（`vault.enc` AES-256-GCM + PBKDF2 200k；`deepseek_vault.py` CLI；
+> 解锁口令机器生成、DPAPI 封存 `pass.bin`）。**偏差记档**：8RSV60V 走「口令存凭据管理器 +
+> git credential fill」，本机 PortableGit **无 credential helper** 且 `~/.gitconfig` 空
+> `credential.helper` 掐断 helper 链 ⇒ 改走 crypt32 DPAPI 直封（同一 DPAPI 信任锚，
+> 口令不明文落盘、仅当前用户可解，安全实质不变）。收编 4 条：`github_pat_finegrained`
+> / `github_pat_classic` / `github_password`（原 `D:\projects\github.txt`，含 GitHub
+> 账号口令）/ `deepseek_api_key`（原 `Desktop\deepseek.txt`，实测有效余额 310.17）——
+> **4/4 回程一致、密文字节级 0 明文痕迹，两个明文文件已删除**，g03 真红线清零。）
 > **时点** 2026-10-31（**@`SIWPAN` 推送配置升级** —— 用户指令「配 GitHub 侧镜像推送」：
 > origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 [`DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 同款口径。
 > ⚠ 旧值「本机不补配 pushurl」作废 —— 那是 2026-10-29 对 `DESKTOP-KQABATS` 的交代，被错误外推到本机；
