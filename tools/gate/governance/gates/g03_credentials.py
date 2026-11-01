@@ -1,6 +1,6 @@
-"""Gate g03 -- credentials must never reach the repository.
+"""Gate g03 -- credentials must never reach the repository or sit on disk in cleartext.
 
-Two faces are judged, because both have already leaked in practice:
+Three faces are judged, because all three have already leaked in practice:
 
 * **tracked content** -- provider tokens, private keys, ``Authorization`` headers,
   URL userinfo, and secret-looking assignments. Candidate lines come from
@@ -8,6 +8,11 @@ Two faces are judged, because both have already leaked in practice:
   partially-staged working tree, and only candidate files are re-read.
 * **``.git/config`` in full** -- a one-off token URL records the token in
   ``branch.<name>.remote``, which ``git remote -v`` never shows.
+* **machine-local plaintext files** (2026-11-01) -- a PAT lying in a ``.txt`` on the
+  desktop or in the workspace root never reaches the repository, yet it is exactly
+  as exposed. The gate does not move credentials for anyone; it makes the red line
+  mechanical: report it, then the credential goes into a managed store
+  (this machine: ``~/.dsvault``, DPAPI-sealed) and the plaintext goes away.
 
 Placeholder discipline is what keeps this gate believable: a documented value
 such as ``<GITEE_TOKEN>``, ``${API_KEY}``, ``your-token-here`` or ``redacted`` is
@@ -21,6 +26,7 @@ Exit codes follow the governance vocabulary: 0 clean, 1 blocking finding,
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -32,7 +38,7 @@ import govlib  # noqa: E402  (path is fixed up immediately above)
 from govlib import EXIT_BLOCKING, EXIT_OK, Baseline, GateError, Report  # noqa: E402
 
 GATE = "g03-credentials"
-TITLE = "governance: no credentials in tracked content or git config"
+TITLE = "governance: no credentials in tracked content, git config, or machine-local plaintext"
 
 #: Broad prefilter handed to `git grep --cached`; precision happens in Python.
 PREFILTER = (r"sk-|ghp_|github_pat_|glpat-|xox[baprs]-|AKIA|AIza|BEGIN [A-Z ]*PRIVATE KEY|"
@@ -90,6 +96,106 @@ SAMPLE_FILE_NAMES = frozenset({".env.example", ".env.sample", ".env.template", "
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
 CONFIG_CREDENTIAL = re.compile(r"https?://[^/\s:@]+:[^/\s@]{6,}@")
+
+# --------------------------------------------------------------------------
+# 第三面：机器本地「明文凭据文件」
+#
+# 前两面只管「进了仓的」与「.git/config 里的」；**机器上的明文文件**（桌面、工作区根、
+# 用户目录）同样会泄密 —— 实测本机就有一份明文 PAT 躺在工作区根的 `.txt` 里。
+# 处置：本门禁**不替人搬凭据**，只把红线机械化：**发现了就报红**，逼人把它收进受管库
+# （本机 `~/.dsvault`，DPAPI 信封加密）再删明文。
+
+#: 用户常见落点（递归到第 2 层）
+MACHINE_USER_DIRS = ("Desktop", "Documents", "Downloads")
+
+#: 合法例外：SSH 私钥本就该明文、受管库密文不是明文、依赖树与版本库不归本门禁
+MACHINE_SKIP_DIRS = frozenset({".ssh", ".dsvault", ".git", "node_modules", "__pycache__",
+                                ".venv", "venv", ".cache", ".npm", ".cargo", ".rustup",
+                                "AppData", "Windows", "System Volume Information",
+                                "$RECYCLE.BIN", ".Trash", "site-packages", "__pypackages__",
+                                ".m2", ".gradle", ".nuget", ".vscode", ".idea"})
+
+#: 非文本载体 ⇒ 跳过（含受管库密文 `.enc`、证书、私钥容器、二进制）
+MACHINE_SKIP_SUFFIX = (".enc", ".key", ".pem", ".pfx", ".p12", ".crt", ".cer", ".der",
+                        ".exe", ".dll", ".so", ".dylib", ".zip", ".7z", ".tar", ".gz", ".bz2",
+                        ".xz", ".iso", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf",
+                        ".mp4", ".mp3", ".woff", ".woff2", ".ttf", ".sqlite", ".db", ".log")
+
+#: 工作区根（仓根的上级）只扫第 0 层；用户目录扫到第 2 层
+MACHINE_WORKSPACE_DEPTH = 0
+MACHINE_USER_DEPTH = 2
+
+
+def machine_scan_roots(root: Path) -> list[tuple[Path, int]]:
+    """机器本地扫描根与深度：工作区根（浅）+ 用户常见目录（稍深）。"""
+    out: list[tuple[Path, int]] = []
+    parent = root.parent
+    if parent and parent.is_dir() and parent != root:
+        out.append((parent, MACHINE_WORKSPACE_DEPTH))
+    home = Path.home()
+    for name in MACHINE_USER_DIRS:
+        p = home / name
+        if p.is_dir():
+            out.append((p, MACHINE_USER_DEPTH))
+    return out
+
+
+def _is_repo_dir(path: Path) -> bool:
+    return (path / ".git").exists()
+
+
+def machine_plaintext_findings(roots: list[tuple[Path, int]]) -> list[tuple[str, int, str, str]]:
+    """机器本地明文凭据文件命中：[(相对路径, 行号, 类别, 行文本)]。"""
+    findings: list[tuple[str, int, str, str]] = []
+    for base, max_depth in roots:
+        if not base.is_dir():
+            continue
+        for dirpath, dirnames, filenames in os.walk(base):
+            here = Path(dirpath)
+            depth = len(here.relative_to(base).parts)
+            dirnames[:] = [d for d in dirnames
+                           if d not in MACHINE_SKIP_DIRS
+                           and not _is_repo_dir(here / d)]
+            if depth >= max_depth:
+                dirnames[:] = []
+            for fn in filenames:
+                p = here / fn
+                if p.suffix.lower() in MACHINE_SKIP_SUFFIX:
+                    continue
+                if p.name in SAMPLE_FILE_NAMES or any(
+                        p.name.endswith(sfx) for sfx in SAMPLE_FILE_SUFFIXES) or any(
+                        infix in p.name for infix in SAMPLE_FILE_INFIXES):
+                    continue
+                try:
+                    if p.stat().st_size > MAX_FILE_BYTES:
+                        continue
+                    text = p.read_text(encoding="utf-8", errors="replace")
+                except OSError:
+                    continue
+                for number, line in enumerate(text.splitlines(), start=1):
+                    if ANNOTATION in line:
+                        continue
+                    for category, pattern in PATTERNS:
+                        match = pattern.search(line)
+                        if match is None:
+                            continue
+                        if category == "assignment":
+                            value = match.group(2)
+                            if value_is_sample(value, line) or not looks_secret(value):
+                                continue
+                        elif category == "url-userinfo":
+                            if url_is_sample(match.group(0), line):
+                                continue
+                        elif category in ("provider-token", "bearer-header", "private-key"):
+                            if value_is_sample(match.group(0), line):
+                                continue
+                        try:
+                            shown = str(p.relative_to(base))
+                        except ValueError:
+                            shown = str(p)
+                        findings.append((shown, number, category, line.strip()[:120]))
+                        break
+    return findings
 
 
 def looks_secret(value: str) -> bool:
@@ -161,8 +267,9 @@ def candidate_lines(root: Path) -> list[tuple[str, int, str]]:
     return found
 
 
-def scan(root: Path, *, include_docs: bool = True) -> Report:
-    """Judge tracked content and `.git/config`; return the classified report."""
+def scan(root: Path, *, include_docs: bool = True,
+         machine_roots: list[tuple[Path, int]] | None = None) -> Report:
+    """Judge tracked content, `.git/config`, and machine-local plaintext files."""
     report = Report(title=TITLE)
     config_path = root / ".git" / "config"
     if config_path.is_file():
@@ -219,6 +326,15 @@ def scan(root: Path, *, include_docs: bool = True) -> Report:
             break
         if not matched:
             report.exempt("candidate line carried no credential shape")
+
+    # 第三面：机器本地明文凭据文件
+    roots = machine_scan_roots(root) if machine_roots is None else machine_roots
+    for shown, number, category, line in machine_plaintext_findings(roots):
+        report.block("machine-plaintext-" + category, shown, number, line)
+    if roots:
+        report.scanned += len(roots)
+    else:
+        report.skip("no machine-local credential roots to scan")
     return report
 
 
@@ -249,7 +365,7 @@ def selfcheck() -> int:
         # allowance inside a URL userinfo, not the inline opt-out.
         sandbox.write("src/push_example.ts",
                       "const push = 'https://<user>:${TOKEN}@gitee.com/<owner>/<repo>.git'\n")
-        report = scan(sandbox.path)
+        report = scan(sandbox.path, machine_roots=[])
         blocked = {finding.kind for finding in report.findings}
         blocked_paths = {finding.path for finding in report.findings}
         check.detects("provider token", "provider-token" in blocked)
@@ -267,7 +383,7 @@ def selfcheck() -> int:
             "[remote \"origin\"]\n\turl = https://gitee.com/owner/name.git\n"
             "[branch \"main\"]\n\tremote = https://owner:8f14e45fceea167a5a36dedd4bea2543@gitee.com/owner/name.git\n",  # gov-credentials: allow
             encoding="utf-8")
-        report = scan(sandbox.path)
+        report = scan(sandbox.path, machine_roots=[])
         check.detects("token recorded in branch.<name>.remote",
                       any(finding.kind == "config-credential" for finding in report.findings))
 
@@ -275,19 +391,44 @@ def selfcheck() -> int:
         sandbox.write("src/ok.ts", "export const answer = 42\n")
         config = sandbox.path / ".git" / "config"
         config.write_text(config.read_text(encoding="utf-8") + "[credential]\n\thelper =\n", encoding="utf-8")
-        report = scan(sandbox.path)
+        report = scan(sandbox.path, machine_roots=[])
         check.detects("empty credential.helper clears the helper chain",
                       any(finding.kind == "empty-credential-helper" for finding in report.findings))
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/ok.ts", "export const answer = 42\n")
-        report = scan(sandbox.path)
+        report = scan(sandbox.path, machine_roots=[])
         check.quiet("a repository with no credential shape", bool(report.findings))
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/config.sample.ts", "const key = 'sk-abcdefghijklmnopqrstuvwxyz012345'\n")  # gov-credentials: allow
-        report = scan(sandbox.path)
+        report = scan(sandbox.path, machine_roots=[])
         check.quiet("a documented sample file suffix", bool(report.findings))
+
+    # 第三面：机器本地明文凭据文件（2026-11-01）
+    with govlib.Sandbox() as sandbox:
+        outside = sandbox.path / "outside"
+        outside.mkdir(parents=True, exist_ok=True)
+        (outside / "creds.txt").write_text(
+            "token = github_pat_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8\n", encoding="utf-8")
+        (outside / "notes.md").write_text(
+            "口令见受管库；此文件无凭据形态。\n", encoding="utf-8")
+        report = scan(sandbox.path, machine_roots=[(outside, 0)])
+        check.detects("a plaintext credential file outside the repository is reported",
+                      any(f.kind.startswith("machine-plaintext") for f in report.findings))
+        # `check.quiet(label, flagged)` 的第二参是「**确实报红了**」⇒ 这里传「notes.md 是否被误报」
+        check.quiet("a machine-local file without a credential shape stays quiet",
+                    any("notes.md" in f.path for f in report.findings
+                        if f.kind.startswith("machine-plaintext")))
+
+    with govlib.Sandbox() as sandbox:
+        outside = sandbox.path / "outside"
+        outside.mkdir(parents=True, exist_ok=True)
+        (outside / "creds.txt").write_text(
+            "token = <GITEE_TOKEN>\n", encoding="utf-8")
+        report = scan(sandbox.path, machine_roots=[(outside, 0)])
+        check.quiet("a placeholder value in a machine-local file is a sample, not a leak",
+                    any(f.kind.startswith("machine-plaintext") for f in report.findings))
     return check.finish()
 
 
