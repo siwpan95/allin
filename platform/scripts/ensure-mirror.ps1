@@ -1,4 +1,4 @@
-# ensure-mirror.ps1 - make sure the local npm mirror proxy is up.
+﻿# ensure-mirror.ps1 - make sure the local npm mirror proxy is up.
 #
 # The proxy ($env:USERPROFILE/.dsh/npm_local_mirror.py — 盘符与用户名随机器，
 # 不写死绝对路径) is a loopback-only
