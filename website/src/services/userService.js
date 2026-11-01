@@ -17,18 +17,29 @@ const envelope = require('../crypto/envelope');
 const keystore = require('../crypto/keystore');
 const { logAudit } = require('./audit');
 
-const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 64, maxmem: 96 * 1024 * 1024 };
+const SCRYPT = { N: 32768, r: 8, p: 1, keylen: 64, maxmem: 96 * 1024 * 1024 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
 
-function hashPassword(password, salt = crypto.randomBytes(16)) {
-  const hash = crypto.scryptSync(password, salt, SCRYPT.keylen, {
-    N: SCRYPT.N,
-    r: SCRYPT.r,
-    p: SCRYPT.p,
-    maxmem: SCRYPT.maxmem,
+function hashPassword(password, salt = crypto.randomBytes(16), params = SCRYPT) {
+  const hash = crypto.scryptSync(password, salt, params.keylen, {
+    N: params.N,
+    r: params.r,
+    p: params.p,
+    maxmem: params.maxmem,
   });
   return { hash, salt };
+}
+
+/**
+ * 解析随行存储的口令参数串（"scrypt$N=…,r=…,p=…,keylen=…"）。
+ * verifyPassword 用它按**该用户注册时的参数**重算，从而 scrypt 成本（N）升级后
+ * 历史账号仍能用旧参数验证（向后兼容），新账号自动用全局更高的 N。
+ */
+function parseParams(str) {
+  const m = /N=(\d+),r=(\d+),p=(\d+),keylen=(\d+)/.exec(String(str || ''));
+  if (!m) return SCRYPT;
+  return { N: Number(m[1]), r: Number(m[2]), p: Number(m[3]), keylen: Number(m[4]), maxmem: SCRYPT.maxmem };
 }
 
 function paramsString() {
@@ -104,7 +115,7 @@ function readableEmail(user) {
 }
 
 function verifyPassword(user, password) {
-  const { hash } = hashPassword(password, user.password_salt);
+  const { hash } = hashPassword(password, user.password_salt, parseParams(user.password_params));
   const expected = Buffer.from(user.password_hash);
   if (expected.length !== hash.length) return false;
   return crypto.timingSafeEqual(expected, hash);
