@@ -63,6 +63,15 @@ TARGET_TOKEN = re.compile(r"(?:\]\(([^)\s]+\.md)(?:#[^)]*)?\)|`([^`\s]+\.md)`)")
 #: 自引用标记：明确指向「本文件」——文件级；「本节」是节级，**不算**（它指当前小节）
 SELF_MARK = re.compile(r"(本文件|本文|本卷)")
 
+#: 规范编号（`SPEC-005`）本身即可定位文件 ⇒ 可作 § 的目标
+SPEC_TOKEN = re.compile(r"\b(SPEC-\d+)\b")
+
+#: 稳定的中文文档别名 → 文件（本仓只认这几个；别名硬编码是**有意的**：
+#: 「索引」在本仓恒指机器分区索引（统辖入口），加新别名前须确认全仓无歧义）
+DOC_ALIASES = {
+    "索引": "事实源/机器分区索引.md",
+}
+
 #: 目标与引用之间允许出现的「连接符类」字符（其余一律视为换目标 ⇒ 不继承）
 #: 含 `|` / `｜` 与数字 —— INDEX 的表格行里，「覆盖区间」列的 `§N` 与「文件」列的链接之间
 #:   隔着表格竖线**和日期**（`… | 2026-08-27 ~ 08-30（§一~§五十八） | …`），
@@ -134,6 +143,32 @@ def resolve_path(docs: str, root: str, src_rel: str, cand: str) -> str | None:
     return None
 
 
+def resolvable_tokens(path: str) -> set[str]:
+    """目标文件里**可被 § 指向**的编号集合 = 标题编号 +（条件性的）编号列表项编号。
+
+    为什么可能要含列表项：本仓的规范用 `N. **…**` 列表项当**子节**（实测 SPEC-004 的 69 条
+    「调试铁律」就是 `## 调试铁律` + `1.`~`69.` 列表项），所以 `SPEC-004 §48` 指的是
+    **列表项 48**，不是某个标题 ⇒ 只认标题会把这类**合法引用**判成失效（假红）。
+
+    ⚠ **但只在「该文档的节就是编号列表」时才含列表项** —— 判据：**全文没有编号标题**。
+      · SPEC-004：编号标题 0 个、列表项 69 个 ⇒ 列表项**就是**它的节 ⇒ 计入；
+      · 机器分区索引：编号标题 7 个、列表项 13 个 ⇒ 列表项只是 §0 的子项 ⇒ **不计入**
+        （否则索引里 §0 下那条「1. …」会冒充「§1」，把改节号后的断链糊过去）。
+
+    ⚠ 只用于**目标解析**（已知目标的场合）；D12 的「列内 §X 是否存在」仍用严格标题集，
+    免得通用编号列表把 D12 放宽。
+    """
+    toks = set(heading_tokens(path))
+    lines = read_text(path).splitlines()
+    has_numbered_heading = any(re.match(r"^#{2,4}\s+[0-9]+(?:\.[0-9]+)*[ .、]", ln) for ln in lines)
+    if not has_numbered_heading:
+        for ln in lines:
+            m = re.match(r"^(\d+)\.\s+\S", ln)
+            if m:
+                toks.add(m.group(1))
+    return toks
+
+
 def resolve_spec(docs: str, spec_id: str) -> str | None:
     """`SPEC-104` → `规范/SPEC-104-<中文短名>.md`。"""
     spec_dir = os.path.join(docs, "规范")
@@ -159,7 +194,8 @@ def check_d9(docs: str, root: str, files: list[str], rep) -> None:
     """`§N` 章节锚点必须指向真实存在的章节（g19 只解析文件路径、不查锚点）。"""
     heads: dict[str, set[str]] = {}
     for f in files:
-        heads[f] = heading_tokens(os.path.join(docs, f.replace("/", os.sep)))
+        # 目标解析用「标题编号 + 编号列表项编号」（本仓规范用 `N. **…**` 列表项当子节）
+        heads[f] = resolvable_tokens(os.path.join(docs, f.replace("/", os.sep)))
 
     for f in files:
         if not (f.startswith(D9_SRC_PREFIXES) or f in D9_SRC_ROOT_FILES):
@@ -173,13 +209,22 @@ def check_d9(docs: str, root: str, files: list[str], rep) -> None:
             refs = list(SECTION_REF.finditer(line))
             if not refs:
                 continue
-            # 本行的**指向性目标**：(位置, 绝对路径) —— 只认链接与反引号包裹（见 TARGET_TOKEN 注释）
+            # 本行的**指向性目标**：(位置, 绝对路径)
             targets: list[tuple[int, str]] = []
             for m in TARGET_TOKEN.finditer(line):
                 cand = m.group(1) or m.group(2)
                 p = resolve_path(docs, root, f, cand)
                 if p:
                     targets.append((m.end(), p))
+            for m in SPEC_TOKEN.finditer(line):          # 规范编号本身即可定位文件
+                p = resolve_spec(docs, m.group(1))
+                if p:
+                    targets.append((m.end(), p))
+            for alias, rel in DOC_ALIASES.items():       # 稳定的中文别名（如「索引 §1」）
+                for m in re.finditer(re.escape(alias), line):
+                    p = os.path.join(docs, rel.replace("/", os.sep))
+                    if os.path.isfile(p):
+                        targets.append((m.end(), p))
             targets.sort()
 
             self_marks = [(m.end(), True) for m in SELF_MARK.finditer(line)]
@@ -404,14 +449,32 @@ def _fixture(kind: str, base: str) -> str:
     os.makedirs(os.path.join(docs, "记录", "交接"), exist_ok=True)
 
     broken_anchor = (kind == "anchor-dangling")
+    broken_spec = (kind == "spec-anchor-dangling")
+    broken_alias = (kind == "alias-anchor-dangling")
     broken_range = (kind == "range-too-narrow")
     broken_count = (kind == "count-line-drift")
     broken_index_range = (kind == "index-range-drift")
 
-    sec = "99" if broken_anchor else "1"
-    with io.open(os.path.join(docs, "事实源", "机器", "机器分区索引.md"), "w", encoding="utf-8") as f:
-        f.write("# 机器分区索引\n\n## 1. 标识\n\n## 2. 盘位\n\n"
-                "见 `机器分区索引.md` §%s\n" % sec)
+    # 被引的索引（中文别名「索引」指向它；**布局照真实仓**：索引在 事实源/ 下、机器文件在其 机器/ 子目录）
+    with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
+        f.write("# 机器分区索引\n\n## 1. 机器分区清单\n\n## 2. 归属规则\n")
+    # 被引的规范（SPEC 编号本身即可定位它）
+    os.makedirs(os.path.join(docs, "规范"), exist_ok=True)
+    with io.open(os.path.join(docs, "规范", "SPEC-005-测试.md"), "w", encoding="utf-8") as f:
+        f.write("# SPEC-005 · 测试\n\n> **编号** SPEC-005 ｜ **效力** 铁律级 ｜ **状态** 生效\n"
+                "> **生效** 2026-09-28 ｜ **最后修订** 2026-09-28 ｜ **适用面** 全域\n"
+                "> **承载体** 测试 ｜ **引用格式** SPEC-005 §5\n\n## 5. 头部契约\n\n正文。\n")
+    # 引用方：三种目标形态各一处（逐维破坏）
+    if broken_spec:
+        refs = "见 `SPEC-005` §99；见 `机器分区索引.md` §1；见 索引 §2"
+    elif broken_alias:
+        refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §99"
+    elif broken_anchor:
+        refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §99；见 索引 §2"
+    else:
+        refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §2"
+    with io.open(os.path.join(docs, "事实源", "观测.md"), "w", encoding="utf-8") as f:
+        f.write("# 观测\n\n## 1. 记录\n\n%s\n" % refs)
 
     hi = "2026-10-16" if broken_range else "2026-10-31"
     with io.open(os.path.join(docs, "记录", "交接", "2026-10.md"), "w", encoding="utf-8") as f:
@@ -441,7 +504,8 @@ def selfcheck_extra() -> dict[str, int]:
     import tempfile
 
     caught = clean = misreports = 0
-    for kind in ("anchor-dangling", "range-too-narrow", "count-line-drift", "index-range-drift"):
+    for kind in ("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
+                 "range-too-narrow", "count-line-drift", "index-range-drift"):
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
