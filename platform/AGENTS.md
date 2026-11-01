@@ -25,6 +25,9 @@ node apps/cli/src/index.js list   # CLI（allin list/search/status/start/stop/..
 | `PLATFORM_PORTS` | 外部端口分配表（唯一事实源） | 仓内 `registry/ports.yaml`（重建默认） |
 | `PLATFORM_REGISTRY` | registry/projects 目录 | 仓内 `registry/projects` |
 | `PLATFORM_PATH_CHECK` | `exists`（默认，本机 fail-loud）/ `absolute`（异机/CI 仅校验形状） | `exists` |
+
+> `exists` 模式下，`status: archived` / `retired` 的墓碑条目**豁免** path 存在性（2026-11-01 拍板：
+> 其工作树已按治理流程归入仓外归档区），形状校验与活性条目一律不放宽。
 | `PLATFORM_ALLIN_ENGINE_CWD` | an-engine 引擎项目目录（引擎页） | 未配置 → 引擎页报「未配置」 |
 | `PLATFORM_PYTHON` | 引擎 CLI 用的 python | `python`（PATH） |
 

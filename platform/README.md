@@ -59,6 +59,10 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 
 异机 / CI 验证：`PLATFORM_PATH_CHECK=absolute npm run check && npm test`。
 
+> **path 存在性豁免（2026-11-01 拍板）**：`status: archived` / `retired` 的**墓碑条目**不做「path 必须本机存在」校验
+> —— 这类条目按治理流程已把工作树移出 `repos/` 归入仓外归档区（远端也多已删除，如 `calculator`），
+> 再要求本机存在等于逼我们删掉「撤退记录」才能绿灯。形状纪律照旧（仍须写 `path`、仍禁盘符），活性条目照旧 fail-loud。
+
 ## 文档
 
 - [AGENTS.md](AGENTS.md) —— 常备命令 / 环境变量 / 纪律速览（agent 与新协作者入口）

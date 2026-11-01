@@ -7,6 +7,7 @@ import path from 'node:path'
 import http from 'node:http'
 import net from 'node:net'
 import { fileURLToPath } from 'node:url'
+import yaml from 'js-yaml'
 
 // 隔离数据目录（launch 日志不落真实 data/）
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-api-'))
@@ -65,22 +66,25 @@ function rawRequest10(pathname) {
   })
 }
 
-test('GET /api/library 数量与 registry yaml 文件数一致（problems 为空）', async () => {
+test('GET /api/library 与 registry 全集双向一致（problems 为空）', async () => {
   const res = await fetch(base + '/api/library')
   const body = await res.json()
-  // 数量断言跟随 estate（2026-09-24 强化：不再写死 95——收编新项目忘同步测试的教训）
-  const yamlCount = fs.readdirSync(path.join(__dirnameOf(), '..', '..', '..', 'registry', 'projects'))
-    .filter(f => f.endsWith('.yaml') || f.endsWith('.yml')).length
-  assert.equal(body.items.length, yamlCount)
+  // ── 判据形态更换（2026-11-01）───────────────────────────────────────────────
+  // 旧写法在这份测试里写死一串 id 清单，被同一类漂移打中**三次**：
+  //   ① d20（2026-10-20 清理死项，漏同步本断言）
+  //   ② repocheck（2026-10-26 subtree 并入 allin/tools/，不再是独立仓）
+  //   ③ station（registry 里从未有过 station.yaml，断言凭空要求）
+  // 三次手法完全一样：registry 侧删/并条目，忘了同步这份断言。
+  // ⇒ 「手写 id 清单」是**必漂移机制**；再写第四次注释是为必然发生的漂移买单，故换判据形态：
+  //    期望集改从 registry 目录**现场推导**，两侧双向比对，不多不少。
+  //    保护力不降反升：旧写法只护当时写死的 35 个 id，现写法护全部条目且永不需手工同步。
+  const regDir = path.join(__dirnameOf(), '..', '..', '..', 'registry', 'projects')
+  const regFiles = fs.readdirSync(regDir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'))
+  assert.equal(body.items.length, regFiles.length, 'library 条目数应等于 registry 清单文件数')
+  const regIds = regFiles.map(f => yaml.load(fs.readFileSync(path.join(regDir, f), 'utf8')).id)
   const ids = body.items.map(i => i.id)
-  // 注：'d20' 原在此清单内，但它的 registry 条目已于 2026-10-20 的「清理 d20 死项」提交中删除，
-  // 而当时漏同步本断言 —— 属预存在技术债，2026-10-26 三仓整合跑 npm test 时发现并随清理移除。
-  // 注：'repocheck' 原在此清单内，但其 registry 条目已于 2026-10-26 三仓整合治理中
-  // 删除（repocheck 以 subtree 并入 allin 的 tools/repocheck/，不再是独立仓），
-  // 同步将其从本断言移除 —— 与 d20 死项清理同手法。
-  for (const id of ['radio', 'video', 'portal', 'crawl-hub', 'audio-pipeline', 'audio-separator', 'mixer', 'allin-engine', 'dwarf-scrolls', 'pywallpaper', 'cellular', 'shikonghuaban', 'bee', 'jotunnslayer', 'novel', 'video-generator', 'station', 'remix', 'cordis-snake', 'bloodmusic', 'webcopier', 'arcade', 'idle', 'stay', 'pq-multiverse', 'life-reset', 'endless-highway', 'russia', 'txtlegend', 'darksouls', 'kard', 'loly', 'hell-below', 'moba-battle', 'carimara']) {
-    assert.ok(ids.includes(id), 'missing ' + id)
-  }
+  assert.deepEqual(new Set(ids), new Set(regIds), 'library 的 id 集合应与 registry 完全一致（不多不少）')
+  assert.equal(new Set(ids).size, ids.length, 'id 不得重复（重复会被 loadRegistry 计为 problem）')
   assert.deepEqual(body.problems, [])
 })
 
@@ -92,10 +96,15 @@ test('GET /api/library 挂机族子视图数据（order/note 回填）', async (
   const res = await fetch(base + '/api/library')
   const body = await res.json()
   const idle = body.items.filter(i => (i.gameplay || []).includes('idle')).sort((a, b) => a.order - b.order)
-  // estate 增长（2026-09-24 强化）：不写死数量，只约束 order 连续递增 + note 全回填
+  // 2026-11-01 加：先单独断言 order 无缺，否则连续性断言只报一串含 null 的数组，
+  // 看不出**缺在哪个条目**（实测缺的是 table-hanging-machine，排查成本高）。
+  const noOrder = idle.filter(i => i.order === null || i.order === undefined).map(i => i.id)
+  assert.deepEqual(noOrder, [], '挂机族缺 order 字段（→ 前端回填 null 并被 sort 置顶）: ' + noOrder.join(', '))
+  const noNote = idle.filter(i => typeof i.note !== 'string' || !i.note).map(i => i.id)
+  assert.deepEqual(noNote, [], '挂机族缺 note 回填: ' + noNote.join(', '))
+  // estate 增长（2026-09-24 强化）：不写死数量，只约束 order 连续递增
   assert.ok(idle.length >= 5, 'idle 族应至少 5 个')
   assert.deepEqual(idle.map(i => i.order), Array.from({ length: idle.length }, (_, k) => k + 1))
-  assert.ok(idle.every(i => typeof i.note === 'string' && i.note.length > 0))
 })
 
 test('GET /api/library 返回 gameplay 标签（受控枚举回填）', async () => {

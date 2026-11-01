@@ -18,7 +18,13 @@ export const PORTS_YAML = process.env.PLATFORM_PORTS || path.join(PLATFORM_DIR, 
 //  - 'exists'（默认）：path 必须存在于本机——author 机器与生产环境保持原纪律；
 //  - 'absolute'：仅校验绝对路径——CI / 异机跑测试用（登记的 path 指向本机外部的
 //    项目目录，天然不存在；跳过存在性但保留形状校验，不让测试绑定具体机器）。
-export const PATH_CHECK = process.env.PLATFORM_PATH_CHECK === 'absolute' ? 'absolute' : 'exists'
+// ⚠️ **惰性读取**（2026-11-01 修复，勿改回 module 级 const）：
+// 原先写作 `export const PATH_CHECK = ...`，模块一旦被 import 时就把模式锁死，
+// 连测试都切不动 ⇒ `PLATFORM_PATH_CHECK=absolute npm test` 下「path 不存在应报错」
+// 类断言集体失去前提而红。该缺陷 2026-09-24 专题记录里已写明，README 却仍推荐这条异机命令。
+export function pathCheckMode() {
+  return process.env.PLATFORM_PATH_CHECK === 'absolute' ? 'absolute' : 'exists'
+}
 
 // ── path 去符盘（2026-10-26 三仓整合 + repos 约定）───────────────────────────
 // 清单里的 path 一律**禁止盘符**（铁律 5 / SPEC-006 机器与路径约定）：写相对于「发布区根」的
@@ -64,6 +70,19 @@ export const KNOWN_GAMEPLAY = [
   'visual-novel', 'sim', 'chess', 'go', 'text', 'shooting',
 ]
 
+// ── 墓碑条目（tombstone）豁免 path 存在性（2026-11-01 拍板）─────────────────
+// 为什么要有这条：`status: archived/retired` 的条目按治理流程**已经把工作树移出 repos/**
+// 归入仓外归档区（远端也多已删除），典型如 calculator（2026-10-29 收拢进 arcade，
+// 原树入 archive/calculator-retired-20261029，Gitee/GitHub 双端 404）。此时再要求
+// 「path 必须存在于本机」，等于逼我们必须删掉这份「撤退记录」才能绿灯 —— 语义冲突。
+// ⇒ 墓碑条目豁免**存在性**，但形状校验一个不放（仍然必须写 path、仍然禁盘符），
+//   避免豁免退化成「随便写」。活性条目（无 status / status: active）照旧 fail-loud。
+const TOMBSTONE_STATUS = new Set(['archived', 'retired'])
+
+function isTombstone(entry) {
+  return TOMBSTONE_STATUS.has(String(entry.status ?? '').trim().toLowerCase())
+}
+
 /**
  * 校验单条清单：必填字段、id 形状、launch.command、端口查表 + 归属核对。
  * @returns {string[]} 问题列表（空 = 通过）
@@ -76,7 +95,7 @@ export function validateEntry(entry, ports) {
   if (entry.id && !/^[a-z0-9][a-z0-9-]*$/.test(entry.id)) errors.push(`bad id: ${entry.id}`)
   if (!entry.path) errors.push('missing path（去符盘纪律：repos/<仓名>）')
   else if (RX_DRIVE.test(entry.path)) errors.push(`path 禁止盘符（去符盘铁律，应写 repos/<仓名>）: ${entry.path}`)
-  else if (PATH_CHECK === 'exists' && !fs.existsSync(resolvePath(entry.path))) {
+  else if (pathCheckMode() === 'exists' && !isTombstone(entry) && !fs.existsSync(resolvePath(entry.path))) {
     errors.push(`path 不存在: ${entry.path} → 解析为 ${resolvePath(entry.path)}`)
   }
   if (!entry.launch || !entry.launch.command) errors.push('missing launch.command')
