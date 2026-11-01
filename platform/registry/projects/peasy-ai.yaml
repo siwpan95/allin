@@ -2,7 +2,10 @@ id: peasy-ai
 name: Peasy AI（原 easy-ai）
 category: tool
 version: 1.0.0
-path: repos/easy-ai
+# 2026-11-01 订正：原写 repos/easy-ai，已随仓改名；本机检出目录为 peasy-ai
+# （remote=git@github.com:siwpan95/peasy-ai.git，与 publish.repo 一致），
+# 旧 PATH 属死锚点，check 报「path 不存在」。此条是活性条目（非墓碑），故改 PATH 而非豁免。
+path: repos/peasy-ai
 manual: true
 launch:
   # 1.0.0 起重构为 src 布局命名空间包，仓库根目录不再有 main.py；

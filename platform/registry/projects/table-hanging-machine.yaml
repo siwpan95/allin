@@ -2,6 +2,9 @@ id: table-hanging-machine
 name: 表格挂机 · Progress Quest v2 风格挂机桌游
 category: game
 gameplay: [idle]
+# 2026-11-01 补：挂机族视图按 order 排序，本条目此前独缺 order ⇒ 前端回填 null，
+# sort 后 null 置顶，导致挂机族视图断言失败。此处顺延补 7（族内已占 1..6）。
+order: 7
 version: 1.0.0
 path: repos/table-hanging-machine
 manual: true
