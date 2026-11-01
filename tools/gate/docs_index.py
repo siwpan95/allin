@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """docs_index.py —— 文档枢纽「索引契约」门禁（SPEC-005 的机械保障）。
 
-判据（D1–D12）：
+判据（D1–D13）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -19,7 +19,9 @@
   D11 两处计数 —— INDEX 头部覆盖行与各节标题里的「N 份」必须一致（同一文档两处计数各漂各的）
   D12 登记自述 —— INDEX 交接表「覆盖区间」列的自述必须与该卷自身相符（节区间末节 ≥ 实际末节、
                   日期区间 == 卷首声明、列内 `§X` 均存在）—— 须按卷判：节号跨卷会重复
-  （D9–D12 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
+  D13 列语义契约 —— INDEX 登记表行里未加限定词的 `§N` 归本行链接的文档；限定词分「文档限定词」与
+                  「INDEX 行号」两类，后者归该行号登记的文档（详见 SPEC-005 §3.6）
+  （D9–D13 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
 
 契约（与本仓其它门禁一致）：
   退出码 0 干净 / 1 基线之外的新阻断 / 2 用法错误 / 3 环境错误
@@ -315,6 +317,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d10(docs, rep)
     docs_contract.check_d11(docs, rep)
     docs_contract.check_d12(docs, rep)
+    docs_contract.check_d13(docs, root, rep)
     return rep
 
 

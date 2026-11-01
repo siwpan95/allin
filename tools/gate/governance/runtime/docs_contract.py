@@ -144,20 +144,7 @@ def resolve_path(docs: str, root: str, src_rel: str, cand: str) -> str | None:
 
 
 def resolvable_tokens(path: str) -> set[str]:
-    """目标文件里**可被 § 指向**的编号集合 = 标题编号 +（条件性的）编号列表项编号。
-
-    为什么可能要含列表项：本仓的规范用 `N. **…**` 列表项当**子节**（实测 SPEC-004 的 69 条
-    「调试铁律」就是 `## 调试铁律` + `1.`~`69.` 列表项），所以 `SPEC-004 §48` 指的是
-    **列表项 48**，不是某个标题 ⇒ 只认标题会把这类**合法引用**判成失效（假红）。
-
-    ⚠ **但只在「该文档的节就是编号列表」时才含列表项** —— 判据：**全文没有编号标题**。
-      · SPEC-004：编号标题 0 个、列表项 69 个 ⇒ 列表项**就是**它的节 ⇒ 计入；
-      · 机器分区索引：编号标题 7 个、列表项 13 个 ⇒ 列表项只是 §0 的子项 ⇒ **不计入**
-        （否则索引里 §0 下那条「1. …」会冒充「§1」，把改节号后的断链糊过去）。
-
-    ⚠ 只用于**目标解析**（已知目标的场合）；D12 的「列内 §X 是否存在」仍用严格标题集，
-    免得通用编号列表把 D12 放宽。
-    """
+    """（保留：字符串形态的可解析节号集合，供调试与自检比对用）"""
     toks = set(heading_tokens(path))
     lines = read_text(path).splitlines()
     has_numbered_heading = any(re.match(r"^#{2,4}\s+[0-9]+(?:\.[0-9]+)*[ .、]", ln) for ln in lines)
@@ -167,6 +154,45 @@ def resolvable_tokens(path: str) -> set[str]:
             if m:
                 toks.add(m.group(1))
     return toks
+
+
+def tok_key(tok: str):
+    """节号 → **规范化键**（中文序数与阿拉伯数等价）；不可解析返回 None。
+
+    为什么必须规范化：同一节可能有两种写法 —— 顶级节用中文序数（`## 一百一十、`），
+    而引用方常写阿拉伯（`§110`）⇒ 字符串比对会把**合法引用**判成失效（假红）。
+    实测：INDEX 的 REC-HO-03 行里就写着 `§110`，而该卷的标题是 `## 一百一十、…`。
+    ⚠ 用**字符串键**而非 float —— 节号可以是多层小数（`§2.1.1`），float() 解析不了。
+    """
+    if re.match(r"^\d+(?:\.\d+)*$", tok):
+        parts = tok.split(".")
+        if len(parts[0]) >= 8:                    # 20261031173800 这类时间戳不是节号
+            return None
+        frac = ".".join(parts[1:]).rstrip("0")
+        return parts[0] + ("." + frac if frac else "")
+    v = cn2int(tok)
+    return str(v) if v is not None else None
+
+
+def numeric_token_set(path: str, with_list_items: bool = False) -> set[str]:
+    """文档的可解析节号集合（规范化键）。
+
+    `with_list_items=True` 时额外计入编号列表项 —— 仅当该文档**全文无编号标题**时才计
+    （SPEC-004 的 69 条调试铁律就是列表项；机器分区索引的列表项只是 §0 的子项、不算节号）。
+    """
+    out: set[str] = set()
+    toks = heading_tokens(path)
+    if with_list_items and not any(re.match(r"^#{2,4}\s+[0-9]+(?:\.[0-9]+)*[ .、]", ln)
+                                   for ln in read_text(path).splitlines()):
+        for ln in read_text(path).splitlines():
+            m = re.match(r"^(\d+)\.\s+\S", ln)
+            if m:
+                toks.add(m.group(1))
+    for t in toks:
+        k = tok_key(t)
+        if k is not None:
+            out.add(k)
+    return out
 
 
 def resolve_spec(docs: str, spec_id: str) -> str | None:
@@ -189,13 +215,45 @@ def strip_refs(text: str) -> str:
     return REF_TOKEN.sub("", text)
 
 
+def collect_targets(docs: str, root: str, f: str, line: str) -> list[tuple[int, str]]:
+    """本行**可定位**的目标：(位置, 绝对路径)。D9 与 D13 共用一份，避免两边判据漂移。"""
+    out: list[tuple[int, str]] = []
+    for m in TARGET_TOKEN.finditer(line):
+        cand = m.group(1) or m.group(2)
+        p = resolve_path(docs, root, f, cand)
+        if p:
+            out.append((m.end(), p))
+    for m in SPEC_TOKEN.finditer(line):                 # 规范编号本身即可定位文件
+        p = resolve_spec(docs, m.group(1))
+        if p:
+            out.append((m.end(), p))
+    for alias, rel in DOC_ALIASES.items():              # 稳定的中文别名（如「索引 §1」）
+        for m in re.finditer(re.escape(alias), line):
+            p = os.path.join(docs, rel.replace("/", os.sep))
+            if os.path.isfile(p):
+                out.append((m.end(), p))
+    out.sort()
+    return out
+
+
+def adjacent_target(targets: list[tuple[int, str]], line: str, ref_start: int):
+    """该引用是否已有**紧邻**可定位目标（紧邻型 / 规范编号型 / 别名型）⇒ 返回该目标或 None。"""
+    for pos, p in reversed(targets):
+        if pos > ref_start:
+            continue
+        if all(ch in GAP_OK for ch in strip_refs(line[pos:ref_start])):
+            return p
+    return None
+
+
 # ---------------------------------------------------------------- D9
 def check_d9(docs: str, root: str, files: list[str], rep) -> None:
     """`§N` 章节锚点必须指向真实存在的章节（g19 只解析文件路径、不查锚点）。"""
     heads: dict[str, set[str]] = {}
     for f in files:
-        # 目标解析用「标题编号 + 编号列表项编号」（本仓规范用 `N. **…**` 列表项当子节）
-        heads[f] = resolvable_tokens(os.path.join(docs, f.replace("/", os.sep)))
+        # 目标解析用「标题编号 +（全文无编号标题时的）编号列表项编号」，且**数值化**
+        # （中文序数与阿拉伯数等价：§110 == ## 一百一十、）
+        heads[f] = numeric_token_set(os.path.join(docs, f.replace("/", os.sep)), with_list_items=True)
 
     for f in files:
         if not (f.startswith(D9_SRC_PREFIXES) or f in D9_SRC_ROOT_FILES):
@@ -209,35 +267,12 @@ def check_d9(docs: str, root: str, files: list[str], rep) -> None:
             refs = list(SECTION_REF.finditer(line))
             if not refs:
                 continue
-            # 本行的**指向性目标**：(位置, 绝对路径)
-            targets: list[tuple[int, str]] = []
-            for m in TARGET_TOKEN.finditer(line):
-                cand = m.group(1) or m.group(2)
-                p = resolve_path(docs, root, f, cand)
-                if p:
-                    targets.append((m.end(), p))
-            for m in SPEC_TOKEN.finditer(line):          # 规范编号本身即可定位文件
-                p = resolve_spec(docs, m.group(1))
-                if p:
-                    targets.append((m.end(), p))
-            for alias, rel in DOC_ALIASES.items():       # 稳定的中文别名（如「索引 §1」）
-                for m in re.finditer(re.escape(alias), line):
-                    p = os.path.join(docs, rel.replace("/", os.sep))
-                    if os.path.isfile(p):
-                        targets.append((m.end(), p))
-            targets.sort()
-
+            # 本行的**指向性目标**：(位置, 绝对路径) —— D9/D13 共用一份收集逻辑
+            targets = collect_targets(docs, root, f, line)
             self_marks = [(m.end(), True) for m in SELF_MARK.finditer(line)]
 
             for rm in refs:
-                tgt = None
-                # ① 紧邻型：目标与 § 之间只隔着分隔符
-                for pos, p in reversed(targets):
-                    if pos > rm.start():
-                        continue
-                    if all(ch in GAP_OK for ch in strip_refs(line[pos:rm.start()])):
-                        tgt = p
-                        break
+                tgt = adjacent_target(targets, line, rm.start())
                 # ② 自引用标记型：「本文件 §N」
                 if tgt is None:
                     for pos, _ in reversed(self_marks):
@@ -257,7 +292,11 @@ def check_d9(docs: str, root: str, files: list[str], rep) -> None:
                 if not toks:
                     rep.exempt("D9-target-no-sections")
                     continue
-                if rm.group(1) not in toks:
+                rv = tok_key(rm.group(1))
+                if rv is None:
+                    rep.exempt("D9-ref-not-numeric")
+                    continue
+                if rv not in toks:
                     rep.block("D9", "%s:%d 的 §%s 在 %s 里没有对应章节" % (f, ln, rm.group(1), rel))
                 else:
                     rep.exempt("D9-anchor-ok")
@@ -417,10 +456,13 @@ def check_d12(docs: str, rep) -> None:
                 rep.block("D12", "INDEX 第 %d 行的覆盖区间日期 %s ~ %s 与该卷卷首声明的 %s ~ %s 不一致"
                           % (ln, dm.group(1), idx_hi, hm.group(1), hm.group(2)))
 
-        # (a) 列内每个 §X 都该卷存在
-        toks = heading_tokens(vol_path)
+        # (a) 列内每个 §X 都该卷存在（**数值化**比较：中文序数与阿拉伯数等价）
+        toks = numeric_token_set(vol_path)
         for m in SECTION_REF.finditer(cell):
-            if m.group(1) not in toks:
+            rv = tok_key(m.group(1))
+            if rv is None:
+                continue
+            if rv not in toks:
                 rep.block("D12", "INDEX 第 %d 行的 §%s 在 %s 里没有对应章节"
                           % (ln, m.group(1), target_rel))
 
@@ -435,6 +477,122 @@ def check_d12(docs: str, rep) -> None:
                           % (ln, rm.group(2), actual_end))
         else:
             rep.exempt("D12-open-range")
+
+# ---------------------------------------------------------------- D13
+#: 文档限定词：出现在 `§` 之前，说明这个 § 指向**别的**文档（不归本行链接）
+DOC_QUALIFIERS = ("交接档", "交接", "索引", "本卷", "本文件", "本文", "本节",
+                   "规范", "记忆", "计划", "审计", "快照", "专题", "事故", "决策", "外部")
+
+#: INDEX 的登记行里，「文件/卷」列的链接（整段含标签，用于排除标签里的 §）
+INDEX_ROW_LINK = re.compile(r"\[([^\]]*)\]\(([^)\s]+\.md)\)")
+
+
+def _index_row_ids(docs: str) -> dict[str, str]:
+    """INDEX 的**行号 → 该行链接的文档**映射（`FACT-01` → `事实源/机器分区索引.md`）。
+
+    行号是 INDEX 里**稳定的标识符**（登记项的主键），所以 `FACT-01 §5.1` 这类引用
+    可以唯一定位目标 —— 与「规范编号型」「中文别名型」同属**无歧义指向形态**。
+    """
+    idx = os.path.join(docs, "INDEX.md")
+    out: dict[str, str] = {}
+    if not os.path.isfile(idx):
+        return out
+    for line in read_text(idx).splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not cells or not re.match(r"^[A-Z]+-[A-Z0-9]+$", cells[0]):
+            continue
+        targets = set()
+        for m in INDEX_ROW_LINK.finditer(line):
+            p = resolve_path(docs, os.path.dirname(docs), "INDEX.md", m.group(2))
+            if p:
+                targets.add(p)
+        if len(targets) == 1:
+            out[cells[0]] = next(iter(targets))
+    return out
+
+
+def check_d13(docs: str, root: str, rep) -> None:
+    """INDEX 登记表的**列语义契约**（SPEC-005 §3.6）：行内**未加限定词**的 `§N` 归本行链接的文档。
+
+    为什么是「契约」而不是启发式：INDEX 的登记表行有固定列语义 ——
+    「文件/卷」列指向一份文档，该行其余列里**不带文档限定词**的 `§N` 指的就是**这份文档**的节。
+    写了契约，判据就按契约读，不靠猜；反之若带限定词，它指向**另一份**文档：
+      · 文档限定词（「交接 §107.10」「索引 §1」）⇒ 跳过（属限定词解析，另一套规则）；
+      · **INDEX 行号**（`FACT-01 §5.1`）⇒ 归**该行号所登记的文档**（行号是稳定主键）。
+
+    排除项：
+      - 行内有**多个**不同链接 ⇒ 目标不唯一 ⇒ 整行跳过；
+      - `§` 落在**链接标签内**（如 `[§107.4 六条清理计划](…)`）⇒ 它指别处 ⇒ 跳过；
+      - 该引用**已有紧邻可定位目标**（D9 已判过）⇒ 不重复判。
+    """
+    idx = os.path.join(docs, "INDEX.md")
+    if not os.path.isfile(idx):
+        return
+    row_ids = _index_row_ids(docs)
+    for ln, line in enumerate(read_text(idx).splitlines(), 1):
+        if not line.lstrip().startswith("|"):
+            continue
+        links = list(INDEX_ROW_LINK.finditer(line))
+        if not links:
+            continue
+        targets = {}
+        for m in links:
+            p = resolve_path(docs, root, "INDEX.md", m.group(2))
+            if p:
+                targets[m.span()] = p
+        distinct = set(targets.values())
+        if len(distinct) != 1:
+            rep.exempt("D13-ambiguous-row")
+            continue
+        row_target = next(iter(distinct))
+        row_rel = os.path.relpath(row_target, docs).replace("\\", "/")
+        toks = numeric_token_set(row_target)
+        line_targets = collect_targets(docs, root, "INDEX.md", line)
+        for rm in SECTION_REF.finditer(line):
+            if any(s <= rm.start() < e for s, e in targets):
+                rep.exempt("D13-in-link-label")
+                continue
+            if adjacent_target(line_targets, line, rm.start()):
+                rep.exempt("D13-already-by-D9")
+                continue
+            before = line[max(0, rm.start() - 12):rm.start()]
+            # ① INDEX 行号限定词 → 该行号登记的文档（**紧邻型**：行号与 § 之间只隔分隔符）
+            hit_id = None
+            for m in reversed(list(re.finditer(r"[A-Z]+-[A-Z0-9]+", line[:rm.start()]))):
+                rid = m.group(0)
+                if rid not in row_ids:
+                    continue
+                if all(ch in GAP_OK for ch in strip_refs(line[m.end():rm.start()])):
+                    hit_id = (rid, row_ids[rid])
+                    break
+            if hit_id:
+                rid, p = hit_id
+                rtoks = numeric_token_set(p)
+                key = tok_key(rm.group(1))
+                if key is not None and rtoks and key not in rtoks:
+                    rep.block("D13", "INDEX 第 %d 行的 %s §%s 在其登记的 %s 里没有对应章节"
+                              % (ln, rid, rm.group(1),
+                                 os.path.relpath(p, docs).replace("\\", "/")))
+                else:
+                    rep.exempt("D13-row-id-ok")
+                continue
+            # ② 文档限定词 → 指别的文档，跳过
+            if any(q in before for q in DOC_QUALIFIERS):
+                rep.exempt("D13-qualified")
+                continue
+            # ③ 列语义契约：归本行链接的文档
+            key = tok_key(rm.group(1))
+            if key is None or not toks:
+                rep.exempt("D13-not-numeric")
+                continue
+            if key not in toks:
+                rep.block("D13", "INDEX 第 %d 行的 §%s 在本行链接的 %s 里没有对应章节"
+                          % (ln, rm.group(1), row_rel))
+            else:
+                rep.exempt("D13-anchor-ok")
+
 
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
@@ -454,6 +612,8 @@ def _fixture(kind: str, base: str) -> str:
     broken_range = (kind == "range-too-narrow")
     broken_count = (kind == "count-line-drift")
     broken_index_range = (kind == "index-range-drift")
+    broken_row_contract = (kind == "row-contract-dangling")
+    broken_row_id = (kind == "row-id-dangling")
 
     # 被引的索引（中文别名「索引」指向它；**布局照真实仓**：索引在 事实源/ 下、机器文件在其 机器/ 子目录）
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
@@ -481,16 +641,29 @@ def _fixture(kind: str, base: str) -> str:
         f.write("# 会话交接 · 2026-10 卷（2026-10-04 ~ %s）\n\n"
                 "## 一、总体状态\n\n## 五十八、收尾\n\n正文（2026-10-31 记）。\n" % hi)
 
-    # INDEX：登记行 + 两处份数自述
+    # INDEX：登记行 + 两处份数自述 + 供 D13 用的行号（FACT-01）与登记表行
     rec_n = 5 if broken_count else 1
     head_rec = 1
     sec_hi = "§一~§一" if broken_index_range else "§一~§五十八"
+    main_line = "主线（§九十九）" if broken_row_contract else "主线"
+    row_id_line = "| FACT-01 | [机器分区索引](事实源/机器分区索引.md) | 2026-10-30 | 机器事实统辖入口 |"
+    extra_row = ""
+    if broken_row_id:
+        # 该行的链接必须**真实存在**，否则整行因「目标不唯一/解析不到」被跳过 ⇒ 用例测不到
+        os.makedirs(os.path.join(docs, "记录", "审计"), exist_ok=True)
+        with io.open(os.path.join(docs, "记录", "审计", "某审计_2026-10-31.md"), "w", encoding="utf-8") as f:
+            f.write("# 某审计\n\n## 1. 结论\n\n正文。\n")
+        extra_row = "| REC-AU-99 | [某审计](记录/审计/某审计_2026-10-31.md) | 2026-10-31 | 见 FACT-01 §九十九 |"
     with io.open(os.path.join(docs, "INDEX.md"), "w", encoding="utf-8") as f:
         f.write("# INDEX\n\n> **时点** 2026-10-31 ｜ **覆盖** 根 0 + 规范 0 + 事实源 1 + 记录 %d = **%d 份**\n\n"
                 "## 四、记录（`记录/`，%d 份，**只增不改**）\n\n"
                 "| 编号 | 卷 | 覆盖区间 | 主线 |\n| --- | --- | --- | --- |\n"
-                "| REC-HO-01 | [2026-10.md](记录/交接/2026-10.md) | 2026-10-04 ~ 10-31（%s） | 主线 |\n"
-                % (head_rec, head_rec + 1, rec_n, sec_hi))
+                "| REC-HO-01 | [2026-10.md](记录/交接/2026-10.md) | 2026-10-04 ~ 10-31（%s） | %s |\n"
+                % (head_rec, head_rec + 1, rec_n, sec_hi, main_line))
+        f.write("\n## 三、事实源（`事实源/`，1 份）\n\n| 编号 | 文件 | 时点 | 一句话 |\n| --- | --- | --- | --- |\n%s\n"
+                % row_id_line)
+        if extra_row:
+            f.write("\n%s\n" % extra_row)
     return docs
 
 
@@ -505,7 +678,8 @@ def selfcheck_extra() -> dict[str, int]:
 
     caught = clean = misreports = 0
     for kind in ("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
-                 "range-too-narrow", "count-line-drift", "index-range-drift"):
+                 "range-too-narrow", "count-line-drift", "index-range-drift",
+                 "row-contract-dangling", "row-id-dangling"):
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
@@ -514,6 +688,7 @@ def selfcheck_extra() -> dict[str, int]:
             check_d10(docs, rep)
             check_d11(docs, rep)
             check_d12(docs, rep)
+            check_d13(docs, os.path.dirname(docs), rep)
             if rep.blocking:
                 caught += 1
             else:
@@ -529,6 +704,7 @@ def selfcheck_extra() -> dict[str, int]:
         check_d10(docs, rep)
         check_d11(docs, rep)
         check_d12(docs, rep)
+        check_d13(docs, os.path.dirname(docs), rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))
