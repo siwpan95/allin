@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """docs_index.py —— 文档枢纽「索引契约」门禁（SPEC-005 的机械保障）。
 
-判据（D1–D11）：
+判据（D1–D12）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -15,7 +15,9 @@
   D9 章节锚点 —— 指向性 `§N` 引用必须落在真实章节上（g19 只解析文件路径、不查章节锚点）
   D10 区间随文 —— 交接卷卷首声明的覆盖区间，必须覆盖正文里出现的最新日期
   D11 两处计数 —— INDEX 头部覆盖行与各节标题里的「N 份」必须一致（同一文档两处计数各漂各的）
-  （D9–D11 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
+  D12 登记自述 —— INDEX 交接表「覆盖区间」列的自述必须与该卷自身相符（节区间末节 ≥ 实际末节、
+                  日期区间 == 卷首声明、列内 `§X` 均存在）—— 须按卷判：节号跨卷会重复
+  （D9–D12 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
 
 契约（与本仓其它门禁一致）：
   退出码 0 干净 / 1 基线之外的新阻断 / 2 用法错误 / 3 环境错误
@@ -33,7 +35,7 @@ import shutil
 import sys
 import tempfile
 
-# 共享判据（D9/D10/D11）—— 与分发版 `g15-docs-contract` **同源一份**：
+# 共享判据（D9/D10/D11/D12）—— 与分发版 `g15-docs-contract` **同源一份**：
 # 新判据只写 `governance/runtime/docs_contract.py` 这一个地方，两个入口都 import 它。
 # 理由（`SPEC-004` 调试铁律 64 的同一教训）：「两份必须一致」只写在文档里必然漂移，
 # 而两份都能跑、都"看着对"，差异只有人工 diff 才看得见 ⇒ 结构上杜绝，不靠记得同步。
@@ -310,6 +312,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d9(docs, root, files, rep)
     docs_contract.check_d10(docs, rep)
     docs_contract.check_d11(docs, rep)
+    docs_contract.check_d12(docs, rep)
     return rep
 
 
@@ -470,7 +473,7 @@ def selfcheck() -> int:
                     print("MISSED case not caught: %s" % kind)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
-    # 新增判据（D9/D10/D11）的自检用例在**共享模块**里 —— 两个落点共用同一套，
+    # 新增判据（D9/D10/D11/D12）的自检用例在**共享模块**里 —— 两个落点共用同一套，
     # 不会各写一套而漂移（与判据同源一条纪律）。
     extra = docs_contract.selfcheck_extra()
     caught += extra["caught"]

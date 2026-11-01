@@ -274,27 +274,160 @@ def check_d11(docs: str, rep) -> None:
             rep.exempt("D11-count-agree")
 
 
+# ---------------------------------------------------------------- D12
+CN_DIGIT = {"零": 0, "一": 1, "二": 2, "三": 3, "四": 4,
+            "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+CN_UNIT = {"十": 10, "百": 100, "千": 1000}
+
+
+def cn2int(s: str):
+    """中文序数 → 整数（九十四→94、一百一十一→111）。不是中文序数则返回 None。"""
+    total, num = 0, 0
+    for ch in s:
+        if ch in CN_DIGIT:
+            num = CN_DIGIT[ch]
+        elif ch in CN_UNIT:
+            unit = CN_UNIT[ch]
+            if unit == 10 and num == 0:
+                num = 1                      # 「十二」= 12
+            total += num * unit
+            num = 0
+        else:
+            return None
+    return total + num
+
+
+def token2int(tok: str):
+    """章节号 → 整数（阿拉伯或中文序数）；时间戳形态与小节号返回 None。"""
+    if tok.isdigit():
+        if len(tok) >= 8:                    # 20261031173800 这类时间戳不是节号
+            return None
+        return int(tok)
+    return cn2int(tok)
+
+
+def top_section_span(path: str):
+    """卷的**顶级节**（`##` 级）节号区间（min, max）；忽略时间戳形态与小节。
+
+    ⚠ 只取 `##` 级：小节（`### 107.5`）与时间戳小节（`### 20261031173800`）不算顶级节。
+    ⚠ `min` 不可靠：有的卷在 `## 九十四` 之后又用了 `## 一、`~`## 五、` 作子节（如 2026-10 卷）
+      ⇒ **不判「起节 ≤ 实际首节」**，只判**末节**（那才是真实漏网的形态）。
+    """
+    lo = hi = None
+    for line in read_text(path).splitlines():
+        m = re.match(r"^##\s+(.*)$", line)
+        if not m:
+            continue
+        t = SECTION_TOKEN.match(m.group(1).strip())
+        if not t:
+            continue
+        v = token2int(t.group(1))
+        if v is None:
+            continue
+        if lo is None or v < lo:
+            lo = v
+        if hi is None or v > hi:
+            hi = v
+    return lo, hi
+
+
+def check_d12(docs: str, rep) -> None:
+    """INDEX 交接表的「覆盖区间」列自述，必须与**该卷自身**相符。
+
+    为什么必须按卷判：交接卷的顶级节用中文序数，而**节号在不同卷间会重复**
+    （`§一` 在 2026-08 卷是「总体状态」、在 2026-10 卷是「用户拍板」）⇒
+    `§N` 必须带卷才无歧义，全局判必然误报。
+
+    三条判据：
+      (a) 列内每个 `§X` 都存在于该卷的标题集合
+      (b) 列内声明的**末节 ≥ 该卷实际末节**（真实漏网形态：写「§一百零七」而卷里已到 §一百一十一）
+      (c) 列内声明的**日期区间 == 该卷卷首声明的日期区间**（D10 保证卷首区间随正文续写，
+          D12 再保证 INDEX 的登记与卷首同步 ⇒ 三段链条闭合）
+    """
+    idx = os.path.join(docs, "INDEX.md")
+    if not os.path.isfile(idx):
+        return
+    for ln, line in enumerate(read_text(idx).splitlines(), 1):
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        target_rel, link_idx = None, None
+        for i, c in enumerate(cells):
+            for m in re.finditer(r"\]\((记录/交接/[^)\s]+\.md)\)", c):
+                target_rel, link_idx = m.group(1), i
+        if target_rel is None or link_idx is None or link_idx + 1 >= len(cells):
+            continue
+        cell = cells[link_idx + 1]
+        vol_path = os.path.join(docs, target_rel.replace("/", os.sep))
+        if not os.path.isfile(vol_path):
+            continue
+
+        # (c) 日期区间：INDEX 登记 vs 卷首声明
+        dm = re.search(r"(20\d{2}-\d{2}-\d{2})\s*~\s*(?:(20\d{2})-)?(\d{2}-\d{2})", cell)
+        hm = re.search(r"（\s*(20\d{2}-\d{2}-\d{2})\s*~\s*(20\d{2}-\d{2}-\d{2})\s*）",
+                       "\n".join(read_text(vol_path).splitlines()[:6]))
+        if dm and hm:
+            idx_hi = "%s-%s" % (dm.group(2) or dm.group(1)[:4], dm.group(3))
+            if (dm.group(1), idx_hi) != hm.groups():
+                rep.block("D12", "INDEX 第 %d 行的覆盖区间日期 %s ~ %s 与该卷卷首声明的 %s ~ %s 不一致"
+                          % (ln, dm.group(1), idx_hi, hm.group(1), hm.group(2)))
+
+        # (a) 列内每个 §X 都该卷存在
+        toks = heading_tokens(vol_path)
+        for m in SECTION_REF.finditer(cell):
+            if m.group(1) not in toks:
+                rep.block("D12", "INDEX 第 %d 行的 §%s 在 %s 里没有对应章节"
+                          % (ln, m.group(1), target_rel))
+
+        # (b) 声明的末节 ≥ 该卷实际末节
+        rm = re.search(r"§([0-9]+(?:\.[0-9]+)*|[%s]+)\s*~\s*§([0-9]+(?:\.[0-9]+)*|[%s]+)"
+                       % (CN_CHARS, CN_CHARS), cell)
+        if rm:
+            declared_end = token2int(rm.group(2))
+            _lo, actual_end = top_section_span(vol_path)
+            if declared_end is not None and actual_end is not None and declared_end < actual_end:
+                rep.block("D12", "INDEX 第 %d 行声明的节区间止于 §%s，但该卷实际已到第 %d 节"
+                          % (ln, rm.group(2), actual_end))
+        else:
+            rep.exempt("D12-open-range")
+
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
-    """造一个迷你枢纽（只含三项新判据所需的结构）。"""
+    """造一个迷你枢纽（只含新判据所需的结构）。
+
+    ⚠ **每个破坏用例只破坏自己那一维** —— 否则会出现"自欺欺人"：
+    早期版本让三个用例同时带上 §99，结果 D10/D11 的用例其实是被 D9 拦下的，
+    `caught=3` 是假象，那两条判据**从未真正被执行过**。故此处逐维开关。
+    """
     docs = os.path.join(base, "docs")
     os.makedirs(os.path.join(docs, "事实源", "机器"), exist_ok=True)
     os.makedirs(os.path.join(docs, "记录", "交接"), exist_ok=True)
 
-    sec = "1" if kind == "clean" else "99"
+    broken_anchor = (kind == "anchor-dangling")
+    broken_range = (kind == "range-too-narrow")
+    broken_count = (kind == "count-line-drift")
+    broken_index_range = (kind == "index-range-drift")
+
+    sec = "99" if broken_anchor else "1"
     with io.open(os.path.join(docs, "事实源", "机器", "机器分区索引.md"), "w", encoding="utf-8") as f:
         f.write("# 机器分区索引\n\n## 1. 标识\n\n## 2. 盘位\n\n"
                 "见 `机器分区索引.md` §%s\n" % sec)
 
-    hi = "2026-10-31" if kind == "clean" else "2026-10-16"
+    hi = "2026-10-16" if broken_range else "2026-10-31"
     with io.open(os.path.join(docs, "记录", "交接", "2026-10.md"), "w", encoding="utf-8") as f:
-        f.write("# 会话交接 · 2026-10 卷（2026-10-04 ~ %s）\n\n正文（2026-10-31 记）。\n" % hi)
+        f.write("# 会话交接 · 2026-10 卷（2026-10-04 ~ %s）\n\n"
+                "## 一、总体状态\n\n## 五十八、收尾\n\n正文（2026-10-31 记）。\n" % hi)
 
-    rec_n = 1 if kind == "count-line-drift" else 1
+    # INDEX：登记行 + 两处份数自述
+    rec_n = 5 if broken_count else 1
     head_rec = 1
+    sec_hi = "§一~§一" if broken_index_range else "§一~§五十八"
     with io.open(os.path.join(docs, "INDEX.md"), "w", encoding="utf-8") as f:
         f.write("# INDEX\n\n> **时点** 2026-10-31 ｜ **覆盖** 根 0 + 规范 0 + 事实源 1 + 记录 %d = **%d 份**\n\n"
-                "## 四、记录（`记录/`，%d 份，**只增不改**）\n" % (head_rec, head_rec + 1, rec_n))
+                "## 四、记录（`记录/`，%d 份，**只增不改**）\n\n"
+                "| 编号 | 卷 | 覆盖区间 | 主线 |\n| --- | --- | --- | --- |\n"
+                "| REC-HO-01 | [2026-10.md](记录/交接/2026-10.md) | 2026-10-04 ~ 10-31（%s） | 主线 |\n"
+                % (head_rec, head_rec + 1, rec_n, sec_hi))
     return docs
 
 
@@ -308,7 +441,7 @@ def selfcheck_extra() -> dict[str, int]:
     import tempfile
 
     caught = clean = misreports = 0
-    for kind in ("anchor-dangling", "range-too-narrow", "count-line-drift"):
+    for kind in ("anchor-dangling", "range-too-narrow", "count-line-drift", "index-range-drift"):
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
@@ -316,6 +449,7 @@ def selfcheck_extra() -> dict[str, int]:
             check_d9(docs, os.path.dirname(docs), _mini_files(docs), rep)
             check_d10(docs, rep)
             check_d11(docs, rep)
+            check_d12(docs, rep)
             if rep.blocking:
                 caught += 1
             else:
@@ -330,6 +464,7 @@ def selfcheck_extra() -> dict[str, int]:
         check_d9(docs, os.path.dirname(docs), _mini_files(docs), rep)
         check_d10(docs, rep)
         check_d11(docs, rep)
+        check_d12(docs, rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))
