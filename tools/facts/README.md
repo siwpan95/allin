@@ -106,3 +106,23 @@ python tools/facts/verify_facts.py --selftest         # 造必错样本，证明
 | 把 `**136**` 改成 `**135**` | 1 条 COUNT | **1 条**，exit 1 |
 | 把 `**43 项**` 改成 `**40 项**` | 1 条 COUNT | **1 条**，exit 1 |
 | `--selftest`（合成样本） | 2 条（COUNT + PATH-EXISTS） | **2 条**，PASS |
+
+## 安装 / 快速开始
+
+**零第三方依赖**（纯标准库），无 pip 安装步骤，在本仓任意 Python 3.9+ 解释器下直接进入第二步即可 ——
+推荐用 `scripts/run_all_gates.sh` 钉死的那个解释器（便携 Python 无 PyYAML 会让 `g18` 假红，`g20` 同理依赖它能否解析分区文件）。
+
+最快的两步：
+
+```bash
+# ① 采集本机事实（输出可直接贴进 docs/事实源/机器/<机器名>.md）
+python tools/facts/measure.py
+# ② 判定本机分区文件：0 = 干净，1 = 有 finding
+python tools/facts/verify_facts.py
+```
+
+⚠ 本工具是 **Windows 专属**（判据基于盘符绝对路径，`platforms: ["nt"]`），非 Windows 直接 `ENV ERROR` 退出 3。
+
+## 许可
+
+本目录是 allin 仓的子件（非独立仓），许可随**仓根 LICENSE**（MIT-0）覆盖。
