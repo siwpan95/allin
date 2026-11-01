@@ -132,6 +132,19 @@ if [ -d packages/allin-governance ]; then
       --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
 fi
 
+# --- 2026-11-01 补齐三项此前未接进自动化的辅助门禁 ---
+# 起因：README §本仓自检口径承诺 A/B/C 三条，脚本却只跑了 A) 与 C)，
+# B) 自 2026-10-30 起一直红着没人发现。**门禁写了不跑 = 没有门禁**，故一并补入。
+# ① README §本仓自检口径 B)：A) 已把 tools/ 排除，故 tools/ 的子件在这里单独体检。
+run "$PY" tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
+# ② .ps1 编码：PowerShell 5.1 对无 UTF-8 BOM 的脚本按 ANSI 解码，
+#    中文变乱码并报一堆假语法错误（本机边界里那条"一边绿一边红"的编码指纹）。
+run "$PY" tools/gate/check_ps1_bom.py
+# ③ 仓库卫生 H1-H8：扫发布区全部仓的 git 跟踪面（136 仓）。
+#    基线棘轮**只单向收紧**：已评估的存量记在 tools/gate/audit/hygiene_baseline.csv，
+#    明细台账见同目录 hygiene_debt_2026-11-01.json —— 刷新基线不等于债务消失，台账才是待办清单。
+run "$PY" tools/repo_hygiene.py --all
+
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
   echo "[with-platform] 额外跑 platform 门禁（需先 cd platform && npm install）"
