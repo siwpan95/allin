@@ -55,6 +55,7 @@
 | `kernel/` | **治理内核**（2026-10-27 立档）：Python/Cordis 服务图 + `allin` CLI 前门（`allin_cli.py`），四大支柱 `docs/platform/preset/tools` 经 `kernel/configs/cordis.allin.yml` 配置树挂载。说明见 [`kernel/README.md`](kernel/README.md) |
 | `packages/` | **可安装包**（2026-10-31 立档）：把本仓**通用**的部分装成外部可直接消费的产物。当前一个包 [`allin-governance`](packages/allin-governance/)（PyPI 名，**占位版本 `0.0.0a1`**），两个子命令：`init` 生成可跑的最小治理骨架（14 道门禁，实测 `npm run check:governance` exit 0）、`repocheck` 离线体检；两者的源码都映射自本仓（**不复制**，一份源码两处消费） |
 | `architecture/` | **系统架构与设计文档**（2026-10-27）：组件级架构图 [`system-architecture.svg`](architecture/system-architecture.svg) + 数据流图 [`data-flow.svg`](architecture/data-flow.svg) + 设计说明。刻意置于 `docs/` 之外以避开文档索引契约 |
+| `website/` | **allin 项目官网**（2026-11-02 立）：开发与维护服务的对外站点，本地部署运行（默认端口 9042，已登记 `事实源/ports.yaml`）。四页导航 + 注册/登录/会话保持 + **AES-256-GCM 信封加密**存储（图片/文件/文案全入库存密文）。入口 [`website/README.md`](website/README.md) |
 | `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
 

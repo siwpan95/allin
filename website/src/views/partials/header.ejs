@@ -1,0 +1,36 @@
+<header class="site-header">
+  <div class="container">
+    <nav class="nav" aria-label="主导航">
+      <a class="brand" href="/">
+        <span class="brand__mark" aria-hidden="true">AL</span>
+        <span class="brand__text">ALLIN LAB<small><%= site.motto %></small></span>
+      </a>
+
+      <div class="nav__links" id="nav-links">
+        <% nav.forEach(function (item) { %>
+        <a class="nav__link <%= pageKey === item.key ? 'is-active' : '' %>" href="<%= item.href %>"><%= item.label %></a>
+        <% }); %>
+      </div>
+
+      <div class="nav__auth">
+        <% if (user) { %>
+          <a class="btn btn--sm btn--ghost" href="/member">控制台</a>
+          <% if (user.role === 'admin') { %>
+          <a class="btn btn--sm" href="/admin">管理台</a>
+          <% } %>
+          <form method="post" action="/logout" class="row" style="margin:0">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn--sm btn--ghost" type="submit">登出</button>
+          </form>
+        <% } else { %>
+          <a class="btn btn--sm btn--ghost" href="/login">登录</a>
+          <a class="btn btn--sm" href="/register">注册</a>
+        <% } %>
+      </div>
+
+      <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="展开或收起导航">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </div>
+</header>

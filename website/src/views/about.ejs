@@ -1,0 +1,103 @@
+<%- include('partials/head') %>
+
+<section class="section" style="padding-top:3.2rem">
+  <div class="container hero__grid">
+    <div>
+      <span class="eyebrow">// about us</span>
+      <h1>关于我们</h1>
+      <p class="hero__lede">
+        ALLIN LAB 是围绕 <strong>allin</strong> 治理仓生长出来的一支小队：一名独立开发者，
+        加上一组长期协同的 AI 协作者。我们不做"看起来很先进"的方案，只做能跑、能查、能接手续做的东西。
+      </p>
+      <p class="muted">
+        我们相信一件事：<strong>共识越充分，执行越不容易跑偏</strong>。所以所有合作都从一次彻底的对齐开始 ——
+        先问清楚、先写下来、先跑一遍门禁，再谈交付时间。
+      </p>
+      <div class="hero__actions">
+        <a class="btn" href="/contact">开始一次对话</a>
+        <a class="btn btn--ghost" href="<%= site.gitee %>" rel="noopener" target="_blank">看看我们写的代码</a>
+      </div>
+    </div>
+    <figure class="hero__art" style="margin:0">
+      <img src="<%= assetUrl('site_about_team_01') %>" alt="赛博风格工作室" width="1024" height="1024" loading="lazy">
+    </figure>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <span class="eyebrow">// three pillars</span>
+    <h2>体系的三个支柱</h2>
+    <div class="grid grid--3" style="margin-top:1.5rem">
+      <article class="card">
+        <h3>规范（SPEC）</h3>
+        <p class="muted" style="font-size:.93rem">
+          铁律、协作流程、调试纪律、机器与路径约定 —— 每一条都来自真实事故，编号固定、可引用、可追责。
+        </p>
+      </article>
+      <article class="card">
+        <h3>事实源（FACTS）</h3>
+        <p class="muted" style="font-size:.93rem">
+          机器分区、端口分配、来源与许可：活台账带时点与失效条款，由脚本采集、由门禁对账，不靠记忆。
+        </p>
+      </article>
+      <article class="card">
+        <h3>记录（RECORDS）</h3>
+        <p class="muted" style="font-size:.93rem">
+          交接流水、审计证据、事故专题、环境快照：一次性证据留档，回答"为什么现在是这个样子"。
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// milestones</span>
+    <h2>一路走来的关键节点</h2>
+    <ul class="timeline" style="margin-top:1.4rem">
+      <% milestones.forEach(function (m) { %>
+      <li>
+        <span class="year"><%= m.year %></span>
+        <div style="font-weight:600"><%= m.title %></div>
+        <p class="muted" style="margin:.2rem 0 0;font-size:.92rem"><%= m.text %></p>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <span class="eyebrow">// principles</span>
+    <h2>工作原则</h2>
+    <div class="grid grid--2" style="margin-top:1.4rem">
+      <% principles.forEach(function (p, i) { %>
+      <article class="card">
+        <div class="card__title">
+          <span class="card__badge"><%= String(i + 1).padStart(2, '0') %></span>
+          <h3 style="margin:0"><%= p.title %></h3>
+        </div>
+        <p class="muted" style="font-size:.93rem;margin-top:.6rem"><%= p.text %></p>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta">
+      <div>
+        <h2 style="margin-bottom:.4rem">想把这套体系装进你的工作区？</h2>
+        <p class="muted" style="margin:0">治理模式本身是可重装的：preset、门禁脚本、文档枢纽，都可以原样搬走。</p>
+      </div>
+      <div class="row">
+        <a class="btn" href="/services">看服务包</a>
+        <a class="btn btn--ghost" href="/contact">直接联系</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

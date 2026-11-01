@@ -1,0 +1,41 @@
+<%- include('partials/head') %>
+
+<section class="auth">
+  <div class="container auth__card">
+    <div class="card" style="padding:1.9rem">
+      <span class="eyebrow">// access</span>
+      <h1 style="font-size:1.7rem">登录</h1>
+      <p class="muted" style="font-size:.92rem">
+        登录后可以进入客户控制台，查看服务工单与专属交付文件。
+      </p>
+
+      <% if (errors && errors.length) { %>
+      <ul class="errors" style="list-style:none">
+        <% errors.forEach(function (e) { %><li><%= e %></li><% }); %>
+      </ul>
+      <% } %>
+
+      <form class="form" method="post" action="/login" data-guard>
+        <input type="hidden" name="next" value="<%= next %>">
+        <div class="field">
+          <label for="email">邮箱</label>
+          <input id="email" name="email" type="email" required autocomplete="email" value="<%= form.email %>" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="password">口令</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="至少 8 位，含字母与数字">
+        </div>
+        <button class="btn btn--block" type="submit">登录</button>
+      </form>
+
+      <p class="auth__switch">
+        还没有账号？<a href="/register">注册一个</a>
+      </p>
+      <p class="muted" style="font-size:.82rem;margin-top:.8rem">
+        口令使用 scrypt 加盐哈希存储，会话 ID 为 256 位随机串且仅存于 httpOnly Cookie。
+      </p>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

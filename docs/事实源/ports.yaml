@@ -72,6 +72,12 @@ ports:
     owner: /platform/apps/portal（按需启动：start-platform.bat，默认 PORT=0 临时端口）
     note: 2026-08-27 起不再常驻 9000——门户为独立网页应用按需启动（双击 start-platform.bat 自动打开浏览器，关闭即释放）；9000 仅作手动模式可选端口
     status: retired
+  - port: 9042
+    service: allin-website
+    owner: /website（src/server.js，npm start；PORT 可覆盖）
+    paths: [/, /services, /about, /contact, /login, /register, /member, /admin, /healthz]
+    note: 2026-11-02 登记——allin 项目官网（开发与维护服务），本地部署，默认 9042
+    status: active
   - port: 9997
     service: mediamtx-api
     owner: mediamtx
@@ -88,5 +94,7 @@ change_log:
     change: portal 9000 退役——门户改为 DSH 插件版（临时端口，释放固定端口占用）
   - date: 2026-09-24
     change: 登记 zhuangtaiji Web 编排编辑器 8011——其文档原默认 8000 与已 active 的 radio-panel 冲突；默认端口改 8011，README/README.en/server.py 已同步
+  - date: 2026-11-02
+    change: 登记 allin-website 9042——allin 项目官网（/website，开发与维护服务站点，本地部署默认端口，落在 9000-9099 聚合门户段）
   - date: 2026-09-24
     change: 登记 localplayer-bridge 8787——聚合桥（private-radio-stations scripts/localplayer-bridge.mjs，npm run bridge），把电台/IPTV/录制/HLS 聚合成 localplayer 播放器清单；消费端 /repos/localplayer plugins/radio-stations-source.js（priority 15）。此前该端口在本表缺席（登记时发现：8787 偏离 88xx-89xx 段约定，且落在 8000-8099 与 8800-8999 之间的空档，段划分待后续统一）

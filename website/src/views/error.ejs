@@ -1,0 +1,18 @@
+<%- include('partials/head') %>
+
+<section class="auth">
+  <div class="container auth__card">
+    <div class="card" style="padding:1.9rem;text-align:center">
+      <span class="eyebrow">// status <%= status %></span>
+      <h1 class="glitch" data-text="<%= title %>" style="font-size:1.7rem"><%= title %></h1>
+      <p class="muted"><%= message %></p>
+      <% if (hint) { %><p class="mono" style="font-size:.84rem;color:var(--dim)"><%= hint %></p><% } %>
+      <div class="row" style="justify-content:center;margin-top:1.2rem">
+        <a class="btn" href="/">回到首页</a>
+        <a class="btn btn--ghost" href="/contact">联系我们</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

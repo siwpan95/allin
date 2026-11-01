@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %></title>
+<meta name="description" content="ALLIN LAB —— allin 项目的开发与维护服务：治理内核建设、平台开发、持续运维与交付。">
+<meta name="color-scheme" content="dark">
+<link rel="stylesheet" href="/css/cyberpunk.css">
+</head>
+<body>
+<div class="scanline" aria-hidden="true"></div>
+<%- include('header') %>
+<main>
+<% if (typeof notice !== 'undefined' && notice) { %>
+<div class="container" style="padding-top:1.5rem">
+  <div class="notice notice--<%= notice.kind %>" role="status" data-auto-dismiss>
+    <span aria-hidden="true">▍</span><span><%= notice.text %></span>
+  </div>
+</div>
+<% } %>

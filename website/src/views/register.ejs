@@ -1,0 +1,47 @@
+<%- include('partials/head') %>
+
+<section class="auth">
+  <div class="container auth__card">
+    <div class="card" style="padding:1.9rem">
+      <span class="eyebrow">// new account</span>
+      <h1 style="font-size:1.7rem">注册</h1>
+      <p class="muted" style="font-size:.92rem">
+        注册后自动登录。邮箱会以密文形式保存，仅用于登录与回复你的需求。
+      </p>
+
+      <% if (errors && errors.length) { %>
+      <ul class="errors" style="list-style:none">
+        <% errors.forEach(function (e) { %><li><%= e %></li><% }); %>
+      </ul>
+      <% } %>
+
+      <form class="form" method="post" action="/register" data-guard>
+        <input type="hidden" name="next" value="<%= next %>">
+        <div class="field">
+          <label for="displayName">昵称</label>
+          <input id="displayName" name="displayName" type="text" required minlength="2" maxlength="40" value="<%= form.displayName %>">
+        </div>
+        <div class="field">
+          <label for="email">邮箱</label>
+          <input id="email" name="email" type="email" required autocomplete="email" value="<%= form.email %>">
+        </div>
+        <div class="field">
+          <label for="password">口令</label>
+          <input id="password" name="password" type="password" required autocomplete="new-password">
+          <span class="field__hint">至少 8 位，且同时包含字母与数字。</span>
+        </div>
+        <div class="field">
+          <label for="passwordConfirm">确认口令</label>
+          <input id="passwordConfirm" name="passwordConfirm" type="password" required autocomplete="new-password">
+        </div>
+        <button class="btn btn--block" type="submit">注册并登录</button>
+      </form>
+
+      <p class="auth__switch">
+        已有账号？<a href="/login">去登录</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

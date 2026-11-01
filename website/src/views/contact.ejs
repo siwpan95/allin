@@ -1,0 +1,96 @@
+<%- include('partials/head') %>
+
+<section class="section" style="padding-top:3.2rem">
+  <div class="container">
+    <span class="eyebrow">// contact</span>
+    <h1>联系我们</h1>
+    <p class="muted" style="max-width:74ch">
+      把需求、现状和期望的时间点写清楚，我们会在一个工作日内回复，并附上一份初步判断（能不能做、怎么做、大概多久）。
+      表单内容会在服务端加密后写入本地数据库，只有管理员可以解密查看。
+    </p>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container grid grid--2" style="align-items:start;gap:2rem">
+    <div class="card" style="padding:1.8rem">
+      <% if (errors && errors.length) { %>
+      <ul class="errors" style="list-style:none">
+        <% errors.forEach(function (e) { %><li><%= e %></li><% }); %>
+      </ul>
+      <% } %>
+      <form class="form" method="post" action="/contact" enctype="multipart/form-data" data-guard>
+        <div class="field">
+          <label for="name">称呼 *</label>
+          <input id="name" name="name" type="text" required maxlength="60" value="<%= form.name || '' %>" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="email">邮箱 *</label>
+          <input id="email" name="email" type="email" required maxlength="120" value="<%= form.email || '' %>" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="topic">需求类型</label>
+          <select id="topic" name="topic">
+            <option value="治理内核落地" <%= form.topic === '治理内核落地' ? 'selected' : '' %>>治理内核落地</option>
+            <option value="平台与工具开发" <%= form.topic === '平台与工具开发' ? 'selected' : '' %>>平台与工具开发</option>
+            <option value="持续维护与值守" <%= form.topic === '持续维护与值守' ? 'selected' : '' %>>持续维护与值守</option>
+            <option value="体检与咨询" <%= form.topic === '体检与咨询' ? 'selected' : '' %>>体检与咨询</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="body">需求描述 * <span id="body-count" class="field__hint"></span></label>
+          <textarea id="body" name="body" required maxlength="4000" data-count="body-count" placeholder="仓库规模、现有技术栈、遇到的具体问题、期望时间点…"><%= form.body || '' %></textarea>
+        </div>
+        <div class="field">
+          <label for="attachment">附件（可选，单个 ≤ 5 MB）</label>
+          <input id="attachment" name="attachment" type="file">
+          <span class="field__hint">附件同样加密入库，不会出现在任何公开目录。</span>
+        </div>
+        <button class="btn btn--block" type="submit">提交需求</button>
+      </form>
+    </div>
+
+    <div class="stack">
+      <div class="panel">
+        <div class="footer__title">直接联系</div>
+        <dl class="kv">
+          <dt>邮箱</dt><dd><a href="mailto:<%= profile.email || site.email %>"><%= profile.email || site.email %></a></dd>
+          <dt>Gitee</dt><dd><a href="<%= profile.gitee || site.gitee %>" rel="noopener" target="_blank"><%= profile.gitee || site.gitee %></a></dd>
+          <dt>GitHub</dt><dd><a href="<%= profile.github || site.github %>" rel="noopener" target="_blank"><%= profile.github || site.github %></a></dd>
+          <dt>服务时间</dt><dd><%= profile.hours || '工作日 10:00–19:00' %></dd>
+          <dt>首次响应</dt><dd><%= profile.responseTime || '1 个工作日' %></dd>
+        </dl>
+      </div>
+
+      <figure class="hero__art" style="margin:0">
+        <img src="<%= assetUrl('site_contact_grid_01') %>" alt="霓虹通讯枢纽" width="1024" height="1024" loading="lazy">
+      </figure>
+
+      <div class="panel">
+        <div class="footer__title">数据安全说明</div>
+        <ul class="checklist" style="font-size:.9rem;margin:0">
+          <li>留言正文与联系方式以 AES-256-GCM 加密入库</li>
+          <li>附件同样加密存储，仅管理员可解密下载</li>
+          <li>密钥与数据库文件不进版本库，默认只在本机</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// faq</span>
+    <h2>提交前可以先看看</h2>
+    <div class="faq" style="margin-top:1.2rem">
+      <% faqs.forEach(function (f) { %>
+      <details>
+        <summary><%= f.q %></summary>
+        <p><%= f.a %></p>
+      </details>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

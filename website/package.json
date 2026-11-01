@@ -1,0 +1,25 @@
+{
+  "name": "allin-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "allin 项目开发与维护服务官方网站：本地部署、数据/图片/文件加密入库（AES-256-GCM）",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --experimental-sqlite src/server.js",
+    "dev": "node --experimental-sqlite --watch src/server.js",
+    "init": "node --experimental-sqlite scripts/init-db.js",
+    "seed": "node --experimental-sqlite scripts/seed.js",
+    "bootstrap": "npm run init && npm run seed",
+    "rotate-key": "node --experimental-sqlite scripts/rotate-key.js",
+    "verify:crypto": "node --experimental-sqlite scripts/verify-crypto.js",
+    "smoke": "node --experimental-sqlite scripts/smoke-test.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "multer": "^2.0.2"
+  }
+}

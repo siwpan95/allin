@@ -1,0 +1,130 @@
+<%- include('partials/head') %>
+
+<section class="hero">
+  <div class="container hero__grid">
+    <div>
+      <span class="eyebrow">// governance-driven delivery</span>
+      <h1 class="hero__title">
+        <span class="glitch" data-text="allin 项目">allin 项目</span><br>
+        开发与维护服务
+      </h1>
+      <p class="hero__lede">
+        我们围绕 <strong>allin</strong> 这一整套工作区治理体系提供开发、维护与陪跑服务：
+        把"一个人 + 多个 AI 协作者 + 上百个仓库"的混乱，变成可执行、可审计、可接手续做的工程流水线。
+      </p>
+      <div class="hero__actions">
+        <a class="btn" href="/services">查看服务与报价</a>
+        <a class="btn btn--ghost" href="/contact">提交需求</a>
+      </div>
+      <ul class="checklist" style="margin-top:1.8rem">
+        <li>治理内核落地：门禁、事实源、文档枢纽一次装好</li>
+        <li>平台与工具开发：门户、注册表、CLI、自动化流水线</li>
+        <li>持续维护：依赖升级、故障处置、事故复盘与基线棘轮</li>
+      </ul>
+    </div>
+    <figure class="hero__art" style="margin:0">
+      <img src="<%= assetUrl('site_home_hero_01') %>" alt="霓虹数据中心夜景" width="1440" height="960" loading="eager">
+    </figure>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <div class="metrics">
+      <% capabilities.forEach(function (item) { %>
+      <div class="metric">
+        <div class="metric__value"><%= item.value %><span style="font-size:.9rem"><%= item.unit || '' %></span></div>
+        <div class="metric__label"><%= item.label %></div>
+        <div class="muted" style="font-size:.8rem"><%= item.note || '' %></div>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// services</span>
+    <h2>三条主线服务</h2>
+    <p class="muted" style="max-width:70ch">
+      「开发」负责把系统建起来，「维护」负责让它长期不掉线，「治理」负责让每一次改动都留得下证据。
+      三条线可以整体承接，也可以按需组合。
+    </p>
+    <div class="grid grid--3" style="margin-top:1.8rem">
+      <% services.forEach(function (s) { %>
+      <article class="card">
+        <% if (s.assetKey) { %>
+        <img class="thumb" src="<%= assetUrl(s.assetKey) %>" alt="<%= s.title %> 配图" loading="lazy">
+        <% } %>
+        <div class="card__title">
+          <h3 style="margin:0"><%= s.title %></h3>
+          <span class="card__badge"><%= s.code %></span>
+        </div>
+        <p class="muted" style="font-size:.94rem;margin-top:.6rem"><%= s.summary %></p>
+        <ul class="checklist" style="font-size:.9rem">
+          <% (s.bullets || []).slice(0, 3).forEach(function (b) { %><li><%= b %></li><% }); %>
+        </ul>
+        <a class="btn btn--sm" href="/services#<%= s.code %>">查看详情</a>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// how we work</span>
+    <h2>我们怎么干活</h2>
+    <div class="grid grid--4" style="margin-top:1.6rem">
+      <div class="card">
+        <h3>先共识，后动手</h3>
+        <p class="muted" style="font-size:.92rem">需求先问清、计划先过一遍，再开工。问题一批不超过四个，每个都带推荐项，不把时间耗在盘问上。</p>
+      </div>
+      <div class="card">
+        <h3>门禁而非自觉</h3>
+        <p class="muted" style="font-size:.92rem">约定写成可执行的门禁：路径、密钥、文档索引、事实源时点，红了就拦住，不靠人记着。</p>
+      </div>
+      <div class="card">
+        <h3>一切过手皆记账</h3>
+        <p class="muted" style="font-size:.92rem">借鉴记来源与许可，教训沉淀成条目，自主决定标注待复核。没有记账的改动，等于没发生过。</p>
+      </div>
+      <div class="card">
+        <h3>资产只增不减</h3>
+        <p class="muted" style="font-size:.92rem">删除与归档前过冗余三查：列功能面、找实证接任者、确认无接任者。推倒重来只用于结构层。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// milestones</span>
+    <h2>治理体系的演进</h2>
+    <ul class="timeline" style="margin-top:1.4rem">
+      <% milestones.forEach(function (m) { %>
+      <li>
+        <span class="year"><%= m.year %></span>
+        <div style="font-weight:600"><%= m.title %></div>
+        <p class="muted" style="margin:.2rem 0 0;font-size:.92rem"><%= m.text %></p>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <div class="cta">
+      <div>
+        <h2 style="margin-bottom:.4rem">把治理交给我们，把时间留给产品</h2>
+        <p class="muted" style="margin:0">先做一次免费体检：把你的仓库结构、门禁覆盖与文档索引跑一遍，出一份可执行清单。</p>
+      </div>
+      <div class="row">
+        <a class="btn" href="/contact">预约体检</a>
+        <a class="btn btn--ghost" href="/about">了解我们</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

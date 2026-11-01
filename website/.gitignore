@@ -1,0 +1,9 @@
+# 运行时产物：数据库、密钥、日志一律不入库（密钥属 day-1 block 类问题）
+node_modules/
+data/
+keys/
+*.key
+*.pem
+.env
+*.log
+.DS_Store

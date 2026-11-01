@@ -1,0 +1,42 @@
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__title">ALLIN LAB</div>
+        <p class="muted" style="font-size:.92rem">
+          围绕 <strong>allin</strong> 治理仓提供开发与维护服务：从治理内核落地、平台开发，
+          到门禁运维与事故复盘，一条链路交付可运行、可审计、可接手续做的工程体系。
+        </p>
+        <p class="mono" style="font-size:.8rem;color:var(--dim)">do it better than future</p>
+      </div>
+      <div>
+        <div class="footer__title">导航</div>
+        <ul style="list-style:none;padding:0;font-size:.92rem">
+          <li><a href="/">首页</a></li>
+          <li><a href="/services">产品服务</a></li>
+          <li><a href="/about">关于我们</a></li>
+          <li><a href="/contact">联系我们</a></li>
+          <li><a href="/member">客户控制台</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__title">联系方式</div>
+        <ul style="list-style:none;padding:0;font-size:.92rem">
+          <li>邮箱：<a href="mailto:<%= site.email %>"><%= site.email %></a></li>
+          <li>Gitee：<a href="<%= site.gitee %>" rel="noopener" target="_blank">siwpan/allin</a></li>
+          <li>GitHub：<a href="<%= site.github %>" rel="noopener" target="_blank">siwpan95/allin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© <%= currentYear %> ALLIN LAB · 本站内容与文件均加密存储于本地数据库</span>
+      <span class="mono">AES-256-GCM · HKDF-SHA256 · scrypt</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

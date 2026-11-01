@@ -1,0 +1,122 @@
+<%- include('partials/head') %>
+
+<section class="section" style="padding-top:3.2rem">
+  <div class="container">
+    <span class="eyebrow">// products & services</span>
+    <h1>产品服务</h1>
+    <p class="muted" style="max-width:74ch">
+      三个可单独采购的服务包，覆盖「建起来 → 跑得稳 → 留得下证据」的完整生命周期。
+      报价为起步价，实际按仓库规模、门禁数量与响应等级核定；所有交付物都带文档与复跑脚本。
+    </p>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container stack">
+    <% services.forEach(function (s, index) { %>
+    <article class="card" id="<%= s.code %>" style="padding:1.8rem">
+      <div class="grid grid--2" style="gap:2rem;align-items:start">
+        <% if (s.assetKey) { %>
+        <img class="thumb" src="<%= assetUrl(s.assetKey) %>" alt="<%= s.title %> 配图" loading="lazy" style="height:220px">
+        <% } %>
+        <div>
+          <div class="row" style="gap:.6rem">
+            <span class="card__badge"><%= s.code %></span>
+            <h2 style="margin:0"><%= s.title %></h2>
+          </div>
+          <p class="mono" style="color:var(--cyan);font-size:.86rem;margin:.4rem 0 .8rem"><%= s.tagline %></p>
+          <p class="muted"><%= s.summary %></p>
+        </div>
+      </div>
+
+      <div class="grid grid--2" style="margin-top:1.4rem">
+        <div>
+          <h3 style="font-size:1rem">服务内容</h3>
+          <ul class="checklist">
+            <% (s.bullets || []).forEach(function (b) { %><li><%= b %></li><% }); %>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1rem">交付物</h3>
+          <ul class="checklist">
+            <% (s.deliverables || []).forEach(function (b) { %><li><%= b %></li><% }); %>
+          </ul>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:1.2rem;gap:1rem">
+        <span class="tag tag--info">起步价 <%= s.priceFrom %></span>
+        <span class="tag"><%= s.sla %></span>
+        <a class="btn btn--sm" href="/contact?topic=<%= encodeURIComponent(s.title) %>">咨询这项服务</a>
+      </div>
+    </article>
+    <% }); %>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// delivery process</span>
+    <h2>交付流程</h2>
+    <div class="steps" style="margin-top:1.5rem">
+      <% steps.forEach(function (st, i) { %>
+      <div class="step">
+        <div class="step__no">STEP <%= String(i + 1).padStart(2, '0') %></div>
+        <div class="step__title"><%= st.title %></div>
+        <div class="step__text"><%= st.text %></div>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <span class="eyebrow">// service level</span>
+    <h2>响应与保障</h2>
+    <div class="panel" style="margin-top:1.2rem;overflow-x:auto">
+      <table class="table">
+        <thead>
+          <tr><th>等级</th><th>适用场景</th><th>首次响应</th><th>修复目标</th><th>服务窗口</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>标准</td><td>日常迭代、文档与门禁调整</td><td>1 个工作日</td><td>按排期</td><td>工作日 10:00–19:00</td></tr>
+          <tr><td>优先</td><td>影响交付的缺陷、依赖升级</td><td>4 小时</td><td>3 个工作日内</td><td>每日 09:00–22:00</td></tr>
+          <tr><td>应急</td><td>线上事故、数据与安全事件</td><td>30 分钟</td><td>当日给出修复或绕行方案</td><td>7×24 小时值守</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:.88rem;margin-top:.8rem">
+      应急等级按次计费，含事故复盘报告与一条新的防复发门禁 —— 每次事故都应该让体系更紧一格。
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="eyebrow">// faq</span>
+    <h2>常见问题</h2>
+    <div class="faq" style="margin-top:1.4rem">
+      <% faqs.forEach(function (f) { %>
+      <details>
+        <summary><%= f.q %></summary>
+        <p><%= f.a %></p>
+      </details>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <div class="cta">
+      <div>
+        <h2 style="margin-bottom:.4rem">不确定该选哪一条？</h2>
+        <p class="muted" style="margin:0">把仓库地址和现状丢过来，我们先给一份体检结论，再谈采购。</p>
+      </div>
+      <a class="btn" href="/contact">联系我们</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
