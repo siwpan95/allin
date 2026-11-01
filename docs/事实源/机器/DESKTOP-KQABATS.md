@@ -1,5 +1,13 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-01（**本机转双核后实测** —— 用户指令「配置本机 github，实现双核推送」：
+>   `ssh -T git@github.com` ⇒ `Hi siwpan95!`（密钥指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`，
+>   GitHub key id `168363891`）；`remote.origin.pushurl` **2 条**（Gitee + GitHub SSH）+ 独立 remote `github`；
+>   双侧 `ls-remote` 与 `rev-parse HEAD` **逐字符相等**（`d45faf1`）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **22** 个目录；主 Python `D:\Python314\python.exe` **现存**；
+>   `D:\musickit` **现存**；`D:\private-radio-stations` **现存**；
+>   `E:\projects\reference` **现存**；`E:\projects\_governance` **现存**。）
 > **时点** 2026-10-30 17:00（**`tools/facts/measure.py` 自动采集 + 人工裁决** —— 机器 `DESKTOP-KQABATS`；
 >   本段为**采集原始值**，凡与上一版不符者须逐项复测后再改，**不要直接覆盖**。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
@@ -144,22 +152,28 @@
   ⇒ **该变量属那台机器的现状，不适用本机**。
 - **读法约定**：跨仓脚本引用数据根时**优先环境变量、未设则按 cwd 相对解析**（铁律 5 同口径）。
 
-## 7. 推送与远端镜像（@`DESKTOP-KQABATS` 侧，2026-10-29 实测）
+## 7. 推送与远端镜像（@`DESKTOP-KQABATS` 侧，**2026-11-01 补配双核后实测**）
 
 | 项 | 现值 |
 | --- | --- |
-| `remote.origin.url` | `https://gitee.com/siwpan/allin.git` |
-| `remote.origin.pushurl` 条数 | **0**（`git config --get-all remote.origin.pushurl` 无输出） |
-| 独立 remote | 无（`git remote -v` 只有 origin） |
-| 推送口径 | **只推 Gitee 单核**，`git push` 走默认 url |
-| 核对口径 | 只核 Gitee 一侧（`ls-remote origin` + `rev-list --left-right --count` 0/0 + 工作树干净） |
+| `remote.origin.url` | `https://gitee.com/siwpan/allin.git`（fetch 侧，不变） |
+| `remote.origin.pushurl` 条数 | **2**：Gitee `https://gitee.com/siwpan/allin.git` + GitHub `git@github.com:siwpan95/allin.git`（SSH） |
+| 独立 remote | `github` = `git@github.com:siwpan95/allin.git`（fetch/push） |
+| 推送口径 | **双核**：一次 `git push origin master` **依次打两条**（Gitee + GitHub 镜像） |
+| 核对口径 | **两侧都要核**：`ls-remote` 两边与 `rev-parse HEAD` **逐字符相等** + `rev-list --left-right --count` 0/0 + 工作树干净 |
+| SSH 前提 | `~/.ssh/id_ed25519`（ED25519，指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`）在 GitHub 已注册（key id `168363891`）；`ssh -T git@github.com` ⇒ **`Hi siwpan95!`**；`~/.ssh/config` 有 `github.com` 与 `ssh.github.com:443` 两段（`IdentitiesOnly yes`，原配置备份 `config.bak-20261101`） |
 
-- **作业口径**：**不要求 GitHub 侧在该机可见**；该机**不补配** GitHub pushurl（用户 2026-10-29 明确交代）。
-  GitHub 镜像由**两台**推：[`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 与 [`./SIWPAN.md`](./SIWPAN.md) §7
-  （均 pushurl 2 条；`@SIWPAN` 于 2026-10-31 经用户指令补配，提交 `2a6da31`）⇒ **本机单核 ≠ 镜像无人推**。
+- **作业口径（2026-11-01 用户指令，取代 2026-10-29 的「不补配」）**：该机**改为双核**，
+  与 [`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9、[`./SIWPAN.md`](./SIWPAN.md) §7 **三台口径一致**。
+  ⚠ 2026-10-29「该机不补配 GitHub pushurl」的交代**已被本条取代**（**逐机指令，不外推**——
+  这是 `@SIWPAN` 在 `2a6da31` 里踩过并已写明的教训）。
+- ⚠ **git 语义坑（实测）**：remote 一旦配了**显式 pushurl**，`url` 就不再是推送目标
+  ⇒ 双核必须是**两条 pushurl**（Gitee + GitHub），不是「url + 一条 pushurl」。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端多次被其它机推进
   （`8b46e67→7f3fecc` PURE_BEHIND、`705f888→e245410` PURE_BEHIND）⇒ **动手前 fetch 对齐是硬纪律**，
-  DIVERGED 时 `g04` 会拦。
+  DIVERGED 时 `g04` 会拦。**双核后 `g04` 已改为核所有推送目标**（2026-11-01，原先只读
+  `remote.*.url` ⇒ 镜像那一路不被覆盖）。
+
 
 ## 8. 与另两台的实测差异（仅列事实，不作定性）
 
