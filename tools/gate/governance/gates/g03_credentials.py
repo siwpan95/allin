@@ -410,7 +410,7 @@ def selfcheck() -> int:
         outside = sandbox.path / "outside"
         outside.mkdir(parents=True, exist_ok=True)
         (outside / "creds.txt").write_text(
-            "token = github_pat_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8\n", encoding="utf-8")
+            "token = github_pat_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8\n", encoding="utf-8")  # gov-credentials: allow
         (outside / "notes.md").write_text(
             "口令见受管库；此文件无凭据形态。\n", encoding="utf-8")
         report = scan(sandbox.path, machine_roots=[(outside, 0)])
