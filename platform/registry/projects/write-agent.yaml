@@ -1,6 +1,7 @@
 id: write-agent
 name: write-agent · 小说创作智能 Agent
 category: ai
+version: 1.0.0
 path: repos/write-agent
 manual: true
 note: 中文网文创作 Agent —— 依题材/风格生成大纲与章节、多轮对话润色、续写改写与风格切换，并内置带严格引用的知识库问答（逐条标注文档名+片段+行号，检索无依据明确回「未查到」）；FastAPI 后端 + 静态前端，默认接 DeepSeek（MOCK_LLM=true 可离线演示）

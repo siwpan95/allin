@@ -1,6 +1,7 @@
 id: game-prototypes
 name: 游戏原型归档仓 · ③收敛合并落点
 category: game
+version: 1.0.0
 path: repos/game-prototypes
 status: archived
 manual: true

@@ -1,6 +1,7 @@
 id: music-prototypes
 name: 音乐原型归档仓 · ③收敛合并落点
 category: music
+version: 1.0.0
 path: repos/music-prototypes
 status: archived
 manual: true

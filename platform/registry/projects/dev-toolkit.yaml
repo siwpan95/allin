@@ -1,6 +1,7 @@
 id: dev-toolkit
 name: 开发工具归档仓 · ③收敛合并落点
 category: tool
+version: 1.0.0
 path: repos/dev-toolkit
 status: archived
 manual: true

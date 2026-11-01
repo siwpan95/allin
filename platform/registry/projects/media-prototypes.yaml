@@ -1,6 +1,7 @@
 id: media-prototypes
 name: 媒体原型归档仓 · ③收敛合并落点
 category: media
+version: 1.0.0
 path: repos/media-prototypes
 status: archived
 manual: true
