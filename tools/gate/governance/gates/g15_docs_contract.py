@@ -6,7 +6,7 @@
 本门禁是它的可执行落地，判据与 allin 仓的 `tools/gate/docs_index.py` **同源**（两处落点、各自自包含）。
 本仓没有 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` —— 该契约为选用制，不强制每个仓采用。
 
-判据（D1–D13）：
+判据（D1–D14）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -22,7 +22,9 @@
   D12 登记自述 —— INDEX 交接表「覆盖区间」列的自述必须与该卷自身相符（须按卷判：节号跨卷会重复）
   D13 列语义契约 —— INDEX 登记表行里未加限定词的 `§N` 归本行链接的文档（详见 SPEC-005 §3.6）
 
-  ⚠ **D9–D13 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
+  D14 书写规范 —— 裸 `§N` 默认指本文件（SPEC-005 §3.7）
+
+  ⚠ **D9–D14 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
   本门禁与仓内 `tools/gate/docs_index.py` **import 同一份** ⇒ 结构上杜绝两份判据漂移
   （`SPEC-004` 调试铁律 64 的同一教训：两份都能跑、都"看着对"，差异只有人工 diff 才看得见）。
 
@@ -324,6 +326,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d11(docs, rep)
     docs_contract.check_d12(docs, rep)
     docs_contract.check_d13(docs, root, rep)
+    docs_contract.check_d14(docs, root, files, rep)
     return rep
 
 

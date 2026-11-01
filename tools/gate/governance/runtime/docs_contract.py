@@ -480,7 +480,8 @@ def check_d12(docs: str, rep) -> None:
 
 # ---------------------------------------------------------------- D13
 #: 文档限定词：出现在 `§` 之前，说明这个 § 指向**别的**文档（不归本行链接）
-DOC_QUALIFIERS = ("交接档", "交接", "索引", "本卷", "本文件", "本文", "本节",
+#: 「该文件」「同文件」＝**前面刚提到的那个文件**（本行内可解析 ⇒ 豁免）
+DOC_QUALIFIERS = ("交接档", "交接", "索引", "本卷", "本文件", "本文", "本节", "该文件", "同文件",
                    "规范", "记忆", "计划", "审计", "快照", "专题", "事故", "决策", "外部")
 
 #: INDEX 的登记行里，「文件/卷」列的链接（整段含标签，用于排除标签里的 §）
@@ -594,6 +595,81 @@ def check_d13(docs: str, root: str, rep) -> None:
                 rep.exempt("D13-anchor-ok")
 
 
+# ---------------------------------------------------------------- D14
+#: 行内代码 / 代码块里的 `§` 是**示例**（如「引用方写 `§110`」），不是引用 ⇒ 豁免
+CODE_SPAN = re.compile(r"`[^`]*`")
+FENCE_BLOCK = re.compile(r"^```.*?^```", re.M | re.S)
+
+#: 「原 §N」= 历史对照语义（原章节列、原文件结构）⇒ 指旧结构、不指现行章节 ⇒ 豁免
+HISTORIC_MARK = re.compile(r"原\s*$")
+
+
+def _in_code(text: str, pos: int) -> bool:
+    """位置是否落在行内代码或代码块里。"""
+    for m in CODE_SPAN.finditer(text):
+        if m.start() <= pos < m.end():
+            return True
+    for m in FENCE_BLOCK.finditer(text):
+        if m.start() <= pos < m.end():
+            return True
+    return False
+
+
+def check_d14(docs: str, root: str, files: list[str], rep) -> None:
+    """**书写规范**：裸 `§N`（无目标、无限定词）默认指**本文件**的节 N（SPEC-005 §3.7）。
+
+    这条规范让 132 处本就指本文件的引用**从"判不了"变成"可校验"**；
+    而指别处的引用必须写全目标（`X.md §N` / `SPEC-XXX §N` / `索引 §N` / `交接 §N` / `本卷 §N`）。
+
+    豁免（刻意保守，宁可漏也不错报）：
+      - **行内代码 / 代码块里的 `§`** ⇒ 那是示例，不是引用；
+      - **表格行** ⇒ INDEX 由 D13 的列语义契约判；其它文档的表格**无列语义契约** ⇒ 跳过；
+      - **「原 §N」** ⇒ 历史对照语义（指旧结构），不指现行章节；
+      - D9 / D13 已判过的引用。
+    """
+    idx_path = os.path.join(docs, "INDEX.md")
+    for f in files:
+        if not (f.startswith(D9_SRC_PREFIXES) or f in D9_SRC_ROOT_FILES):
+            continue
+        full = os.path.join(docs, f.replace("/", os.sep))
+        text = read_text(full)
+        self_toks = numeric_token_set(full, with_list_items=True)
+        offset = 0
+        for ln, line in enumerate(text.splitlines(keepends=True), 1):
+            if REF_FORMAT_FIELD.search(line):
+                offset += len(line)
+                continue
+            is_row = line.lstrip().startswith("|")
+            tgts = collect_targets(docs, root, f, line)
+            for rm in SECTION_REF.finditer(line):
+                if _in_code(text, offset + rm.start()):
+                    rep.exempt("D14-in-code")
+                    continue
+                if adjacent_target(tgts, line, rm.start()):
+                    rep.exempt("D14-already-by-D9")
+                    continue
+                before = line[max(0, rm.start() - 12):rm.start()]
+                if any(q in before for q in DOC_QUALIFIERS):
+                    rep.exempt("D14-qualified")
+                    continue
+                if HISTORIC_MARK.search(before):
+                    rep.exempt("D14-historic")
+                    continue
+                if is_row:
+                    rep.exempt("D14-table-row")
+                    continue
+                key = tok_key(rm.group(1))
+                if key is None:
+                    rep.exempt("D14-not-numeric")
+                    continue
+                if key not in self_toks:
+                    rep.block("D14", "%s:%d 的裸 §%s 按书写规范应指本文件的节，但本文件没有这一节"
+                              % (f, ln, rm.group(1)))
+                else:
+                    rep.exempt("D14-self-ok")
+            offset += len(line)
+
+
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
     """造一个迷你枢纽（只含新判据所需的结构）。
@@ -614,6 +690,7 @@ def _fixture(kind: str, base: str) -> str:
     broken_index_range = (kind == "index-range-drift")
     broken_row_contract = (kind == "row-contract-dangling")
     broken_row_id = (kind == "row-id-dangling")
+    broken_bare = (kind == "bare-ref-dangling")
 
     # 被引的索引（中文别名「索引」指向它；**布局照真实仓**：索引在 事实源/ 下、机器文件在其 机器/ 子目录）
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
@@ -631,10 +708,12 @@ def _fixture(kind: str, base: str) -> str:
         refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §99"
     elif broken_anchor:
         refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §99；见 索引 §2"
+    elif broken_bare:
+        refs = "见 §99；见 `SPEC-005` §5；见 `机器分区索引.md` §1"
     else:
-        refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §2"
+        refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §2；另见 §2"
     with io.open(os.path.join(docs, "事实源", "观测.md"), "w", encoding="utf-8") as f:
-        f.write("# 观测\n\n## 1. 记录\n\n%s\n" % refs)
+        f.write("# 观测\n\n## 1. 记录\n\n## 2. 口径\n\n%s\n" % refs)
 
     hi = "2026-10-16" if broken_range else "2026-10-31"
     with io.open(os.path.join(docs, "记录", "交接", "2026-10.md"), "w", encoding="utf-8") as f:
@@ -679,7 +758,7 @@ def selfcheck_extra() -> dict[str, int]:
     caught = clean = misreports = 0
     for kind in ("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
                  "range-too-narrow", "count-line-drift", "index-range-drift",
-                 "row-contract-dangling", "row-id-dangling"):
+                 "row-contract-dangling", "row-id-dangling", "bare-ref-dangling"):
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
@@ -689,6 +768,7 @@ def selfcheck_extra() -> dict[str, int]:
             check_d11(docs, rep)
             check_d12(docs, rep)
             check_d13(docs, os.path.dirname(docs), rep)
+            check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
             if rep.blocking:
                 caught += 1
             else:
@@ -705,6 +785,7 @@ def selfcheck_extra() -> dict[str, int]:
         check_d11(docs, rep)
         check_d12(docs, rep)
         check_d13(docs, os.path.dirname(docs), rep)
+        check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))

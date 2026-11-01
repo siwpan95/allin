@@ -9,7 +9,7 @@
 
 ## 统一引擎（2026-08-23 起改名 alloy）
 > ⚠ **2026-09-22 现盘核对：包名已由 alloy 再次改名 `allin_engine`** —— 提交 `72c1d63`（2026-09-19，`refactor!: 引擎改名 alloy -> allin_engine`）；本机实测为 `/repos/an-engine/allin_engine/`（根层 `core/ world/ systems/ trpg/ …` 为双写镜像），入口现为 **`from allin_engine import GameEngine`**，PyPI 包名 **allin-engine 1.0.0**。
-> **本段下方所有 `alloy.*`、`from alloy import`、`pip install -e …\alloy`、`python -m alloy …` 的写法，一律按 `allin_engine` 读**（内联副本 `dwarf-scrolls`/`sandbox` 亦已是 `allin_engine/`）。详见《会话交接_2026-08-27.md》§六十二与《文档与现盘核对报告_2026-09-22.md》。
+> **本段下方所有 `alloy.*`、`from alloy import`、`pip install -e …\alloy`、`python -m alloy …` 的写法，一律按 `allin_engine` 读**（内联副本 `dwarf-scrolls`/`sandbox` 亦已是 `allin_engine/`）。详见 [记录/交接/2026-09.md](../记录/交接/2026-09.md) §六十二与 [记录/审计/文档与现盘核对报告_2026-09-22.md](../记录/审计/文档与现盘核对报告_2026-09-22.md)。
 - 本体路径: /repos/an-engine/（旧名 allin_engine → alloy；过渡 shim 已归档 /archive/allin-engine-shim-2026-08-27；远程仓 siwpan/an-engine）
 - 入口: `from alloy import GameEngine`
 - 新项目应优先复用 alloy 的模块, 而非从其他项目复制代码
