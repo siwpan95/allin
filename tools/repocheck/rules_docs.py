@@ -213,7 +213,8 @@ def _readme_license_section(ctx: "ProjectContext") -> str | None:
     text = ctx.text(rel)
     if text is None:
         return None
-    match = re.search(r"^#{1,6}\s*(?:license|licence|许可|协议)\b.*$", text, re.I | re.M)
+    # 2026-11-01 @SIWPAN：允许编号章节标题（如「## 11. 许可」）——上游 website README 实证踩中
+    match = re.search(r"^#{1,6}\s*(?:\d+[.、)．]*\s*)?(?:license|licence|许可|协议)\b.*$", text, re.I | re.M)
     if not match:
         return None
     segment = text[match.end(): match.end() + 500]
