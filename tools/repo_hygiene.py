@@ -774,10 +774,19 @@ def load_exemptions(path):
 
 
 def is_exempted(finding, active):
-    """命中是否落在豁免表内（仓路径与检查项都要对上，path 支持 `*` 前缀）。"""
+    """命中是否落在豁免表内（仓与检查项都要对上，path 支持 `*` 前缀）。
+
+    **仓的双轨匹配**（2026-11-01 修）：绝对路径全等 **或** 仓名（basename）相等。
+    原实现只认绝对路径全等；而豁免表为避免写死盘符（SPEC-001 铁律 5）**一律写仓名**
+    （`deepseek-harness` / `3dworld`）⇒ 两条豁免**从未生效** —— 写了、看着在、
+    实则恒不命中，是典型的静默失效。双轨后：写仓名跨机可用，写绝对路径仍可精确锁定。
+    """
     repo = os.path.normcase(finding.repo.rstrip("/\\"))
+    base = os.path.normcase(os.path.basename(repo))
     for chk, ex_repo, pth in active:
-        if finding.check != chk or repo != ex_repo:
+        if finding.check != chk:
+            continue
+        if repo != ex_repo and base != ex_repo:
             continue
         if pth.endswith("*"):
             if finding.path.startswith(pth[:-1]):
@@ -1110,6 +1119,37 @@ def selfcheck():
         print("  豁免表缺理由不生效:   {}  [{}]".format("✔" if not act2 and inv2 and left2 else "✘",
                                                     "%d生效/%d剩余/%d无效" % (len(act2), len(left2), len(inv2))))
         ok &= not act2 and bool(inv2) and bool(left2)
+
+        # 仓名写法（2026-11-01 补）：豁免表为免写死盘符（铁律 5）只写**仓名**，
+        # 而原 `is_exempted` 只认绝对路径全等 ⇒ 这类豁免全部静默失效
+        # （既有 `deepseek-harness` / `3dworld` 两条即如此，从未命中过）。
+        # 本用例故意把 fixture 放在**深层嵌套**目录中再按仓名豁免，证明路径形状无关。
+        r3 = _make_fixture(tmp, "nested/deeper/exempt-byname", _ex_fixture)
+        res3 = [x for x in scan_repo(r3, {}) if x.check == "H2"]
+        exf3 = os.path.join(tmp, "ex_byname.csv")
+        with io.open(exf3, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["check", "repo", "path", "reason", "recorded_at"])
+            w.writerow(["H2", "exempt-byname", "vendor/*", "仓名写法：不写死盘符", "2026-11-01"])
+        act3, inv3 = load_exemptions(exf3)
+        left3 = [x for x in res3 if not is_exempted(x, act3)]
+        ok3 = len(act3) == 1 and res3 and not left3 and not inv3
+        print("  豁免表写仓名也生效:   {}  [{}]".format("✔" if ok3 else "✘",
+                                                   "%d生效/%d原/%d剩余" % (len(act3), len(res3), len(left3))))
+        ok &= ok3
+
+        # 反例：**别的仓名不得豁免**（防止 basename 匹配把别家仓的同类违规一并抹掉）。
+        exf4 = os.path.join(tmp, "ex_wrongname.csv")
+        with io.open(exf4, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["check", "repo", "path", "reason", "recorded_at"])
+            w.writerow(["H2", "totally-other-repo", "vendor/*", "别的仓名不该命中", "2026-11-01"])
+        act4, _inv4 = load_exemptions(exf4)
+        left4 = [x for x in res3 if not is_exempted(x, act4)]
+        ok4 = len(act4) == 1 and len(left4) == len(res3)
+        print("  别的仓名不豁免:       {}  [{}]".format("✔" if ok4 else "✘",
+                                                  "%d生效/%d剩余" % (len(act4), len(left4))))
+        ok &= ok4
 
         # H5 反例十（2026-09-28，DSH 实证）：**未跟踪且未被忽略**的文件里若有令牌，
         # `--worktree` 必须抓到它 —— 那是最危险的窗口（一次 git add -A 就入库）。
