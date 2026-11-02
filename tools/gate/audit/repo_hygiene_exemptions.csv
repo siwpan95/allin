@@ -1,5 +1,4 @@
 check,repo,path,reason,recorded_at
-H2,deepseek-harness,vendor/*,有意 vendor，不是「把第三方源码倒进仓」。vendor/README.md 载明：这是 Cordis 框架及其基础库的**源码 vendor 副本**，刻意不用 npm 依赖，以便 harness 完整拥有框架层（可审计 / 可打补丁 / 可钉版本）；并带 manifest 表逐包记录上游 repo URL 与精确 commit（如 cosmokit 1.8.1 ← https://github.com/deepseek-harness/cosmokit @ 16f6fc058ade66e8ac5da0033d35a8d0f279f544），各包保留上游 MIT LICENSE。2026-09-28 核实：被跟踪 76 个文件全为 .ts/.json/.md 源码（构建物 .map/.tsbuildinfo 未被跟踪）；该仓 .gitignore 无 vendor 规则（本就有意跟踪）。⇒ 若按 H2 把它 gitignore 并 git rm --cached，等于拆掉该项目「完全拥有框架层」的核心设计。,2026-09-28
 H2,3dworld,vendor/*,有意 vendor，与 deepseek-harness 同构：vendor/cordis 是 cordis-py（github.com/geohotstan/cordis-py，MIT）的**源码 vendor 副本**，用于「引擎内核不依赖网络安装」——world3d/_cordis_locate.py 先试已安装的 cordis、再退回 vendor/cordis/src。溯源齐备：vendor/cordis/VENDOR.md 载明来源/许可/借用范围，vendor/cordis.lock 把 commit 钉死为 a3d0c171571c6bbb465d04c06eab2de53d270814（短 a3d0c17，package 4.0.0，下载 2026-10-09）并给出 zip SHA-256 b216a2b8…2a31616 与四条复核命令；上游 MIT LICENSE 随副本保留。2026-10-14 核实：被跟踪 71 个文件（含 cordis.lock）全为 .py/.toml/.md/.yml 源码，零构建物；该仓 .gitignore 无 vendor 规则（本就有意跟踪）。⇒ 若按 H2 gitignore 并 git rm --cached，vendor 回退路径失效，无网/无 pip 环境下 cordis 接线不可复现。,2026-10-14
 H5,private-radio-stations,apps/video/src/live/defunct/hongle.py,有意豁免 —— 2026-11-01 四项实证裁决：① 该组账号不是本机持有者的资产：本文件 vendored 自上游 wbt5/real-url（GPL-2.0，见同目录 README-vendor.md 与 LICENSE），账号是上游仓库自带的公开样例；用户 2026-11-01 确认系网上公开信息且非本人手机号。② 运行时零引用：全仓 grep hongle|HongLe 零命中；resolve.py 仅把 live/ 自身插入 sys.path 而 defunct/ 无 __init__.py（非包）⇒ importlib.import_module 加载不到它；platforms.json 47 条不含 hongle。③ 服务能力已死：2026-08-29 归档提交 4058265 载明该平台的 service API 已失效（用户实测确认）。④ 刻意不改文件而非删改为占位：它是 GPL-2.0 vendor 副本，改动会偏离上游并增加后续同步成本；删除对运行时同样零影响但会丢掉「原生实现+废弃判词」这份历史资产（虽可 git show 取回，保留风险更低）。⇒ 在风险面为零的前提下，与其删改上游代码，不如把裁决写成带理由的显式豁免。,2026-11-01
 H5,players-unified,host/tests/parity.mjs,假 positives 豁免 —— 2026-11-01 核实：命中值本身是**测试夹具**（TOKEN 常量 = parity-test-token-0123456789），名字与值都自称夹具；该用例需要一段固定串做对等性比对，真实凭据不会自称 test-token。⇒ 后续根治方向（不在本判例内改）：把 test-token / <名>-test-<名> 形态并入 repo_hygiene.py 的 VALUE_STOPWORDS「自证是夹具」词族（现有 fixture/dummy/sample/fake/synthetic 等），从判据层消除这类形态，并补一条反向自检。未采纳「改 this value」的处置：那会改整个 parity 用例的语义，超出卫生门禁的职责。,2026-11-01
@@ -13,10 +12,7 @@ H4,game-prototypes,mahjong/*,游戏字体 SimHei×2，游戏必需资源。,2026
 H4,game-prototypes,project-root/*,字体 NotoSansSC Bold/Regular（开源），项目必需资源。,2026-11-01
 H4,game-prototypes,sandbox/*,字体 BCanMouHui 手写体，项目必需资源。,2026-11-01
 H4,game-prototypes,stay/*,字体 STKAITI，项目必需资源。,2026-11-01
-H4,game-prototypes,cellular_automaton/*,字体 dinglieciwei，项目必需资源。,2026-11-01
 H4,game-prototypes,lonely-desert-road/*,音频 music_drums.wav + docs/demo_3d.mp4 演示视频：游戏必需素材与展示件，无重获取源。,2026-11-01
-H4,game-prototypes,ling-train/*,火车进站电影史素材与渲染件（电影史参考影像+渲染输出）：项目核心素材，无重获取源。,2026-11-01
-H4,game-prototypes,ncmturnmp3/*,.ncm 加密音乐素材（转换器测试输入），随归档副本保全。,2026-11-01
 H4,ling-train,*,音视频素材与渲染件：火车进站电影史真实影像（参考素材）+ 渲染输出。素材无重获取源；渲染件为项目成果物。⇒ 全部有意跟踪。,2026-11-01
 H4,lonely-desert-road,*,音频 music_drums.wav（游戏必需）+ docs/demo_3d.mp4（演示视频）：无重获取源，有意跟踪。,2026-11-01
 H4,mahjong,*,字体 SimHei×2：麻将游戏必需资源（渲染牌面），离线可玩是设计目标。,2026-11-01
@@ -25,11 +21,11 @@ H4,sandbox,*,字体 BCanMouHui 手写体：项目必需资源。,2026-11-01
 H4,stay,*,字体 STKAITI：项目必需资源。,2026-11-01
 H4,cellular_automaton,*,字体 dinglieciwei：项目必需资源。,2026-11-01
 H4,Idle,*,字体 SourceHanSansSC-Heavy：游戏必需资源。,2026-11-01
-H4,novel,*,字体 gui/static/font.ttf：阅读器必需资源。,2026-11-01
+H4,novel,gui/static/font.ttf,字体 gui/static/font.ttf：阅读器必需资源。,2026-11-01
 H4,moba_battle_platform,*,字体 HanChanGaoHeiTi（otf+原始 zip）与 simhei/simkai：游戏 UI 必需资源，离线部署是设计目标。,2026-11-01
-H4,hushi_twrj,*,阅读器.html（7.5MB）：单文件交付物（数据内嵌于 html），是项目本体的发布形态而非入库垃圾。,2026-11-01
+H4,hushi_twrj,阅读器.html,阅读器.html（7.5MB）：单文件交付物（数据内嵌于 html），是项目本体的发布形态而非入库垃圾。,2026-11-01
 H4,musickit,woodwind/*,woodwind/manifest.json（5.8MB）：XAM 采样包 ingest 清单（管线数据，与采样资产配套），程序化音乐流水线的必需数据。,2026-11-01
-H4,3dworld-demos,*,assets/kkrieger_ost_150s.wav：kkrieger 游戏音乐资产，demo 不可分割素材，无重获取源。,2026-11-01
+H4,3dworld-demos,assets/kkrieger_ost_150s.wav,assets/kkrieger_ost_150s.wav：kkrieger 游戏音乐资产，demo 不可分割素材，无重获取源。,2026-11-01
 H4,under-withered-limbs,*,游戏音频（mansion_explore/memory_ambience）与字体（msyh/msyhbd）：游戏必需资源，离线可玩是设计目标。,2026-11-01
 H2,board-replay,src/vendor/weiqi_lab/*,有意 vendor —— weiqi_lab 的 scoring/referee 工具模块副本，保持本项目零外部依赖（与 allin vendor 判例同构）。,2026-11-01
 H2,dict-scene-engine,vendor/plugin-hmr/*,有意 vendor —— plugin-hmr 单文件副本，避免为单文件引入 npm 依赖安装步骤（cordis 生态）。,2026-11-01

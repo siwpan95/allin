@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -42,18 +43,72 @@ BLOCK = re.compile(r"^\s*BLOCK\s+(?P<path>.+?):(?P<line>\d+):\s+(?P<kind>[^:]+):
 SARIF_VERSION = "2.1.0"
 SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
 
+# 与 governance/run.ts 的 interpreter 契约一致：门禁套件只用**同一个**解释器跑，
+# 否则 SARIF 导出会和 `check:governance` 得出两种结论（例如本机 python 缺 PyYAML
+# 时 g18 会在导出里报假红，而门禁跑本体却是绿的 —— 同一笔提交两个判词）。
+MINIMUM_PYTHON = (3, 9)
+
+
+def _probe_python(command: str, prefix: list[str]) -> list[str] | None:
+    """Return [command, *prefix] when it is a usable Python >= MINIMUM_PYTHON, else None.
+
+    Mirrors governance/run.ts probe(): the first interpreter that satisfies the
+    version floor wins, so the pinned venv (which carries PyYAML for g18) is
+    preferred over a stripped system python.
+    """
+    try:
+        result = subprocess.run(
+            [command, *prefix, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+    except (OSError, ValueError):
+        return None
+    if result.returncode != 0:
+        return None
+    parts = (result.stdout or "").strip().split(".")
+    try:
+        major, minor = int(parts[0]), int(parts[1])
+    except (ValueError, IndexError):
+        return None
+    if major > MINIMUM_PYTHON[0] or (major == MINIMUM_PYTHON[0] and minor >= MINIMUM_PYTHON[1]):
+        return [command, *prefix]
+    return None
+
+
+def discover_python() -> list[str]:
+    """Resolve the interpreter for the gates, identical to governance/run.ts
+    discoverInterpreter().
+
+    The order is DSH_GOVERNANCE_PYTHON -> venv -> python3 -> python -> py -3,
+    then the interpreter already running this script as a last resort. This keeps
+    the SARIF export and the `check:governance` dispatcher on one source of truth.
+    """
+    override = os.environ.get("DSH_GOVERNANCE_PYTHON", "").strip()
+    if override:
+        return [override]
+    venv = ROOT / ".venv"
+    for cand in (venv / "Scripts" / "python.exe", venv / "bin" / "python"):
+        if cand.is_file():
+            return [str(cand)]
+    for command, prefix in (("python3", []), ("python", []), ("py", ["-3"])):
+        found = _probe_python(command, prefix)
+        if found is not None:
+            return found
+    return [sys.executable]
+
 
 def gates() -> list[dict]:
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
     return list(data.get("gates", []))
 
 
-def run_gate(gate: dict, python: str, include_frozen: bool) -> tuple[list[dict], str | None]:
-    """(results, execution error) for one gate."""
+def run_gate(gate: dict, python_cmd: list[str], include_frozen: bool) -> tuple[list[dict], str | None]:
+    """(results, execution error) for one gate. `python_cmd` is the interpreter
+    resolved by discover_python() (or an explicit --python), as an argv list."""
     script = GATE_HOME / gate["script"]
     if not script.is_file():
         return [], f"{gate['id']}: script missing at {gate['script']}"
-    args = [python, str(script)]
+    args = [*python_cmd, str(script)]
     if include_frozen:
         args += ["--no-baseline", "--list-all"]
     completed = subprocess.run(
@@ -109,7 +164,8 @@ def build(results: list[dict], notifications: list[dict], rules: list[dict]) -> 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="export governance findings as SARIF 2.1.0")
     parser.add_argument("--out", default=str(OUT), help=f"output path (default: {OUT})")
-    parser.add_argument("--python", default=sys.executable, help="interpreter that runs the gates")
+    parser.add_argument("--python", default=None,
+                        help="interpreter that runs the gates (default: mirror governance/run.ts discovery)")
     parser.add_argument("--include-frozen", action="store_true",
                         help="also report baseline-frozen findings (default: new findings only)")
     parser.add_argument("--strict", action="store_true", help="exit 1 when findings exist")
@@ -121,8 +177,9 @@ def main(argv: list[str] | None = None) -> int:
     notifications: list[dict] = []
     rules: list[dict] = []
     per_gate: dict[str, int] = {}
+    python_cmd = [args.python] if args.python else discover_python()
     for gate in registry:
-        found, error = run_gate(gate, args.python, args.include_frozen)
+        found, error = run_gate(gate, python_cmd, args.include_frozen)
         rules.append({
             "id": gate["id"],
             "shortDescription": {"text": gate.get("title", gate["id"])},

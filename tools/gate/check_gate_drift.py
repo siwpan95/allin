@@ -44,6 +44,12 @@ TRACKED = (
     "check_gate_drift.py",
 )
 
+#: repo_hygiene.py 的**仓内**实体在 `tools/repo_hygiene.py`（见 docs/规范/README.md §双落点），
+#: 不在 `tools/gate/` 下；其工作副本仍在 `tools/gate/repo_hygiene.py`。两侧相对 gate 目录
+#: 的偏移不同，故仓内落点要上溯一层。不处理这个偏移，TRACKED 里的 repo_hygiene.py
+#: 在仓内落点永远找不到 ⇒ 静默漏检（两边都不存在时被 `compare` 跳过）。
+REPO_REL = {"repo_hygiene.py": "../repo_hygiene.py"}
+
 #: 默认落点：脚本自身所在目录为工作副本，仓内落点按「约定父目录」推导 ——
 #: **不写死盘符**（`铁律 5`）：仓内落点 = 环境变量 `ALLIN_ROOT`，否则 = 工作副本上两级的 `allin`。
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -105,7 +111,7 @@ def compare(repo_side, work_side, verbose=True):
         return [], [], [], 0, True
     drifted, only_repo, only_work, compared = [], [], [], 0
     for name in TRACKED:
-        a = os.path.join(repo_side, name)
+        a = os.path.join(repo_side, REPO_REL.get(name, name))
         b = os.path.join(work_side, name)
         ea, eb = os.path.isfile(a), os.path.isfile(b)
         if ea and not eb:

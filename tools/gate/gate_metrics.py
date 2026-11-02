@@ -89,7 +89,7 @@ def count_exceptions() -> dict[str, int]:
         per_source[path.stem] = len(keys)
     rows = [ln.strip() for ln in read_lines(EXEMPTIONS)
             if ln.strip() and not ln.strip().startswith("#")]
-    if rows and rows[0].lower().startswith("rule"):
+    if rows and rows[0].lower().startswith(("rule", "check")):
         rows = rows[1:]
     per_source["repo_hygiene_exemptions.csv"] = len(rows)
     return per_source
