@@ -17,7 +17,10 @@ function securityHeaders(req, res, next) {
     [
       "default-src 'self'",
       "script-src 'self'",
-      "style-src 'self'",
+      // 2026-11-02 实测（Chromium）：全站 10 个模板共 120 处内联 style="" 被本策略拦截，
+      // 管理台布局被打断。样式注入的 XSS 风险远低于脚本（script-src 仍严格 'self'），
+      // 故 style-src 放行内联；模板侧后续如收敛为 class，可撤掉 'unsafe-inline'。
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
       "font-src 'self' data:",
       "form-action 'self'",
