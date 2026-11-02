@@ -167,8 +167,9 @@ allin-governance repocheck <目录> --fail-on error   # 离线仓库体检
 直接 `main.py .` 会把它们误当项目扫描。**自检只打真实子件**，三条命令：
 
 ```bash
-# A) 平台子件（排除中间目录 tools/ vendor/ preset/ packages/）
-python tools/repocheck/main.py .     --exclude tools,vendor,preset,packages,scripts --skip-rules 1,7 --fail-on error
+# A) 平台子件（排除中间目录 tools/ vendor/ preset/ packages/ scripts/ website/ ——
+#   website/ 与本仓其它中间目录同类，其健康度由独立的 website-smoke CI job 兜底，不靠 repocheck 判）
+python tools/repocheck/main.py .     --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error
 # B) 体检器自身（排除中间目录 gate/）
 python tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
 # C) 可安装包本身（packages/ 里的单个包；排除 src/ 与 tests/ 两个中间层）

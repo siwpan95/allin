@@ -111,6 +111,38 @@ run() {
   fi
 }
 
+# --- 发布区卫生门禁：发布区缺席时显式降级为 skip（不记 failed）---
+# 发布区（同级 repos/ 或 $PROJECTS_ROOT）在本仓 CI 里不存在，属「没有可扫的仓」，
+# 不是「卫生不合格」。若按原样跑 repo_hygiene.py --all，它会因找不到任何 git 仓而以
+# env-error(3) 退出，把整批门禁拖红 —— 这正是此前 CI 连续红的根因之一（B1）。
+# 本地有发布区时行为与之前完全一致；发布区缺席/为空时记 [SKIP]，不计入失败。
+_run_repo_hygiene() {
+  local repos_root="${PROJECTS_ROOT:-}"
+  if [ -z "$repos_root" ] && [ -d "$ROOT/repos" ]; then
+    repos_root="$ROOT/repos"
+  fi
+  if [ -z "$repos_root" ] && [ -d "${ROOT%/*}/repos" ]; then
+    repos_root="${ROOT%/*}/repos"
+  fi
+  if [ -z "$repos_root" ] || [ ! -d "$repos_root" ]; then
+    echo "==> $PY tools/repo_hygiene.py --all"
+    echo "    [SKIP] 未检测到发布区（无同级 repos/ 且未设 \$PROJECTS_ROOT）：无可扫仓，非卫生不合格"
+    log_run "repo_hygiene:skip(no-publish-area)" 0 0
+    return 0
+  fi
+  local has_repo=0
+  for d in "$repos_root"/*/; do
+    [ -d "${d}.git" ] && { has_repo=1; break; }
+  done
+  if [ "$has_repo" -eq 0 ]; then
+    echo "==> $PY tools/repo_hygiene.py --all"
+    echo "    [SKIP] 发布区 $repos_root 下没有任何 git 仓：无可扫对象，非卫生不合格"
+    log_run "repo_hygiene:skip(empty-publish-area)" 0 0
+    return 0
+  fi
+  run "$PY" tools/repo_hygiene.py --all
+}
+
 echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
@@ -122,10 +154,10 @@ run "$PY" tools/gate/agent_regression.py
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
 run "$PY" preset/allin/refresh-gov-block.py --check
-run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts --skip-rules 1,7 --fail-on error
-# packages/ 是 monorepo 的中间目录（与 tools/ 同类），故上一行排除它；
-# 它内部的单个包按「子件」口径单独体检 —— 与 README §本仓自检口径 B) 同一做法：
-# 排除中间层（src/tests）、跳过 1/2/4/5 四条「一个独立仓才该有」的规则。
+run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error
+# packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
+# packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
+# 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。
 # packages/ 当前只有一个包；新增包时要在这里补一行（或改成循环）。
 if [ -d packages/allin-governance ]; then
   run "$PY" tools/repocheck/main.py packages/allin-governance \
@@ -143,7 +175,12 @@ run "$PY" tools/gate/check_ps1_bom.py
 # ③ 仓库卫生 H1-H8：扫发布区全部仓的 git 跟踪面（136 仓）。
 #    基线棘轮**只单向收紧**：已评估的存量记在 tools/gate/audit/hygiene_baseline.csv，
 #    明细台账见同目录 hygiene_debt_2026-11-01.json —— 刷新基线不等于债务消失，台账才是待办清单。
-run "$PY" tools/repo_hygiene.py --all
+#    发布区缺席时由 _run_repo_hygiene 降级为 skip（见其注释），避免把整批门禁拖红。
+_run_repo_hygiene
+# ④ 门禁双落点漂移自检：本工具把"两份必须一致"变成退出码（F1 收口动作）。
+#    实跑比对依赖外部工作副本（/tools/gate），CI 上不存在 ⇒ SKIPPED（不是通过）；
+#    故 CI 跑 --selfcheck 做工具自身逻辑回归（EOL 归一化 / 真漂移判红 / 缺对端 SKIP / 同目录守卫）。
+run "$PY" tools/gate/check_gate_drift.py --selfcheck
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"

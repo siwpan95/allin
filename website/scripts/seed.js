@@ -264,8 +264,12 @@ function main() {
   console.log(`  配图数量    ${imageCount}`);
   console.log(`  账号        ${admin.email}（admin） / ${member.email}（member）`);
   console.log(`  账号文件    ${path.relative(config.root, accountsFile)}（已被 .gitignore 忽略）`);
-  if (!admin.reused) console.log(`  管理员口令  ${admin.password}`);
-  if (!member.reused) console.log(`  演示口令    ${member.password}`);
+  // 口令默认不打印到控制台（避免共享终端 / CI 日志泄漏）；需要时可设 SEED_SHOW_PASSWORDS=1
+  if (!admin.reused && process.env.SEED_SHOW_PASSWORDS) console.log(`  管理员口令  ${admin.password}`);
+  if (!member.reused && process.env.SEED_SHOW_PASSWORDS) console.log(`  演示口令    ${member.password}`);
+  if ((!admin.reused || !member.reused) && !process.env.SEED_SHOW_PASSWORDS) {
+    console.log(`  账号口令    见 ${path.relative(config.root, accountsFile)}（权限 0600，默认不打印明文；设 SEED_SHOW_PASSWORDS=1 可打印）`);
+  }
   console.log('\n  下一步：npm start → 打开 ' + config.baseUrl + '\n');
   db.close();
 }

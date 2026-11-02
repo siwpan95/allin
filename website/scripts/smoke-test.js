@@ -16,6 +16,7 @@
  */
 
 const { spawn } = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -122,7 +123,8 @@ async function main() {
 
   // 4) 注册 → 会话保持 → 控制台
   const email = `smoke_${Date.now()}@example.com`;
-  const password = 'SmokeTest2026';
+  // 每次运行随机生成口令（保证同时含字母与数字，满足校验策略），不在源码里留固定凭据
+  const password = `${crypto.randomBytes(10).toString('base64url').replace(/[^A-Za-z0-9]/g, '').slice(0, 10)}${crypto.randomInt(0, 10)}`;
   const reg = await request('/register', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },

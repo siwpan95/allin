@@ -102,7 +102,10 @@ def count_frozen(root: Path) -> dict[str, int]:
                      if ln.strip() and not ln.strip().startswith("#")]
         except OSError:
             continue
-        if label.endswith(".csv") and lines and lines[0].lower().startswith("rule"):
+        # 剥表头：豁免表首行是列名（check/rule 起头），不是数据行。
+        # 旧判断写死 startswith("rule")，但本仓 CSV 表头是 "check,repo,..."，
+        # 于是表头被当成一条豁免计入「燃尽口径」—— 计数整体 +1（off-by-one）。
+        if label.endswith(".csv") and lines and lines[0].lower().startswith(("rule", "check")):
             lines = lines[1:]
         if lines:
             counts[label] = len(lines)
@@ -170,6 +173,13 @@ def run(root: str, args: argparse.Namespace) -> Report:
                          f"必须复核后关闭或续期 —— 过期即视为未复核的接受风险")
         else:
             report.exempt(f"open-until-{expires}")
+            # liveness 判据：open 且过期日过远（>18 个月）≈ 永久豁免，
+            # 失去「到期复核」的意义，记一条 note 逼出复核，不阻断
+            # （g18 不在首次运行就红；本仓既有条目 expire 均在 ~3 个月内，不会触发）。
+            if (when - today).days > 548:
+                report.note(
+                    f"liveness: {identifier} 过期日 {expires} 过远（>18 个月），"
+                    f"建议复核确认该接受风险仍有效，避免沦为永久豁免")
 
     frozen = count_frozen(base)
     total_frozen = sum(frozen.values())

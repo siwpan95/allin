@@ -97,3 +97,9 @@ tools/reposcan/output/
 #   对照：`moba_battle_platform` / `worldbuilder` 可以整目录忽略，它们的 `.workbuddy/` 里没有入库物。
 #   memory/ 则是 WorkBuddy 每次会话的运行记忆（本机私有，无治理意义），按产物处理。
 .workbuddy/memory/
+
+# ===== 个人机器硬件导出件（2026-11-02，P1-9）=====
+# 腾讯电脑管家导出的本机硬件报告：虽已脱敏唯一标识（序列号/MAC/UUID → <已脱敏>），
+# 但属个人隐私、且会随克隆扩散，故移出版本库（留在工作树本地，由本机事实源文档引用）。
+siwpan新机电脑硬件信息 - 腾讯电脑管家检测结果.txt
+siwpan旧机电脑硬件信息 - 腾讯电脑管家检测结果.txt

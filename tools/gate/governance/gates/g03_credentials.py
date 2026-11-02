@@ -26,6 +26,7 @@ Exit codes follow the governance vocabulary: 0 clean, 1 blocking finding,
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import re
 import subprocess
@@ -42,7 +43,8 @@ TITLE = "governance: no credentials in tracked content, git config, or machine-l
 
 #: Broad prefilter handed to `git grep --cached`; precision happens in Python.
 PREFILTER = (r"sk-|ghp_|github_pat_|glpat-|xox[baprs]-|AKIA|AIza|BEGIN [A-Z ]*PRIVATE KEY|"
-             r"password|passwd|secret|token|api[_-]?key|apikey|Authorization|https?://")
+             r"password|passwd|secret|token|api[_-]?key|apikey|Authorization|https?://|"
+             r"[0-9a-fA-F]{30,}")
 
 #: Precise patterns, most specific first. Each entry is (category, compiled pattern).
 PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -54,8 +56,14 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("url-userinfo", re.compile(r"\b[a-z][a-z0-9+.\-]*://[^/\s:@]{1,64}:[^/\s@]{8,}@")),
     ("bearer-header", re.compile(r"(?i)authorization\s*[:=]\s*[\"']?bearer\s+[A-Za-z0-9._\-]{20,}")),
     ("assignment", re.compile(r"(?i)(?<![/&?])\b(access[_-]?token|api[_-]?key|apikey|auth[_-]?token|"
-                              r"client[_-]?secret|password|passwd|secret|token)\b\s*[:=]\s*"
-                              r"[\"']?([A-Za-z0-9_\-./+]{16,})")),
+                              r"client[_-]?secret|password|passwd|secret|token|gitee[_-]?token)\b"
+                              r"\s*[:=]\s*[\"']?([A-Za-z0-9_\-./+]{16,})")),
+    # Bare high-entropy hex run (e.g. a Gitee PAT committed as a raw hex string with
+    # no surrounding key). Precision (entropy + length band) is applied in `scan` via
+    # `looks_like_secret_hex`; this only decides *which* lines reach it. Hex that sits
+    # inside a URL (preceded/followed by ':', '/' or '@') is excluded here so the
+    # url-userinfo branch -- which already knows about sample hosts -- keeps authority.
+    ("hex-secret", re.compile(r"(?<![0-9a-fA-F:/@])(?:[0-9a-fA-F]{30,63})(?![0-9a-fA-F:/@])")),  # gov-paths: allow —— 字符类里的 F:/ 被 g01 WIN_PATH 误判为 windows 路径，非真路径
 )
 
 #: A value that is a documented sample rather than a secret.
@@ -70,6 +78,12 @@ PLACEHOLDER_VALUE = re.compile(
 SAMPLE_MARKERS = ("test", "example", "dummy", "fake", "sample", "mock", "synthetic", "placeholder",
                   "not-real", "not_real", "notreal", "redacted", "changeme", "xxxx", "e2e",
                   "localhost", "signed-out", "for-the-renderer", "do-not-log", "do_not_log")
+
+#: The machine-local scan omits the bare-hex detector. Stray 30+ hex runs are
+#: ubiquitous in ordinary machine files (logs, caches, app data, build artifacts)
+#: and would drown the real signal; the tracked-content and .git/config scans keep
+#: the full pattern set where the Gitee-PAT threat actually lives.
+MACHINE_PATTERNS = tuple((cat, pat) for cat, pat in PATTERNS if cat != "hex-secret")
 
 #: Reading the value from the environment is configuration, not a committed secret.
 ENV_REFERENCES = ("process.env", "import.meta.env", "os.environ", "os.getenv", "getenv(", "deno.env",
@@ -175,7 +189,7 @@ def machine_plaintext_findings(roots: list[tuple[Path, int]]) -> list[tuple[str,
                 for number, line in enumerate(text.splitlines(), start=1):
                     if ANNOTATION in line:
                         continue
-                    for category, pattern in PATTERNS:
+                    for category, pattern in MACHINE_PATTERNS:
                         match = pattern.search(line)
                         if match is None:
                             continue
@@ -216,6 +230,31 @@ def looks_secret(value: str) -> bool:
         return False
     classes = sum(bool(re.search(pattern, value)) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]", r"[^A-Za-z0-9]"))
     return classes >= 2 or len(value) >= 32
+
+
+def shannon_entropy(value: str) -> float:
+    """Bits per character of Shannon entropy; a uniformly random hex string ≈ 4.0."""
+    if not value:
+        return 0.0
+    counts: dict[str, int] = {}
+    for ch in value:
+        counts[ch] = counts.get(ch, 0) + 1
+    n = len(value)
+    return -sum((c / n) * math.log2(c / n) for c in counts.values())
+
+
+def looks_like_secret_hex(value: str) -> bool:
+    """A bare hex run is a credential only when it is long, high-entropy, and not
+    shaped like the two most common legitimate digests: a 40-char git SHA or a
+    64-char SHA-256. Length band is enforced by the ``hex-secret`` pattern; this
+    adds the entropy gate so content hashes and low-entropy runs stay quiet.
+    """
+    h = value.lower()
+    if not re.fullmatch(r"[0-9a-f]{30,63}", h):
+        return False
+    if len(h) in (40, 64):  # canonical git SHA / SHA-256 — a digest, not a token
+        return False
+    return shannon_entropy(h) >= 3.5
 
 
 def value_is_sample(value: str, line: str) -> bool:
@@ -317,9 +356,13 @@ def scan(root: Path, *, include_docs: bool = True,
                 if url_is_sample(match.group(0), line):
                     report.exempt("URL points at a documentation host or sample pair")
                     continue
-            elif category in ("provider-token", "bearer-header", "private-key"):
-                if value_is_sample(match.group(0), line):
+            elif category in ("provider-token", "bearer-header", "private-key", "hex-secret"):
+                value = match.group(0)
+                if value_is_sample(value, line):
                     report.exempt("token shape carries a synthetic marker")
+                    continue
+                if category == "hex-secret" and not looks_like_secret_hex(value):
+                    report.exempt("hex run is a digest or low-entropy, not a token")
                     continue
             matched = True
             report.block(category, path, number, line)
@@ -429,6 +472,27 @@ def selfcheck() -> int:
         report = scan(sandbox.path, machine_roots=[(outside, 0)])
         check.quiet("a placeholder value in a machine-local file is a sample, not a leak",
                     any(f.kind.startswith("machine-plaintext") for f in report.findings))
+
+    # 2026-11-02: Gitee 裸 hex PAT 形态（审计发现的漏报，见 full-check-allin 报告 #1）
+    with govlib.Sandbox() as sandbox:
+        # 形态②：键名族此前不含 gitee_token，漏报
+        sandbox.write("src/gitee_config.ts",
+                      "const GITEE_TOKEN = 'a1b2c3d4e5f6789012345678901234'\n")  # gov-credentials: allow
+        # 形态①：纯裸 hex 单独成行，此前 PREFILTER 不命中，漏报
+        sandbox.write("src/raw_hex.ts",
+                      "a1b2c3d4e5f6789012345678901234\n")  # gov-credentials: allow
+        # 对照：40-char git SHA 不应被误报
+        sandbox.write("src/commit_sha.ts",
+                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n")
+        report = scan(sandbox.path, machine_roots=[])
+        blocked_kinds = {finding.kind for finding in report.findings}
+        blocked_paths = {finding.path for finding in report.findings}
+        check.detects("Gitee-style token assignment (GITEE_TOKEN = <hex>)",
+                      "assignment" in blocked_kinds and "src/gitee_config.ts" in blocked_paths)
+        check.detects("bare high-entropy hex on its own line",
+                      "hex-secret" in blocked_kinds and "src/raw_hex.ts" in blocked_paths)
+        check.quiet("a 40-char git SHA is not flagged as a secret",
+                    "src/commit_sha.ts" in blocked_paths)
     return check.finish()
 
 
