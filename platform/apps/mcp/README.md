@@ -36,7 +36,10 @@ node platform/apps/mcp/src/index.js --list-tools
 ### 安全边界
 
 - **只读默认**：除 `record.append` / `memory.append` 外全部只读。
-- **写操作要显式确认**：两个写工具不带 `confirm=true` 直接返回 `isError`。
+- **工具面三级权限（tier）**：每个工具声明 `tier` —— `read`（只读）／`write-reversible`（追加写、
+  可经 git 回滚）／`write-irreversible`（外部不可逆副作用，当前架构尚无此类工具）。
+  `tools/list` 与 `--list-tools` 均返回 `tier`，便于客户端/门禁按级管控。
+- **写操作要显式确认**：两个写工具（`write-reversible`）不带 `confirm=true` 直接返回 `isError`。
 - **`record.append` 写在 `tools/gate/audit/mcp-drafts/`**，不进 `docs/`——否则会立刻触发
   文档索引契约 D1「文件未登记」；草稿要成为正式记录，须由人移入 `docs/记录/` 并在 `INDEX.md` 登记。
 - **`memory.append` 只追加、不新建**：目标必须是**已存在且已在 `docs/INDEX.md` §4 登记**的
@@ -51,6 +54,10 @@ node platform/apps/mcp/src/index.js --list-tools
 - **错误分两类，不混记**（`error_kind`）：`rejected`（业务/策略拒绝，如缺 `confirm=true`、未知工具名）
   是**治理机制正常工作的一次成功验证**，不计「agent 任务失败」；`failed`（文件不可读、脚本异常）
   才是真失败。混记会让指标自欺（曾把自检的 4 次正常拒绝报成「一次做完率 0%」）。
+- **会话级调用预算 / 熔断器（2026-11-02 新增）**：单次 MCP 会话（一个 `trace_id`）的工具调用次数
+  设上限（默认 `200`，可用 `AGENT_TOOL_CALL_BUDGET` 覆盖）。**超限即确定性降级**——返回 `isError`
+  并提示「总结结论或升级人工」，绝不静默放行。对应 AgentOps「步数预算 + 熔断器」闸门，防 agent
+  在同一次任务里无限绕圈或静默烧钱。触顶记录 `budget_exceeded: true` 落进 trace，可追溯。
 - **工具失败返回 `isError: true` + 原因，绝不返回空成功。**
 - **调用成功 ≠ 任务完成**：`gate.run` / `registry.verify` 额外返回 `verified` 与 `verifiedBy`
   —— 退出码 0 也要以实证为准（整套门禁须出现「N/N gate(s) clean」且两数相等；
