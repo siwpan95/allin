@@ -46,7 +46,7 @@
 | [siwpan/dict-scene-engine](https://gitee.com/siwpan/dict-scene-engine.git) | — | 0 | 公开 | 字典场景引擎 —— 基于 Cordis 4.0 插件架构的文字冒险游戏引擎（场景即字典，能力即插件） |
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
 | [siwpan/dse-core](https://gitee.com/siwpan/dse-core.git) | — | 0 | 公开 | 字典场景引擎内核 —— 基于 Cordis 4.0 插件架构、与内容解耦的文字冒险/互动叙事引擎（场景即字典，能力即插件） |
-| [siwpan/dsh-release-archiver](https://gitee.com/siwpan/dsh-release-archiver.git) | — | 0 | 公开 | DeepSeek Harness 发布源码归档流水线：每周检测上游 release，双格式归档 + 完整性校验 + 解压复核（判据唯一实现） |
+| [siwpan/dsh-release-archiver](https://gitee.com/siwpan/dsh-release-archiver.git) | — | 0 | 公开 | DeepSeek Harness 发布归档流水线：人工一键触发 run.sh（检测→双格式下载→完整性校验→解压复核）；平台定时任务仅调用本仓 run.sh；判据唯一实现，无 AI 依赖 |
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |

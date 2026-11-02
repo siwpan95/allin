@@ -19,6 +19,9 @@ note: >-
   远端 `gitee.com/siwpan/dsh-release-archiver`（public）；tag `v1.1.0` = 手动触发改造，`v1.1.1` 修 `dl_one` 临时目录未归一化
   （Windows 盘符形式 TMPDIR 下新 tag 下载必失败，负向用例发现）；`v1.0.0` 为建项首发；
   master `68d1900` 为提示词改「只调 run.sh」的纯文档提交（未打新 tag）。
+  远端仓描述已于 2026-11-02 PATCH 订正为「人工一键触发 run.sh … 平台定时任务仅调用本仓 run.sh」，
+  消除「每周检测」旧措辞（描述取自远端元数据，改描述须 PATCH 远端而非只改本地文档）；
+  PORTFOLIO 简介列随之由 `build_portfolio.py --apply` 刷新。
 launch:
   # 无常驻服务；人工入口即一键流水线（--dry-run 只看计划）
   command: bash scripts/run.sh
