@@ -1,21 +1,24 @@
 id: dsh-release-archiver
 name: DSH 发布源码归档流水线
 category: tool
-version: 1.0.0
+version: 1.1.1
 path: repos/dsh-release-archiver
 status: active
 manual: true
 note: >-
-  2026-11-02 建项：把「每周检测 deepseek-ai/deepseek-harness 的 releases → 双格式源码归档 →
-  完整性校验 → 解压复核」从会话里的一次性命令固化为可版本化脚本与判据。四个脚本：
-  weekly_check.sh（只读差集，API 失败不冒充「无新增」）、dl_one.sh（逐字沿用本工作区技能
-  github-release-source-archive-download）、archive_one.sh（串行编排）、verify_tag.sh
-  （硬指标唯一实现：文件数+符号链接数 == zip 条目数、失效链接 0）。归档本体不入库，
-  落点由 DSH_ARCHIVE_ROOT 指定（不写死盘符）。**远端已建：`gitee.com/siwpan/dsh-release-archiver`
-  （public，首提交 `3755c4c`，tag `v1.0.0`，2026-11-02 推送并匿名核对）**。
+  2026-11-02 建项：把「检测 deepseek-ai/deepseek-harness 的 releases → 双格式源码归档 →
+  完整性校验 → 解压复核」固化为可版本化脚本与判据。**触发方式是人工按需（不是定时）**：
+  Windows 双击 run.cmd 或 `bash scripts/run.sh`，每次运行固定五步（检测 → 下载 → 校验 →
+  解压 → 复核 → 汇总），输出汇总表与每条 RESULT，并写日志到 $DSH_ARCHIVE_ROOT/logs/。
+  判断全部下沉进脚本：check_new.sh 只读差集（API 失败 exit 3，不冒充「无新增」）、
+  dl_one.sh（逐字沿用本工作区技能 github-release-source-archive-download）、archive_one.sh
+  串行编排、verify_tag.sh 硬指标唯一实现（文件数+符号链接数 == zip 条目数、失效链接 0）。
+  归档本体不入库，落点由 DSH_ARCHIVE_ROOT 指定（可写在被忽略的 config/local.env，不写死盘符）。
+  远端 `gitee.com/siwpan/dsh-release-archiver`（public）；tag `v1.1.0` = 手动触发改造，`v1.1.1` 修 `dl_one` 临时目录未归一化
+  （Windows 盘符形式 TMPDIR 下新 tag 下载必失败，负向用例发现）；`v1.0.0` 为建项首发。
 launch:
-  # 无常驻服务；入口是只读检测脚本
-  command: bash scripts/weekly_check.sh
+  # 无常驻服务；人工入口即一键流水线（--dry-run 只看计划）
+  command: bash scripts/run.sh
 verify:
   # 无副作用的语法自检（不需要 DSH_ARCHIVE_ROOT）；硬指标复核要带 tag 参数，见 README
-  command: bash -n scripts/archive_one.sh && bash -n scripts/weekly_check.sh && bash -n scripts/verify_tag.sh
+  command: bash -n scripts/run.sh && bash -n scripts/archive_one.sh && bash -n scripts/check_new.sh && bash -n scripts/verify_tag.sh
