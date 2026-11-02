@@ -1,5 +1,14 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-03 05:55（**@`DESKTOP-KQABATS` 跨机待修项自修 + 远端对齐** —— 用户指令「对齐远端，完成交接，完成后提交推送」：
+>   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
+>   本机发布区 `E:\projects\repos` **23** 个目录（逐目录 `Test-Path .git` 与 `git remote get-url origin` 全通，与 2026-11-02 记数一致，本轮无增减）；
+>   本机 `.git` 总数 **25**（发布区 23 + 仓外 2 处，逐目录实测）；
+>   远端 master 已快进对齐 `b3eedf1`（本机 0 ahead / 0 behind），推送仍为**双核**（`origin` 两条 pushurl：Gitee + GitHub SSH）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **23** 个目录；主 Python `D:\Python314\python.exe` **现存**；
+>   `D:\musickit` **现存**；`D:\private-radio-stations` **现存**；
+>   `E:\projects\reference` **现存**；`E:\projects\_governance` **现存**。）
 > **时点** 2026-11-02 19:55（**发布区目录数复测** —— 新增检出 `pywallpaper`（Gitee `siwpan/pywallpaper`，首提 `d486ab4`「docs: 补充 v1.1.0 发行说明」，2026-11-02 16:04）⇒ 发布区目录数 **22 → 23**；本机 `.git` 总数 **24 → 25**；其余可机检断言沿用 2026-11-01 实测，未复测。）
 > **时点** 2026-11-01（**本机转双核后实测** —— 用户指令「配置本机 github，实现双核推送」：
 >   `ssh -T git@github.com` ⇒ `Hi siwpan95!`（密钥指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`，
@@ -92,11 +101,11 @@
 | Python | `python\versions\3.13.12\python.exe`（**目录名是 3.13.12，实际版本 3.13.14**） |
 | PortableGit | `PortableGit\versions\{1.3.0, current}\`（**不在 PATH**） |
 
-## 4. 仓数口径（2026-11-02 复测）
+## 4. 仓数口径（2026-11-03 复测）
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **137** | 跨机共识值，唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5 |
+| **远端仓总数**（Gitee `siwpan`） | **138** | 跨机共识值，唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5；2026-11-03 本机匿名 API 分页复核一致（page1=100 / page2=38 / page3=0） |
 | **本机发布区目录数** | **23** | `Get-ChildItem E:\projects\repos -Directory` |
 | 含 `.git` | **23 / 23** | 逐目录 `Test-Path .git` |
 | 含 `origin` | **23 / 23** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
@@ -109,8 +118,8 @@
 `worldbuilder`、`zhuangtaiji`。
 
 - **口径**：提「远端仓数」一律查索引 §5；提「本机发布区仓数」一律**现场实测**。
-  本机是**部分检出** —— 远端 137 与本地 22 的差额是**尚未在此机检出**的仓，不是缺失。
-- ⚠ **与 `SIWPAN` 的差异**：那台是**全量检出**（137 = 远端 137），本机只有 22 ⇒
+  本机是**部分检出** —— 远端 138 与本地 23 的差额是**尚未在此机检出**的仓，不是缺失。
+- ⚠ **与 `SIWPAN` 的差异**：那台是**全量检出**（137 = 远端 137），本机只有 23 ⇒
   「哪仓在哪台」以各机分区文件为准，**勿跨机假设**。
 - ⚠ **与 `DESKTOP-8RSV60V` 的差异**：`calculator` 在本机发布区仍是独立目录，那台已把它收拢进
   `arcade` 并转 `archived` ⇒ **两机发布区不同步**，以各机实测为准。
@@ -185,7 +194,7 @@
 | CPU / 内存 | i5-13420H / 15.7 GB | i5-12600KF / 16 GB | i7-9750H / 31.9 GB |
 | 系统 | 家庭版 26300 | 专业版 26300 | 专业版 26100 |
 | 工作区盘 | `E:` | `G:` | `D:` |
-| 发布区规模 | **22（部分检出）** | 136 | **137（全量检出）** |
+| 发布区规模 | **23（部分检出）** | 137 | **137（全量检出）** |
 | git 在 PATH | WorkBuddy vendor PortableGit **与**系统安装版**两份并存** | `G:\Git\cmd\git.exe` | WorkBuddy vendor PortableGit |
 | pwsh | **不在 PATH** | `G:\powershell\7` 在 PATH | `C:\Program Files\PowerShell\7` 在 PATH |
 
