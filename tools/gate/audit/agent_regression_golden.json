@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "description": "agent 行为回归黄金集 —— 与 runner (agent_regression.py) 分离，便于版本化追踪。改 case 集须显式改本文件并同步 commit 基线（agent_regression.py --commit-baseline）。判据来源：docs/规范/SPEC-001-铁律.md 与 .workbuddy/skills/allin-governance-agent/SKILL.md §2.1。",
+  "cases": [
+    "定位仓根",
+    "门禁数自述一致",
+    "MCP 工具面",
+    "MCP 自检",
+    "多载体一致",
+    "文档枢纽"
+  ]
+}
