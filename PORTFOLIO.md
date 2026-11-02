@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-10-30），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-02），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 137 个仓库**（公开 137 · 私有 0）。
+**共 138 个仓库**（公开 138 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -46,6 +46,7 @@
 | [siwpan/dict-scene-engine](https://gitee.com/siwpan/dict-scene-engine.git) | — | 0 | 公开 | 字典场景引擎 —— 基于 Cordis 4.0 插件架构的文字冒险游戏引擎（场景即字典，能力即插件） |
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
 | [siwpan/dse-core](https://gitee.com/siwpan/dse-core.git) | — | 0 | 公开 | 字典场景引擎内核 —— 基于 Cordis 4.0 插件架构、与内容解耦的文字冒险/互动叙事引擎（场景即字典，能力即插件） |
+| [siwpan/dsh-release-archiver](https://gitee.com/siwpan/dsh-release-archiver.git) | — | 0 | 公开 | DeepSeek Harness 发布源码归档流水线：每周检测上游 release，双格式归档 + 完整性校验 + 解压复核（判据唯一实现） |
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
 | [siwpan/fish](https://gitee.com/siwpan/fish.git) | — | 0 | 公开 | 桌面养鱼桌宠（软硬一体）：Python 端与 XJ380 C++ 端逐位对偶，纯函数内核 + 双端黄金用例 |
