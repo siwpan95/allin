@@ -889,8 +889,9 @@ if (argv.includes('--selftest')) {
   const mine = spans.filter((s) => s.trace_id === trace.sessionId)
   check('agent trace 落盘', mine.length === toolCalls, `落 ${mine.length}/${toolCalls} 条`)
   check('trace 带 OTel GenAI 属性',
-    mine.every((s) => s['gen_ai.tool.name'] && s['gen_ai.tool.status']
-      && typeof s['gen_ai.client.operation.duration'] === 'number'))
+    mine.every((s) => s['gen_ai.tool.name'] && s['gen_ai.tool.call.status']
+      && s['gen_ai.operation.name'] === 'execute_tool' && s['gen_ai.tool.call.id']
+      && s['gen_ai.trace.id'] && typeof s['gen_ai.client.operation.duration'] === 'number'))
   check('trace 带 trace_id/span_id',
     mine.every((s) => s.trace_id && s.span_id))
   check('trace 步数连续', mine.every((s, i) => s.span_index === i + 1))

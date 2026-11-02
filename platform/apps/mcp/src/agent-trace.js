@@ -21,9 +21,11 @@
 //
 // 字段命名
 // --------
-// 向 **OpenTelemetry GenAI 语义约定**靠拢（`gen_ai.*`），但**不引入 OTel SDK**
-// （本仓取向：零外部依赖、可审计、单仓自持）。将来若接 Phoenix/Langfuse/自有 collector，
-// 映射是机械改名，不需重写埋点 ⇒ 零锁定成本。
+// 向 **OpenTelemetry GenAI 语义约定**对齐（`gen_ai.*`），但**不引入 OTel SDK**
+// （本仓取向：零外部依赖、可审计、单仓自持）。已采用 canonical 命名
+// （`gen_ai.tool.call.status` / `gen_ai.tool.call.id` / `gen_ai.operation.name` /
+// `gen_ai.trace.id` 等），完整机械映射见 `OTEL_GENAI_MAP`。
+// 将来若接 Phoenix/Langfuse/自有 collector，映射是机械改名，不需重写埋点 ⇒ 零锁定成本。
 // 参考：https://opentelemetry.io/docs/specs/semconv/gen-ai/
 //
 // 只记元数据，不记内容
@@ -36,22 +38,47 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 
+/** OTel GenAI 字段映射表（零锁定成本）。
+ * 本仓自产字段已向 OpenTelemetry GenAI 语义约定对齐
+ * （https://opentelemetry.io/docs/specs/semconv/gen-ai/），**不引入 OTel SDK**。
+ * 若将来接 Phoenix / Langfuse / 自有 collector，下表即机械改名对照，不需重写埋点 ⇒ 零锁定成本。 */
+export const OTEL_GENAI_MAP = {
+  'gen_ai.operation.name': 'execute_tool（一次工具执行）',
+  'gen_ai.agent.name': 'allin-governance（产生 trace 的 agent）',
+  'gen_ai.system': 'allin-governance（工具面归属）',
+  'gen_ai.trace.id': '= trace_id（一次会话）',
+  'gen_ai.tool.name': '= tool（被调工具名）',
+  'gen_ai.tool.call.id': '= span_id（单次工具调用）',
+  'gen_ai.tool.call.status': 'ok | rejected | error（rejected=策略拒绝，不计失败）',
+  'gen_ai.tool.type': 'function（MCP 工具以函数调用形态触发）',
+  'gen_ai.client.operation.duration': '= ms（毫秒）',
+  'gen_ai.usage.input_tokens': '= args_bytes（以字节近似，非真 token）',
+  'gen_ai.usage.output_tokens': '= result_bytes（以字节近似，非真 token）',
+}
+
 /** 单条 trace 的字段名（与 OTel GenAI 对齐的部分加注释，便于将来机械映射）。 */
 export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes, sessionId, spanIndex, tier, budgetExceeded }) {
+  const spanId = crypto.randomBytes(8).toString('hex')
   return {
     ts: new Date().toISOString(),
-    // ── 追踪标识 ──
+    // ── 追踪标识（OTel 标准属性）──
     trace_id: sessionId,                                   // 一次 MCP 会话 = 一个 trace
-    span_id: crypto.randomBytes(8).toString('hex'),        // 单次工具调用 = 一个 span
+    span_id: spanId,                                       // 单次工具调用 = 一个 span
     span_index: spanIndex,                                 // 会话内序号（步数）
     session_id: sessionId,
-    // ── OTel GenAI 对齐段 ──
+    // ── OTel GenAI 对齐段（canonical 命名，见 OTEL_GENAI_MAP；不引入 OTel SDK）──
+    'gen_ai.operation.name': 'execute_tool',               // 本 span 是一次工具执行
+    'gen_ai.agent.name': 'allin-governance',               // 产生该 trace 的 agent / 系统
+    'gen_ai.system': 'allin-governance',                   // 工具面归属（本仓自有 MCP server）
+    'gen_ai.trace.id': sessionId,                          // 一次会话 = 一个 trace（GenAI 约定属性名）
     'gen_ai.tool.name': toolName,                          // gen_ai.tool.name
-    'gen_ai.tool.status': ok ? 'ok' : (errorKind === 'rejected' ? 'rejected' : 'error'),
+    'gen_ai.tool.call.id': spanId,                         // 单次工具调用 id（= span_id）
+    'gen_ai.tool.call.status': ok ? 'ok' : (errorKind === 'rejected' ? 'rejected' : 'error'),
+    'gen_ai.tool.type': 'function',                        // MCP 工具以函数调用形态触发
     'gen_ai.client.operation.duration': ms,                // gen_ai.client.operation.duration（毫秒）
     'gen_ai.usage.input_tokens': argsBytes,                // 以参数字节数近似输入规模（非真 token）
     'gen_ai.usage.output_tokens': resultBytes,             // 以返回字节数近似输出规模（非真 token）
-    // ── 本仓自有段 ──
+    // ── 本仓自有段（治理语义，jq/grep 直读）──
     tool: toolName,                                        // 便于 jq/grep 直读
     ok,
     error_kind: errorKind,                                 // 'rejected'（策略拒绝）| 'failed'（真失败）
