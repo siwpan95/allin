@@ -4,7 +4,7 @@
 > **怎么用**：想找东西先在这里搜；**不要**靠翻目录。找"规矩"看 `规范/`，找"现在的值"看 `事实源/`，找"当时怎么发生的"看 `记录/`。
 > **谁保证它不过期**：`python tools/gate/docs_index.py`（判据 D1–D8）——文件没登记、登记没文件、规范缺头部、规范名带日期、分类错位、ASCII 别名缺失、交接卷断号、**本行自述份数与实际不符**，任一条都报红。
 > **分类判据与命名规则**：见 [`规范/SPEC-005-文档枢纽契约.md`](规范/SPEC-005-文档枢纽契约.md)。
-> **时点** 2026-11-01 ｜ **覆盖** 根 4 + 规范 16 + 事实源 12 + 记录 56 = **88 份**（不含 `md/` 历史树 231 篇）
+> **时点** 2026-11-02 ｜ **覆盖** 根 4 + 规范 16 + 事实源 12 + 记录 57 = **89 份**（不含 `md/` 历史树 231 篇）
 > ⚠ **本行份数由门禁 D8 逐次核对**：改完文档忘了改这里的数字会直接报红（2026-09-28 曾出现「头部写 51 / 实际 49」）。
 
 | 类别 | 目录 | ASCII 别名 | 是什么 | 可变性 |
@@ -81,7 +81,7 @@
 | FACT-10 | [DESKTOP-8RSV60V.md](事实源/机器/DESKTOP-8RSV60V.md) | 2026-10-29 | **该机唯一事实源**：新旧机判据、盘位（C·D·F·G）、工作区跨项目盘与数据盘落点、仓数口径、运行时与工具链、冲突裁决、待裁项、查重结论、跨仓环境变量、推送口径（**Gitee + GitHub 双核**） | 索引 §1、preset 治理段 |
 | FACT-11 | [SIWPAN.md](事实源/机器/SIWPAN.md) | 2026-10-29 | **该机唯一事实源**：主机名 / 用户目录 / CPU / 内存 / 系统版本 / 盘位、仓根 `/projects/allin`、与 `DESKTOP-KQABATS` 的实测差异 | 索引 §1 |
 
-## 四、记录（`记录/`，56 份，**只增不改，不作为约束**）
+## 四、记录（`记录/`，57 份，**只增不改，不作为约束**）
 
 ### 4.1 交接（逐轮事实流水，按月分卷）
 
@@ -140,6 +140,7 @@
 | REC-TO-07 | [能力接缝作为治理边界](记录/专题/能力接缝作为治理边界_2026-10-26.md) | 2026-10-26 | DSH capability-seam / event-walk-backstop / 结构化错误 原则并入：Definition/Provider/Consumer 三分、cwd≠沙箱、策略离能力、错误码是接缝一部分、独立扫描兜底 |
 | REC-TO-08 | [agent 生命周期与所有权契约](记录/专题/agent生命周期与所有权契约_2026-10-26.md) | 2026-10-26 | DSH agent-lifecycle / turn-enclosure 原则并入：单一停止原语、disposer 是消费者能力、拆解顺序有负载、所有权抗热重载、turn 围栏、结构化失败 |
 | REC-TO-09 | [凭据分层与密钥隔离存储](记录/专题/凭据分层与密钥隔离存储_2026-10-26.md) | 2026-10-26 | DSH credentials 分层原则并入：托管存储 vs 环境层分离、严格拒绝、0600 读时强制、永不 materialize，补 g03 只拦"进仓"的本地存储缺口 |
+| REC-TO-10 | [DSH 发布归档自动化建项](记录/专题/DSH发布归档自动化建项_2026-11-02.md) | 2026-11-02 | 把已无人值守跑了一个多月的「每周检测 DSH release → 双格式源码归档 → 校验 → 解压复核」固化为本地仓 `repos/dsh-release-archiver`（**13 文件**，首提交 `3755c4c`，tag `v1.0.0`）：判据落 `verify_tag.sh` 唯一实现、坑落 `LESSONS.md` 十条台账、流程落 `RUNBOOK.md` + 可粘贴 `automation/prompt.md`；实跑 `weekly_check` 本地 35 / 远端 10 / 新增 0，`verify_tag dsh-v0.2.1-rc.5` = files 16339 + symlinks 14 = 16353 vs zip 条目 16353、失效链接 0；建仓当场被判 `g17` `unregistered-repo` + `g20` 仓数 136→137，补齐 registry/机器事实/分级 #140 后转绿；自测另抓 `${TMPDIR:-/tmp}` 假保险（Windows 的 TMPDIR 本身是盘符形式）。**远端 `gitee.com/siwpan/dsh-release-archiver` 已建、已推送、已转公开（2026-11-02 放行）** |
 
 ### 4.4 外部 · 快照
 
@@ -222,3 +223,12 @@
 * 最后更新：2026-11-01（增补 `记录/交接/2026-11.md` §113）：**本机配 GitHub 侧、转双核推送**（用户指令）—— 盘点实测：本机已有 ed25519 密钥、`~/.ssh/config` 仅 gitee 段（已加 `github.com` + `ssh.github.com:443`，备份 `config.bak-20261101`）；GitHub 仓 `siwpan95/allin` 存在且**镜像落后 2 笔**；**公钥未在 GitHub 注册前不写 pushurl**（写了会让整次 push 失败 ⇒ 顺序不能反）。**门禁补盲**：`g04-push-evidence` 原只读 `remote.*.url` ⇒ 双核后镜像那一路不被核、且凭据红线只查 fetch url（PAT 藏进 pushurl 可绕过）⇒ 改为**凭据检查覆盖 url+pushurl**、**同步状态逐个核所有推送目标**（对齐 @SIWPAN「两侧都要核」口径）。⚠ git 语义坑：remote 配了显式 pushurl 后 `url` 不再是推送目标 ⇒ 双核必须**两条 pushurl**。
 * 最后更新：2026-11-01（增补 `记录/交接/2026-11.md` §115）：**本机受管凭据库建成** —— `C:\Users\13122\.dsvault\`（`vault.enc` 密文 + `dsvault.py` 工具），**DPAPI CurrentUser 信封加密**（内部即 AES-256、密钥由 OS 按用户+机器派生、密文与当前用户绑定）；⚠ 与另一台 PBKDF2+AES-256-GCM 的差异是**实测所致**（本机装不上 `cryptography`、无 PyPI 访问）⇒ 安全属性等价。导入两份凭据文件并**逐条验证解密正确**后，两个明文文件改名归档 ⇒ **明文零残留**（仓内无工具依赖它们）。**SSH 公钥已在 GitHub ⇒ 日常推送不依赖任何令牌**。
 * 最后更新：2026-11-01（增补 `记录/交接/2026-11.md` §116）：**`g03` 增第三面：机器本地明文凭据文件** —— 扩 `g03`（不新增 `g21` ⇒ **闸门数仍 20 道**、不动 registry/baseline/CI 分层），扫工作区根与用户目录，沿用既有 PATTERNS 与样本豁免，例外 `~/.ssh`（私钥本该明文）与 `~/.dsvault`/`*.enc`（密文）。**上线即命中我自己「改名归档」的两份明文** ⇒ 门禁证明「改名归档不算收敛」⇒ 已**真正删除**（vault 内 9 条此前已逐条验证解密正确）⇒ 收敛判据＝**密文里可验证 + 盘上无明文**。
+* 最后更新：2026-11-02（登记 REC-TO-10：**DSH 发布归档自动化建项** —— 用户指令「将自动化流程建项，放在 `repos`，更新 `allin` 对应内容」。新建 `repos/dsh-release-archiver`（12 文件，本地首提交 `3755c4c`，**未建远端、未推送**）；记录 56→57、总 88→89。同批订正三处账实：① registry 新增该仓条目；② `FACT-10` 本机 `repos` 顶层 136→137（137 目录 / 137 含 `.git` / 136 含 origin）并同步差额对账（137 = 140 − 3）；③ `FACT-08` 补 #140（②，分级对象 135→136、合计 139→140，标题同步 135→136 仓）。**门禁实证**：建仓后未登记时 `check:governance` = **18/20**（`g17` `unregistered-repo` + `g20` 仓数不符，两处红均由新仓引起），补齐后 20/20 clean —— **「建仓必须同步登记与机器事实」是门禁强制，不是流程洁癖**。）*
+
+* 最后更新：2026-11-02（REC-TO-10 放行收口：**打 tag `v1.0.0` + 建 Gitee 仓 + 推送 + 匿名核对**）—— 远端 `siwpan/dsh-release-archiver`：建仓 `private=true`（空仓不能设公开）→ push `master`+`--tags`（HTTP/1.1，令牌不落 `.git/config`）→ PATCH **`private:false`** 转公开（`public:true` 会静默失效）。**四项无凭据核对全绿**：① 匿名 API `public=true / private=false / default_branch=master / permission=null`；② `ls-remote` master、tag 对象 `6c1f74c`、peeled `3755c4c` 与本地一致；③ 匿名浅克隆 tag 得 HEAD `3755c4c`、13 文件、tag 消息完整；④ raw 四文件 blob 哈希逐一相同。**本轮新坑：raw 未加 `-L` 会拿到 302 跳转页（411 字节），三项哈希假红** —— `Etag` 即真实 blob 哈希，`curl -sL` 复核转绿，已回填仓内 `LESSONS.md` 第 11 条（`9b46971`）。连带订正：机器事实 136→**137 含 origin**、`机器分区索引` §5 远端 137→**138**（匿名分页 100+38）、分级 #140 去掉「尚无远端」、registry `0.1.0→1.0.0`、REC-TO-10 文件数 12→13。当前 master `9b46971`，tag `v1.0.0` 钉 `3755c4c`。)
+
+* 最后更新：2026-11-02（REC-TO-10 第二次收口：**触发方式改为人工按需**）—— 用户定调「独立项目需人工触发、无 AI 辅助」。仓内提交 `cf3ab4c`、附注 tag `v1.1.0`（对象 `58d9284`）已推送：新增 `repos/dsh-release-archiver/scripts/run.sh`（一键五步：检测→下载→校验→解压→复核→汇总，输出汇总表并写 `$DSH_ARCHIVE_ROOT/logs/`）、`repos/dsh-release-archiver/run.cmd`（双击入口，ASCII/CRLF）、`repos/dsh-release-archiver/config/local.env.example`（本机私有配置，复制改一行即可；local.env 已 gitignore）、`repos/dsh-release-archiver/scripts/lib.sh` 增 `load_env()`（环境变量 > local.env > target.env）；检测脚本去周期化命名（`check_new.sh`）；退出码 0/1/2/3 固定（3 = 检测失败，**不冒充无新增**）。实测：`--help` exit 0、缺配置 exit 2 并给一次配置指引、仅靠 local.env 的 `--dry-run` 正常、`--tag dsh-v0.2.1-rc.5 --yes` 6s PASS（16339+14=16353，broken=0）。匿名核对：ls-remote 三引用一致、浅克隆 16 文件且 `run.sh` / `run.cmd` 在位、raw blob 相同、`public=true`。`v1.0.0` 保持不动。registry `1.0.0→1.1.0`，分级 #140 补「人工一键」。**平台每周任务仍在（仓外），是否暂停待定**。
+
+* 最后更新：2026-11-02（REC-TO-10 补丁：**`v1.1.1` 修 `dl_one` 临时目录**）—— 负向用例（不存在的 tag）抓到：`dl_one` 仍用 `TMPDIR` 的 `:-` 默认值，Windows 盘符形式下 `mkdir` / `curl` 落到混合路径，**真实新 tag 下载必失败**，日志却只像网络问题。已改经 `repos/dsh-release-archiver/scripts/lib.sh` 的 `tmp_root()`，三处临时副本一并归一化；提交 `d55fd2d`、附注 tag `v1.1.1`（对象 `8421752`）已推送，匿名核对 16 文件、`DLDIR="$TS/_ghd"`、raw 哈希一致。台账第 10 条补记「**复制来的脚本最容易漏统一**」。registry `1.1.0→1.1.1`。)
+
+* 最后更新：2026-11-02（REC-TO-10 第三次收口：**平台任务改为「只调 run.sh」**）—— 用户指令「改成『只调本仓 run.sh』的形态」。任务 `e96a6834-…` 状态 `PAUSED → ACTIVE`（每周一 00:00，rrule 不变），提示词由六步 800+ 字整体替换为「一条命令 + 三条纪律 + 汇报五项」，只调用 `repos/dsh-release-archiver/scripts/run.sh --yes`（`cd` 到仓目录后执行）；三条纪律为：exit≠0 不得报「无新增」、不得换下载源重试、`cd` 失败或仓不存在立即停。仓侧提交 `68d1900`（纯文档，未打 tag）：`repos/dsh-release-archiver/automation/prompt.md` 从「可选」升级为现役提示词唯一来源（与平台逐字一致），README 落判据「定时解决的是『有人记得跑』，不是『有人会判断』」，RUNBOOK 修正绝对表述。实测：在工作区 cwd 与绝对路径两种调用下均 exit 0、配置自加载、`LOCAL_TAGS=35 / NEW_TAGS=` 空、日志落归档根；匿名核对 master `68d1900` 与本地一致、raw 三文件 blob 哈希相同。registry note 同步，分级 #140 补「平台任务只调该脚本」。**首次自动执行：下周一 00:00**。）
