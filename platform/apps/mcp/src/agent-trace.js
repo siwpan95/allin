@@ -37,7 +37,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 
 /** 单条 trace 的字段名（与 OTel GenAI 对齐的部分加注释，便于将来机械映射）。 */
-export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes, sessionId, spanIndex }) {
+export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes, sessionId, spanIndex, tier, budgetExceeded }) {
   return {
     ts: new Date().toISOString(),
     // ── 追踪标识 ──
@@ -55,6 +55,8 @@ export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes,
     tool: toolName,                                        // 便于 jq/grep 直读
     ok,
     error_kind: errorKind,                                 // 'rejected'（策略拒绝）| 'failed'（真失败）
+    tier,                                                  // 'read' | 'write-reversible' | 'write-irreversible'
+    budget_exceeded: budgetExceeded || false,              // 是否因会话调用预算耗尽被熔断器拦截
     ms,
     args_bytes: argsBytes,
     result_bytes: resultBytes,

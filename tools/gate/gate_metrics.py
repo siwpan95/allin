@@ -224,6 +224,18 @@ def agent_ops(spans: list[dict]) -> dict:
             pass
     tool_rows = sorted(by_tool.values(), key=lambda item: -item["calls"])
 
+    # 按 tier 聚合（read / write-reversible / write-irreversible）—— 对应「工具面三级权限」的观测面。
+    by_tier: dict[str, dict] = {}
+    for span in spans:
+        tier = str(span.get("tier") or "read")
+        slot = by_tier.setdefault(tier, {"tier": tier, "calls": 0, "failed": 0, "rejected": 0})
+        slot["calls"] += 1
+        kind = kind_of(span)
+        if kind == "failed":
+            slot["failed"] += 1
+        elif kind == "rejected":
+            slot["rejected"] += 1
+
     ok_sessions = len(sessions) - len(failed_traces)
     return {
         "state": "ok",
@@ -237,6 +249,7 @@ def agent_ops(spans: list[dict]) -> dict:
         "steps_p95": percentile(step_counts, 0.95),
         "steps_max": max(step_counts),
         "by_tool": tool_rows,
+        "by_tier": by_tier,
         "failed_traces": failed_traces[:10],
     }
 
@@ -341,6 +354,16 @@ def render(metrics: dict, previous: int | None) -> str:
                 detail += f"，拒绝 {item['rejected']}"
             lines.append(f"       - {item['tool']}：调用 {item['calls']} 次"
                          f"，累计 {item['total_ms']}ms{detail}")
+        tier_order = ["read", "write-reversible", "write-irreversible"]
+        tiers = agent.get("by_tier", {})
+        if tiers:
+            parts = []
+            for t in tier_order:
+                if t in tiers:
+                    slot = tiers[t]
+                    flag = f"失败{slot['failed']}" if slot["failed"] else "ok"
+                    parts.append(f"{t} {slot['calls']} 次（{flag}）")
+            lines.append(f"       工具面分级：{' ｜ '.join(parts)}")
     return "\n".join(lines)
 
 

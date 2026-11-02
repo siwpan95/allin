@@ -110,11 +110,13 @@ function memoryVolumes() {
 const TOOLS = [
   {
     name: 'gate.list',
+    tier: 'read',
     description: '列出 allin 治理门禁（id / title / tier / 是否有基线）',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
     name: 'gate.run',
+    tier: 'read',
     description: '跑一个门禁（gate 指定 id）或整套聚合（all=true）。返回退出码与输出尾部。',
     inputSchema: {
       type: 'object',
@@ -128,6 +130,7 @@ const TOOLS = [
   },
   {
     name: 'registry.query',
+    tier: 'read',
     description: '按 id / category 查询项目注册表，返回条目摘要',
     inputSchema: {
       type: 'object',
@@ -141,6 +144,7 @@ const TOOLS = [
   },
   {
     name: 'registry.verify',
+    tier: 'read',
     description: '无头验证登记项目（可限定 only/category/limit）。耗时操作，默认 limit 20。',
     inputSchema: {
       type: 'object',
@@ -155,6 +159,7 @@ const TOOLS = [
   },
   {
     name: 'docs.search',
+    tier: 'read',
     description: '在文档枢纽里全文检索（不含 md/ 历史树），返回 file:line:片段',
     inputSchema: {
       type: 'object',
@@ -165,6 +170,7 @@ const TOOLS = [
   },
   {
     name: 'project.status',
+    tier: 'read',
     description: '单个项目的登记信息 + 本地克隆的最后提交天数 + 上次验证结论',
     inputSchema: {
       type: 'object',
@@ -175,6 +181,7 @@ const TOOLS = [
   },
   {
     name: 'record.append',
+    tier: 'write-reversible',
     description: '起草一份治理记录（写到 audit/mcp-drafts/，不直接进 docs/，避免触发 D1 未登记）。需要 confirm=true。',
     inputSchema: {
       type: 'object',
@@ -189,6 +196,7 @@ const TOOLS = [
   },
   {
     name: 'gate.history',
+    tier: 'read',
     description: '汇总门禁执行留痕（gate-runs.jsonl）：总次数 / 失败次数 / 各标签最近一次退出码 / 最近 N 条',
     inputSchema: {
       type: 'object',
@@ -198,6 +206,7 @@ const TOOLS = [
   },
   {
     name: 'metrics.snapshot',
+    tier: 'read',
     description: '跑 gate_metrics.py --json：逃逸率 / 证据新鲜度 / 例外燃尽 / 门禁性能预算（只读，不落趋势文件）',
     inputSchema: {
       type: 'object',
@@ -207,11 +216,13 @@ const TOOLS = [
   },
   {
     name: 'exceptions.list',
+    tier: 'read',
     description: '读治理例外台账（exceptions.yml）：每条 id / kind / gate / status / expires，附 open / closed 计数',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
     name: 'memory.read',
+    tier: 'read',
     description: '召回 agent 长期记忆（docs/记录/记忆/ 按月卷）：默认最近 2 卷，可用 query 按关键词过滤行；默认隐藏已被 supersedes 取代的旧条目（只增不改 ⇒ 用覆盖代替删除），可用 includeSuperseded 显示、layer 按层过滤',
     inputSchema: {
       type: 'object',
@@ -226,6 +237,7 @@ const TOOLS = [
   },
   {
     name: 'memory.append',
+    tier: 'write-reversible',
     description: '向当月记忆卷追加一条带日期的经验（只增不改）——自学习回路的记账入口。写操作：需要 confirm=true，且当月卷必须已登记进 docs/INDEX.md。可选 layer（临时/永久）与 supersedes（取代某条旧条目）',
     inputSchema: {
       type: 'object',
@@ -242,6 +254,7 @@ const TOOLS = [
   },
   {
     name: 'memory.promotable',
+    tier: 'read',
     description: '记忆晋升看板（只读）：按 tag 统计有效条目数，把「同 tag ≥ 阈值条且未晋升」的列为固化成专项 skill 的候选，附建议流程',
     inputSchema: {
       type: 'object',
@@ -609,7 +622,41 @@ function auditWrite(tool, file) {
 // 原则：**遥测由中间件发出，不由模型自述**（见 agent-trace.js 头注）。
 const trace = new AgentTrace(AUDIT_DIR, { enabled: process.env.ALLIN_NO_TRACE !== '1' })
 
-function callToolTraced(name, args) {
+// ── 工具调用预算 / 熔断器 ──
+// 防 agent 在同一次会话里无限绕圈（重复调用工具）或静默烧钱：超过上限即**确定性降级**
+// （拒绝执行、给出可操作提示），绝不静默放行。对应 AgentOps「步数预算 + 熔断器」三重闸门之一。
+// 默认 200 次/会话；自检用 AGENT_TOOL_CALL_BUDGET 临时压低以便验证。
+function getMaxToolCalls() {
+  const n = Number(process.env.AGENT_TOOL_CALL_BUDGET)
+  return Number.isFinite(n) && n > 0 ? n : 200
+}
+
+// 工具 tier 查询（read / write-reversible / write-irreversible）。
+function tierOf(name) {
+  return TOOLS.find((t) => t.name === name)?.tier || 'read'
+}
+
+function callToolTraced(name, args, tr = trace) {
+  const toolTier = tierOf(name)
+  // ① 预算/熔断器：在真正执行前拦截，避免无谓的工具调用。
+  if (tr.steps >= getMaxToolCalls()) {
+    const msg =
+      `工具调用预算耗尽：本会话已达 ${getMaxToolCalls()} 次上限（熔断器触发，防绕圈/烧钱）。` +
+      `请总结已得结论，或显式升级人工，而非继续调用工具。`
+    const span = tr.record(buildSpan({
+      toolName: String(name || 'unknown'),
+      ok: false,
+      errorKind: 'failed',
+      ms: 0,
+      argsBytes: byteSize(args),
+      resultBytes: 0,
+      sessionId: tr.sessionId,
+      spanIndex: tr.spanIndex + 1,
+      tier: toolTier,
+      budgetExceeded: true,
+    }))
+    return { isError: true, errorKind: 'failed', text: msg, trace_id: span.trace_id, span_id: span.span_id }
+  }
   const started = Date.now()
   let result
   let threw = false
@@ -623,15 +670,16 @@ function callToolTraced(name, args) {
   // 业务/策略拒绝（rejected）≠ 真失败（failed）：前者是治理机制正常工作的一次验证，
   // 不该把 agent 的「一次做完率」打低（详见 gate_metrics.agent_ops 的口径说明）。
   const errorKind = ok ? undefined : (result?.errorKind || 'failed')
-  const span = trace.record(buildSpan({
+  const span = tr.record(buildSpan({
     toolName: String(name || 'unknown'),
     ok,
     errorKind,
     ms: Date.now() - started,
     argsBytes: byteSize(args),
     resultBytes: byteSize(result?.text),
-    sessionId: trace.sessionId,
-    spanIndex: trace.spanIndex + 1,
+    sessionId: tr.sessionId,
+    spanIndex: tr.spanIndex + 1,
+    tier: toolTier,
   }))
   // 响应里带上 trace 标识 —— agent 报障时能直接引用，本机排查也能按 id 定位。
   if (result && typeof result === 'object') {
@@ -662,7 +710,7 @@ function handle(msg) {
     const name = params?.name
     let result
     try {
-      result = callToolTraced(name, params?.arguments || {})
+      result = callToolTraced(name, params?.arguments || {}, trace)
     } catch (e) {
       result = fail(String(e && e.message ? e.message : e))
     }
@@ -711,6 +759,10 @@ if (argv.includes('--selftest')) {
   const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
   check('initialize 返回 protocolVersion', msgs[0]?.result?.protocolVersion === PROTOCOL)
   check('tools/list 返回 13 个工具', msgs[1]?.result?.tools?.length === 13, `got ${msgs[1]?.result?.tools?.length}`)
+  check('tools/list 含 tier 三级分级', msgs[1]?.result?.tools?.every((t) => t.tier), '部分工具缺 tier')
+  check('写工具标记为 write-reversible', msgs[1]?.result?.tools
+    ?.filter((t) => t.name === 'record.append' || t.name === 'memory.append')
+    ?.every((t) => t.tier === 'write-reversible'), '写工具 tier 应为 write-reversible')
   check('gate.list 返回门禁清单', textOf(2).includes('"gates"'))
   check('registry.query 返回结构', textOf(3).includes('"total"'))
   check('docs.search 命中', textOf(4).includes('hits'))
@@ -759,12 +811,28 @@ if (argv.includes('--selftest')) {
   const writeProbe = actions.filter((a) => a.tool === 'record.append' || a.tool === 'memory.append')
   check('写操作审计链可用（可解析出条目）', writeProbe.length >= 0 && actions.every((a) => a.ts && a.tool))
   check('审计路径为正斜杠（跨机可读）', actions.every((a) => !String(a.file || '').includes('\\')))
+
+  // ── 工具调用预算 / 熔断器自检 ──
+  // 为什么要有：AgentOps「步数预算 + 熔断器」是防 agent 同会话无限绕圈/烧钱的三重闸门之一。
+  // 这里用独立 trace + 临时压低预算，验证「超预算即确定性降级、绝不静默放行」。
+  const prevBudget = process.env.AGENT_TOOL_CALL_BUDGET
+  process.env.AGENT_TOOL_CALL_BUDGET = '2'
+  const bt = new AgentTrace(AUDIT_DIR, { enabled: false }) // 不落盘，纯逻辑验证
+  const rb1 = callToolTraced('gate.list', {}, bt)
+  const rb2 = callToolTraced('gate.list', {}, bt)
+  const rb3 = callToolTraced('gate.list', {}, bt)
+  check('预算内（第1/2次）正常放行', !rb1.isError && !rb2.isError)
+  check('超预算第3次被熔断器拦截', rb3.isError === true && /预算/.test(rb3.text || ''),
+    `第3次 isError=${rb3.isError}`)
+  if (prevBudget === undefined) delete process.env.AGENT_TOOL_CALL_BUDGET
+  else process.env.AGENT_TOOL_CALL_BUDGET = prevBudget
+
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
   process.exit(failures === 0 ? 0 : 1)
 }
 
 if (argv.includes('--list-tools')) {
-  console.log(JSON.stringify(TOOLS.map((t) => ({ name: t.name, description: t.description })), null, 2))
+  console.log(JSON.stringify(TOOLS.map((t) => ({ name: t.name, description: t.description, tier: t.tier || 'read' })), null, 2))
   process.exit(0)
 }
 
