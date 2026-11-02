@@ -42,7 +42,15 @@ node platform/apps/mcp/src/index.js --list-tools
 - **`memory.append` 只追加、不新建**：目标必须是**已存在且已在 `docs/INDEX.md` §4 登记**的
   当月卷 `docs/记录/记忆/<YYYY-MM>.md`（未登记直接拒绝，避免 D1 打红）；开新卷属治理动作，
   由人（或走完整文档流程）完成。条目**只增不改**，纠错另起新条目注明取代关系。
-- **每次接受写操作都落审计** `tools/gate/audit/mcp-actions.jsonl`（ts / tool / file）。
+- **每次接受写操作都落审计** `tools/gate/audit/mcp-actions.jsonl`（ts / tool / file，路径用正斜杠）。
+- **每次工具调用都落 agent trace** `tools/gate/audit/agent-runs.jsonl`（AgentOps 最小闭环，2026-11-02 新增）：
+  一次 MCP 会话 = 一个 `trace_id`，每次工具调用 = 一个 `span`；字段向 **OTel GenAI 语义约定**对齐
+  （`gen_ai.tool.name` / `gen_ai.tool.status` / `gen_ai.client.operation.duration` / `gen_ai.usage.*`），
+  但**不引入 OTel SDK**（本仓零外部依赖取向）⇒ 将来接任何 collector 只是机械改名。
+  **只记元数据，不记内容**：工具参数与返回值一律不落盘（只记字节规模），避免文档正文/记忆条目泄漏进留痕。
+- **错误分两类，不混记**（`error_kind`）：`rejected`（业务/策略拒绝，如缺 `confirm=true`、未知工具名）
+  是**治理机制正常工作的一次成功验证**，不计「agent 任务失败」；`failed`（文件不可读、脚本异常）
+  才是真失败。混记会让指标自欺（曾把自检的 4 次正常拒绝报成「一次做完率 0%」）。
 - **工具失败返回 `isError: true` + 原因，绝不返回空成功。**
 - **调用成功 ≠ 任务完成**：`gate.run` / `registry.verify` 额外返回 `verified` 与 `verifiedBy`
   —— 退出码 0 也要以实证为准（整套门禁须出现「N/N gate(s) clean」且两数相等；
