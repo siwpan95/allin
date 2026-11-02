@@ -277,19 +277,21 @@ python tools/repocheck/main.py packages/allin-governance --exclude src,tests --s
 > `repos/...` → `<工作区根>` 之下；其它相对值 → 治理仓根 `allin/` 之下（如平台自身的 `platform`）。
 > 可用 `PLATFORM_REPOS_ROOT` 覆盖发布区根。
 
-## Gitee 项目组合全量索引（137 仓）
+## Gitee 项目组合全量索引（138 仓）
 
-全量 **137 个 Gitee 仓库**（公开 137 · 私有 0，2026-10-30 API 匿名分页实测；
-2026-10-26 口径为 135：整合删去 `repocheck`、`allin-platform`、`deepseek-harness` 三仓并补齐新项目，
-此后净增 2 仓）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
+全量 **138 个 Gitee 仓库**（公开 138 · 私有 0，2026-11-03 API 匿名分页实测；
+2026-10-30 口径为 137（+1 = `dsh-release-archiver`），2026-10-26 口径为 135：整合删去
+`repocheck`、`allin-platform`、`deepseek-harness` 三仓并补齐新项目，此后净增 2 仓）的索引见 [`PORTFOLIO.md`](PORTFOLIO.md)：
 按仓库名排序，含语言 / Star / 简介 / 可见性。该文件由脚本从 Gitee API 自动生成，是**索引而非源码镜像**。
 
 **治理原则：源码按需懒拉取**——只有开始具体开发某个项目时，才 `git clone` 到本机发布区
 （`<工作区根>/repos/<仓名>`；落点随机器，现值见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)）；
-不强制预先克隆全量 137 仓（各机按需，全量检出与部分检出并存）。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
+不强制预先克隆全量 138 仓（各机按需，全量检出与部分检出并存）。本仓（allin）只承载治理说明、文档枢纽、DSH preset 载体，
 以及**治理动脉**：两件已并入库的子件（`platform/` 集成平台、`tools/repocheck/` 体检器）
 加上 `deepseek-harness` 的治理内核（仅文档层，见第 6 条）；
-其余 **136 个仓库各自独立**（137 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
+其余 **137 个仓库各自独立**（138 减本仓自身），按需克隆、独立演进、整仓推送（铁律 0/3）。
+**远端 138 与本机 137 的差额 = 本仓自身**（`allin` 落在 `G:\allin`，不在 `G:\repos`）——
+2026-11-03 实测远端 137 个项目仓与本机 `G:\repos` 137 目录**双向差集为 0**。
 `PORTFOLIO.md` 随远端变化而过期，需刷新时重跑生成脚本。
 
 ## 治理准则（2026-08-27 深度审核固化）
@@ -312,4 +314,4 @@ python tools/repocheck/main.py packages/allin-governance --exclude src,tests --s
 
 ---
 
-*最后更新：2026-10-30（README 去单机化——标题与正文不再写死 `/projects/allin` 等单一机器路径，仓根/发布区/检出规模统一指向 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)；Gitee 组合口径 135 → **137**（2026-10-30 API 实测）并重跑 `build_portfolio.py --apply` 刷新 PORTFOLIO.md；DSH 仓外 checkout 落点标注随机器。@`SIWPAN` 实测。前史：2026-10-28 治理对账 `ef2a545`（订正门禁 15→19 陈旧口径、修 g15 自检假阳性、落地 REC-AU-17/18））*
+*最后更新：2026-11-03（Gitee 组合口径 137 → **138**（2026-11-03 匿名 API 分页实测：page1=100 / page2=38 / page3=0），并订正「其余 N 仓」推算式为 **137 减本仓自身**；实测远端 137 个项目仓与本机 `G:\repos` 137 目录双向差集为 0，差额 = 本仓自身落在 `G:\allin`。@`DESKTOP-8RSV60V` 实测。前史：2026-10-30 README 去单机化——标题与正文不再写死 `/projects/allin` 等单一机器路径，仓根/发布区/检出规模统一指向 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)；Gitee 组合口径 135 → **137**（2026-10-30 API 实测）并重跑 `build_portfolio.py --apply` 刷新 PORTFOLIO.md；DSH 仓外 checkout 落点标注随机器。@`SIWPAN` 实测。更早：2026-10-28 治理对账 `ef2a545`（订正门禁 15→19 陈旧口径、修 g15 自检假阳性、落地 REC-AU-17/18））*
