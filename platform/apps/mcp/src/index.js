@@ -105,6 +105,51 @@ function memoryVolumes() {
   }
 }
 
+// ---------------------------------------------------------------- BM25 检索（P2-①，2026-11-02）
+// 在零依赖前提下用 词频(tf) + 文档频率(idf) + 长度归一 做相关性排序，取代原来的原始词频；
+// 结构化字段权重（文件名/标题/就近小节/根级文档）作为加性 boost。
+// 明确**不上向量库** —— embedding 会打破「确定性、可审计、零外部依赖」取向（见 §117.3）。
+const BM25_K1 = 1.5
+const BM25_B = 0.75
+
+// 查询分词：按非「字母数字 + 中日韩」的边界切分；CJK 段用「整词 + 二元文法」免分词依赖。
+function tokenizeQuery(q) {
+  const out = new Set()
+  for (const part of String(q).split(/[\s,.;:!?()[\]{}"'`~|/\\+=*_<>@#$%^&—–…·]+/)) {
+    const p = part.trim()
+    if (!p) continue
+    if (/[一-鿿]/.test(p)) {
+      for (const seg of p.split(/([一-鿿]+)/)) {
+        const s = seg.trim()
+        if (!s) continue
+        if (/[一-鿿]/.test(s)) {
+          if (s.length >= 2) {
+            out.add(s)
+            for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2))
+          } else {
+            out.add(s)
+          }
+        } else if (/[a-z0-9]/i.test(s)) {
+          out.add(s.toLowerCase())
+        }
+      }
+    } else {
+      out.add(p.toLowerCase())
+    }
+  }
+  return [...out].filter((t) => t.length >= 1)
+}
+
+// 子串计数（大小写不敏感）：CJK 词整体匹配，ASCII 词大小写归一。
+function countOcc(haystack, needle) {
+  if (!needle) return 0
+  const h = haystack.toLowerCase()
+  const n = needle.toLowerCase()
+  let c = 0, i = 0
+  while ((i = h.indexOf(n, i)) !== -1) { c += 1; i += n.length }
+  return c
+}
+
 // ---------------------------------------------------------------- tools
 
 const TOOLS = [
@@ -160,7 +205,7 @@ const TOOLS = [
   {
     name: 'docs.search',
     tier: 'read',
-    description: '在文档枢纽里全文检索（不含 md/ 历史树），返回 file:line:片段',
+    description: '在文档枢纽里全文检索（BM25 + 结构化字段权重，不上向量库），返回 file:line 片段与 citation 引用（grounding）',
     inputSchema: {
       type: 'object',
       properties: { query: { type: 'string' }, limit: { type: 'number' } },
@@ -346,51 +391,104 @@ function callTool(name, args) {
     }
     case 'docs.search': {
       const docs = path.join(REPO, 'docs')
-      const q = String(a.query || '')
+      const q = String(a.query || '').trim()
       if (!q) return reject('query 不能为空')
       const cap = Math.min(a.limit || 20, 100)
-      let skippedNonText = 0
-      // 零依赖重排：没有 embedding，就用「命中次数 + 标题/就近小节/文件名加权」排序，
-      // 取代原来「按遍历顺序取前 N 条」——那样排在前面的常常只是碰巧先被读到的文件。
-      const scored = []
+      const terms = tokenizeQuery(q)
+      if (!terms.length) return reject('query 无可索引词')
+      // 单次遍历建语料统计（df / 平均行长度）并收集命中行。无 embedding、无重排模型，
+      // 只用 词频(tf) + 文档频率(idf, BM25) + 长度归一 —— 确定性、可审计、零外部依赖。
+      const lines = []            // {file,line,section,snippet,tf,len,depth,nameLower,headingLower,isHeading}
+      const docHas = new Map()    // file -> Set(term)  用于文档频率 df
+      let totalLen = 0, totalLines = 0, skippedNonText = 0
       const walk = (dir) => {
-        for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
-          if (name.name === 'md') continue
-          const full = path.join(dir, name.name)
-          if (name.isDirectory()) { walk(full); continue }
+        for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+          if (ent.name === 'md') continue
+          const full = path.join(dir, ent.name)
+          if (ent.isDirectory()) { walk(full); continue }
           // 只索引 Markdown：PDF / 表格 / 扫描件等二进制一律跳过并如实计数 ——
           // 专用解析引擎（如 RAGflow DeepDoc）与本机零依赖原则冲突，明确不做，
           // 所以**必须把跳过量报出来**，避免 agent 误以为「搜过但没结果」。
-          if (!name.name.endsWith('.md')) { skippedNonText += 1; continue }
+          if (!ent.name.endsWith('.md')) { skippedNonText += 1; continue }
           const rel = path.relative(REPO, full).replace(/\\/g, '/')
-          const nameBonus = name.name.includes(q) ? 2 : 0
-          const rootBonus = rel.split('/').length === 2 ? 0.5 : 0
-          const lines = readLines(full)
+          const relDepth = rel.split('/').length
+          const nameLower = ent.name.toLowerCase()
+          const fileLines = readLines(full)
+          const present = new Set()
           let heading = ''
-          lines.forEach((line, i) => {
+          fileLines.forEach((line, i) => {
             const trimmed = line.trim()
-            if (trimmed.startsWith('#')) { heading = trimmed.replace(/^#+\s*/, ''); return }
-            if (!line.includes(q)) return
-            let score = line.split(q).length - 1
-            if (trimmed.startsWith('#')) score += 3
-            if (heading && heading.includes(q)) score += 2
-            score += nameBonus + rootBonus
-            scored.push({
-              score, file: rel, line: i + 1,
-              section: heading || null,
-              snippet: trimmed.slice(0, 160),
-            })
+            if (!trimmed) return
+            const isHeading = trimmed.startsWith('#')
+            const body = isHeading ? trimmed.replace(/^#+\s*/, '') : trimmed
+            if (isHeading) heading = body
+            const tf = {}
+            let hasAny = false
+            for (const t of terms) {
+              const c = countOcc(body, t)
+              if (c > 0) { tf[t] = c; hasAny = true }
+            }
+            const len = body.length || 1
+            totalLen += len; totalLines += 1
+            if (hasAny) {
+              lines.push({
+                file: rel, line: i + 1, section: heading || null,
+                snippet: (isHeading ? '# ' : '') + body.slice(0, 160),
+                tf, len, depth: relDepth, nameLower,
+                headingLower: heading.toLowerCase(), isHeading,
+              })
+              for (const t of Object.keys(tf)) present.add(t)
+            }
           })
+          if (present.size) docHas.set(rel, present)
         }
       }
       try { walk(docs) } catch (e) { return fail(String(e.message)) }
+      const N = docHas.size || 1
+      const avgdl = totalLines ? totalLen / totalLines : 1
+      const idfCache = {}
+      const idfOf = (t) => {
+        if (idfCache[t] !== undefined) return idfCache[t]
+        let df = 0
+        for (const set of docHas.values()) if (set.has(t)) df += 1
+        return (idfCache[t] = Math.log(1 + (N - df + 0.5) / (df + 0.5)))
+      }
+      // BM25 基础分 + 结构化字段权重（文件名/标题/就近小节/根级文档）作为加性 boost。
+      const scored = []
+      for (const l of lines) {
+        let bm25 = 0
+        const matched = []
+        for (const t of terms) {
+          const f = l.tf[t]
+          if (!f) continue
+          matched.push(t)
+          bm25 += idfOf(t) * (f * (BM25_K1 + 1)) / (f + BM25_K1 * (1 - BM25_B + BM25_B * (l.len / avgdl)))
+        }
+        if (bm25 <= 0) continue
+        let boost = 0
+        if (terms.some((t) => l.nameLower.includes(t.toLowerCase()))) boost += 2
+        if (l.headingLower && terms.some((t) => l.headingLower.includes(t.toLowerCase()))) boost += 2
+        if (l.isHeading) boost += 3
+        if (l.depth === 2) boost += 0.5
+        scored.push({
+          score: Number((bm25 + boost).toFixed(4)),
+          bm25: Number(bm25.toFixed(4)),
+          boost: Number(boost.toFixed(4)),
+          file: l.file, line: l.line, section: l.section, snippet: l.snippet,
+          citation: `${l.file}#L${l.line}`,   // grounding：可指回源文档的精确行
+          matched_terms: matched,
+        })
+      }
       scored.sort((x, y) => (y.score - x.score) || x.file.localeCompare(y.file) || (x.line - y.line))
       return {
         text: JSON.stringify({
           query: q,
-          matched: scored.length,
+          terms,
+          model: 'bm25+field-weights',
           ranked: true,
-          scoring: '命中次数 + 标题×3 + 就近小节含词×2 + 文件名含词×2 + 根级文档×0.5',
+          params: { k1: BM25_K1, b: BM25_B, avgdl: Number(avgdl.toFixed(1)), docs: N },
+          scoring: 'BM25(idf·词频饱和·长度归一) + 结构权重(文件名×2 + 就近小节×2 + 标题行×3 + 根级文档×0.5)；不上向量库',
+          matched: scored.length,
           skippedNonText,
           note: skippedNonText
             ? `另有 ${skippedNonText} 个非 Markdown 文件未索引（PDF/表格/扫描件需专用解析引擎，与零依赖原则冲突，明确不做）`
@@ -766,6 +864,10 @@ if (argv.includes('--selftest')) {
   check('gate.list 返回门禁清单', textOf(2).includes('"gates"'))
   check('registry.query 返回结构', textOf(3).includes('"total"'))
   check('docs.search 命中', textOf(4).includes('hits'))
+  const ds4 = (() => { try { return JSON.parse(textOf(4)) } catch { return {} } })()
+  check('docs.search 使用 BM25 模型', ds4.model === 'bm25+field-weights')
+  check('docs.search 含 grounding citation',
+    Array.isArray(ds4.hits) && ds4.hits.length > 0 && ds4.hits.every((h) => typeof h.citation === 'string' && h.citation.includes('#L')))
   check('record.append 未确认即拒绝', msgs[5]?.result?.isError === true)
   check('未知工具报 isError', msgs[6]?.result?.isError === true)
   check('gate.history 返回留痕汇总', textOf(7).includes('"total"') || textOf(7).includes('留痕为空'))
