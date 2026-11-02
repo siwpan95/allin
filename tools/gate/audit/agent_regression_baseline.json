@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "commit": "d172589",
+  "ts": "2026-11-02T12:27:36Z",
+  "total": 6,
+  "passed": 6,
+  "pass_rate": 1.0,
+  "cases": {
+    "定位仓根": true,
+    "门禁数自述一致": true,
+    "MCP 工具面": true,
+    "MCP 自检": true,
+    "多载体一致": true,
+    "文档枢纽": true
+  }
+}

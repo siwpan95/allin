@@ -83,6 +83,12 @@ bin-release/
 # 豁免是「这一条不是问题，因为……」的**显式判定**，**理由必填**，属于要评审、要留痕的治理物。
 # ⇒ 不能跟着 audit/ 一起被忽略，否则 DSH vendor/ 那类有理由的例外会随克隆丢失。
 !/tools/gate/audit/repo_hygiene_exemptions.csv
+# 例外：**agent 行为回归的黄金集与基线必须入库**。
+# 与上方豁免表同性质：eval harness 的对比对象是「提交式基线 + 版本化黄金集」，
+# 二者都是要评审、要留痕、随克隆保留的治理物；若被忽略，他机拉取后对比模式无基线可读，
+# 版本间 diff 回归拦截即失效。基线是 runner 在 `--commit-baseline` 时写回的已知良好状态。
+!/tools/gate/audit/agent_regression_golden.json
+!/tools/gate/audit/agent_regression_baseline.json
 
 # reposcan 生成产物（脚本产出，不入版本控制；g01 会因内含机器路径报红，g05 判 output/ 为 artifact 目录）
 tools/reposcan/repos_meta.json
