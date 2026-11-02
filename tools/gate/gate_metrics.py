@@ -20,6 +20,13 @@ questions that actually matter (and that an auditor asks first):
    skipped, worked around, or switched off, and then it is not a control at all.
    Reported per label as p50 / p95 / max; p95 over budget is what counts, so a
    single cold-start outlier does not condemn a fast gate.
+5. **agent 执行观测 (agent execution observability)** -- 第 5 类指标（2026-11-02 新增）：
+   前四类全部只答「仓库体检做得怎么样」，没有一个能答 AgentOps 的核心问题 ——
+   **agent 这次任务走了几步、成了没有、卡在哪一步**。数据来自
+   `tools/gate/audit/agent-runs.jsonl`（MCP 每次工具调用落一个 span，
+   字段向 OTel GenAI 语义约定对齐）。口径：一次 MCP 会话 = 一个 trace；
+   会话内全部调用成功才算一次做完（对应 AgentOps 的 escalation rate 口径）；
+   步数越多越可能绕圈 ⇒ 对应「步数预算 + 熔断器」。
 
 The tool is a reporter, never a gate: it always exits 0 unless asked for an
 unusable input (missing trail), where it exits 3 like the gates do.
@@ -36,6 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent          # tools/
 AUDIT = ROOT / "gate" / "audit"
 TRAIL = AUDIT / "gate-runs.jsonl"
+AGENT_TRAIL = AUDIT / "agent-runs.jsonl"
 SNAPSHOTS = AUDIT / "exceptions-snapshots.jsonl"
 BASELINES = ROOT / "gate" / "governance" / "baseline"
 EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
@@ -146,6 +154,93 @@ def latency(runs: list[dict], budget_ms: int) -> dict:
             "over_budget": [item["label"] for item in per_label if item["over_budget"]]}
 
 
+# ---------------------------------------------------------------- agent ops
+# 第五类指标（2026-11-02）：**agent 侧**执行观测。
+#
+# 为什么门禁指标还不够：①②③④ 全部只答「仓库体检做得怎么样」——
+# 逃逸率、新鲜度、例外燃尽、门禁延迟。没有一个能答 AgentOps 的核心问题：
+#
+#     **agent 这次任务走了几步、成了没有、卡在哪一步？**
+#
+# AgentOps 的失败模式不是「模型说错了」，而是「做了无法解释、无法回滚的动作」。
+# 要解释一个动作，先得有动作序列 —— 这就是 `agent-runs.jsonl` 的职责。
+#
+# 口径（刻意保守，避免指标自欺）：
+#   * **一次会话 = 一个 trace**（MCP 走 stdio JSON-RPC，进程即会话）；
+#   * **会话成败**：该会话内**全部**工具调用都成功 ⇒ ok；只要有一次 error ⇒ failed。
+#     （AgentOps 的「escalation rate」同源：能不能一次做完，比做得多快更重要。）
+#   * **步数**：span 数 —— 步数越多越可能绕圈（呼应「步数预算 + 熔断器」）。
+def agent_ops(spans: list[dict]) -> dict:
+    """Agent execution metrics: session success rate + step distribution.
+
+    **口径的坑（2026-11-02 实测发现）**：工具返回 `isError` 有两种截然不同的含义 ——
+      ① **业务性拒绝**：agent 主动试了危险路径，被策略挡住（如缺 `confirm=true`、未知工具名）。
+         这是**治理机制正常工作**，是一次**成功**的验证，不该算「agent 任务失败」；
+      ② **真正失败**：工具崩了/超时/结果不可用。
+    早期版本把两者都算 error ⇒ 自检跑完「一次做完率 0%」，把**机制生效**误报成**任务失败** ——
+    这类指标自欺比没指标更糟。
+    ⇒ 现在按 `error_kind` 区分：`rejected`（业务拒绝，不计失败）/ `failed`（真失败）/ 未标注则按 failed（保守）。
+    """
+    sessions: dict[str, list[dict]] = {}
+    for span in spans:
+        trace_id = str(span.get("trace_id") or span.get("session_id") or "")
+        if not trace_id:
+            continue
+        sessions.setdefault(trace_id, []).append(span)
+
+    if not sessions:
+        return {"state": "no-evidence", "sessions": 0, "spans": 0,
+                "success_rate": None, "steps_p50": 0, "steps_p95": 0, "steps_max": 0,
+                "by_tool": [], "failed_traces": [], "rejected_calls": 0, "failed_calls": 0}
+
+    def kind_of(span: dict) -> str:
+        kind = str(span.get("error_kind") or "")
+        if kind:
+            return kind
+        return "failed" if not bool(span.get("ok")) else "ok"
+
+    step_counts = [len(items) for items in sessions.values()]
+    rejected_total = sum(1 for span in spans if kind_of(span) == "rejected")
+    failed_total = sum(1 for span in spans if kind_of(span) == "failed")
+    failed_traces = [tid for tid, items in sessions.items()
+                     if any(kind_of(item) == "failed" for item in items)]
+
+    by_tool: dict[str, dict] = {}
+    for span in spans:
+        name = str(span.get("tool") or span.get("gen_ai.tool.name") or "")
+        if not name:
+            continue
+        slot = by_tool.setdefault(name, {"tool": name, "calls": 0, "errors": 0,
+                                         "rejected": 0, "total_ms": 0})
+        slot["calls"] += 1
+        kind = kind_of(span)
+        if kind == "failed":
+            slot["errors"] += 1
+        elif kind == "rejected":
+            slot["rejected"] += 1
+        try:
+            slot["total_ms"] += int(span.get("ms", 0))
+        except (TypeError, ValueError):
+            pass
+    tool_rows = sorted(by_tool.values(), key=lambda item: -item["calls"])
+
+    ok_sessions = len(sessions) - len(failed_traces)
+    return {
+        "state": "ok",
+        "sessions": len(sessions),
+        "spans": len(spans),
+        "success_rate": round(ok_sessions / len(sessions), 4),
+        "failed_sessions": len(failed_traces),
+        "rejected_calls": rejected_total,
+        "failed_calls": failed_total,
+        "steps_p50": percentile(step_counts, 0.5),
+        "steps_p95": percentile(step_counts, 0.95),
+        "steps_max": max(step_counts),
+        "by_tool": tool_rows,
+        "failed_traces": failed_traces[:10],
+    }
+
+
 def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> dict:
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=days)
@@ -180,6 +275,8 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
 
     exceptions = count_exceptions()
     total_exceptions = sum(exceptions.values())
+    agent_spans = load_runs(AGENT_TRAIL)
+    agent_window = [span for span in agent_spans if in_window(span, since)]
     return {
         "window_days": days,
         "runs_total": len(runs),
@@ -190,6 +287,7 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
         "evidence_freshness": freshness,
         "exceptions": {"total": total_exceptions, "by_source": exceptions},
         "latency": latency(window, budget_ms),
+        "agent_ops": agent_ops(agent_window),
     }
 
 
@@ -222,6 +320,27 @@ def render(metrics: dict, previous: int | None) -> str:
         flag = "超限" if item["over_budget"] else "ok"
         lines.append(f"       - [{flag}] {item['label']}：p50 {item['p50']}ms / "
                      f"p95 {item['p95']}ms / max {item['max']}ms（n={item['n']}）")
+    # ⑤ agent 侧执行观测（AgentOps）：会话成功率 + 步数分布
+    agent = metrics.get("agent_ops") or {}
+    if agent.get("state") != "ok":
+        lines.append("  ⑤ agent 执行观测：无证据（还没有 agent 工具调用留痕）")
+    else:
+        rate = agent["success_rate"]
+        lines.append(f"  ⑤ agent 执行观测：会话 {agent['sessions']} 次 / span {agent['spans']} 个"
+                     f"　一次做完率 {rate * 100:.1f}%"
+                     f"（失败会话 {agent['failed_sessions']}）")
+        lines.append(f"       步数：p50 {agent['steps_p50']} / p95 {agent['steps_p95']} / max {agent['steps_max']}"
+                     f"（步数越多越可能绕圈 ⇒ 对应「步数预算 + 熔断器」）")
+        lines.append(f"       调用分类：策略拒绝 {agent.get('rejected_calls', 0)} 次"
+                     f"（治理机制生效，不计失败）／真失败 {agent.get('failed_calls', 0)} 次")
+        for item in agent["by_tool"][:6]:
+            detail = ""
+            if item.get("errors"):
+                detail += f"，失败 {item['errors']}"
+            if item.get("rejected"):
+                detail += f"，拒绝 {item['rejected']}"
+            lines.append(f"       - {item['tool']}：调用 {item['calls']} 次"
+                         f"，累计 {item['total_ms']}ms{detail}")
     return "\n".join(lines)
 
 

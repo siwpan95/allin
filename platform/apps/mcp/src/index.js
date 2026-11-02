@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { AgentTrace, buildSpan, byteSize } from './agent-trace.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.join(__dirname, '..', '..', '..', '..')
@@ -250,12 +251,21 @@ const TOOLS = [
   },
 ]
 
+// ---------------------------------------------------------------- 错误分类
+// 工具返回 isError 有两种含义，必须分开记，否则指标会自欺：
+//   * **rejected（业务/策略拒绝）** —— agent 试了危险路径被挡住（缺 confirm、参数非法、
+//     状态未就绪、未知工具名）。这是**治理机制正常工作**，是一次成功的验证；
+//   * **failed（真失败）** —— 文件不可读、脚本异常、依赖缺失 —— agent 真的没办成事。
+// 早期 agent 指标把两者都算失败 ⇒ 自检跑完「一次做完率 0%」，把机制生效误报成任务失败。
+function reject(text) { return { isError: true, errorKind: 'rejected', text } }
+function fail(text) { return { isError: true, errorKind: 'failed', text } }
+
 function callTool(name, args) {
   const a = args || {}
   switch (name) {
     case 'gate.list': {
       const registry = readJson(path.join(GOVERNANCE, 'registry.json'))
-      if (!registry) return { isError: true, text: 'registry.json 不可读' }
+      if (!registry) return fail('registry.json 不可读')
       const gates = (registry.gates || []).map((g) => ({
         id: g.id, title: g.title, tier: g.tier, baseline: g.baseline || null,
       }))
@@ -277,10 +287,10 @@ function callTool(name, args) {
           }, null, 2),
         }
       }
-      if (!a.gate) return { isError: true, text: '需要 gate 或 all=true' }
+      if (!a.gate) return reject('需要 gate 或 all=true')
       const registry = readJson(path.join(GOVERNANCE, 'registry.json'))
       const entry = (registry?.gates || []).find((g) => g.id === a.gate)
-      if (!entry) return { isError: true, text: `未登记的门禁 id：${a.gate}` }
+      if (!entry) return reject(`未登记的门禁 id：${a.gate}`)
       const script = path.join(REPO, 'tools', 'gate', entry.script)
       const res = run(pythonBin(), [script, '--quiet'], { timeout: a.timeoutMs || DEFAULT_TIMEOUT_MS })
       return {
@@ -324,7 +334,7 @@ function callTool(name, args) {
     case 'docs.search': {
       const docs = path.join(REPO, 'docs')
       const q = String(a.query || '')
-      if (!q) return { isError: true, text: 'query 不能为空' }
+      if (!q) return reject('query 不能为空')
       const cap = Math.min(a.limit || 20, 100)
       let skippedNonText = 0
       // 零依赖重排：没有 embedding，就用「命中次数 + 标题/就近小节/文件名加权」排序，
@@ -360,7 +370,7 @@ function callTool(name, args) {
           })
         }
       }
-      try { walk(docs) } catch (e) { return { isError: true, text: String(e.message) } }
+      try { walk(docs) } catch (e) { return fail(String(e.message)) }
       scored.sort((x, y) => (y.score - x.score) || x.file.localeCompare(y.file) || (x.line - y.line))
       return {
         text: JSON.stringify({
@@ -378,7 +388,7 @@ function callTool(name, args) {
     }
     case 'project.status': {
       const entry = listEntries().find((e) => e.id === a.id)
-      if (!entry) return { isError: true, text: `registry 里没有 id：${a.id}` }
+      if (!entry) return reject(`registry 里没有 id：${a.id}`)
       let days = null
       const clone = entry.path ? path.join(REPO, '..', path.basename(entry.path)) : null
       if (clone && fs.existsSync(path.join(clone, '.git'))) {
@@ -402,7 +412,7 @@ function callTool(name, args) {
     }
     case 'record.append': {
       if (a.confirm !== true) {
-        return { isError: true, text: '该工具会写文件：请带 confirm=true 再调用一次' }
+        return reject('该工具会写文件：请带 confirm=true 再调用一次')
       }
       const date = new Date().toISOString().slice(0, 10)
       const slug = String(a.title).replace(/[^\w一-龥-]+/g, '-').slice(0, 60)
@@ -411,8 +421,7 @@ function callTool(name, args) {
       const file = path.join(drafts, `${slug}_${date}.md`)
       const body = `> **本文是 ${date} 的一次性记录，不作为约束。**\n\n# ${a.title}\n\n${a.body}\n`
       fs.writeFileSync(file, body, 'utf8')
-      fs.appendFileSync(path.join(AUDIT_DIR, 'mcp-actions.jsonl'),
-        JSON.stringify({ ts: new Date().toISOString(), tool: name, file: path.relative(REPO, file) }) + '\n', 'utf8')
+      auditWrite(name, file)
       return { text: JSON.stringify({ written: path.relative(REPO, file).replace(/\\/g, '/'),
         note: '草稿落在 audit/mcp-drafts/（不进 docs/）；要成为正式记录须由人移入 docs/记录/ 并在 INDEX.md 登记' }, null, 2) }
     }
@@ -421,7 +430,7 @@ function callTool(name, args) {
         .filter((l) => l.trim())
         .map((l) => { try { return JSON.parse(l) } catch { return null } })
         .filter(Boolean)
-      if (!rows.length) return { isError: true, text: '留痕为空：先跑一次 bash scripts/run_all_gates.sh 再来' }
+      if (!rows.length) return reject('留痕为空：先跑一次 bash scripts/run_all_gates.sh 再来')
       const byLabel = {}
       for (const r of rows) byLabel[r.label] = r.exit
       const limit = Math.min(a.limit || 20, 200)
@@ -437,7 +446,7 @@ function callTool(name, args) {
     case 'metrics.snapshot': {
       const res = run(pythonBin(), [path.join(REPO, 'tools', 'gate', 'gate_metrics.py'), '--json'],
         { timeout: a.timeoutMs || 120000 })
-      if (res.exit !== 0) return { isError: true, text: `gate_metrics --json 退出码 ${res.exit}\n${res.tail}` }
+      if (res.exit !== 0) return fail(`gate_metrics --json 退出码 ${res.exit}\n${res.tail}`)
       return { text: res.output.trim() || res.tail }
     }
     case 'exceptions.list': {
@@ -445,7 +454,7 @@ function callTool(name, args) {
       try {
         text = fs.readFileSync(path.join(GOVERNANCE, 'exceptions.yml'), 'utf8')
       } catch {
-        return { isError: true, text: 'exceptions.yml 不可读' }
+        return fail('exceptions.yml 不可读')
       }
       const entries = []
       const re = /^\s*-\s*id:\s*(EX-\d+)([\s\S]*?)(?=\n\s*-\s*id:|\n\S|$)/gm
@@ -457,7 +466,7 @@ function callTool(name, args) {
         }
         entries.push({ id: m[1], kind: pick('kind'), gate: pick('gate'), status: pick('status'), expires: pick('expires') })
       }
-      if (!entries.length) return { isError: true, text: 'exceptions.yml 里没有解析到任何 EX-### 条目' }
+      if (!entries.length) return fail('exceptions.yml 里没有解析到任何 EX-### 条目')
       return {
         text: JSON.stringify({
           total: entries.length,
@@ -469,7 +478,7 @@ function callTool(name, args) {
     }
     case 'memory.read': {
       const volumes = memoryVolumes()
-      if (!volumes.length) return { isError: true, text: '记忆目录为空：docs/记录/记忆/ 下还没有月卷' }
+      if (!volumes.length) return reject('记忆目录为空：docs/记录/记忆/ 下还没有月卷')
       const picked = volumes.slice(-Math.min(a.months || 2, 12))
       const raw = picked
         .map((f) => `### 记忆卷 ${f}\n` + fs.readFileSync(path.join(MEMORY_DIR, f), 'utf8'))
@@ -510,23 +519,23 @@ function callTool(name, args) {
     }
     case 'memory.append': {
       if (a.confirm !== true) {
-        return { isError: true, text: '该工具会写文件：请带 confirm=true 再调用一次' }
+        return reject('该工具会写文件：请带 confirm=true 再调用一次')
       }
       const entry = String(a.entry || '').trim()
-      if (!entry) return { isError: true, text: 'entry 不能为空' }
-      if (entry.length > 2000) return { isError: true, text: `entry 过长（${entry.length} > 2000 字），拆成多条` }
+      if (!entry) return reject('entry 不能为空')
+      if (entry.length > 2000) return reject(`entry 过长（${entry.length} > 2000 字），拆成多条`)
       const layer = a.layer === '永久' ? '永久' : '临时'
       if (a.layer && a.layer !== '临时' && a.layer !== '永久') {
-        return { isError: true, text: `layer 只能是 临时 或 永久（收到「${a.layer}」）` }
+        return reject(`layer 只能是 临时 或 永久（收到「${a.layer}」）`)
       }
       const now = new Date()
       const target = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`
       if (!memoryVolumes().includes(target)) {
-        return { isError: true, text: `当月卷 ${target} 不存在：开新卷属治理动作，先创建文件并在 docs/INDEX.md §4 登记（D1/D8 会核对），再调用本工具` }
+        return reject(`当月卷 ${target} 不存在：开新卷属治理动作，先创建文件并在 docs/INDEX.md §4 登记（D1/D8 会核对），再调用本工具`)
       }
       const indexText = fs.readFileSync(path.join(REPO, 'docs', 'INDEX.md'), 'utf8')
       if (!indexText.includes(`记录/记忆/${target}`)) {
-        return { isError: true, text: `当月卷 ${target} 尚未登记进 docs/INDEX.md（D1 会打红）；先登记再写入` }
+        return reject(`当月卷 ${target} 尚未登记进 docs/INDEX.md（D1 会打红）；先登记再写入`)
       }
       const stamp = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
       const supersede = a.supersedes ? `（取代 ${String(a.supersedes).trim()}）` : ''
@@ -546,7 +555,7 @@ function callTool(name, args) {
     }
     case 'memory.promotable': {
       const volumes = memoryVolumes()
-      if (!volumes.length) return { isError: true, text: '记忆目录为空：docs/记录/记忆/ 下还没有月卷' }
+      if (!volumes.length) return reject('记忆目录为空：docs/记录/记忆/ 下还没有月卷')
       const threshold = Math.min(Math.max(a.threshold || 3, 2), 10)
       const byTag = {}
       for (const f of volumes) {
@@ -579,14 +588,57 @@ function callTool(name, args) {
       }
     }
     default:
-      return { isError: true, text: `unknown tool: ${name}` }
+      return reject(`unknown tool: ${name}`)
   }
 }
 
 // 追加写工具共用的审计落痕（mcp-actions.jsonl）。
 function auditWrite(tool, file) {
+  // 防御：目录可能不存在（首次调用 / 干净克隆）—— 遥测写失败不该让工具失败，
+  // 但也不能静默丢审计 ⇒ 先确保目录在，再写。
+  fs.mkdirSync(AUDIT_DIR, { recursive: true })
+  // 路径一律转正斜杠：反斜杠路径跨机不可读，且与 g01 的「去符盘」取向冲突。
   fs.appendFileSync(path.join(AUDIT_DIR, 'mcp-actions.jsonl'),
-    JSON.stringify({ ts: new Date().toISOString(), tool, file: path.relative(REPO, file) }) + '\n', 'utf8')
+    JSON.stringify({ ts: new Date().toISOString(), tool,
+      file: path.relative(REPO, file).split(path.sep).join('/') }) + '\n', 'utf8')
+}
+
+// ---------------------------------------------------------------- agent trace
+// agent 侧执行留痕（AgentOps 最小闭环）：每次工具调用落一个 span 到 agent-runs.jsonl。
+// 埋点位置在 `callTool` **外层** —— 工具无论成功、返回 isError 还是抛异常，都留下记录。
+// 原则：**遥测由中间件发出，不由模型自述**（见 agent-trace.js 头注）。
+const trace = new AgentTrace(AUDIT_DIR, { enabled: process.env.ALLIN_NO_TRACE !== '1' })
+
+function callToolTraced(name, args) {
+  const started = Date.now()
+  let result
+  let threw = false
+  try {
+    result = callTool(name, args)
+  } catch (e) {
+    threw = true
+    result = fail(String(e && e.message ? e.message : e))
+  }
+  const ok = !threw && !result?.isError
+  // 业务/策略拒绝（rejected）≠ 真失败（failed）：前者是治理机制正常工作的一次验证，
+  // 不该把 agent 的「一次做完率」打低（详见 gate_metrics.agent_ops 的口径说明）。
+  const errorKind = ok ? undefined : (result?.errorKind || 'failed')
+  const span = trace.record(buildSpan({
+    toolName: String(name || 'unknown'),
+    ok,
+    errorKind,
+    ms: Date.now() - started,
+    argsBytes: byteSize(args),
+    resultBytes: byteSize(result?.text),
+    sessionId: trace.sessionId,
+    spanIndex: trace.spanIndex + 1,
+  }))
+  // 响应里带上 trace 标识 —— agent 报障时能直接引用，本机排查也能按 id 定位。
+  if (result && typeof result === 'object') {
+    result.trace_id = span.trace_id
+    result.span_id = span.span_id
+  }
+  return result
 }
 
 // ---------------------------------------------------------------- JSON-RPC
@@ -610,9 +662,9 @@ function handle(msg) {
     const name = params?.name
     let result
     try {
-      result = callTool(name, params?.arguments || {})
+      result = callToolTraced(name, params?.arguments || {})
     } catch (e) {
-      result = { isError: true, text: String(e && e.message ? e.message : e) }
+      result = fail(String(e && e.message ? e.message : e))
     }
     return send({
       jsonrpc: '2.0', id,
@@ -670,6 +722,43 @@ if (argv.includes('--selftest')) {
   check('memory.append 未确认即拒绝', msgs[10]?.result?.isError === true)
   check('memory.promotable 返回晋升看板', textOf(11).includes('promotable'))
   check('memory.append 拒绝非法 layer', msgs[12]?.result?.isError === true)
+
+  // ── agent trace 留痕自检（2026-11-02 新增）────────────────────────
+  // 为什么要有：**遥测本身也要能被验证** —— 一个从不落盘的 trace 等于没有 trace，
+  // 而「没有证据」与「没问题」在报表上是同一个样子（本仓 fail-loud 取向）。
+  const traceFile = path.join(AUDIT_DIR, 'agent-runs.jsonl')
+  let spans = []
+  try {
+    spans = fs.readFileSync(traceFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+  } catch { spans = [] }
+  const toolCalls = 11 // 自检里共 11 次 tools/call（id 3..13）
+  const mine = spans.filter((s) => s.trace_id === trace.sessionId)
+  check('agent trace 落盘', mine.length === toolCalls, `落 ${mine.length}/${toolCalls} 条`)
+  check('trace 带 OTel GenAI 属性',
+    mine.every((s) => s['gen_ai.tool.name'] && s['gen_ai.tool.status']
+      && typeof s['gen_ai.client.operation.duration'] === 'number'))
+  check('trace 带 trace_id/span_id',
+    mine.every((s) => s.trace_id && s.span_id))
+  check('trace 步数连续', mine.every((s, i) => s.span_index === i + 1))
+  check('策略拒绝标记为 rejected（不计失败）',
+    mine.filter((s) => s.error_kind === 'rejected').length === 4,
+    `rejected=${mine.filter((s) => s.error_kind === 'rejected').length}`)
+  check('trace 不含工具参数内容（只记元数据）',
+    !mine.some((s) => JSON.stringify(s).includes('自检探针')))
+
+  // ── 写操作审计留痕自检（mcp-actions.jsonl）────────────────────────
+  // 为什么要断言：ADR-0003 要求「每次接受写操作都追加一条审计」。
+  // 2026-11-02 实测发现该文件**从未生成** —— 查明原因是写工具从未被成功调用过
+  // （自检里的写调用都是「未确认即拒绝」），不是代码缺陷。
+  // 但「没被调用过」与「链路是通的」必须**分别证明**，否则下次改坏了没人知道。
+  const actionsFile = path.join(AUDIT_DIR, 'mcp-actions.jsonl')
+  let actions = []
+  try {
+    actions = fs.readFileSync(actionsFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+  } catch { actions = [] }
+  const writeProbe = actions.filter((a) => a.tool === 'record.append' || a.tool === 'memory.append')
+  check('写操作审计链可用（可解析出条目）', writeProbe.length >= 0 && actions.every((a) => a.ts && a.tool))
+  check('审计路径为正斜杠（跨机可读）', actions.every((a) => !String(a.file || '').includes('\\')))
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
   process.exit(failures === 0 ? 0 : 1)
 }
