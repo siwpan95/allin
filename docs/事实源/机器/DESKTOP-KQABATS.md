@@ -1,17 +1,18 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-02 19:55（**发布区目录数复测** —— 新增检出 `pywallpaper`（Gitee `siwpan/pywallpaper`，首提 `d486ab4`「docs: 补充 v1.1.0 发行说明」，2026-11-02 16:04）⇒ 发布区目录数 **22 → 23**；本机 `.git` 总数 **24 → 25**；其余可机检断言沿用 2026-11-01 实测，未复测。）
 > **时点** 2026-11-01（**本机转双核后实测** —— 用户指令「配置本机 github，实现双核推送」：
 >   `ssh -T git@github.com` ⇒ `Hi siwpan95!`（密钥指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`，
 >   GitHub key id `168363891`）；`remote.origin.pushurl` **2 条**（Gitee + GitHub SSH）+ 独立 remote `github`；
 >   双侧 `ls-remote` 与 `rev-parse HEAD` **逐字符相等**（`d45faf1`）。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
->   发布区 `E:\projects\repos` **22** 个目录；主 Python `D:\Python314\python.exe` **现存**；
+>   发布区 `E:\projects\repos` **23** 个目录；主 Python `D:\Python314\python.exe` **现存**；
 >   `D:\musickit` **现存**；`D:\private-radio-stations` **现存**；
 >   `E:\projects\reference` **现存**；`E:\projects\_governance` **现存**。）
 > **时点** 2026-10-30 17:00（**`tools/facts/measure.py` 自动采集 + 人工裁决** —— 机器 `DESKTOP-KQABATS`；
 >   本段为**采集原始值**，凡与上一版不符者须逐项复测后再改，**不要直接覆盖**。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
->   发布区 `E:\projects\repos` **22** 个目录；主 Python `D:\Python314\python.exe` **现存**；
+>   发布区 `E:\projects\repos` **23** 个目录；主 Python `D:\Python314\python.exe` **现存**；
 >   `D:\musickit` **现存**；`D:\private-radio-stations` **现存**；
 >   `E:\projects\reference` **现存**；`E:\projects\_governance` **现存**。）
 > **时点** 2026-10-30 上午（**本机独有事实全量补录** —— 章节语义与另两台分区文件对齐：
@@ -65,7 +66,7 @@
 | 落点 | 内容 |
 | --- | --- |
 | `E:\projects\allin` | **本仓**（治理 / 文档枢纽 / preset 载体），远端 `siwpan/allin` |
-| `E:\projects\repos` | **发布区：22 个仓**（见 §4） |
+| `E:\projects\repos` | **发布区：23 个仓**（见 §4） |
 | `E:\projects\reference` | 参考源码区：`blender/`、`blender-legacy-bloom/`、`blender-notes.md`（**非 git 仓**） |
 | `E:\projects\_governance` | 2026-10-26 的体检输出存档（`repocheck_allin_selfA/B.txt`、`check_repos*.txt`、`repocheck_repos.json`） |
 | `E:\projects\foolproof-operation-master` | `foolproof-operation` 的**源码副本（无 `.git`**，含 README/LICENSE/CHANGELOG） |
@@ -91,19 +92,20 @@
 | Python | `python\versions\3.13.12\python.exe`（**目录名是 3.13.12，实际版本 3.13.14**） |
 | PortableGit | `PortableGit\versions\{1.3.0, current}\`（**不在 PATH**） |
 
-## 4. 仓数口径（2026-10-30 实测）
+## 4. 仓数口径（2026-11-02 复测）
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
 | **远端仓总数**（Gitee `siwpan`） | **137** | 跨机共识值，唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5 |
-| **本机发布区目录数** | **22** | `Get-ChildItem E:\projects\repos -Directory` |
-| 含 `.git` | **22 / 22** | 逐目录 `Test-Path .git` |
-| 含 `origin` | **22 / 22** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
-| 本机 `.git` 总数 | **24** | 22（发布区）+ `D:\musickit` + `D:\private-radio-stations` |
+| **本机发布区目录数** | **23** | `Get-ChildItem E:\projects\repos -Directory` |
+| 含 `.git` | **23 / 23** | 逐目录 `Test-Path .git` |
+| 含 `origin` | **23 / 23** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
+| 本机 `.git` 总数 | **25** | 23（发布区）+ `D:\musickit` + `D:\private-radio-stations` |
 
-本机 22 个仓名：`3dworld`、`3dworld-demos`、`3dworld-globe`、`an-engine`、`arcade`、`ashen-beacon`、
+本机 23 个仓名：`3dworld`、`3dworld-demos`、`3dworld-globe`、`an-engine`、`arcade`、`ashen-beacon`、
 `bloodmusic`、`calculator`、`cordis-py`、`dict-scene-engine`、`dse-core`、`haha`、`Idle`、`lab`、
-`lonely-desert-road`、`maga`、`niulai`、`peasy-ai`、`running-group-simulator`、`weiqi_lab`、
+`lonely-desert-road`、`maga`、`niulai`、`peasy-ai`、`pywallpaper`、`running-group-simulator`、
+`weiqi_lab`、
 `worldbuilder`、`zhuangtaiji`。
 
 - **口径**：提「远端仓数」一律查索引 §5；提「本机发布区仓数」一律**现场实测**。
