@@ -63,7 +63,7 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     # `looks_like_secret_hex`; this only decides *which* lines reach it. Hex that sits
     # inside a URL (preceded/followed by ':', '/' or '@') is excluded here so the
     # url-userinfo branch -- which already knows about sample hosts -- keeps authority.
-    ("hex-secret", re.compile(r"(?<![0-9a-fA-F:/@])(?:[0-9a-fA-F]{30,63})(?![0-9a-fA-F:/@])")),
+    ("hex-secret", re.compile(r"(?<![0-9a-fA-F:/@])(?:[0-9a-fA-F]{30,63})(?![0-9a-fA-F:/@])")),  # gov-paths: allow —— 字符类里的 F:/ 被 g01 WIN_PATH 误判为 windows 路径，非真路径
 )
 
 #: A value that is a documented sample rather than a secret.
