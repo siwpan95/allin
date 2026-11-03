@@ -1,8 +1,14 @@
-# allin 统一调度配置树（单一事实来源）
+# allin 统一调度配置树（支柱清单的唯一数据源）
 #
 # 四大支柱：docs（文档）/ platform（管理）/ preset（治理模式）/ tools（工具）
 # 经 cordis 内核挂载，由统一 CLI（allin_cli.py）调度。
-# 改一行 yml 即可换装配，不改代码。
+#
+# 语义（ADR-0006，2026-11-04 起）：
+#   - entry 的 id 必须已登记在 kernel/registry.py 的 SERVICES 封闭白名单 ——
+#     白名单外的 id 会在 kernel/tree.py 导入时立即报错（fail-loud），不是挂载时才炸；
+#   - kernel/tree.py 的 WANT_ALL 从本文件的 entry id **自动推导**，改本文件即改清单；
+#   - 新增支柱 = ① registry.py 加短名 → ② services/ 加实现 → ③ 本文件加 entry（共 3 处，
+#     其中代码边界 2 处 + 数据 1 处；本文件不再是"第三份手抄"）。
 - name: docs
   id: docs
 - name: platform

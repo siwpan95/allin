@@ -32,13 +32,42 @@ from kernel.registry import SYNTH_PREFIX  # noqa: E402
 # 配置树目录（仓库资产，不随 wheel 分发；可用 ALLIN_CONFIGS 指向别处）
 CONFIG_DIR = os.environ.get('ALLIN_CONFIGS') or os.path.join(ROOT, 'kernel', 'configs')
 
-# 全部四大支柱就绪所需的最低服务集（CLI 引导与 headless 验证共用）
-WANT_ALL = ('docs', 'platform', 'preset', 'tools')
 ALLIN_CONFIG = 'cordis.allin.yml'
 
 
 def config_path(name: str) -> str:
     return os.path.join(CONFIG_DIR, name)
+
+
+def _want_all_from_config() -> tuple:
+    """支柱清单唯一数据源（ADR-0006，2026-11-04 工程审查 A1 的收口实现）。
+
+    此前"四大支柱"这一份事实在 kernel/registry.py:SERVICES、本文件的 WANT_ALL、
+    configs/cordis.allin.yml 三处手抄 —— 新增支柱要改 3 个文件，且漂移无报警。
+    现在：WANT_ALL 从 yml 的 entry id **推导**，并 fail-loud 校验 ids ⊆ registry.SERVICES
+    （yml 里写了白名单外的短名 = import 即红，而不是挂载时才炸）。
+    新增第五支柱的路径收敛为：① registry.py 加短名 → ② services/ 加实现 → ③ yml 加 entry。
+    """
+    try:
+        with open(config_path(ALLIN_CONFIG), encoding='utf-8') as fh:
+            data = yaml.safe_load(fh) or []
+    except FileNotFoundError:
+        # 配置缺席（新装环境 / ALLIN_CONFIGS 指向空目录）时的出厂口径
+        return ('docs', 'platform', 'preset', 'tools')
+    ids = tuple(e['id'] for e in data if isinstance(e, dict) and e.get('id'))
+    unknown = [i for i in ids if i not in registry.SERVICES]
+    if unknown:
+        raise RuntimeError(
+            f'{ALLIN_CONFIG} 含 registry.SERVICES 白名单之外的 entry id：{unknown}'
+            f'（允许：{sorted(registry.SERVICES)}）——'
+            '新增支柱须先改 kernel/registry.py（封闭表）+ kernel/services/ 实现，再回 yml 登记'
+        )
+    if not ids:
+        raise RuntimeError(f'{ALLIN_CONFIG} 没有任何带 id 的 entry，无法推导支柱清单')
+    return ids
+
+
+WANT_ALL = _want_all_from_config()
 
 
 # ---- 配置树 entry 白名单（安全：配置即代码）----------------------------------
