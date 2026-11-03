@@ -66,25 +66,25 @@
 | 落点 | 内容 |
 | --- | --- |
 | `D:\projects\allin` | **本仓**（治理仓，`origin` = `https://gitee.com/siwpan/allin.git`） |
-| `D:\projects\repos` | **发布区**（Gitee 仓的本地检出，全量检出，见 §4 仓数） |
+| `D:\projects\repos` | **发布区**（Gitee 仓的本地检出，**全量检出**（2026-11-03 晚补检出 `dsh-release-archiver` 后恢复），见 §4 仓数） |
 
 - 便携工具链：`C:\Users\13122\.workbuddy\binaries\`（Node / Python / 等，随 WorkBuddy）；
   git 走 WorkBuddy vendor 的 PortableGit（见 §5）。
 - WorkBuddy 会话工作区按日期目录管理（`C:\Users\13122\WorkBuddy\<日期时间>\`）。
 
-## 4. 仓数口径（2026-10-30 实测）
+## 4. 仓数口径（2026-10-30 实测；2026-11-03 复测）
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **137** | API 匿名分页实测（2026-10-30 上午）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5 |
-| **本机发布区目录数** | **137** | `D:\projects\repos` **137** 个仓 |
-| 含 `.git` | **137 / 137** | 逐目录 `Test-Path .git` |
-| 含 `origin` | **137 / 137** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
-| 本机 `.git` 总数 | **138** | 137（发布区）+ 本仓 `D:\projects\allin` |
+| **远端仓总数**（Gitee `siwpan`） | **138** | API 匿名分页实测（**2026-11-03 复测**：page1=100 / page2=38 / page3=0；2026-10-30 首测为 137，差值即新仓 `dsh-release-archiver`）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5 |
+| **本机发布区目录数** | **138** | `D:\projects\repos` **138** 个仓（2026-11-03 晚补检出 `dsh-release-archiver`；上午复测时为 137） |
+| 含 `.git` | **138 / 138** | 逐目录实测 |
+| 含 `origin` | **138 / 138** | 逐仓读 `.git/config` 判 `[remote "origin"]`（新仓 origin = `https://gitee.com/siwpan/dsh-release-archiver.git`） |
+| 本机 `.git` 总数 | **139** | 138（发布区）+ 本仓 `D:\projects\allin` |
 
-- **口径**：本机是**全量检出**（137 = 远端 137）；提「远端仓数」一律查索引 §5；
+- **口径**：本机是**全量检出**（2026-11-03 晚补检出后 138 = 远端 138）；提「远端仓数」一律查索引 §5；
   提「本机发布区仓数」一律**现场实测**。
-- ⚠ **与 `DESKTOP-KQABATS` 的差异**：那机是**部分检出**（22 仓），本机是全量检出 ——
+- ⚠ **与 `DESKTOP-KQABATS` 的差异**：那机是**部分检出**（23 仓，2026-11-03 复测），本机是全量检出 138 仓 ——
   「哪仓在哪台」以各机分区文件为准，勿跨机假设。
 
 ## 5. 运行时与工具链（2026-10-30 实测；PATH 实际解析，非文档声称）
