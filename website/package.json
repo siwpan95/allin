@@ -14,8 +14,11 @@
     "seed": "node --experimental-sqlite scripts/seed.js",
     "bootstrap": "npm run init && npm run seed",
     "rotate-key": "node --experimental-sqlite scripts/rotate-key.js",
+    "backup-key": "node --experimental-sqlite scripts/backup-key.js backup",
+    "restore-key": "node --experimental-sqlite scripts/backup-key.js restore",
     "verify:crypto": "node --experimental-sqlite scripts/verify-crypto.js",
-    "smoke": "node --experimental-sqlite scripts/smoke-test.js"
+    "smoke": "node --experimental-sqlite scripts/smoke-test.js",
+    "test": "node --test \"test/*.test.js\""
   },
   "dependencies": {
     "ejs": "^3.1.10",

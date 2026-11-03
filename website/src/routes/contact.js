@@ -10,8 +10,14 @@ const content = require('../services/contentService');
 const contactService = require('../services/contactService');
 const assetService = require('../services/assetService');
 const { detectMime } = require('../services/assetService');
+const { rateLimiter } = require('../middleware/security');
 
 const router = express.Router();
+
+// 2026-11-04 工程审查修复（C2）：/contact 此前是唯一未认证可写且无节流的入库面
+// （留言加密入库 + 最大 5MB 附件）。限流放在 multer 之前，拒绝成本最低；
+// 此时 multipart 尚未解析、body 里没有 email，故按纯 IP 限流（匿名面按 IP 口径正确）。
+const contactLimiter = rateLimiter({ name: 'contact', max: 5 });
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -31,7 +37,7 @@ function renderContact(res, req, { form = {}, errors = [] }) {
   });
 }
 
-router.post('/contact', upload.single('attachment'), (req, res, next) => {
+router.post('/contact', contactLimiter, upload.single('attachment'), (req, res, next) => {
   const form = {
     name: String(req.body.name || '').trim(),
     email: String(req.body.email || '').trim(),
