@@ -28,7 +28,8 @@ from .service import Service
 try:  # optional dependency — enables the event-driven watcher
     from watchdog.events import FileSystemEventHandler
     from watchdog.observers import Observer
-except ImportError:  # pragma: no cover — exercised by the polling tests
+except ImportError:  # no watchdog → polling fallback; regression-covered by
+    # kernel/tests/test_kernel_no_watchdog.py (blocks watchdog via meta_path)
     FileSystemEventHandler = None
     Observer = None
 
@@ -37,25 +38,28 @@ WATCHDOG_AVAILABLE = Observer is not None
 _DEFAULT_IGNORED = ("**/node_modules", "**/.*", "cache", "data")
 
 
-class _WatchHandler(FileSystemEventHandler):
-    def __init__(self, hmr: "Hmr", is_ignored):
-        self._hmr = hmr
-        self._is_ignored = is_ignored
+if WATCHDOG_AVAILABLE:  # define only when the base class exists — the
+    # zero-dependency installation must stay importable (regression:
+    # `class _WatchHandler(None)` used to raise TypeError at import time).
+    class _WatchHandler(FileSystemEventHandler):
+        def __init__(self, hmr: "Hmr", is_ignored):
+            self._hmr = hmr
+            self._is_ignored = is_ignored
 
-    def on_modified(self, event):
-        if self._hmr._stopped or event.is_directory:
-            return
-        path = event.src_path
-        if not self._is_ignored(path):
-            self._hmr._on_file_event(path)
+        def on_modified(self, event):
+            if self._hmr._stopped or event.is_directory:
+                return
+            path = event.src_path
+            if not self._is_ignored(path):
+                self._hmr._on_file_event(path)
 
-    def on_created(self, event):
-        self.on_modified(event)
+        def on_created(self, event):
+            self.on_modified(event)
 
-    def on_moved(self, event):
-        path = event.dest_path
-        if not self._is_ignored(path):
-            self._hmr._on_file_event(path)
+        def on_moved(self, event):
+            path = event.dest_path
+            if not self._is_ignored(path):
+                self._hmr._on_file_event(path)
 
 
 class Hmr(Service):
