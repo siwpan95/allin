@@ -34,11 +34,7 @@ REPO_ONLY_OK = {"__pycache__"}
 
 
 def sha256_of(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def collect(root: Path) -> dict:
@@ -74,7 +70,7 @@ def main() -> int:
         default=[],
         metavar="MODULE=PATH",
         help="跳过 importlib 定位，直接指定已安装包目录（本地无 venv 时的等价验证口；"
-        "可多次：如 allin_governance._repocheck=C:/tmp/_repocheck）",
+        "可多次，格式 MODULE=<已安装包目录>，如 allin_governance._repocheck 指向拷贝出的 _repocheck 目录）",
     )
     args = ap.parse_args()
     repo_root = Path(args.root).resolve()
