@@ -39,7 +39,7 @@
 
 - **allin** = 本仓（索引 + 治理说明 + [文档枢纽 `docs/`](docs/README.md) + 审核证据 `audit-fragments/`）。检出目录名 = 远端仓名 `allin`（2026-09-27 前名为 `allin_push`，历史）；**检出路径随机器而异**，见 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)。
 - **一仓一目录**：每个 gitee 仓库对应 `<项目盘>/<仓名>` 一个目录，仓名 = 目录名。
-- **alloy** = 统一游戏引擎（原 allin_engine，2026-08-23 改名；仓库 siwpan/an-engine）。
+- **allin_engine** = 统一游戏引擎现行名（历史沿革：allin_engine → 2026-08-23 改名 alloy → **2026-09-19 改回 `allin_engine`**，commit `72c1d63`；PyPI 包名 **allin-engine**，入口 `from allin_engine import GameEngine`；仓库 siwpan/an-engine）。**唯一事实源 = [`docs/规范/SPEC-201-引擎接口契约.md`](docs/规范/SPEC-201-引擎接口契约.md) 头部订正块**；本文及仓内其他文档中残留的 `alloy.*` 写法一律按 `allin_engine` 读。
 - **复制优于共享**：项目内联引擎/字体/资源副本是**有意为之**，不算冗余；缓存（__pycache__/.venv/node_modules/build/dist）不算重复。
 
 ## 顶层结构（本仓实际内容）
@@ -53,8 +53,8 @@
 | `tools/` | 工作区门禁与工具（死根路径 + AST 未定义名 + **文档索引契约** + 别名重建，见其 README） |
 | `platform/` | **全项目集成平台**（2026-10-26 由原 `siwpan/allin-platform` 整仓并入）：门户 + 内核 + 注册表 + harness 黄金值门禁。入口 [`platform/README.md`](platform/README.md)，契约 [`SPEC-203`](docs/规范/SPEC-203-allin-platform契约.md) |
 | `kernel/` | **治理内核**（2026-10-27 立档）：Python/Cordis 服务图 + `allin` CLI 前门（`allin_cli.py`），四大支柱 `docs/platform/preset/tools` 经 `kernel/configs/cordis.allin.yml` 配置树挂载。说明见 [`kernel/README.md`](kernel/README.md) |
-| `packages/` | **可安装包**（2026-10-31 立档）：把本仓**通用**的部分装成外部可直接消费的产物。当前一个包 [`allin-governance`](packages/allin-governance/)（PyPI 名，**占位版本 `0.0.0a1`**），两个子命令：`init` 生成可跑的最小治理骨架（14 道门禁，实测 `npm run check:governance` exit 0）、`repocheck` 离线体检；两者的源码都映射自本仓（**不复制**，一份源码两处消费） |
-| `architecture/` | **系统架构与设计文档**（2026-10-27）：组件级架构图 [`system-architecture.svg`](architecture/system-architecture.svg) + 数据流图 [`data-flow.svg`](architecture/data-flow.svg) + 设计说明。刻意置于 `docs/` 之外以避开文档索引契约 |
+| `packages/` | **可安装包**（2026-10-31 立档）：把本仓**通用**的部分装成外部可直接消费的产物。当前一个包 [`allin-governance`](packages/allin-governance/)（PyPI 名，现版本 **`0.0.0a2`**，演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准），子命令：`init` 生成可跑的最小治理骨架（14 道门禁，实测 `npm run check:governance` exit 0；a2 起 `--with-exceptions` 可带 g18）、`repocheck` 离线体检、`verify`（a2 新增，按 `GENERATED.json` 复核快照 sha256）；源码都映射自本仓（**不复制**，一份源码两处消费） |
+| `architecture/` | **架构图源与 ADR**（2026-10-27）：组件级架构图 [`system-architecture.svg`](architecture/system-architecture.svg) + 数据流图 [`data-flow.svg`](architecture/data-flow.svg) + [`adr/`](architecture/adr/README.md) 现行决策。**权威架构叙事 = [`SPEC-204-系统架构`](docs/规范/SPEC-204-系统架构.md)**（ADR-0007，2026-11-04 迁入文档契约管辖；本目录只留图与决策，不承载正文） |
 | `website/` | **allin 项目官网**（2026-11-02 立）：开发与维护服务的对外站点，本地部署运行（默认端口 9042，已登记 `事实源/ports.yaml`）。四页导航 + 注册/登录/会话保持 + **AES-256-GCM 信封加密**存储（图片/文件/文案全入库存密文）。入口 [`website/README.md`](website/README.md) |
 | `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
@@ -86,14 +86,14 @@
   - `verify-mount.ps1` —— 三层校验（安装层 / 结构层 / 漂移层）+ 兜底指引（UTF-8 BOM 运行）。
   - `make-bundle.ps1` —— 把 `allin.patch.yml` 封装成可 `dsh plugin add` 的 npm bundle（可选 `-Install`）；⚠️ bundle 是 `allin.patch.yml` 的派生副本，**改了源必须重跑本脚本刷新**，CI 用 `.\make-bundle.ps1 -Check` 拦落后。
   - `verify-upstream-merge.ps1` —— 上游 PR 合并门禁：合入前确认 allin overlay 与官方 harness 能力集无冲突。
-- **独立 gitee 仓**：`siwpan/deepseek-harness`（remote `gitde`）—— 解耦 overlay 与上游镜像，上游破坏性变更只动我们的 pin、不动源；比对 shipped `cordis.patch.yml` 即可定位漂移点。
-- **上游关系纪律（§八）**：官方 `github.com/deepseek-ai/deepseek-harness` 仅作 SHAPE 核对 / 漂移定位的**参考对象**，不直接 fetch 进部署；其更新经 PR 合入主干前须确认与 allin overlay **无冲突**（`verify-mount.ps1` 漂移层作判据之一）。完整纪律见 `docs/DSH升级与插件不兼容_2026-09-24.md` §八。
+- ~~独立 gitee 仓 `siwpan/deepseek-harness`~~（**历史，2026-10-26 整合后已删除**）：该仓曾用于解耦 overlay 与上游镜像，其职责现由本仓 `preset/allin/` 承接；比对 shipped `cordis.patch.yml` 定位漂移点的方法不变。
+- **上游关系纪律（§八）**：官方 `github.com/deepseek-ai/deepseek-harness` 仅作 SHAPE 核对 / 漂移定位的**参考对象**，不直接 fetch 进部署；其更新经 PR 合入主干前须确认与 allin overlay **无冲突**（`verify-mount.ps1` 漂移层作判据之一）。完整纪律见 [`docs/记录/专题/DSH升级与插件不兼容_2026-09-24.md`](docs/记录/专题/DSH升级与插件不兼容_2026-09-24.md) §八。
 
 安装/校验/回滚全流程见 [`preset/allin/安装说明.md`](preset/allin/安装说明.md)。
 
 ## 治理 Agent 与内核（2026-10-27）
 
-本仓治理以 **「Agent 双形态 + Cordis 内核 + 集成平台」** 三元落地，三者共享同一份治理事实（见 [`architecture/`](architecture/README.md) 设计文档与 [`architecture/system-architecture.svg`](architecture/system-architecture.svg)）：
+本仓治理以 **「Agent 双形态 + Cordis 内核 + 集成平台」** 三元落地，三者共享同一份治理事实（权威架构叙事 = [`SPEC-204-系统架构`](docs/规范/SPEC-204-系统架构.md)；图源 = [`architecture/system-architecture.svg`](architecture/system-architecture.svg)）：
 
 - **治理大脑（Agent，双形态）**
   - **WorkBuddy 侧**：[`.workbuddy/skills/allin-governance-agent`](.workbuddy/skills/allin-governance-agent/SKILL.md) —— 本仓项目级治理 agent（总控大脑）：开卷读四事实源、按铁律/SPEC 放行判断、把具体活路由到 15 个专项 skill 或亲自跑门禁。
@@ -102,8 +102,8 @@
 - **治理内核（Cordis 服务图）**：[`kernel/`](kernel/README.md) —— Python/Cordis 服务图，`allin_cli.py` 作统一前门（`tools` / `docs` / `platform` / `preset` 子命令）。`kernel/tree.py` 用 Cordis `Loader` 按 `kernel/configs/cordis.allin.yml` 挂载；`kernel/registry.py` 的 `SERVICES` 封闭白名单（`docs/platform/preset/tools` → `kernel/services/*.py`）把 entry name 钉死为代码边界（防「配置即代码」评审绕过）。
 - **集成平台（Node）**：[`platform/`](platform/README.md) —— 零依赖 `node:http` 门户 `:9000`（Host 围栏 + loopbackOnly 防 DNS rebinding）+ `@allin/core` 注册表/启停/工坊内核；聚合不融合，项目是独立进程。API 契约见 [`platform/apps/portal/openapi.yaml`](platform/apps/portal/openapi.yaml)（OpenAPI 3.0.3，13 条路径，由真实源码生成）。
 
-**系统架构图**：组件分层 [`architecture/system-architecture.svg`](architecture/system-architecture.svg) · 数据流 [`architecture/data-flow.svg`](architecture/data-flow.svg) · 设计说明 [`architecture/README.md`](architecture/README.md)。
-> 该目录刻意置于 `docs/` 之外——新增文档若进 `docs/` 必须在 [`docs/INDEX.md`](docs/INDEX.md) 登记（文档索引契约 D1/D8），而架构图是工程视图、不属于四分类文档体系，故不入枢纽。
+**系统架构图**：组件分层 [`architecture/system-architecture.svg`](architecture/system-architecture.svg) · 数据流 [`architecture/data-flow.svg`](architecture/data-flow.svg) · 权威叙事 [`SPEC-204-系统架构`](docs/规范/SPEC-204-系统架构.md) · 现行决策 [`architecture/adr/`](architecture/adr/README.md)。
+> 图源（SVG 二进制资产）在 `docs/` 体系外免检，但**改图必同改 SPEC-204**；叙事正文已迁入规范（ADR-0007），不再游离于门禁之外。
 
 ## 对外文档与参与入口
 
