@@ -109,3 +109,8 @@ tools/reposcan/output/
 # 但属个人隐私、且会随克隆扩散，故移出版本库（留在工作树本地，由本机事实源文档引用）。
 siwpan新机电脑硬件信息 - 腾讯电脑管家检测结果.txt
 siwpan旧机电脑硬件信息 - 腾讯电脑管家检测结果.txt
+
+# ===== 可安装包构建物（2026-11-04，ADR-0008）=====
+# dist/ 只随 release tag 产出，不入版本库（wheel/tar.gz 是构建时点快照，
+# 入库会与仓内演进分叉；对账由 tools/check_pkg_parity.py + CI 兜住映射一致性）。
+packages/*/dist/

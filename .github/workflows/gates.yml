@@ -95,6 +95,11 @@ jobs:
           "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
+      # 包映射对账（ADR-0008）：装的就是刚构建的 wheel —— 逐文件 sha256 比对
+      # "发布物 ↔ 仓内真身"，把「SHA-256 逐字节相同」从一次性实测变成退出码。
+      - name: 可安装包映射对账（wheel ↔ 仓内源码 sha256）
+        run: |
+          "$RUNNER_TEMP/ag/bin/python" tools/check_pkg_parity.py
 
   gates-windows:
     name: 治理门禁（Windows · 完整 20 道，含 g20-facts）
@@ -143,6 +148,11 @@ jobs:
           "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
+      # 包映射对账（ADR-0008，同 Linux 侧）：改 gates.yml 前后双平台各验一次
+      - name: 可安装包映射对账（wheel ↔ 仓内源码 sha256）
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/ag/Scripts/python.exe" tools/check_pkg_parity.py
 
   website-smoke:
     name: 官网冒烟测试（Node · npm run smoke）
@@ -163,3 +173,7 @@ jobs:
         run: |
           npm ci
           npm run smoke
+      # 加密层单测（2026-11-04 补，T4）：gcm 往返/篡改必败/AAD 绑定/轮换语义/keystore
+      - name: 加密层单测
+        working-directory: website
+        run: npm test

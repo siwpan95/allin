@@ -1,0 +1,31 @@
+# Dependabot 依赖安全更新监控（2026-11-04 工程审查后上移至仓根）。
+# 背景：此前配置误放在 kernel/.github/ 下 —— GitHub 只认仓根 .github/dependabot.yml，
+# 导致全仓 pip/npm 依赖零自动安全更新监控（审查清单 C1）。
+# 说明：本仓 Node 侧刻意零/少依赖（platform 零运行时依赖、website 少量 pin），
+# npm 条目主要盯着 lockfile 里的传递依赖；pip 条目覆盖仓根 requirements-*。
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+  - package-ecosystem: "pip"
+    directory: "/kernel"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directory: "/website"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+  - package-ecosystem: "npm"
+    directory: "/platform"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

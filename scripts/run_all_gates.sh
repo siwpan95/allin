@@ -182,6 +182,19 @@ _run_repo_hygiene
 #    故 CI 跑 --selfcheck 做工具自身逻辑回归（EOL 归一化 / 真漂移判红 / 缺对端 SKIP / 同目录守卫）。
 run "$PY" tools/gate/check_gate_drift.py --selfcheck
 
+# --- 2026-11-04 工程审查补齐：把已有测试接进跑批（测试写了不跑 = 没有测试）---
+# ⑤ kernel 单元测试：导入冒烟 + 无 watchdog 回归（vendor/cordis hmr 降级路径，
+#    该缺陷此前因测试从未进跑批而潜伏——kernel 在零依赖环境整体不可导入）。
+#    纯标准库 unittest，零第三方依赖。
+run "$PY" -m unittest discover -s kernel/tests
+# ⑥ repocheck 自身 30 条规则的测试套件（695 行）。自带无 pytest 兜底跑法（仅标准库），
+#    从仓根直跑时脚本目录自动进 sys.path，import report/scanner 可解析。
+run "$PY" tools/repocheck/test_scanner.py
+# ⑦ 仓根 README「可机检事实」护栏（2026-11-04 工程审查 Docu Top3-2 落地）：
+#    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
+#    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。
+run "$PY" tools/gate/check_readme_refs.py
+
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
   echo "[with-platform] 额外跑 platform 门禁（需先 cd platform && npm install）"
