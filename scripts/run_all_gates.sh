@@ -102,19 +102,42 @@ log_run() {
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" >> "$GATE_RUNS" 2>/dev/null || true
 }
 
+# GitHub Actions 的 ::error:: workflow command 会把失败项写进 check-run annotations，
+# 而 annotations 是**匿名可读**的（job logs 端点需仓库 admin 权限，实测 403）。
+# 2026-11-04 复核 CI 首跑时，4 个 job 全红却只能看到通用 exit code 1 —— 这个
+# 「红了但不知道哪一步红」的断层由此补上。数据里的 % / CR / LF 必须百分号编码，
+# 否则 annotation 会被截断。仅 GITHUB_ACTIONS=true 时输出，本地跑批日志不受影响。
+gh_escape() {
+  local s="$1"
+  s="${s//%/%25}"
+  s="${s//$'\r'/%0D}"
+  s="${s//$'\n'/%0A}"
+  printf '%s' "$s"
+}
+
 run() {
   echo "==> $*"
-  local t0 rc=0
+  local t0 rc=0 out tail_txt
   t0="$(now_ms)"
-  if "$@"; then rc=0; else rc=$?; fi
+  out="$(mktemp "${TMPDIR:-/tmp}/allin-gate-XXXXXX")"
+  if "$@" > "$out" 2>&1; then rc=0; else rc=$?; fi
+  cat "$out"
   log_run "$*" "$rc" "$(( $(now_ms) - t0 ))"
   if [ "$rc" -eq 0 ]; then
     echo "    [ok]"
   else
     echo "    [FAIL] exit=$rc"
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+      printf '::error::门禁步骤失败（exit=%s）：%s\n' "$rc" "$(gh_escape "$*")"
+      # 只报「哪条命令挂了」还不足以定位，把该命令的尾部输出一并推成 annotation：
+      # job logs 端点匿名 403，annotations 是唯一公开可读的通道；多行用 %0A 连接。
+      tail_txt="$(tail -n 12 "$out")"
+      printf '::error::失败命令尾部输出：%s\n' "$(gh_escape "$tail_txt")"
+    fi
     fail=1
     failures+=("$*")
   fi
+  rm -f "$out"
 }
 
 # --- 发布区卫生门禁：发布区缺席时显式降级为 skip（不记 failed）---
@@ -228,6 +251,10 @@ echo "----------------------------------------"
 if [ "$fail" -ne 0 ]; then
   echo "门禁未全绿，失败项："
   for f in "${failures[@]}"; do echo "  - $f"; done
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    printf '::error::全部门禁未通过，共 %s 项失败：%s\n' \
+      "${#failures[@]}" "$(gh_escape "$(printf '%s; ' "${failures[@]}")")"
+  fi
   exit 1
 fi
 echo "全部门禁通过。"

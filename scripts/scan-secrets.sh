@@ -22,9 +22,24 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
-GITLEAKS_BIN="${GITLEAKS_BIN:-gitleaks}"
+# GitHub Actions：install-gitleaks.sh 写了 $GITHUB_PATH，PATH 里直接能找到 gitleaks。
+# Gitee Go：没有 $GITHUB_PATH（且多个 command 不共享 shell 会话），但安装脚本把二进制
+# 固定放在 <安装目录>/gitleaks（默认 /tmp/gitleaks-8.18.4/gitleaks）—— 这里按同一
+# 路径兜底，使两侧都只需依次调「安装脚本 + 本脚本」两个文件，不靠跨步骤传变量。
+# 若自定义了 GITLEAKS_INSTALL_DIR，两个脚本必须给同一个值（安装脚本会 echo 出实际路径）。
+if [ -z "${GITLEAKS_BIN:-}" ]; then
+  if command -v gitleaks >/dev/null 2>&1; then
+    GITLEAKS_BIN="$(command -v gitleaks)"
+  else
+    for cand in "${GITLEAKS_INSTALL_DIR:-/tmp/gitleaks-8.18.4}/gitleaks" /tmp/gitleaks-8.18.4/gitleaks; do
+      if [ -x "$cand" ]; then GITLEAKS_BIN="$cand"; break; fi
+    done
+    GITLEAKS_BIN="${GITLEAKS_BIN:-gitleaks}"
+  fi
+fi
 if ! command -v "$GITLEAKS_BIN" >/dev/null 2>&1 && [ ! -x "$GITLEAKS_BIN" ]; then
-  echo "ENV ERROR: 找不到 gitleaks（PATH 或 GITLEAKS_BIN=<路径>）。" >&2
+  echo "ENV ERROR: 找不到 gitleaks（PATH / GITLEAKS_BIN=<路径> / 安装目录固定路径）。" >&2
+  echo "          先跑 bash scripts/install-gitleaks.sh，或显式指定 GITLEAKS_BIN。" >&2
   exit 3
 fi
 

@@ -178,10 +178,18 @@ jobs:
 
       # website 用 Node 22 内置 SQLite（--experimental-sqlite），无需外部数据库；
       # 本地 19/19 全绿，此前却从无 CI 覆盖（B2 同源的「无回归护栏」缺口）。
-      - name: 安装依赖并跑冒烟
+      #
+      # 2026-11-04 复核 CI 首跑时定位到这个 job 长期红的根因：smoke 的「管理员登录
+      # 并进入管理台」用例要读 data/seed-accounts.json 里的管理员口令，而该文件是
+      # 被 .gitignore 忽略的**运行时产物**，干净检出里根本不存在 —— 原步骤只跑
+      # `npm ci && npm run smoke`，于是必然 17/18（少两项），实测本机复现一致。
+      # 补 `npm run bootstrap`（= init + seed）按本地同一路径生成运行时数据，
+      # 实测 seed 后 smoke 19/19。运行时文件不入库，不影响仓库卫生。
+      - name: 安装依赖、初始化运行时数据并跑冒烟
         working-directory: website
         run: |
           npm ci
+          npm run bootstrap
           npm run smoke
       # 加密层单测（2026-11-04 补，T4）：gcm 往返/篡改必败/AAD 绑定/轮换语义/keystore
       - name: 加密层单测
@@ -204,15 +212,13 @@ jobs:
           fetch-depth: 0   # 需要 PR base sha 可达，才算得准增量
 
       # 版本与仓根 .pre-commit-config.yaml 的 gitleaks rev 严格同版（v8.18.4）。
-      # 用 go install 而非第三方 action / 未校验的二进制：完整性由 Go checksum
-      # database 保证，不引入新的 action 供应链面。runner 缺 Go 时明确 exit 3，
-      # 不静默跳过（SKIPPED is not a pass）。
+      # 安装逻辑抽到 scripts/install-gitleaks.sh，GitHub / Gitee 两侧共用：
+      # 下载官方 release 预编译二进制 + 同一 release 的 checksums.txt 做 SHA256
+      # 校验，不依赖 runner 的 Go 工具链 —— ubuntu-latest 已迁到 Ubuntu 26，
+      # `go install` 编译 2024 年的 v8.18.4 在首跑实测 exit 1。
+      # 下载/校验失败一律 exit 3，不静默跳过（SKIPPED is not a pass）。
       - name: 安装 gitleaks v8.18.4（与 pre-commit 同版）
-        run: |
-          set -euo pipefail
-          command -v go >/dev/null 2>&1 || { echo "ENV ERROR: runner 缺 Go 工具链" >&2; exit 3; }
-          go install github.com/gitleaks/gitleaks/v8@v8.18.4
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        run: bash scripts/install-gitleaks.sh
 
       - name: 扫描本次变更新增行
         env:

@@ -97,19 +97,22 @@ stages:
         strategy:
           retry: "0"
 
-      # 2026-11-04 工程审查 P1-4：密钥增量扫描。与 GitHub 侧调**同一个**脚本
-      # scripts/scan-secrets.sh，判据不允许漂移；本侧触发的是 push/master，
-      # 未显式传基线时脚本回退到 origin/master 分叉点 / HEAD~1。
-      # Gitee Go 的多个 command 不保证共享 shell 会话，故整条链写在一行，
-      # 用 GITLEAKS_BIN 绝对路径而不依赖上一行 export 的 PATH。
-      # 注意：Gitee Go 需手动开通（见文件头），外部 PR 通道在 GitHub 镜像侧；
-      # 本步骤保证「主仓绿、镜像红」式的口径漂移不会发生。
+      # 2026-11-04 工程审查 P1-4：密钥增量扫描。与 GitHub 侧调**同一对**脚本
+      # scripts/install-gitleaks.sh + scripts/scan-secrets.sh，判据不允许漂移；
+      # 本侧触发的是 push/master，未显式传基线时脚本回退到 origin/master 分叉点 / HEAD~1。
+      # 安装脚本把二进制固定落在 /tmp/gitleaks-8.18.4/gitleaks，scan-secrets.sh 按同一
+      # 路径兜底发现 —— Gitee Go 的多个 command 不共享 shell 会话，故不依赖 export/PATH。
+      # 不再用 go install：ubuntu-latest 迁到 Ubuntu 26 后，编译 2024 年的 v8.18.4
+      # 在 CI 首跑实测 exit 1；改为官方 release 预编译二进制 + 官方 checksums.txt
+      # SHA256 校验。境内 runner 若直连 github.com release 超时，可设 GITLEAKS_BASE_URL
+      # 指向可达镜像（镜像需同时提供同名 tarball 与 checksums.txt，校验逻辑不变）。
+      # 注意：Gitee Go 需手动开通（见文件头），外部 PR 通道在 GitHub 镜像侧。
       - step: build@python
         name: secrets_scan
         displayName: 密钥增量扫描（gitleaks · 与 GitHub 侧同一脚本）
         pythonVersion: "3.13"
         commands:
-          - GOPROXY=https://goproxy.cn,direct go install github.com/gitleaks/gitleaks/v8@v8.18.4 && GITLEAKS_BIN="$(go env GOPATH)/bin/gitleaks" bash scripts/scan-secrets.sh
+          - bash scripts/install-gitleaks.sh && bash scripts/scan-secrets.sh
         settings: []
         caches: []
         notify: []
