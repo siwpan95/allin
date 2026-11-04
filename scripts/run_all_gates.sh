@@ -91,9 +91,18 @@ now_ms() {
   esac
 }
 
+# 5MB 轮转（对齐 launch.js tasks.log 口径）：超限改名 .1（覆盖旧 .1），防 JSONL 无限膨胀。
+rotate_if_large() {
+  local f="$1"
+  if [ -f "$f" ] && [ "$(wc -c < "$f" 2>/dev/null || echo 0)" -gt $((5 * 1024 * 1024)) ]; then
+    mv -f "$f" "$f.1"
+  fi
+}
+
 log_run() {
   # $1=label $2=exit code $3=耗时(ms)
   mkdir -p "$(dirname "$GATE_RUNS")" 2>/dev/null || true
+  rotate_if_large "$GATE_RUNS"
   # 标签里的反斜杠（Windows 解释器路径）会写成像 \P 这样的非法 JSON 转义，
   # 让整行解析失败、指标少算一条 —— 统一折成正斜杠再落盘。
   local label
@@ -156,6 +165,11 @@ run "$PY" tools/gate/docs_index.py
 # agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
 # registry 是否一致）。这组固定样例补的就是这一层 —— 改配置/提示词/工具面前后各跑一次。
 run "$PY" tools/gate/agent_regression.py
+# g21 agent-parity（2026-11-04 P2 编排工程化落地）：routes.yaml ⇄ SKILL.md 锚点 ⇄
+# GOVERNANCE 段锚点三方对账 + 15 个专项 skill 入口存在性（M5 skill 台账门禁化）。
+# 判据产物落 tools/gate/audit/g21-runs.jsonl（JSONL 逐行，audit/ 已被 .gitignore 覆盖）。
+# 放在 refresh-gov-block --check 之前：失败定位从「台账↔正文」到「正文↔副本」单向推进。
+run "$PY" tools/gate/agent_parity.py
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。

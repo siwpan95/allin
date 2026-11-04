@@ -1,0 +1,6 @@
+<%# 状态徽（原子）：语义色 + 图标 + 文本三冗余，色弱可辨。 %>
+<%# locals: state('ok'|'warn'|'error'|'info'|'dim'), icon('●'|'▲'|'×'|'◷'|'■'), label, title? %>
+<span class="tag tag--<%= state %> gov-pill" role="status"<% if (title) { %> title="<%= title %>"<% } %>>
+  <span class="gov-pill__icon" aria-hidden="true"><%= icon %></span>
+  <span><%= label %></span>
+</span>

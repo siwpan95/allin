@@ -1,0 +1,67 @@
+<%- include('partials/head') %>
+
+<section class="section" style="padding-top:2.8rem">
+  <div class="container">
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <div>
+        <span class="eyebrow">// governance admin</span>
+        <h1 style="font-size:2rem;margin-bottom:.3rem">治理管理</h1>
+        <p class="muted" style="margin:0">
+          项目启停（admin + CSRF 双通道，成败均记审计流水）与治理审计过滤视图；状态卡与管理台共用同一代理数据面。
+        </p>
+      </div>
+      <div class="row" style="gap:.6rem;margin:0;align-items:center">
+        <span id="gov-stale" aria-live="polite"></span>
+        <a class="btn btn--sm btn--ghost" href="/admin">← 返回管理台</a>
+      </div>
+    </div>
+
+<div id="gov-config" hidden data-csrf="<%= csrfToken %>" data-admin="<%= isAdmin ? '1' : '0' %>"
+     data-api-overview="/member/api/governance/overview"
+     data-api-orchestration="/member/api/governance/orchestration"
+     data-api-entries="/member/api/governance/entries"></div>
+
+    <noscript>
+      <div class="notice notice--warn" role="status" style="margin-top:1.2rem">
+        <span aria-hidden="true">▍</span>
+        <span>治理数据与操作按钮需要浏览器脚本拉取与确认；当前环境未启用脚本，仅审计过滤视图可用。</span>
+      </div>
+    </noscript>
+    <div id="gov-inline" role="status" aria-live="polite" style="margin-top:1rem"></div>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container grid grid--2" style="align-items:start">
+    <%- include('partials/gov/overview-card') %>
+    <%- include('partials/gov/gate-card') %>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <%- include('partials/gov/orchestration-card') %>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <span class="eyebrow">// entries</span>
+    <h2>项目操作</h2>
+    <div style="margin-top:1rem">
+      <%- include('partials/gov/entry-list') %>
+    </div>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <span class="eyebrow">// governance audit trail</span>
+    <h2>审计流水（过滤视图）</h2>
+    <div style="margin-top:1rem">
+      <%- include('partials/gov/audit-filter', { audit: audit, filters: filters }) %>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

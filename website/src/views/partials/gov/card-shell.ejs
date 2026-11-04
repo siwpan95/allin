@@ -1,0 +1,15 @@
+<%# 卡片外壳（分子）：标题 + 状态徽挂点 + 降级横幅挂点 + 骨架体（JS 首帧替换）。 %>
+<%# locals: name(挂点名), title, extra?(面板内追加的静态块，默认空) %>
+<div class="panel gov-card" data-gov-card="<%= name %>">
+  <div class="row" style="justify-content:space-between;align-items:center;gap:.6rem;margin-bottom:.7rem">
+    <div class="footer__title"><%= title %></div>
+    <span id="gov-pill-<%= name %>"><%- include('status-pill', { state: 'info', icon: '◷', label: '加载中' }) %></span>
+  </div>
+  <div id="gov-banner-<%= name %>"></div>
+  <div id="gov-body-<%= name %>" class="gov-body" aria-busy="true">
+    <div class="gov-skeleton"></div>
+    <div class="gov-skeleton"></div>
+    <div class="gov-skeleton gov-skeleton--short"></div>
+  </div>
+  <% if (typeof extra !== 'undefined' && extra) { %><%- extra %><% } %>
+</div>

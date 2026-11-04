@@ -33,6 +33,7 @@ ADR 仍留在 `docs/` 之外：ADR 属工程视图，不属四分类文档体系
 | ADR-0007 | [架构叙事迁入 SPEC-204](ADR-0007-架构叙事迁入SPEC-204.md) | accepted | 2026-11-04 | 叙事正文受文档契约与 g19 管辖，`architecture/` 只留图源与 ADR |
 | ADR-0008 | [包映射 sha256 对账门禁](ADR-0008-包映射sha256对账门禁.md) | accepted | 2026-11-04 | 「一份源码两处消费」从口头纪律变退出码（`tools/check_pkg_parity.py` + CI） |
 | ADR-0009 | [架构资产对账门禁固化](ADR-0009-架构资产对账门禁固化.md) | accepted | 2026-11-04 | SVG/adr/ 免检资产的「声明↔真身」六项对账变退出码（`tools/gate/check_arch_assets.py`） |
+| ADR-0010 | [三面贯通与编排纪律工程化](ADR-0010-三面贯通与编排纪律工程化.md) | accepted | 2026-11-05 | 三面 BFF 贯通 + `tools/orchestration/routes.yaml` + g21 三方对账门禁 + `smoke:e2e` 北极星 + Task Scheduler 守护面 |
 
 ## 何时必须写 ADR
 

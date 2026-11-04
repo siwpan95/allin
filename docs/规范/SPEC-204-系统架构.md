@@ -84,6 +84,8 @@
   `lab-tournament-daily-automation` / `multilang-board-engine-lab` / `pluginplayer-win-build` /
   `pyglet-app-package-dist` / `pypi-publish-prep` / `repo-sync-remote-to-local` /
   `venv-ca-security-audit` / `windows-node-env-diagnose`），匹配到即转交，不重造。
+  **2026-11-05 起该路由表有机器可读台账**（`tools/orchestration/routes.yaml`）与
+  **g21 三方对账门禁**（`tools/gate/agent_parity.py`，锚点计数=1，已接 `run_all_gates.sh`；详见 §6）。
 - Agent 自身负责：治理放行判断、四事实源阅读、门禁总调度、文档新增流程、推送/发版纪律把守。
 
 ### 2.2 执行面 A —— allin Cordis CLI（`kernel/` + `allin_cli.py`）
@@ -226,6 +228,28 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
   `PLATFORM_ALLIN_ENGINE_CWD` · `PLATFORM_PYTHON` · `PLATFORM_PORTAL_AUTO_OPEN`。
 - **CI/异机模式**：`PLATFORM_PATH_CHECK=absolute` 仅校验路径形状（登记 path 指向外部目录，
   天然不存在，跳过存在性检查），`check:governance` 同理只校验形状，不 fail-loud 误杀。
+
+## 6. 三面贯通增量（2026-11-05，ADR-0010）
+
+在 §1 分层之上**加边不加层**，四个贯通点全部只读、写路径唯一：
+
+| 贯通点 | 数据流 | 方向 |
+|---|---|---|
+| G1 治理看板 | 浏览器 → website `/member/dashboard`（requireAuth）→ 服务端 BFF 代理（3s 超时+快照缓存）→ portal `/api/overview` | website→platform，只读 |
+| G2 门禁留痕上板 | `tools/gate/audit/gate-runs.jsonl` → portal `/api/gate-history` → website 管理台 | kernel→platform→website，只读 |
+| G3 跨面 CLI 汇总 | `allin status` 纯文件只读 running.json / gate-runs.jsonl / g21-runs.jsonl，platform 离线可降级（退出码 0 缺失 / 1 损坏 / 2 `--strict`） | 文件事实源 ← kernel，只读 |
+| G4 编排健康可视化 | `tools/orchestration/routes.yaml` + g21 产物 `tools/gate/audit/g21-runs.jsonl`（JSONL 尾行，行内自含 routes 数组）→ portal `/api/orchestration` → website 编排健康卡 | 台账→portal→website，只读 |
+
+- **编排事实源**：`tools/orchestration/routes.yaml`（15 条专项 skill 路由，受控 YAML 子集）；
+  **g21 门禁**（`tools/gate/agent_parity.py`，Python 标准库）做三方对账
+  （routes.yaml ⇄ SKILL.md `<!-- route:<id> -->` 锚点 ⇄ GOVERNANCE 段锚点，计数=1），
+  与 verify-mount（正文↔安装）、refresh-gov-block（正文↔副本）失败域分离。
+- **写路径唯一**：website admin+CSRF → BFF 代理 → portal 既有启停端点；浏览器零新增暴露面
+  （只认 website 单源），portal Host 围栏/loopbackOnly 代码零改动。
+- **北极星验收**：`npm run smoke:e2e`（6 检查点，证据 `tools/gate/audit/e2e-runs.jsonl`）。
+- **部署守护面**：Task Scheduler 4 个 `ALLIN-*` 任务（登录自启/失败重启）+ 每日备份
+  （robocopy /MIR → 仓外异盘，checkpoint + manifest sha256 + 7 天轮转；密钥唯一通道 backup-key）；
+  脚本在 `tools/deploy/`，注册由人执行。
 
 ---
 

@@ -24,6 +24,7 @@ import {
   DATA_DIR,
   resolvePath,
 } from '@allin/core'
+import { overviewPayload, orchestrationPayload } from './bridge.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PUBLIC = path.join(__dirname, '..', 'public')
@@ -33,6 +34,9 @@ const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(PLATFORM, 'registry'
 // 而不是指向某台机器的硬编码路径（2026-09-24 强化：仓库区 repos/ 解绑，盘符随机器）。
 const ENGINE_CWD = process.env.PLATFORM_ALLIN_ENGINE_CWD || null
 const port = process.env.PORT !== undefined ? Number(process.env.PORT) : 9000
+// 实际绑定端口（listen 后回填）：PORT=0 按需形态下配置端口与实际端口不同，
+// bridge overview 的 portal.port 必须报实际值（2026-11-04 实测修正：报 0 会让消费方误判）
+let boundPort = port
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -266,6 +270,18 @@ const server = http.createServer(async (req, res) => {
       }
     })
   }
+  // ── bridge 只读聚合（P4-M1 · 三面贯通 G1/G2/G4 数据面）────────────────────────
+  // Host 围栏已在最顶端全局生效；两个只读端点额外过 loopbackOnly（P2 §5 S1 收紧口径）。
+  // deps 注入：bridge 不 import core，依赖方向 index → bridge 单向无环（P2 §1.1）。
+  if (p === '/api/overview' && req.method === 'GET') {
+    if (!loopbackOnly(req, res)) return
+    return json(res, 200, await overviewPayload({ loadRegistry, isRunning, readAlerts, registryDir: REGISTRY, port: boundPort }))
+  }
+  if (p === '/api/orchestration' && req.method === 'GET') {
+    if (!loopbackOnly(req, res)) return
+    return json(res, 200, orchestrationPayload(url.searchParams))
+  }
+
   if (p === '/api/workshop' && req.method === 'GET') {
     const { entries } = loadRegistry(REGISTRY)
     const base = listWorkshop(entries)
@@ -351,6 +367,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, '127.0.0.1', () => {
   const actual = server.address().port
+  boundPort = actual
   // 端口发现（CLI/宿主用）：实际端口写入 data/portal.port，进程退出时删除；
   // 被强杀时文件可能残留，消费方须以 /api/status 探活兜底。
   const PORT_FILE = path.join(DATA_DIR, 'portal.port')

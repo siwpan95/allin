@@ -21,6 +21,7 @@ const pages = require('./routes/pages');
 const authRoutes = require('./routes/auth');
 const memberRoutes = require('./routes/member');
 const adminRoutes = require('./routes/admin');
+const governanceRoutes = require('./routes/governance');
 const contactRoutes = require('./routes/contact');
 const assetRoutes = require('./routes/assets');
 
@@ -65,6 +66,7 @@ function createApp() {
   app.use('/', authRoutes);
   app.use('/', memberRoutes);
   app.use('/', adminRoutes);
+  app.use('/', governanceRoutes);
   app.use('/', contactRoutes);
 
   app.get('/healthz', (req, res) => {

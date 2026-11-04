@@ -9,6 +9,7 @@
   allin platform check-repos
   allin preset list
   allin preset show <name>
+  allin status [--json] [--strict]
 """
 from __future__ import annotations
 
@@ -93,6 +94,8 @@ def dispatch(args) -> object:
             return svc.show(args.name)
         if args.action == 'apply':
             return svc.apply(args.name, dry_run=not args.yes)
+    if args.domain == 'status':
+        return ctx.status.summary(as_json=args.json, strict=args.strict)
     return None
 
 
@@ -125,6 +128,11 @@ def build_parser() -> argparse.ArgumentParser:
     pr_a = pr.add_parser('apply')
     pr_a.add_argument('name')
     pr_a.add_argument('--yes', action='store_true')
+
+    p_stat = sub.add_parser('status', help='三面贯通只读状态汇总（纯文件事实源，不依赖网络）')
+    p_stat.add_argument('--json', action='store_true', help='输出机器可读 JSON（供 smoke:e2e 断言）')
+    p_stat.add_argument('--strict', action='store_true',
+                        help='数据源损坏时退出码升级为 2（缺省损坏=1、缺失=0 降级；fail-loud 供机器消费方）')
     return parser
 
 

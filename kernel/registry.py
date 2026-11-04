@@ -25,6 +25,8 @@ SERVICES = {
     'platform': 'kernel.services.platform_service:PlatformService',
     'preset': 'kernel.services.preset_service:PresetService',
     'tools': 'kernel.services.tools_service:ToolService',
+    # ---- 第五支柱：三面贯通只读状态汇总（P4-M1，2026-11-04 白名单纪律内扩条目）----
+    'status': 'kernel.services.status_service:StatusService',
 }
 
 

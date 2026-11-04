@@ -164,6 +164,19 @@ jobs:
         run: |
           "$RUNNER_TEMP/ag/Scripts/python.exe" tools/check_pkg_parity.py
 
+      # 端到端三面冒烟（SC6 北极星）：CLI 前门→kernel 探测→portal 临时实例→website 临时实例
+      # （9156，先查 ports.yaml）→g21 漂移判据，证据落 tools/gate/audit/e2e-runs.jsonl。
+      # verify-mount/DSH 子项在 CI 无挂载层，脚本自动 skip（skip ≠ fail）。
+      # 只放 Windows job：website 临时实例链路（node:sqlite / 路径 / env 面）按本机形态验证，
+      # Linux 复刻属后续演进；gates-posix 不动。
+      - name: 端到端三面冒烟（smoke:e2e，北极星）
+        shell: bash
+        env:
+          ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
+        run: |
+          npm ci --prefix website
+          npm run smoke:e2e
+
   website-smoke:
     name: 官网冒烟测试（Node · npm run smoke）
     runs-on: ubuntu-latest
