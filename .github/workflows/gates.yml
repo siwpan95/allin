@@ -79,9 +79,19 @@ jobs:
           .venv/bin/python tools/repocheck/main.py packages/allin-governance \
             --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
 
-      - name: 可安装包单测（allin-governance CLI 包装边界 + init 边界）
+      - name: 可安装包单测（allin-governance CLI 包装边界 + init 边界，含覆盖率）
         run: |
-          .venv/bin/python -m pytest packages/allin-governance -q
+          .venv/bin/python -m pip install --quiet pytest-cov
+          .venv/bin/python -m pytest packages/allin-governance -q \
+            --cov=allin_governance --cov-report=term-missing
+
+      # kernel 单测覆盖率（2026-11-04 遗留项 T7 收口）：kernel 此前零行为测试、
+      # 唯一冒烟不进 CI —— 现在既进 CI 又亮覆盖率，缺口数字直接看构建日志。
+      - name: kernel 单测覆盖率
+        run: |
+          .venv/bin/python -m pip install --quiet pytest-cov
+          .venv/bin/python -m pytest kernel/tests -q \
+            --cov=kernel --cov-report=term-missing
 
       # D1.1 的验收判据就在这里：装 wheel → 在一个**与仓无关**的目录里 init →
       # 那条 `npm run check:governance` 必须 exit 0。

@@ -200,6 +200,11 @@ run "$PY" tools/repocheck/test_scanner.py
 #    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
 #    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。
 run "$PY" tools/gate/check_readme_refs.py
+# ⑧ 架构资产对账（2026-11-04 体检落地，ADR-0009）：architecture/ 的 SVG 与 adr/ 在
+#    文档契约判据之外，本门禁把「SVG 数字 / adr 索引 / website 端口登记」六项声明
+#    对账成退出码 —— 体检实测 5 处漂移（ADR 索引缺 0006–0008、图内三处数字落后两代）
+#    曾静默存活近月，此后同类漂移跑批即红。
+run "$PY" tools/gate/check_arch_assets.py
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
