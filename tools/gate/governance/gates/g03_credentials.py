@@ -516,8 +516,10 @@ def selfcheck() -> int:
                     "src/commit_sha.ts" in blocked_paths)
 
     # 2026-11-04 工程审查 P1：补齐审计复现的四类漏报形态，并守住 digest 白名单。
+    # 下面 3 行是故意构造的 hex 夹具（不是真密钥），行尾注解让 CI 的
+    # scripts/scan-secrets.sh 增量扫描跳过它们，避免 gitleaks 首跑误判。
     with govlib.Sandbox() as sandbox:
-        hex40 = "a1b2c3d4e5f6789012345678901234567890abcd"
+        hex40 = "a1b2c3d4e5f6789012345678901234567890abcd"  # gov-credentials: allow
         hex64 = "d4c3b2a1" * 8
         # 形态③：JSON 引号键（原 assignment 键名两端不接受引号 ⇒ 漏报）
         sandbox.write("src/json_key.ts", f'const cfg = {{ "token": "{hex40}" }};\n')
@@ -533,8 +535,8 @@ def selfcheck() -> int:
         sandbox.write("src/very_long_hex.ts", "c1d2e3f4a5b6" * 10 + "c1d2e3f4\n")
         # 对照：无凭据语境的 40/64 位 digest 必须保持安静
         sandbox.write("src/quiet_digest.ts",
-                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"
-                      "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n")
+                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"  # gov-credentials: allow
+                      "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n")  # gov-credentials: allow
         report = scan(sandbox.path, machine_roots=[])
         blocked_kinds = {f.kind for f in report.findings}
         blocked_paths = {f.path for f in report.findings}

@@ -5,6 +5,14 @@ Thumbs.db
 .mypy_cache/
 __pycache__/
 
+# ===== 覆盖率运行产物（2026-11-04 远端 T7 引入 pytest-cov 后配套补） =====
+# CI 与本地跑 --cov 会落 .coverage / coverage.xml / htmlcov/；都是可重生成的
+# 机器状态，入库只带来噪音。g05-hygiene 本就把 coverage/ 视为 artifact 目录。
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
 # ===== allin 统一调度内核的本地 venv（绝不入库；含 cordis/pyyaml/watchdog） =====
 .venv/
 
