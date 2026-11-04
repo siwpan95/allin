@@ -177,3 +177,36 @@ jobs:
       - name: 加密层单测
         working-directory: website
         run: npm test
+
+  # 2026-11-04 工程审查 P1-4：外部 PR 不会装仓根的 pre-commit，此前 gitleaks
+  # 只在本机拦，CI 侧的唯一凭据门禁是规则较窄的自研 g03 ⇒ 存在绕过面。
+  # 这里补一道**独立**的密钥扫描，push / pull_request 都触发。
+  # 扫描面是「本次变更的新增行」而非整棵树：仓内有一批故意构造的凭据夹具
+  # （tools/repo_hygiene.py / g03 selfcheck / 交接记录里的 SHA256），全树扫描
+  # 会把它们全判红；新增行扫描既零误报，又恰好覆盖外部 PR 夹带密钥的路径。
+  # 与 Gitee Go 侧调同一个 scripts/scan-secrets.sh，两侧口径不允许漂移。
+  secrets-scan:
+    name: 密钥增量扫描（gitleaks · 外部 PR 防线）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0   # 需要 PR base sha 可达，才算得准增量
+
+      # 版本与仓根 .pre-commit-config.yaml 的 gitleaks rev 严格同版（v8.18.4）。
+      # 用 go install 而非第三方 action / 未校验的二进制：完整性由 Go checksum
+      # database 保证，不引入新的 action 供应链面。runner 缺 Go 时明确 exit 3，
+      # 不静默跳过（SKIPPED is not a pass）。
+      - name: 安装 gitleaks v8.18.4（与 pre-commit 同版）
+        run: |
+          set -euo pipefail
+          command -v go >/dev/null 2>&1 || { echo "ENV ERROR: runner 缺 Go 工具链" >&2; exit 3; }
+          go install github.com/gitleaks/gitleaks/v8@v8.18.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: 扫描本次变更新增行
+        env:
+          # PR: 目标分支基线；push: 本次推送前的 HEAD。首次推送的 before 全 0，
+          # 由脚本回退到 origin/master 分叉点 / HEAD~1。
+          GITLEAKS_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash scripts/scan-secrets.sh

@@ -1,8 +1,11 @@
 // allin-platform 前台逻辑：库/工坊/引擎三页签。
 const $ = (sel) => document.querySelector(sel)
 
-async function api(path, options) {
-  const res = await fetch(path, options)
+async function api(path, options = {}) {
+  // 门户是本地回环服务；状态变更端点要求来源信号（见 src/index.js 的 stateChangeAllowed）。
+  // 显式标记本地调用方，跨站网页无法伪造自定义头（会触发预检，本服务不返回 CORS 头）。
+  const headers = { 'X-Allin-Local': '1', ...(options.headers || {}) }
+  const res = await fetch(path, { ...options, headers })
   return res.json()
 }
 

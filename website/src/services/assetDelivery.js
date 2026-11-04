@@ -96,6 +96,14 @@ function sendAsset({ req, res, assetKey, allow = ['public'], denyNotice = 'login
     'Cache-Control': cacheable ? 'public, max-age=86400' : 'private, no-store',
     'X-Content-Type-Options': 'nosniff',
   });
+  // 2026-11-04 P2 修复（F-014）：只有「public 且是位图」才允许浏览器内联渲染。
+  // 其余一律强制下载 —— 上传的 SVG 含 <script> 时同源内联会直接变成存储型 XSS，
+  // 附件 / 文本同理。filename 用 assetKey 白名单化，杜绝响应头注入。
+  const inlineSafe = scope === 'public' && /^image\/(jpeg|png|gif|webp)$/.test(payload.mime);
+  if (!inlineSafe) {
+    const filename = String(assetKey).replace(/[^A-Za-z0-9._-]/g, '_');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+  }
   if (req.headers['if-none-match'] === etag) {
     res.status(304).end();
     return undefined;

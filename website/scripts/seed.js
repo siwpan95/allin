@@ -226,13 +226,69 @@ function seedContent() {
   );
 }
 
-function ensureUser(email, displayName, role, envVar) {
-  const db = getDb();
-  const existing = userService.findUserByEmail(email);
-  const password = process.env[envVar] || crypto.randomBytes(9).toString('base64url').slice(0, 14);
-  if (existing) {
-    return { email, password: process.env[envVar] || '(已存在，沿用原口令)', reused: true, id: existing.id };
+/**
+ * 生成一定满足 validatePassword（字母 + 数字）的随机口令。
+ * 原实现 randomBytes(9).toString('base64url').slice(0, 14) 有约 12.8% 概率
+ * 不含数字（base64url 里数字只占 10/64），createUser 会直接抛错、seed 半途失败。
+ * 用无易混淆字符的字母表，先各放一个字母和一个数字再洗牌，确定性满足约束。
+ */
+function randomPassword() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const all = letters + digits;
+  const pick = (alphabet) => alphabet[crypto.randomInt(alphabet.length)];
+  const chars = [pick(letters), pick(digits)];
+  for (let i = 0; i < 14; i += 1) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i -= 1) {
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
   }
+  return chars.join('');
+}
+
+/** 读回上次 seed 写下的真实口令（账号文件与 DB 同在 data/，同生命周期）。 */
+function previousPasswords() {
+  const accountsFile = path.join(config.dataDir, 'seed-accounts.json');
+  try {
+    const data = JSON.parse(fs.readFileSync(accountsFile, 'utf8'));
+    const out = {};
+    for (const a of data.accounts || []) {
+      if (a && a.email && typeof a.password === 'string') out[a.email] = a.password;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function ensureUser(email, displayName, role, envVar, previous) {
+  const existing = userService.findUserByEmail(email);
+  const envPassword = process.env[envVar];
+
+  if (existing) {
+    // 只有「确实能解开库内 hash」的口令才写进账号文件。原实现把 env 值或
+    // 占位串 `(已存在，沿用原口令)` 直接写出，与库内 hash 不一致 ⇒ 登录 302。
+    // 候选顺序：显式 env > 上次账本；都不能复用时写 null + 说明，绝不写假口令。
+    const candidates = [envPassword, previous[email]].filter(Boolean);
+    const usable = candidates.find((p) => userService.verifyPassword(existing, p));
+    if (usable) {
+      const note = envPassword && usable !== envPassword
+        ? `${envVar} 与库内口令不一致，已忽略；文件写的是可登录的既有口令`
+        : undefined;
+      return { email, password: usable, reused: true, id: existing.id, ...(note ? { note } : {}) };
+    }
+    return {
+      email,
+      password: null,
+      reused: true,
+      id: existing.id,
+      note: `账号已存在但口令不可复用（账号文件缺失或已损坏）；本脚本不自动重置已有账号，请删除 data/ 下数据库后重跑 seed`,
+    };
+  }
+
+  const password = envPassword || randomPassword();
+  const pwdError = userService.validatePassword(password);
+  if (pwdError) throw new Error(`${envVar} 不合法：${pwdError}`);
   const created = userService.createUser({ email, password, displayName, role });
   return { email, password, reused: false, id: created.id };
 }
@@ -246,8 +302,9 @@ function main() {
   seedMemberFile();
   seedContent();
 
-  const admin = ensureUser('admin@allin.local', '站点管理员', 'admin', 'ADMIN_SEED_PASSWORD');
-  const member = ensureUser('demo@allin.local', '演示用户', 'member', 'MEMBER_SEED_PASSWORD');
+  const previous = previousPasswords();
+  const admin = ensureUser('admin@allin.local', '站点管理员', 'admin', 'ADMIN_SEED_PASSWORD', previous);
+  const member = ensureUser('demo@allin.local', '演示用户', 'member', 'MEMBER_SEED_PASSWORD', previous);
 
   // 口令只写进被忽略的运行时目录，绝不进版本库
   const accountsFile = path.join(config.dataDir, 'seed-accounts.json');
@@ -274,4 +331,8 @@ function main() {
   db.close();
 }
 
-main();
+// 直接执行（npm run seed）时跑 main()；被 require 时不产生任何 DB 副作用，
+// 便于回归测试直接调用 randomPassword / previousPasswords / ensureUser。
+if (require.main === module) main();
+
+module.exports = { randomPassword, previousPasswords, ensureUser };

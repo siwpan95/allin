@@ -74,6 +74,12 @@ failures=()
 # 每次执行落一行 JSONL（tools/gate/audit/ 已被 .gitignore 忽略，属运行时产物）。
 GATE_RUNS="$ROOT/tools/gate/audit/gate-runs.jsonl"
 HEAD_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+# 一次跑批 = 一个 RUN_ID。秒级 ts 会把同一批拆成几十个「秒组」；gate_metrics.py
+# 旧口径按 ts[:19] 分组，只要某一秒恰好没失败就把它当「最近一次全绿」，
+# 于是一次**有失败的跑批**也可能被洗成 fresh（假绿）。落 batch 字段后，
+# 指标按真正的一次跑批判定全部 exit=0 才算全绿；历史无 batch 的行由
+# gate_metrics.py 按「同 commit + 时间邻近」聚类兼容，见该文件 group_batches()。
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 
 now_ms() {
   # GNU date 支持 %3N；BSD date 不支持 —— 退化到秒级（毫秒置 0），仍可统计。
@@ -92,8 +98,8 @@ log_run() {
   # 让整行解析失败、指标少算一条 —— 统一折成正斜杠再落盘。
   local label
   label="$(printf '%s' "$1" | tr '\\' '/')"
-  printf '{"ts":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s}\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$HEAD_SHA" "$label" "$2" "$3" >> "$GATE_RUNS" 2>/dev/null || true
+  printf '{"ts":"%s","batch":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s}\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" >> "$GATE_RUNS" 2>/dev/null || true
 }
 
 run() {
@@ -198,8 +204,18 @@ run "$PY" tools/gate/check_readme_refs.py
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
   echo "[with-platform] 额外跑 platform 门禁（需先 cd platform && npm install）"
+  # 三项各自 run：原写法 ( cd platform && npm run check && npm test && npm run harness )
+  # 用 && 串联，check 一红就短接，test / harness 根本没跑；而且整行不写 log_run，
+  # 三项在治理指标里完全不可见（逃逸率 / 延迟预算都算不到）。改后逐项独立留痕、独立计失败。
+  # 注：本机若未全量检出注册表路径，check / harness 会因 PLATFORM_PATH_CHECK 判据报环境红；
+  #     这是环境事实不是代码缺陷，需要时显式带 PLATFORM_PATH_CHECK=absolute 跑本脚本。
   if [ -d platform ]; then
-    ( cd platform && npm run check && npm test && npm run harness ) || { fail=1; failures+=("platform gates"); }
+    run npm --prefix platform run check
+    run npm --prefix platform test
+    run npm --prefix platform run harness
+  else
+    echo "    [SKIP] 未找到 platform/ 目录"
+    log_run "platform:skip(no-platform-dir)" 0 0
   fi
 fi
 

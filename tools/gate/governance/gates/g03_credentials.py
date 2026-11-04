@@ -55,15 +55,22 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
                                   r"AIza[0-9A-Za-z_\-]{35})\b")),
     ("url-userinfo", re.compile(r"\b[a-z][a-z0-9+.\-]*://[^/\s:@]{1,64}:[^/\s@]{8,}@")),
     ("bearer-header", re.compile(r"(?i)authorization\s*[:=]\s*[\"']?bearer\s+[A-Za-z0-9._\-]{20,}")),
-    ("assignment", re.compile(r"(?i)(?<![/&?])\b(access[_-]?token|api[_-]?key|apikey|auth[_-]?token|"
-                              r"client[_-]?secret|password|passwd|secret|token|gitee[_-]?token)\b"
-                              r"\s*[:=]\s*[\"']?([A-Za-z0-9_\-./+]{16,})")),
+    # 2026-11-04 工程审查 P1：原键名前缀 (?<![/&?]) 把 `?token=` / `&token=` 整个
+    # 排除，且键名两端不接受引号 ⇒ JSON/YAML 引号键与 URL query 参数两种常见形态
+    # 全部漏报。现改为：只挡「嵌在别的标识符里」的 (?<![A-Za-z0-9_])，键名两侧
+    # 允许可选引号，覆盖 ① token = x ② "token": "x" ③ ?token=x / &api_key=x。
+    ("assignment", re.compile(r"(?i)(?<![A-Za-z0-9_])[\"']?"
+                              r"(access[_-]?token|api[_-]?key|apikey|auth[_-]?token|"
+                              r"client[_-]?secret|password|passwd|secret|token|gitee[_-]?token)"
+                              r"[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-./+]{16,})")),
     # Bare high-entropy hex run (e.g. a Gitee PAT committed as a raw hex string with
     # no surrounding key). Precision (entropy + length band) is applied in `scan` via
     # `looks_like_secret_hex`; this only decides *which* lines reach it. Hex that sits
     # inside a URL (preceded/followed by ':', '/' or '@') is excluded here so the
     # url-userinfo branch -- which already knows about sample hosts -- keeps authority.
-    ("hex-secret", re.compile(r"(?<![0-9a-fA-F:/@])(?:[0-9a-fA-F]{30,63})(?![0-9a-fA-F:/@])")),  # gov-paths: allow —— 字符类里的 F:/ 被 g01 WIN_PATH 误判为 windows 路径，非真路径
+    # {30,} 而非 {30,63}：原上限 63 让 64 位及更长的裸 hex 串根本进不了判定
+    # （量词吃掉前 63 位后，负向前视撞上第 64 位 hex 而整体失配）。
+    ("hex-secret", re.compile(r"(?<![0-9a-fA-F:/@])(?:[0-9a-fA-F]{30,})(?![0-9a-fA-F:/@])")),  # gov-paths: allow —— 字符类里的 F:/ 被 g01 WIN_PATH 误判为 windows 路径，非真路径
 )
 
 #: A value that is a documented sample rather than a secret.
@@ -243,18 +250,32 @@ def shannon_entropy(value: str) -> float:
     return -sum((c / n) * math.log2(c / n) for c in counts.values())
 
 
-def looks_like_secret_hex(value: str) -> bool:
-    """A bare hex run is a credential only when it is long, high-entropy, and not
-    shaped like the two most common legitimate digests: a 40-char git SHA or a
-    64-char SHA-256. Length band is enforced by the ``hex-secret`` pattern; this
-    adds the entropy gate so content hashes and low-entropy runs stay quiet.
+#: 行内出现这些词时，40/64 位 hex 不能再按 digest 放行 —— 它处于凭据语境。
+#: 只看行文本、不看路径（仓内 ``g03_credentials.py`` 这类路径自带 credential 字样，
+#: 若把路径算进来会把门禁源码与自检夹具整行误判）。
+CREDENTIAL_CONTEXT = re.compile(
+    r"(?i)(?:\b(?:token|secret|password|passwd|api[_-]?key|apikey|pat|credential|"
+    r"auth|access[_-]?key|private[_-]?key|bearer)\b|凭据|口令|密钥|授权|令牌|访问令牌)"
+)
+
+
+def looks_like_secret_hex(value: str, line: str = "") -> bool:
+    """A bare hex run is a credential only when it is long and high-entropy.
+
+    40/64 位是 git SHA 与 SHA-256 的标准长度，公开仓里遍布 action 钉、提交留档、
+    校验和（本机实测 68 行），一律报红会让门禁失去可信度。故默认按 digest 放行；
+    **唯一例外**是整行明确处于凭据语境（token / password / 密钥…）—— 此时 Gitee
+    PAT 与摘要在字符串层面不可区分，宁可报红也不能放行。带键名的 40/64 hex 由
+    ``assignment`` 分支先行拦截，走不到这里。
     """
     h = value.lower()
-    if not re.fullmatch(r"[0-9a-f]{30,63}", h):
+    if not re.fullmatch(r"[0-9a-f]{30,}", h):
+        return False
+    if shannon_entropy(h) < 3.5:
         return False
     if len(h) in (40, 64):  # canonical git SHA / SHA-256 — a digest, not a token
-        return False
-    return shannon_entropy(h) >= 3.5
+        return CREDENTIAL_CONTEXT.search(line) is not None
+    return True
 
 
 def value_is_sample(value: str, line: str) -> bool:
@@ -361,7 +382,7 @@ def scan(root: Path, *, include_docs: bool = True,
                 if value_is_sample(value, line):
                     report.exempt("token shape carries a synthetic marker")
                     continue
-                if category == "hex-secret" and not looks_like_secret_hex(value):
+                if category == "hex-secret" and not looks_like_secret_hex(value, line):
                     report.exempt("hex run is a digest or low-entropy, not a token")
                     continue
             matched = True
@@ -493,6 +514,42 @@ def selfcheck() -> int:
                       "hex-secret" in blocked_kinds and "src/raw_hex.ts" in blocked_paths)
         check.quiet("a 40-char git SHA is not flagged as a secret",
                     "src/commit_sha.ts" in blocked_paths)
+
+    # 2026-11-04 工程审查 P1：补齐审计复现的四类漏报形态，并守住 digest 白名单。
+    with govlib.Sandbox() as sandbox:
+        hex40 = "a1b2c3d4e5f6789012345678901234567890abcd"
+        hex64 = "d4c3b2a1" * 8
+        # 形态③：JSON 引号键（原 assignment 键名两端不接受引号 ⇒ 漏报）
+        sandbox.write("src/json_key.ts", f'const cfg = {{ "token": "{hex40}" }};\n')
+        # 形态④：URL query 参数（原 (?<![/&?]) 把 ?token= / &token= 整个排除 ⇒ 漏报）
+        sandbox.write("src/query.ts",
+                      f"const url = 'https://gitee.com/api/v5/user?access_token={hex40}';\n")
+        # 40/64 位 hex 带键名时由 assignment 拦截（裸串仍按 digest 放行）
+        sandbox.write("src/long_key.ts", f'const cfg = {{ "api_key": "{hex64}" }};\n')
+        # 裸 40 位 hex 但整行处于凭据语境 ⇒ 不能再按 git SHA 放行
+        # （用中文冒号，避免形成标准赋值形态而被 assignment 先行拦截）
+        sandbox.write("src/bare_with_context.ts", f"// 凭据 token 留档：{hex40}\n")
+        # 128 位裸 hex：原 {30,63} 上限导致整个匹配失配
+        sandbox.write("src/very_long_hex.ts", "c1d2e3f4a5b6" * 10 + "c1d2e3f4\n")
+        # 对照：无凭据语境的 40/64 位 digest 必须保持安静
+        sandbox.write("src/quiet_digest.ts",
+                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"
+                      "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n")
+        report = scan(sandbox.path, machine_roots=[])
+        blocked_kinds = {f.kind for f in report.findings}
+        blocked_paths = {f.path for f in report.findings}
+        check.detects("40-char hex behind a JSON quoted key",
+                      "assignment" in blocked_kinds and "src/json_key.ts" in blocked_paths)
+        check.detects("40-char hex in a URL query parameter",
+                      "assignment" in blocked_kinds and "src/query.ts" in blocked_paths)
+        check.detects("64-char hex behind a JSON quoted key",
+                      "assignment" in blocked_kinds and "src/long_key.ts" in blocked_paths)
+        check.detects("bare 40-char hex in a credential context",
+                      "hex-secret" in blocked_kinds and "src/bare_with_context.ts" in blocked_paths)
+        check.detects("128-char bare hex run (beyond the old {30,63} cap)",
+                      "hex-secret" in blocked_kinds and "src/very_long_hex.ts" in blocked_paths)
+        check.quiet("40/64-char digests with no credential context stay quiet",
+                    "src/quiet_digest.ts" in blocked_paths)
     return check.finish()
 
 

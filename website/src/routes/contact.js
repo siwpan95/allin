@@ -10,13 +10,18 @@ const content = require('../services/contentService');
 const contactService = require('../services/contactService');
 const assetService = require('../services/assetService');
 const { detectMime } = require('../services/assetService');
-const { rateLimiter } = require('../middleware/security');
+const { rateLimiter, sameOriginGuard } = require('../middleware/security');
+const { logAudit } = require('../services/audit');
 
 const router = express.Router();
 
 // 2026-11-04 工程审查修复（C2）：/contact 此前是唯一未认证可写且无节流的入库面
 // （留言加密入库 + 最大 5MB 附件）。限流放在 multer 之前，拒绝成本最低；
 // 此时 multipart 尚未解析、body 里没有 email，故按纯 IP 限流（匿名面按 IP 口径正确）。
+//
+// 2026-11-04 P2 修复（F-009）：sameOriginGuard 挂最前面 —— 匿名表单没有会话，
+// 套不了依赖 csrfToken 的 csrfProtect；靠 Sec-Fetch-Site + Origin 挡跨站驱动提交。
+// 无来源信号的裸请求（curl / CLI / 冒烟脚本）不是 CSRF 向量，放行。
 const contactLimiter = rateLimiter({ name: 'contact', max: 5 });
 
 const upload = multer({
@@ -37,7 +42,7 @@ function renderContact(res, req, { form = {}, errors = [] }) {
   });
 }
 
-router.post('/contact', contactLimiter, upload.single('attachment'), (req, res, next) => {
+router.post('/contact', sameOriginGuard, contactLimiter, upload.single('attachment'), (req, res, next) => {
   const form = {
     name: String(req.body.name || '').trim(),
     email: String(req.body.email || '').trim(),
@@ -45,8 +50,27 @@ router.post('/contact', contactLimiter, upload.single('attachment'), (req, res, 
     body: String(req.body.body || '').trim(),
   };
 
+  // 附件在 createMessage 校验之前就写库；后续校验 / 写留言一旦失败，
+  // 必须补偿删除，否则留下无人引用的孤儿密文附件。
+  // 这也是 assetService.deleteAsset 此前「定义了却没人调用」的接入点（F-013）。
+  let attachmentKey = null;
+  const rollbackAttachment = () => {
+    if (!attachmentKey) return;
+    try {
+      assetService.deleteAsset(attachmentKey);
+      logAudit({ actor: null, action: 'contact.attachment_rollback', target: attachmentKey });
+    } catch (e) {
+      logAudit({
+        actor: null,
+        action: 'contact.attachment_rollback',
+        target: attachmentKey,
+        ok: false,
+        detail: String((e && e.message) || e),
+      });
+    }
+  };
+
   try {
-    let attachmentKey = null;
     let attachmentName = null;
     if (req.file && req.file.size > 0) {
       attachmentName = req.file.originalname;
@@ -73,6 +97,7 @@ router.post('/contact', contactLimiter, upload.single('attachment'), (req, res, 
     });
     res.redirect('/contact?notice=contact_sent');
   } catch (err) {
+    rollbackAttachment();
     if (err && err.code === 'LIMIT_FILE_SIZE') {
       return res
         .status(400)

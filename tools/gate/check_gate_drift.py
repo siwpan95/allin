@@ -31,22 +31,37 @@ import shutil
 import sys
 import tempfile
 
-#: 需要两侧一致的门禁脚本（按文件名比对；两侧都存在的才比）。
-#: 加新脚本时**必须同步加到这里**，否则它会静默漏检 —— 见 --selfcheck 的最后一项。
-TRACKED = (
-    "scan_hardcoded.ps1",
-    "repo_hygiene.py",
-    "check_ps1_bom.py",
-    "watchdog.py",
-    "check_undefined_names.py",
-    "docs_index.py",
-    "make_doc_aliases.ps1",
-    "check_gate_drift.py",
-)
+#: 门禁脚本后缀。TRACKED 不再靠人工登记：2026-11-04 全检实测硬编码的 8 个名字
+#: 漏了 agent_regression.py / gate_metrics.py / check_readme_refs.py ——
+#: 「加新脚本必须同步加到这里」本身就是反模式（纪律不如门禁）。改为从两侧目录
+#: 顶层自动发现 .py / .ps1，取并集，任一新增立即纳管。
+GATE_SUFFIXES = (".py", ".ps1")
+
+#: repo_hygiene.py 的**仓内**实体在 `tools/repo_hygiene.py`（见下 REPO_REL），
+#: 不在 `tools/gate/` 顶层，自动发现扫不到，故显式补入。
+ALWAYS_TRACKED = ("repo_hygiene.py",)
+
+
+def discover_tracked(repo_side, work_side):
+    """两侧顶层门禁脚本名取并集（只扫文件、不钻子目录，避免把 governance/gates 拉进来）。
+
+    取**并集**而非只看仓内：工作副本侧新增而仓内没有的文件也要报「归属差异」，
+    这正是漂移检查该发现的。
+    """
+    names = set(ALWAYS_TRACKED)
+    for side in (repo_side, work_side):
+        if not os.path.isdir(side):
+            continue
+        for entry in os.listdir(side):
+            if not entry.endswith(GATE_SUFFIXES):
+                continue
+            if os.path.isfile(os.path.join(side, entry)):
+                names.add(entry)
+    return tuple(sorted(names))
 
 #: repo_hygiene.py 的**仓内**实体在 `tools/repo_hygiene.py`（见 docs/规范/README.md §双落点），
 #: 不在 `tools/gate/` 下；其工作副本仍在 `tools/gate/repo_hygiene.py`。两侧相对 gate 目录
-#: 的偏移不同，故仓内落点要上溯一层。不处理这个偏移，TRACKED 里的 repo_hygiene.py
+#: 的偏移不同，故仓内落点要上溯一层。不处理这个偏移，自动登记集合里的 repo_hygiene.py
 #: 在仓内落点永远找不到 ⇒ 静默漏检（两边都不存在时被 `compare` 跳过）。
 REPO_REL = {"repo_hygiene.py": "../repo_hygiene.py"}
 
@@ -105,12 +120,13 @@ def _norm_bytes(path):
     return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"), True
 
 
-def compare(repo_side, work_side, verbose=True):
+def compare(repo_side, work_side, verbose=True, tracked=None):
     """返回 (drifted:list, only_repo:list, only_work:list, compared:int, skipped:bool)"""
     if not os.path.isdir(repo_side) or not os.path.isdir(work_side):
         return [], [], [], 0, True
     drifted, only_repo, only_work, compared = [], [], [], 0
-    for name in TRACKED:
+    names = tracked if tracked is not None else discover_tracked(repo_side, work_side)
+    for name in names:
         a = os.path.join(repo_side, REPO_REL.get(name, name))
         b = os.path.join(work_side, name)
         ea, eb = os.path.isfile(a), os.path.isfile(b)
@@ -179,9 +195,22 @@ def selfcheck():
         print("  单侧存在判归属差异:     %s  [仅仓内 %d, 仅工作副本 %d, 漂移 %d]"
               % ("✔" if (or4 and not d4) else "✘", len(or4), len(ow4), len(d4)))
         ok &= bool(or4) and not d4
-        # ⑤ 覆盖面自证：TRACKED 里的每个名字都必须真的被比过（防"加了脚本忘了登记"）
-        print("  TRACKED 覆盖 %d 个名字（新增脚本须登记，否则静默漏检）" % len(TRACKED))
-        ok &= len(TRACKED) >= 6
+        # ⑤ 覆盖面自证：新加的脚本必须被**自动发现**，且它一旦漂移必须判红。
+        #    旧实现 TRACKED 硬编码 8 个名字、靠人登记，实测漏了
+        #    agent_regression.py / gate_metrics.py / check_readme_refs.py 三个；
+        #    这一用例把「加了脚本忘了登记」变成可复现的失败，而不是静默漏检。
+        brand_new = "brand_new_probe.py"
+        with open(os.path.join(a, brand_new), "w", encoding="utf-8", newline="") as fh:
+            fh.write("x = 1\n")
+        with open(os.path.join(b, brand_new), "w", encoding="utf-8", newline="") as fh:
+            fh.write("x = 2\n")   # 真漂移
+        found = discover_tracked(a, b)
+        d5, _, _, n5, sk5 = compare(a, b, verbose=False)
+        caught = any(name == brand_new for name, _ in d5)
+        print("  自动发现新脚本且漂移判红:   %s  [发现 %d 个, 比较 %d 个, 漂移 %d]"
+              % ("✔" if (brand_new in found and caught and not sk5) else "✘",
+                 len(found), n5, len(d5)))
+        ok &= brand_new in found and caught and not sk5
         # ⑥ 两侧是同一个目录 ⇒ 必须响亮失败（第一版就是在这里假绿的）
         same = os.path.realpath(a) == os.path.realpath(b)
         print("  同目录守卫用例（构造同目录）: %s"

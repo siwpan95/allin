@@ -143,9 +143,41 @@ test('GET /api/alerts E5 订阅视图（聚合分歧事件，无事件时为空�
   assert.ok(Array.isArray(body.alerts))
 })
 
-test('POST 启动未知项目 → 404', async () => {
-  const res = await fetch(base + '/api/library/nope/start', { method: 'POST' })
+test('POST 启动未知项目 → 404（本地调用方带标记头）', async () => {
+  const res = await fetch(base + '/api/library/nope/start', {
+    method: 'POST',
+    headers: { 'X-Allin-Local': '1' },
+  })
   assert.equal(res.status, 404)
+})
+
+// 2026-11-04 工程审查 P0：状态变更来源围栏（CSRF）。
+// 用原生 http.request 以便自由设置 Origin / Sec-Fetch-Site（undici fetch 对部分头有限制）。
+function rawPost(pathname, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(base + pathname, { method: 'POST', headers }, (res) => {
+      res.resume()
+      res.on('end', () => resolve(res.statusCode))
+    })
+    req.on('error', reject)
+    req.end('x=1')
+  })
+}
+
+test('CSRF 围栏：跨站 Origin / cross-site / 裸请求 → 403，且 shutdown 不执行', async () => {
+  const originHost = base.replace('http://', 'https://evil.example.com')
+  assert.equal(await rawPost('/api/shutdown', { Origin: originHost }), 403, '跨站 Origin 必须拒绝')
+  assert.equal(await rawPost('/api/shutdown', { 'Sec-Fetch-Site': 'cross-site' }), 403, 'Fetch Metadata cross-site 必须拒绝')
+  assert.equal(await rawPost('/api/shutdown', {}), 403, '无来源信号的裸 POST 必须拒绝')
+  assert.equal(await rawPost('/api/library/nope/start', { Origin: originHost }), 403, 'start 端点同样受保护')
+  // 若上面任何一条放行，进程会退出，后续测试不会执行 —— 进程仍活着即证明副作用未发生
+  assert.equal((await fetch(base + '/api/status')).status, 200, '门户进程仍在，shutdown 未被执行')
+})
+
+test('CSRF 围栏：本地标记头 / 同源浏览器信号 → 放行到业务逻辑', async () => {
+  assert.equal(await rawPost('/api/library/nope/start', { 'X-Allin-Local': '1' }), 404)
+  const sameOrigin = { Origin: base, 'Sec-Fetch-Site': 'same-origin' }
+  assert.equal(await rawPost('/api/library/nope/start', sameOrigin), 404)
 })
 
 after(() => server.close())

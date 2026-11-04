@@ -98,7 +98,13 @@ async function api(pathname, method = 'GET') {
   }
   let res
   try {
-    res = await fetch(base + pathname, { method, signal: AbortSignal.timeout(120000) })
+    // CLI 是本地可信调用方：状态变更端点要求来源信号（见门户 src/index.js 的
+    // stateChangeAllowed）。显式带标记头，避免依赖浏览器才有的 Origin/Sec-Fetch-Site。
+    res = await fetch(base + pathname, {
+      method,
+      headers: { 'X-Allin-Local': '1' },
+      signal: AbortSignal.timeout(120000),
+    })
   } catch (e) {
     fail('请求门户失败: ' + e.message)
   }

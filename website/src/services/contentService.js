@@ -13,6 +13,41 @@ const keystore = require('../crypto/keystore');
 const { DecryptError } = require('../crypto/errors');
 const { logAudit } = require('./audit');
 
+/**
+ * 事务包装（2026-11-04 P2 修复 F-013）：把跨表写入收敛为原子单元。
+ *
+ * node:sqlite 的 DatabaseSync 是同步 API；本机 Node v22.22.2 实测**没有**
+ * `db.inTransaction` 属性，故用模块级 txDepth 记录逻辑事务嵌套：
+ * 内层调用直接复用外层事务，不重复 BEGIN（否则 SQLite 报
+ * "cannot start a transaction within a transaction"）。
+ * 任何异常一律 ROLLBACK 后原样抛出 —— 绝不吞错、绝不留下半写入状态。
+ *
+ * 口径说明：audit.logAudit() 按既有设计吞掉自身写失败（审计不拖垮业务），
+ * 所以这里保证的是「业务写入与审计共用同一提交点」，不是严格两阶段提交。
+ */
+let txDepth = 0;
+
+function withTransaction(fn) {
+  const db = getDb();
+  if (txDepth > 0) return fn();
+  db.exec('BEGIN IMMEDIATE');
+  txDepth += 1;
+  try {
+    const result = fn();
+    db.exec('COMMIT');
+    return result;
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {
+      // 回滚失败不掩盖原始异常；上层 fail loud
+    }
+    throw err;
+  } finally {
+    txDepth -= 1;
+  }
+}
+
 function putDoc({ docKey, kind, data, status = 'new' }) {
   const db = getDb();
   const { keyId, material } = keystore.getActiveKey(db);
@@ -123,4 +158,4 @@ function countDocs() {
   return getDb().prepare('SELECT kind, COUNT(*) AS n FROM secure_docs GROUP BY kind ORDER BY kind').all();
 }
 
-module.exports = { putDoc, getDoc, getDocRow, getDocRowById, listDocs, setDocStatus, countDocs, decryptRow };
+module.exports = { withTransaction, putDoc, getDoc, getDocRow, getDocRowById, listDocs, setDocStatus, countDocs, decryptRow };

@@ -51,6 +51,10 @@ EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
 FRESH_HOURS = 24
 AGING_DAYS = 7
 BUDGET_MS = 60_000          # 门禁研究共识：单次检查应 < 60s，慢过这条线的门禁会被绕过
+# 历史留痕（589 行，2026-10-28 起）没有 batch 字段。按「同 commit + 相邻记录间隔
+# <= 该秒数」把连续执行推断成一次跑批；一次跑批内单条门禁远快于 5 分钟，
+# 而两次独立跑批之间通常远超这个间隔（实测同秒连跑也由 PID 后缀区分）。
+BATCH_GAP_SECONDS = 300
 
 
 def read_lines(path: Path) -> list[str]:
@@ -83,8 +87,17 @@ def parse_ts(value: str) -> datetime | None:
         return None
 
 
+def _aware(stamp: datetime | None) -> datetime | None:
+    """统一成 tz-aware，避免 naive/aware 混比抛 TypeError（历史行可能不带 Z）。"""
+    if stamp is None:
+        return None
+    if stamp.tzinfo is None:
+        return stamp.replace(tzinfo=timezone.utc)
+    return stamp
+
+
 def in_window(run: dict, since: datetime) -> bool:
-    stamp = parse_ts(str(run.get("ts", "")))
+    stamp = _aware(parse_ts(str(run.get("ts", ""))))
     return stamp is not None and stamp >= since
 
 
@@ -254,6 +267,107 @@ def agent_ops(spans: list[dict]) -> dict:
     }
 
 
+# --------------------------------------------------------------- 跑批口径
+def group_batches(runs: list[dict]) -> list[tuple[str, list[dict], bool]]:
+    """把执行留痕按「一次跑批」分组，返回 [(key, items, inferred)]。
+
+    优先用 `run_all_gates.sh` 写入的 `batch` 字段（精确，同一批共享一个 RUN_ID）；
+    历史行（无 batch）按「同 commit + 相邻间隔 <= BATCH_GAP_SECONDS」聚类推断，
+    标记 inferred=True，以便输出时如实说明这是推断而非确证。
+
+    **为什么不能再按 ts[:19] 秒级分组**：一次跑批要跑十几条门禁、跨几十秒，
+    秒级分组会把它拆成几十个「秒组」；只要某一秒恰好没有失败记录，旧口径就把
+    那一秒当作「最近一次全绿」，于是一次有失败的跑批照样报 fresh —— 假绿。
+    证据新鲜度必须回答「最近一次完整跑批全绿了吗」，不是「某一秒内没红吗」。
+    """
+    explicit: dict[str, list[dict]] = {}
+    legacy: list[dict] = []
+    for run in runs:
+        batch = str(run.get("batch") or "").strip()
+        if batch:
+            explicit.setdefault(batch, []).append(run)
+        else:
+            legacy.append(run)
+    groups: list[tuple[str, list[dict], bool]] = [
+        (key, items, False) for key, items in explicit.items()
+    ]
+    if legacy:
+        epoch = datetime.min.replace(tzinfo=timezone.utc)
+        ordered = sorted(
+            legacy,
+            key=lambda r: (_aware(parse_ts(str(r.get("ts", "")))) or epoch,
+                           str(r.get("commit", ""))),
+        )
+        cluster: list[dict] = []
+        last_stamp: datetime | None = None
+        last_commit = ""
+        for run in ordered:
+            stamp = _aware(parse_ts(str(run.get("ts", ""))))
+            commit = str(run.get("commit", ""))
+            gap = ((stamp - last_stamp).total_seconds()
+                   if (stamp is not None and last_stamp is not None) else 0)
+            if cluster and (gap > BATCH_GAP_SECONDS or commit != last_commit):
+                groups.append((f"legacy#{len(groups)}", cluster, True))
+                cluster = []
+            cluster.append(run)
+            last_stamp = stamp
+            last_commit = commit
+        if cluster:
+            groups.append((f"legacy#{len(groups)}", cluster, True))
+    return groups
+
+
+def batch_stamp(items: list[dict]) -> datetime | None:
+    stamps = [_aware(parse_ts(str(r.get("ts", "")))) for r in items]
+    stamps = [s for s in stamps if s is not None]
+    return max(stamps) if stamps else None
+
+
+def batch_verdict(runs: list[dict], now: datetime) -> dict:
+    """证据新鲜度：按整批判定全绿（纯函数，不读磁盘，供 --selfcheck 注入验证）。"""
+    stamps = [_aware(parse_ts(str(r.get("ts", "")))) for r in runs]
+    stamps = [s for s in stamps if s is not None]
+    newest = max(stamps) if stamps else None
+
+    groups = group_batches(runs)
+    greens: list[tuple[datetime, bool, int]] = []
+    last_stamp: datetime | None = None
+    last_ok: bool | None = None
+    for _key, items, inferred in groups:
+        ok = all(int(r.get("exit", 0)) == 0 for r in items)
+        stamp = batch_stamp(items)
+        if ok and stamp is not None:
+            greens.append((stamp, inferred, len(items)))
+        if stamp is not None and (last_stamp is None or stamp > last_stamp):
+            last_stamp, last_ok = stamp, ok
+
+    newest_green = max(greens, key=lambda g: g[0]) if greens else None
+    green_at = newest_green[0] if newest_green else None
+    if newest is None:
+        return {"state": "no-evidence", "age_hours": None, "last_run": None,
+                "last_green": None, "last_green_inferred": None,
+                "green_batches": 0, "batches": len(groups), "last_batch_ok": None}
+
+    anchor = green_at or newest
+    age = (now - anchor).total_seconds() / 3600.0
+    if last_ok is False:
+        state = "last-batch-red"
+    elif green_at is None:
+        state = "no-green-batch"
+    else:
+        state = "fresh" if age <= FRESH_HOURS else ("aging" if age <= AGING_DAYS * 24 else "stale")
+    return {
+        "state": state,
+        "age_hours": round(age, 1),
+        "last_run": newest.isoformat(),
+        "last_green": green_at.isoformat() if green_at else None,
+        "last_green_inferred": newest_green[1] if newest_green else None,
+        "green_batches": len(greens),
+        "batches": len(groups),
+        "last_batch_ok": last_ok,
+    }
+
+
 def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> dict:
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=days)
@@ -262,29 +376,8 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
     failed = [run for run in window if int(run.get("exit", 0)) != 0]
     escape_rate = (len(failed) / len(window)) if window else 0.0
 
-    stamps = [parse_ts(str(run.get("ts", ""))) for run in runs]
-    stamps = [stamp for stamp in stamps if stamp is not None]
-    newest = max(stamps) if stamps else None
-    # A "green batch" = the newest timestamp whose whole second-level group has no failure.
-    green_at = None
-    if stamps:
-        by_ts: dict[str, list[dict]] = {}
-        for run in runs:
-            by_ts.setdefault(str(run.get("ts", ""))[:19], []).append(run)
-        green_candidates = [key for key, items in by_ts.items()
-                            if all(int(item.get("exit", 0)) == 0 for item in items)]
-        if green_candidates:
-            green_at = parse_ts(max(green_candidates) + "Z" if not max(green_candidates).endswith("Z")
-                                else max(green_candidates))
-
-    if newest is None:
-        freshness = {"state": "no-evidence", "age_hours": None, "last_run": None, "last_green": None}
-    else:
-        age = (now - (green_at or newest)).total_seconds() / 3600.0
-        state = "fresh" if age <= FRESH_HOURS else ("aging" if age <= AGING_DAYS * 24 else "stale")
-        freshness = {"state": state, "age_hours": round(age, 1),
-                     "last_run": newest.isoformat(),
-                     "last_green": green_at.isoformat() if green_at else None}
+    # 证据新鲜度改为按「一次跑批」判定，旧秒级分组会把红批洗成 fresh（见 group_batches）。
+    freshness = batch_verdict(runs, now)
 
     exceptions = count_exceptions()
     total_exceptions = sum(exceptions.values())
@@ -315,8 +408,21 @@ def render(metrics: dict, previous: int | None) -> str:
     if fresh["state"] == "no-evidence":
         lines.append("  ② 证据新鲜度：无证据（还没跑过门禁）")
     else:
-        lines.append(f"  ② 证据新鲜度：{fresh['state']}（最近一次全绿距今 {fresh['age_hours']} 小时）")
-        lines.append(f"       最近全绿：{fresh['last_green'] or '（无）'}")
+        green = fresh.get("last_green")
+        batches = fresh.get("batches", 0)
+        greens = fresh.get("green_batches", 0)
+        if fresh.get("last_batch_ok") is False:
+            lines.append(f"  ② 证据新鲜度：{fresh['state']} —— 最近一次跑批有失败，"
+                         f"不算全绿证据（{greens}/{batches} 个批次全绿）")
+        elif green is None:
+            lines.append(f"  ② 证据新鲜度：{fresh['state']} —— 有执行留痕，"
+                         f"但没有可证明的全绿批次（0/{batches}）")
+        else:
+            inferred = "（按时间邻近推断，历史留痕无 batch 字段）" if fresh.get("last_green_inferred") else ""
+            lines.append(f"  ② 证据新鲜度：{fresh['state']}（最近一次全绿批次距今 "
+                         f"{fresh['age_hours']} 小时；{greens}/{batches} 个批次全绿）")
+            lines.append(f"       最近全绿：{green}{inferred}")
+        lines.append(f"       最近执行：{fresh['last_run']}")
     exc = metrics["exceptions"]
     delta = ""
     if previous is not None:
@@ -367,6 +473,59 @@ def render(metrics: dict, previous: int | None) -> str:
     return "\n".join(lines)
 
 
+def selfcheck() -> int:
+    """注入式自证：秒级假绿必须被挡住，真全绿必须被认出（不读磁盘留痕）。
+
+    四个方向：
+      ① legacy 跨秒批次含一条失败、且最晚那一秒单独成功 ⇒ 不得判全绿
+         （这正是旧 ts[:19] 口径的假绿复现：那一秒会被当成「最近一次全绿」）；
+      ② 显式 batch 的一批含失败 ⇒ 不得判全绿，last_batch_ok=False；
+      ③ 显式 batch 的一批全成功 ⇒ 能算出 last_green；
+      ④ 先绿后红两批 ⇒ 最近批次红，但仍有更早的全绿批次可报。
+    """
+    print("== 治理度量 自测（跑批口径反假绿） ==")
+    now = datetime(2026, 11, 4, 12, 0, tzinfo=timezone.utc)
+    ok = True
+
+    legacy_red = [
+        {"ts": "2026-11-04T11:59:58Z", "commit": "c1", "label": "a", "exit": 0, "ms": 10},
+        {"ts": "2026-11-04T11:59:59Z", "commit": "c1", "label": "b", "exit": 1, "ms": 10},
+        {"ts": "2026-11-04T12:00:00Z", "commit": "c1", "label": "c", "exit": 0, "ms": 10},
+    ]
+    v1 = batch_verdict(legacy_red, now)
+    print("  ① 跨秒批次含失败不判全绿:      %s  [last_green=%s, last_batch_ok=%s]"
+          % ("✔" if v1["last_green"] is None and v1["last_batch_ok"] is False else "✘",
+             v1["last_green"], v1["last_batch_ok"]))
+    ok &= v1["last_green"] is None and v1["last_batch_ok"] is False
+
+    explicit_red = [
+        {"ts": "2026-11-04T11:59:58Z", "batch": "run-1", "commit": "c1", "label": "a", "exit": 0, "ms": 10},
+        {"ts": "2026-11-04T11:59:59Z", "batch": "run-1", "commit": "c1", "label": "b", "exit": 1, "ms": 10},
+        {"ts": "2026-11-04T12:00:00Z", "batch": "run-1", "commit": "c1", "label": "c", "exit": 0, "ms": 10},
+    ]
+    v2 = batch_verdict(explicit_red, now)
+    print("  ② 显式 batch 含失败不判全绿:   %s"
+          % ("✔" if v2["last_green"] is None and v2["last_batch_ok"] is False else "✘"))
+    ok &= v2["last_green"] is None and v2["last_batch_ok"] is False
+
+    explicit_green = [dict(r, exit=0, batch="run-2") for r in explicit_red]
+    v3 = batch_verdict(explicit_green, now)
+    print("  ③ 显式 batch 全绿能算出全绿:   %s  [%s]"
+          % ("✔" if v3["last_green"] and v3["last_batch_ok"] is True else "✘", v3["last_green"]))
+    ok &= bool(v3["last_green"]) and v3["last_batch_ok"] is True
+
+    mixed = explicit_red + [
+        {"ts": "2026-11-04T11:59:00Z", "batch": "run-0", "commit": "c1", "label": "z", "exit": 0, "ms": 10},
+    ]
+    v4 = batch_verdict(mixed, now)
+    print("  ④ 先绿后红：最近批次红仍保留更早全绿: %s"
+          % ("✔" if v4["last_batch_ok"] is False and bool(v4["last_green"]) else "✘"))
+    ok &= v4["last_batch_ok"] is False and bool(v4["last_green"])
+
+    print("SELFCHECK_%s" % ("PASSED" if ok else "FAILED"))
+    return 0 if ok else 3
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="governance metrics from the gate execution trail")
     parser.add_argument("--trail", default=str(TRAIL), help=f"gate run trail (default: {TRAIL})")
@@ -375,7 +534,11 @@ def main(argv: list[str] | None = None) -> int:
                         help=f"latency budget in ms for metric 4 (default {BUDGET_MS})")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--snapshot", action="store_true", help="append the current exception count to the trend file")
+    parser.add_argument("--selfcheck", action="store_true", help="inject-and-prove the batch verdict (no trail needed)")
     args = parser.parse_args(argv)
+
+    if args.selfcheck:
+        return selfcheck()
 
     path = Path(args.trail)
     if not path.is_file():

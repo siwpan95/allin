@@ -1178,7 +1178,7 @@ def selfcheck():
             # 不带标记就会被自己判红（2026-10-06 实测：H5 两条存量红之一即此）。
             # ⚠ 标记只能放在**源码行尾注释**里、不能写进字符串内容 —— 写进内容就进了夹具文件，
             #   该夹具是"必须被判红"的正例（H5 环回URL令牌判），那样会把正例测废。
-            wr(d, "t/g.log", "dsh web: http://127.0.0.1:3080/?token=a1b2c3d4e5f67890abcdef1234567890\n")  # repo-hygiene: allow
+            wr(d, "t/g.log", "dsh web: http://127.0.0.1:3080/?token=a1b2c3d4e5f67890abcdef1234567890\n")  # repo-hygiene: allow; gov-credentials: allow
         r = _make_fixture(tmp, "cred_lo", _cred_loopback)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 环回URL令牌判:    {}  [{}]".format("✔" if h5 else "✘", len(h5)))
@@ -1188,8 +1188,8 @@ def selfcheck():
             # 注意：H5 每文件**最多产出一条** finding（`pat.search` 命中即 break），
             # 所以两种宿主形态要分放两个文件，否则只验得到一条。
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/h.log", "u=http://localhost:8000/&api_key=a1b2c3d4e5f67890abcdef1234567890\n")
-            wr(d, "t/i.log", "v=http://192.168.1.7:9000/?token=b2c3d4e5f67890abcdef1234567890ab\n")
+            wr(d, "t/h.log", "u=http://localhost:8000/&api_key=a1b2c3d4e5f67890abcdef1234567890\n")  # gov-credentials: allow
+            wr(d, "t/i.log", "v=http://192.168.1.7:9000/?token=b2c3d4e5f67890abcdef1234567890ab\n")  # gov-credentials: allow
         r = _make_fixture(tmp, "cred_lan", _cred_localhost_lan)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 localhost/内网判: {}  [{}]".format("✔" if len(h5) >= 2 else "✘", len(h5)))
@@ -1198,7 +1198,7 @@ def selfcheck():
         def _cred_public_link(d):
             wr(d, "LICENSE", "MIT\n")
             wr(d, "rules.html",
-               'x <a href="https://www.beian.gov.cn/portal/x?&token=651a3142deadbeefdeadbeefdeadbeef1234">y</a>\n')
+               'x <a href="https://www.beian.gov.cn/portal/x?&token=651a3142deadbeefdeadbeefdeadbeef1234">y</a>\n')  # gov-credentials: allow
         r = _make_fixture(tmp, "cred_pub", _cred_public_link)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 公共站分享链接不判: {}  [{}]".format("✔" if not h5 else "✘", len(h5)))

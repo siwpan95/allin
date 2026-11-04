@@ -64,6 +64,36 @@ function hostAllowed(req) {
   return LOOPBACK_HOST.test(String(req.headers.host || ''))
 }
 
+// 状态变更来源围栏（2026-11-04 工程审查 P0）：
+// Host 围栏挡的是 DNS rebinding，挡不住 CSRF —— 恶意页面跨站 POST 到回环地址时
+// socket 仍是 127.0.0.1（loopbackOnly 放行）、Host 也是合法回环头，simple request
+// 还不触发 CORS 预检，副作用会真实发生（实测 POST /api/shutdown 能让进程退出）。
+// 因此所有非 GET/HEAD 请求统一在这里过一道来源校验，而不是逐个端点挂，避免以后
+// 新增端点漏挂。三选一放行：
+//   1) 本地可信调用方显式带 X-Allin-Local: 1（CLI / 门户前端 / 本地脚本）。
+//      跨站网页无法设置自定义头：会触发 CORS 预检，本服务不返回任何 CORS 响应头，
+//      预检必然失败 ⇒ 该标记不会被伪造。
+//   2) 浏览器同源请求：Sec-Fetch-Site ∈ {same-origin, none} 且 Origin == http://<Host>。
+//   3) 二者皆不具备的裸请求一律拒绝（无来源信号 = 不可判定，按 g10 大声拒绝口径）。
+// 跨站请求会带 Origin: <攻击者域> 或 Sec-Fetch-Site: cross-site，两者任一不合即 403。
+function stateChangeAllowed(req, res) {
+  if (req.headers['x-allin-local'] === '1') return true
+  const site = String(req.headers['sec-fetch-site'] || '').toLowerCase()
+  // 拒绝前先消费掉请求体，否则 socket 上残留未读数据会让客户端收到 ECONNRESET，
+  // 掩盖了「403」这个真实结论（也避免连接异常被误读成服务故障）。
+  const deny = (reason) => {
+    req.resume()
+    res.writeHead(403)
+    res.end(`forbidden (${reason})`)
+    return false
+  }
+  if (site && site !== 'same-origin' && site !== 'none') return deny('cross-site')
+  const origin = String(req.headers.origin || '')
+  if (origin && origin !== `http://${String(req.headers.host || '')}`) return deny('origin')
+  if (!site && !origin) return deny('missing source signal')
+  return true
+}
+
 function readBody(req, maxBytes = 64 * 1024) {
   return new Promise((resolve) => {
     let data = ''
@@ -164,6 +194,8 @@ const server = http.createServer(async (req, res) => {
   // Host 围栏在最前：GET 读取面（/api/library 含全盘路径信息）同样受保护，
   // 不止写操作的 loopbackOnly（2026-09-24 Phase 1）
   if (!hostAllowed(req)) { res.writeHead(403); return res.end('forbidden') }
+  // 状态变更统一过来源围栏（GET/HEAD 读取面不受影响，Host 围栏仍覆盖它们）
+  if (req.method !== 'GET' && req.method !== 'HEAD' && !stateChangeAllowed(req, res)) return
   const url = new URL(req.url, 'http://x')
   const p = url.pathname
 
@@ -191,7 +223,13 @@ const server = http.createServer(async (req, res) => {
     const { entries } = loadRegistry(REGISTRY)
     const entry = entries.find(e => e.id === stopM[1])
     // dispose 纪律：优先优雅停止（entry.stop.command），缺省回退树杀（异步，不阻塞事件循环）
-    return json(res, 200, await stopEntry(stopM[1], entry || null))
+    // 2026-11-04 P2 修复（F-020）：stopEntry 内部 logTask / removeRunning 可能抛，
+    // 未捕获会让整个 async handler 变成 unhandled rejection ⇒ 详情页 500。
+    try {
+      return json(res, 200, await stopEntry(stopM[1], entry || null))
+    } catch (e) {
+      return json(res, 200, { ok: false, reason: 'stop-failed', error: String((e && e.message) || e) })
+    }
   }
   const alertsM = p.match(/^\/api\/alerts$/)
   if (alertsM && req.method === 'GET') {

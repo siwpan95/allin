@@ -16,12 +16,9 @@ function maskEmail(email) {
   return String(email || '').replace(/^(.{1,2})[^@]*@/, '$1***@');
 }
 
-/** 只允许站内相对路径回跳，杜绝 open redirect。 */
-function safeNext(value) {
-  const next = String(value || '');
-  if (!next.startsWith('/') || next.startsWith('//')) return '/member';
-  return next;
-}
+// 回跳白名单抽到纯函数模块，见 src/safeRedirect.js（P1 开放重定向修复）
+// 注：不放 lib/ —— g05-hygiene 把 lib/ 视为被忽略的产物目录，跟踪它会判红。
+const { safeNext, withNotice } = require('../safeRedirect');
 
 function setSessionCookie(res, sessionId) {
   res.cookie(config.session.cookieName, sessionId, {
@@ -83,7 +80,7 @@ router.post('/login', rateLimiter({ name: 'login', max: 8, windowMs: 10 * 60 * 1
     setSessionCookie(res, session.id);
     userService.touchLogin(user.id);
     logAudit({ actor: `user:${user.id}`, action: 'auth.login', target: `user:${user.id}` });
-    return res.redirect(`${safeNext(req.body.next)}?notice=welcome_back`);
+    return res.redirect(withNotice(safeNext(req.body.next), 'welcome_back'));
   } catch (err) {
     return next(err);
   }

@@ -19,24 +19,29 @@ function createMessage({ name, email, topic, body, attachmentKey = null, attachm
   if (!cleanBody) throw new Error('请填写需求描述');
 
   const docKey = `contact-${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}-${crypto.randomBytes(3).toString('hex')}`;
-  content.putDoc({
-    docKey,
-    kind: 'contact',
-    status: 'new',
-    data: {
-      name: cleanName,
-      email: cleanEmail,
-      topic: cleanTopic || '未分类',
-      body: cleanBody,
-      attachmentKey,
-      attachmentName,
-      ip,
-      userAgent: userAgent ? String(userAgent).slice(0, 200) : null,
-      submittedAt: new Date().toISOString(),
-    },
+  // 2026-11-04 P2 修复（F-013）：正文与审计流水同事务提交。
+  // 原实现是两条独立语句 —— 写留言成功后若进程崩溃 / 审计写失败，
+  // 会留下「库里有留言、流水里查不到」的半写入，追责链断在这里。
+  return content.withTransaction(() => {
+    content.putDoc({
+      docKey,
+      kind: 'contact',
+      status: 'new',
+      data: {
+        name: cleanName,
+        email: cleanEmail,
+        topic: cleanTopic || '未分类',
+        body: cleanBody,
+        attachmentKey,
+        attachmentName,
+        ip,
+        userAgent: userAgent ? String(userAgent).slice(0, 200) : null,
+        submittedAt: new Date().toISOString(),
+      },
+    });
+    logAudit({ actor: null, action: 'contact.submit', target: docKey });
+    return { docKey };
   });
-  logAudit({ actor: null, action: 'contact.submit', target: docKey });
-  return { docKey };
 }
 
 function listMessages({ status = null, limit = 200, order = 'desc' } = {}) {

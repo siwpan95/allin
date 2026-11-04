@@ -97,6 +97,25 @@ stages:
         strategy:
           retry: "0"
 
+      # 2026-11-04 工程审查 P1-4：密钥增量扫描。与 GitHub 侧调**同一个**脚本
+      # scripts/scan-secrets.sh，判据不允许漂移；本侧触发的是 push/master，
+      # 未显式传基线时脚本回退到 origin/master 分叉点 / HEAD~1。
+      # Gitee Go 的多个 command 不保证共享 shell 会话，故整条链写在一行，
+      # 用 GITLEAKS_BIN 绝对路径而不依赖上一行 export 的 PATH。
+      # 注意：Gitee Go 需手动开通（见文件头），外部 PR 通道在 GitHub 镜像侧；
+      # 本步骤保证「主仓绿、镜像红」式的口径漂移不会发生。
+      - step: build@python
+        name: secrets_scan
+        displayName: 密钥增量扫描（gitleaks · 与 GitHub 侧同一脚本）
+        pythonVersion: "3.13"
+        commands:
+          - GOPROXY=https://goproxy.cn,direct go install github.com/gitleaks/gitleaks/v8@v8.18.4 && GITLEAKS_BIN="$(go env GOPATH)/bin/gitleaks" bash scripts/scan-secrets.sh
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
       # D1.1 的验收判据：装 wheel → 在与仓无关的临时目录里 init → 门禁必须 exit 0。
       # 与 GitHub 侧同一条判据：两边都跑，否则「主仓绿、镜像红」就是一个没人发现的矛盾。
       # 整条链写在一个 command 里：Gitee Go 的多个 command 不保证共享同一个 shell 会话，
