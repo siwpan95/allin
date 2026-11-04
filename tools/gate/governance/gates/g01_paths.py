@@ -77,6 +77,14 @@ SKIP_EXTENSIONS = frozenset(
 #: paths in it, and judging it as code turned its dead paths into blockers.
 DOC_EXTENSIONS = frozenset({".md", ".mdx", ".rst", ".txt", ".adoc", ".html", ".htm"})
 
+#: Example / template files are shipped as samples, never as effective code.
+#: A file like ``源.txt.example`` has ``.example`` as its *last* suffix, so it never
+#: reaches DOC_EXTENSIONS. Without this rule a sample path inside it blocks on POSIX
+#: (parent directory absent) while the very same line is exempted on Windows as
+#: "path written for the other platform" -- a platform-dependent false positive that
+#: kept the Linux CI job red. 2026-11-04 修复：示例文件按 report-only 处理。
+EXAMPLE_SUFFIXES = (".example", ".sample", ".template")
+
 #: Comment leaders per extension family, used only to classify a line, never to hide a file.
 LINE_COMMENT_LEADERS = ("//", "#", "*", "/*", "<!--", "--", ";", '"""', "'''")
 
@@ -176,6 +184,7 @@ def scan(root: Path, *, platform: str, include_docs: bool, deep: bool) -> Report
         is_doc = extension in DOC_EXTENSIONS
         is_fixture = (any(segment in f"/{relative}" for segment in FIXTURE_SEGMENTS)
                       or bool(TEST_FILE_NAMES.search(Path(relative).name)))
+        is_example = relative.endswith(EXAMPLE_SUFFIXES)
         generated = is_generated(text)
         report.scanned += 1
         for match in (*WIN_PATH.finditer(text), *POSIX_PATH.finditer(text)):
@@ -219,6 +228,9 @@ def scan(root: Path, *, platform: str, include_docs: bool, deep: bool) -> Report
             if is_fixture:
                 report.exempt("test fixture or snapshot")
                 continue
+            if is_example:
+                report.exempt("example or template file (report-only)")
+                continue
             if generated:
                 report.exempt("generator-owned file")
                 continue
@@ -249,6 +261,9 @@ def selfcheck() -> int:
         sandbox.write("src/dead_posix.ts", "const root = '/Users/gov-selfcheck-missing/work'\n")  # gov-paths: allow
         sandbox.write("src/fixture.spec.ts", "const fake = 'D:\\\\gov-selfcheck-missing\\\\fixture'\n")  # gov-paths: allow; gov-python: allow
         sandbox.write("docs/sample.md", "Config lives in `/Users/gov-selfcheck-missing/work`.\n")  # gov-paths: allow
+        # `.txt.example` 的最后后缀是 .example，不进 DOC_EXTENSIONS；这类模板文件里的
+        # 示例路径曾在 POSIX 上把 g01 判红（CI Linux job 长期红的根因），必须 report-only。
+        sandbox.write("config.txt.example", "示例：/Users/gov-selfcheck-missing/my-plugin\n")  # gov-paths: allow
 
         nt_report = scan(sandbox.path, platform="nt", include_docs=False, deep=True)
         posix_report = scan(sandbox.path, platform="posix", include_docs=False, deep=True)
@@ -261,6 +276,7 @@ def selfcheck() -> int:
         check.quiet("documentation is report-only", "docs/sample.md" in nt_blocked)
         check.quiet("other-platform path is report-only", "src/dead_posix.ts" in nt_blocked)
         check.quiet("test-file fixture is report-only", "src/fixture.spec.ts" in nt_blocked)
+        check.quiet("example/template file is report-only", "config.txt.example" in posix_blocked)
 
         baseline = Baseline(sandbox.path / "baseline.txt")
         baseline.write(nt_report.findings)

@@ -31,6 +31,16 @@ import shutil
 import sys
 import tempfile
 
+# Windows CI runner（Python 3.13，stdout 默认 ANSI cp1252）打印中文诊断会直接
+# UnicodeEncodeError 崩溃；run_all_gates.sh 已统一 export PYTHONIOENCODING=utf-8，
+# 这里再给脚本自身钉一层：被单独调用（--selfcheck 不经跑批脚本）时也安全。
+# reconfigure 是 3.7+ API，仓要求 3.9+；被捕获/替换的流可能没有该方法，静默跳过。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 #: 门禁脚本后缀。TRACKED 不再靠人工登记：2026-11-04 全检实测硬编码的 8 个名字
 #: 漏了 agent_regression.py / gate_metrics.py / check_readme_refs.py ——
 #: 「加新脚本必须同步加到这里」本身就是反模式（纪律不如门禁）。改为从两侧目录
