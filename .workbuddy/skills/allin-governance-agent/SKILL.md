@@ -171,21 +171,24 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 
 | 任务特征 | 路由到的 skill |
 | --- | --- |
-| DSH 本地部署拉不起来 / 会话异常 | `dsh-deploy-repair` |
-| C 盘扫描清理（只读扫描优先） | `c-drive-scan-clean` |
-| Cordis 4.x 集成 / 迁移 | `cordis-v4-integration` |
-| Electron 便携版 Gitee 发版 | `electron-portable-gitee-release` |
-| Gitee 被墙/大文件 fetch 不到 | `gitee-blocked-file-fetch` |
-| 从解压目录推送到 Gitee | `gitee-push-from-extracted-dir` |
-| GitHub release 源码归档下载 | `github-release-source-archive-download` |
-| lab 多语言引擎循环赛每日自动化 | `lab-tournament-daily-automation` |
-| 多语言棋盘引擎实验 | `multilang-board-engine-lab` |
-| pluginplayer Windows 构建 | `pluginplayer-win-build` |
-| pyglet 应用打包分发 | `pyglet-app-package-dist` |
-| PyPI 发布准备 | `pypi-publish-prep` |
-| 仓库远端→本地同步 | `repo-sync-remote-to-local` |
-| venv CA 证书安全巡检（GHSA-6q48） | `venv-ca-security-audit` |
-| Windows Node 环境诊断 | `windows-node-env-diagnose` |
+| DSH 本地部署拉不起来 / 会话异常 | `dsh-deploy-repair` <!-- route:dsh-deploy-repair --> |
+| C 盘扫描清理（只读扫描优先） | `c-drive-scan-clean` <!-- route:c-drive-scan-clean --> |
+| Cordis 4.x 集成 / 迁移 | `cordis-v4-integration` <!-- route:cordis-v4-integration --> |
+| Electron 便携版 Gitee 发版 | `electron-portable-gitee-release` <!-- route:electron-portable-gitee-release --> |
+| Gitee 被墙/大文件 fetch 不到 | `gitee-blocked-file-fetch` <!-- route:gitee-blocked-file-fetch --> |
+| 从解压目录推送到 Gitee | `gitee-push-from-extracted-dir` <!-- route:gitee-push-from-extracted-dir --> |
+| GitHub release 源码归档下载 | `github-release-source-archive-download` <!-- route:github-release-source-archive-download --> |
+| lab 多语言引擎循环赛每日自动化 | `lab-tournament-daily-automation` <!-- route:lab-tournament-daily-automation --> |
+| 多语言棋盘引擎实验 | `multilang-board-engine-lab` <!-- route:multilang-board-engine-lab --> |
+| pluginplayer Windows 构建 | `pluginplayer-win-build` <!-- route:pluginplayer-win-build --> |
+| pyglet 应用打包分发 | `pyglet-app-package-dist` <!-- route:pyglet-app-package-dist --> |
+| PyPI 发布准备 | `pypi-publish-prep` <!-- route:pypi-publish-prep --> |
+| 仓库远端→本地同步 | `repo-sync-remote-to-local` <!-- route:repo-sync-remote-to-local --> |
+| venv CA 证书安全巡检（GHSA-6q48） | `venv-ca-security-audit` <!-- route:venv-ca-security-audit --> |
+| Windows Node 环境诊断 | `windows-node-env-diagnose` <!-- route:windows-node-env-diagnose --> |
+
+> 路由台账唯一事实源：`tools/orchestration/routes.yaml`（机器可读，锚点 `<!-- route:<id> -->`
+> 由 `tools/gate/agent_parity.py` 门禁三方对账——改本表、routes.yaml 或 preset 治理段任一侧，必跑该门禁）。
 
 本 agent 自己负责：治理放行判断、四事实源阅读、门禁总调度、文档新增流程、推送/发版/建仓的纪律把守。
 

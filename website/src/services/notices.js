@@ -15,6 +15,8 @@ const NOTICES = Object.freeze({
   asset_missing: { kind: 'error', text: '请求的资源不存在或已被移除。' },
   asset_broken: { kind: 'error', text: '资源解密失败（数据可能已损坏），已记录安全日志。' },
   rate_limited: { kind: 'error', text: '尝试过于频繁，请稍后再试。' },
+  governance_degraded: { kind: 'warn', text: '治理平台（portal）当前离线，看板处于降级状态；站点其他功能不受影响。' },
+  governance_action_fail: { kind: 'error', text: '治理操作未成功，原因见页面提示；该次尝试已记入审计流水。' },
 });
 
 function notice(code) {

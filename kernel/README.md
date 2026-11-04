@@ -17,14 +17,15 @@ allin 的「制度 + 文档枢纽 + 执行器」三合一治理体系中，**内
 | `paths.py` | 仓库内路径常量（根、规范目录、缓存目录等），全部相对仓根推导，**不写死任何机器盘符** |
 | `_cordis_locate.py` | 定位托管 Cordis 运行时（先试已安装，再退回 `vendor/cordis`），与 `vendor/` 的回退策略一致 |
 | `configs/` | 内核自身的配置片段（环境/阈值等） |
-| `services/` | 四支柱的具体实现：`docs_service.py`（文档枢纽索引契约 D1–D8）、`platform_service.py`、`preset_service.py`、`tools_service.py` |
+| `services/` | 支柱的具体实现：`docs_service.py`（文档枢纽索引契约 D1–D8）、`platform_service.py`、`preset_service.py`、`tools_service.py`、`status_service.py`（跨面只读汇总，ADR-0010） |
 
-## 四大服务支柱
+## 服务支柱（四支柱 + status 只读汇总）
 
 1. **docs（文档枢纽）** —— 维护 `docs/` 四分类（规范 / 事实源 / 记录 / 历史）的索引与契约，门禁 `docs_index.py` 即以其为判据。
 2. **platform（集成平台）** —— 描述 `platform/` 子进程隔离聚合的契约。
 3. **preset（治理预设）** —— 与 DSH `preset/allin/allin.patch.yml` 的 `GOVERNANCE:BEGIN/END` 段同源，是治理事实的可执行载体。
 4. **tools（执行器）** —— 聚合 `tools/` 下门禁与工具的调用契约。
+5. **status（只读汇总，ADR-0010）** —— `allin_cli.py status` 跨面状态汇总：读 platform 运行态状态文件（运行时产物，portal 未启动时不存在→降级）、门禁留痕与编排判据 JSONL（`tools/gate/audit/` 下，gitignored 运行时产物）的尾行/尾部；纯文件只读、零网络、不 import 项目代码。退出码：文件缺失=0（降级展示）、损坏=1、`--strict` 下=2。
 
 ## 设计约束（铁律）
 

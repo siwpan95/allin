@@ -10,9 +10,11 @@
  *   4) 注册 / 登录 / 会话保持 / 登出
  *   5) 越权访问管理台 → 403
  *   6) 留言表单（含附件）入库
- *   7) **落盘无明文**：数据库文件里搜不到任何原文片段
+ *   7) 治理看板：匿名 401/302、member 403 写拒绝、platform 离线 200 + 降级标记
+ *   8) **落盘无明文**：数据库文件里搜不到任何原文片段
  *
  * 用法：npm run smoke（会先用 9155 端口起一个临时实例，跑完自动关闭）
+ * 注：临时实例强制 PORTAL_PORT_FILE 指向不存在路径 → 治理代理走确定性离线降级链路。
  */
 
 const { spawn } = require('node:child_process');
@@ -75,7 +77,13 @@ async function waitReady(child) {
 async function main() {
   const child = spawn(process.execPath, ['--experimental-sqlite', path.join(ROOT, 'src', 'server.js')], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), SITE_BASE_URL: BASE },
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      SITE_BASE_URL: BASE,
+      // 治理看板冒烟用确定性离线：端口发现文件指向不存在的路径 → PORTAL_UNREACHABLE 降级
+      PORTAL_PORT_FILE: path.join(ROOT, 'data', 'smoke-no-portal.port'),
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -145,6 +153,48 @@ async function main() {
   const adminDenied = await request('/admin', { cookie: memberCookie });
   step('普通会员访问管理台被拒', adminDenied.status === 403, `HTTP ${adminDenied.status}`);
 
+  // 5.5) 治理看板：可达性 / 越权 / platform 离线降级（portal.port 文件已被强制指向不存在路径）
+  const govAnon = await request('/member/dashboard');
+  step('匿名访问治理看板跳登录', govAnon.status === 302 && (govAnon.headers.get('location') || '').includes('/login'), govAnon.headers.get('location') || '');
+  const govApiAnon = await request('/member/api/governance/overview', { headers: { accept: 'application/json' } });
+  step(
+    '匿名治理 API 返回 401',
+    govApiAnon.status === 401 && JSON.parse(govApiAnon.text).code === 'LOGIN_REQUIRED',
+    `HTTP ${govApiAnon.status}`
+  );
+  const dash = await request('/member/dashboard', { cookie: memberCookie });
+  step(
+    '治理看板可达（platform 离线仍 200）',
+    dash.status === 200 && dash.text.includes('治理看板') && dash.text.includes('gov-config'),
+    `HTTP ${dash.status}`
+  );
+  const govOverview = await request('/member/api/governance/overview', { headers: { accept: 'application/json' }, cookie: memberCookie });
+  const govOverviewBody = JSON.parse(govOverview.text);
+  step(
+    'platform 离线时总览 API 200 + 降级标记',
+    govOverview.status === 200 && govOverviewBody.ok === true && govOverviewBody.degraded && govOverviewBody.degraded.code === 'PORTAL_UNREACHABLE',
+    `HTTP ${govOverview.status} · degraded=${govOverviewBody.degraded ? govOverviewBody.degraded.code : 'null'}`
+  );
+  const govOrch = await request('/member/api/governance/orchestration', { headers: { accept: 'application/json' }, cookie: memberCookie });
+  const govOrchBody = JSON.parse(govOrch.text);
+  step(
+    'platform 离线时编排 API 200 + 降级不报错',
+    govOrch.status === 200 && govOrchBody.ok === true && govOrchBody.degraded && govOrchBody.degraded.code === 'PORTAL_UNREACHABLE',
+    `HTTP ${govOrch.status}`
+  );
+  const govCsrf = (dash.text.match(/data-csrf="([^"]+)"/) || [])[1] || '';
+  const govWriteMember = await request('/member/api/governance/entries/smoke-entry/stop', {
+    method: 'POST',
+    headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
+    cookie: memberCookie,
+    body: form({ _csrf: govCsrf }),
+  });
+  step(
+    'member 调治理写接口被拒 403',
+    govWriteMember.status === 403 && JSON.parse(govWriteMember.text).code === 'FORBIDDEN',
+    `HTTP ${govWriteMember.status}`
+  );
+
   // 6) 留言（含附件）
   const fd = new FormData();
   fd.append('name', '冒烟测试');
@@ -185,6 +235,28 @@ async function main() {
       `HTTP ${adminPage.status}`
     );
     step('管理台能看到刚提交的留言', adminPage.text.includes('冒烟测试'), '');
+
+    // 7.5) 治理管理页（admin）与写接口 CSRF 闸门
+    const govAdmin = await request('/admin/governance', { cookie });
+    step(
+      '管理员进入治理管理页',
+      govAdmin.status === 200 && govAdmin.text.includes('治理管理') && govAdmin.text.includes('审计流水'),
+      `HTTP ${govAdmin.status}`
+    );
+    const govWriteNoCsrf = await request('/member/api/governance/entries/smoke-entry/stop', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
+      cookie,
+      body: form({}),
+    });
+    step('治理写接口缺 CSRF 被拒 403', govWriteNoCsrf.status === 403, `HTTP ${govWriteNoCsrf.status}`);
+    const govWriteBadId = await request('/member/api/governance/entries/SMOKE_BAD/stop', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json', 'x-csrf-token': (govAdmin.text.match(/data-csrf="([^"]+)"/) || [])[1] || '' },
+      cookie,
+      body: JSON.stringify({}),
+    });
+    step('治理写接口非法 id 被拒 400', govWriteBadId.status === 400, `HTTP ${govWriteBadId.status}`);
   }
 
   // 8) 登出

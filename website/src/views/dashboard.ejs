@@ -1,0 +1,47 @@
+<%- include('partials/head') %>
+
+<section class="section" style="padding-top:2.8rem">
+  <div class="container">
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <div>
+        <span class="eyebrow">// governance dashboard</span>
+        <h1 style="font-size:2rem;margin-bottom:.3rem">治理看板</h1>
+        <p class="muted" style="margin:0">
+          三面治理实况：平台状态、门禁健康与编排同步（只读）。数据由浏览器每 5 秒实时拉取，平台离线时自动降级显示，不影响站点其他功能。
+        </p>
+      </div>
+      <div class="row" style="gap:.6rem;margin:0;align-items:center">
+        <span id="gov-stale" aria-live="polite"></span>
+        <a class="btn btn--sm btn--ghost" href="/member">返回控制台</a>
+      </div>
+    </div>
+
+<div id="gov-config" hidden data-csrf="<%= csrfToken %>" data-admin="<%= isAdmin ? '1' : '0' %>"
+     data-api-overview="/member/api/governance/overview"
+     data-api-orchestration="/member/api/governance/orchestration"
+     data-api-entries="/member/api/governance/entries"></div>
+
+    <noscript>
+      <div class="notice notice--warn" role="status" style="margin-top:1.2rem">
+        <span aria-hidden="true">▍</span>
+        <span>看板数据需要浏览器脚本实时拉取；当前环境未启用脚本，卡片停留在骨架状态。</span>
+      </div>
+    </noscript>
+    <div id="gov-inline" role="status" aria-live="polite" style="margin-top:1rem"></div>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container grid grid--2" style="align-items:start">
+    <%- include('partials/gov/overview-card') %>
+    <%- include('partials/gov/gate-card') %>
+  </div>
+</section>
+
+<section class="section--tight">
+  <div class="container">
+    <%- include('partials/gov/orchestration-card') %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

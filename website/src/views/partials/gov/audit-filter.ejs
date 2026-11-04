@@ -1,0 +1,50 @@
+<%# 审计流水过滤视图（纯 SSR，GET 查询参数驱动，不参与轮询）。仅 /admin/governance 使用。 %>
+<%# locals: audit(行数组), filters{action, ok, limit} %>
+<div class="panel" style="overflow-x:auto">
+  <form method="get" action="/admin/governance" class="row" style="gap:.6rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
+    <label style="font-size:.85rem">
+      <span class="muted">动作包含</span><br>
+      <input class="gov-filter-input" type="text" name="action" value="<%= filters.action %>" placeholder="如 governance." maxlength="100">
+    </label>
+    <label style="font-size:.85rem">
+      <span class="muted">结果</span><br>
+      <select name="ok" class="gov-filter-input">
+        <option value="" <%= filters.ok === '' ? 'selected' : '' %>>全部</option>
+        <option value="ok" <%= filters.ok === 'ok' ? 'selected' : '' %>>仅成功</option>
+        <option value="fail" <%= filters.ok === 'fail' ? 'selected' : '' %>>仅失败</option>
+      </select>
+    </label>
+    <label style="font-size:.85rem">
+      <span class="muted">条数</span><br>
+      <select name="limit" class="gov-filter-input">
+        <% [20, 50, 100].forEach(function (n) { %>
+        <option value="<%= n %>" <%= filters.limit === n ? 'selected' : '' %>><%= n %></option>
+        <% }); %>
+      </select>
+    </label>
+    <button class="btn btn--sm" type="submit">应用过滤</button>
+    <a class="btn btn--sm btn--ghost" href="/admin/governance">清除</a>
+  </form>
+
+  <% if (!audit.length) { %>
+  <p class="muted" style="margin:0">
+    没有匹配的审计记录。
+    <a href="/admin/governance">清除过滤</a>
+  </p>
+  <% } else { %>
+  <table class="table">
+    <thead><tr><th>时间</th><th>主体</th><th>动作</th><th>对象</th><th>结果</th></tr></thead>
+    <tbody>
+      <% audit.forEach(function (a) { %>
+      <tr>
+        <td class="mono" style="font-size:.82rem"><%= a.at %></td>
+        <td class="mono" style="font-size:.82rem"><%= a.actor || '—' %></td>
+        <td class="mono" style="font-size:.82rem"><%= a.action %></td>
+        <td class="mono" style="font-size:.82rem"><%= a.target || '—' %></td>
+        <td><%= Number(a.ok) === 1 ? '<span class="tag tag--ok">ok</span>' : '<span class="tag tag--warn">fail</span>' %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</div>

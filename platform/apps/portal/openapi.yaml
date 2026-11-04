@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: allin-platform Portal API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     allin 治理平台前台（`platform/apps/portal`，即 `@allin/portal`）的本地 HTTP 接口规范。
 
@@ -49,6 +49,10 @@ tags:
     description: 工坊：订阅/更新/回滚与发布面审计
   - name: engine
     description: allin_engine 引擎视图（dump-profile）
+  - name: governance
+    description: |
+      bridge 只读聚合端点（P4-M1 三面贯通 G1/G2/G4 数据面）：一次性聚合全局状态，
+      与读取 g21 编排判据快照。仅读文件事实源与既有内存态，不含任何启停能力。
 
 paths:
   /api/status:
@@ -231,6 +235,125 @@ paths:
                   escapeRate: 0
                   lastRunAt: '2026-10-27T22:17:00Z'
                   lastOkAt: '2026-10-27T22:17:00Z'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/overview:
+    get:
+      tags: [governance]
+      summary: 全局只读聚合（一次拉取，供外部看板避免多次串行请求）
+      description: |
+        bridge 端点：聚合 portal 自身状态、library 投影（pid 存活级，非探测级——探测细节走
+        `/api/library`）、alerts 近 24h 计数、gate-runs.jsonl 摘要与 g21 判据概要。
+        30s TTL 内存缓存（响应 `cached` 标注是否命中缓存），无文件监听（Windows 跨进程
+        FSWatcher 语义不可靠）。任一子数据源读失败时对应块降级为零值/`readable=false`，
+        整体仍 200，不报错。
+      operationId: getOverview
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 聚合快照（generatedAt 为聚合生成时间；cached 为是否 30s 缓存命中）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverviewResponse'
+              example:
+                portal:
+                  version: '0.1.0'
+                  uptime: 15
+                  port: 9399
+                library:
+                  total: 146
+                  running: 0
+                  invalid: 1
+                  problems: 1
+                alerts:
+                  last24h: 0
+                  latestTs: '2026-11-01T17:36:34.563Z'
+                gates:
+                  readable: true
+                  lastRunAt: '2026-11-04T13:42:11Z'
+                  lastOkAt: '2026-11-04T13:42:11Z'
+                  escapeRate: 0.03
+                orchestration:
+                  readable: false
+                  routes: 0
+                  driftCount: 0
+                  lastCheckAt: null
+                  healthy: false
+                generatedAt: '2026-11-04T14:23:06.293Z'
+                cached: false
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/orchestration:
+    get:
+      tags: [governance]
+      summary: 编排判据快照（读 g21 产物最后一行）
+      description: |
+        bridge 端点：读取 `tools/gate/audit/g21-runs.jsonl`（g21 门禁产出的 JSONL 逐行快照，
+        每行一次运行的完整自足快照，5MB 轮转）的**最后一行**——即最新判据结果。
+        行内自带 routes 数组，本端点不做任何 YAML 解析。
+        `healthy` 按判红三条件计算：routesReadable=false ∨ 任一 drift severity=error ∨ drift>0。
+        `lastCheckError` 透传崩溃行的 `error{code,msg}`（门禁自身故障），正常完成行为 null。
+        文件缺失/全空/全坏行时 `readable=false` 且不报错（g21 首次运行前属正常状态）。
+        `include` 查询参数控制返回块（逗号分隔，缺省 `routes,status`）。
+      operationId: getOrchestration
+      parameters:
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 返回块白名单（routes/status，缺省两者都返回）
+      security:
+        - loopbackBoundary: []
+      responses:
+        '200':
+          description: 判据快照（成功与降级均以 200 返回，靠 readable 字段区分）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResponse'
+              examples:
+                healthy:
+                  summary: 尾行为正常完成的判据（全绿）
+                  value:
+                    readable: true
+                    routes:
+                      - id: gitee-release
+                        skill: gitee-release
+                        entry: tools/gitee_release.py
+                        forms: [workbuddy, dsh]
+                        trigger: '发布|发版|release'
+                    drift: []
+                    lastCheckAt: '2026-11-04T15:00:00.000Z'
+                    lastCheckError: null
+                    summary: { total: 2, driftCount: 0 }
+                    healthy: true
+                gateCrashed:
+                  summary: 尾行为崩溃行（门禁自身故障）
+                  value:
+                    readable: true
+                    routes: []
+                    drift: []
+                    lastCheckAt: '2026-11-04T14:00:00.000Z'
+                    lastCheckError:
+                      code: PARSE_FAILED
+                      msg: 'routes.yaml 解析失败于第 42 行'
+                    summary: { total: 0, driftCount: 0 }
+                    healthy: false
+                notGenerated:
+                  summary: g21 尚未运行（文件缺失）
+                  value:
+                    readable: false
+                    routes: []
+                    drift: []
+                    lastCheckAt: null
+                    lastCheckError: null
+                    summary: { total: 0, driftCount: 0 }
+                    healthy: false
         '403':
           $ref: '#/components/responses/Forbidden'
 
@@ -759,6 +882,209 @@ components:
           type: string
           nullable: true
       additionalProperties: true
+
+    OverviewPortal:
+      type: object
+      description: 门户自身状态（version 取自 package.json，port 为实际绑定端口——PORT=0 按需形态下与配置端口不同）
+      properties:
+        version:
+          type: string
+          nullable: true
+          example: '0.1.0'
+        uptime:
+          type: integer
+          description: 进程自启动以来的秒数
+          example: 15
+        port:
+          type: integer
+          nullable: true
+          description: 实际绑定端口（listen 后回填）
+          example: 9399
+      required: [version, uptime, port]
+
+    OverviewLibrary:
+      type: object
+      description: library 投影（pid 存活级，非探测级；探测级细节走 /api/library）
+      properties:
+        total:
+          type: integer
+          description: 登记条目总数
+          example: 146
+        running:
+          type: integer
+          description: pid 存活的条目数
+          example: 0
+        invalid:
+          type: integer
+          description: 未通过校验（_valid=false）的条目数
+          example: 1
+        problems:
+          type: integer
+          description: registry 装配问题条数
+          example: 1
+      required: [total, running, invalid, problems]
+
+    OverviewAlerts:
+      type: object
+      description: 分歧事件近 24h 概览（聚合既有 readAlerts，倒序首条即最新）
+      properties:
+        last24h:
+          type: integer
+          example: 0
+        latestTs:
+          type: string
+          nullable: true
+          example: '2026-11-01T17:36:34.563Z'
+      required: [last24h, latestTs]
+
+    OverviewGates:
+      type: object
+      description: 门禁留痕摘要（gate-runs.jsonl tail 200，与 /api/gate-history 同口径）
+      properties:
+        readable:
+          type: boolean
+          description: 留痕文件是否可读（缺失时 false 且数值块为零值）
+        lastRunAt:
+          type: string
+          nullable: true
+        lastOkAt:
+          type: string
+          nullable: true
+        escapeRate:
+          type: number
+          description: 尾部样本失败占比
+          example: 0.03
+      required: [readable, lastRunAt, lastOkAt, escapeRate]
+
+    OrchestrationSummary:
+      type: object
+      description: g21 判据概要投影（g21-runs.jsonl 尾行）
+      properties:
+        readable:
+          type: boolean
+          description: 产物文件是否可读（g21 首次运行前为 false，属正常状态）
+        routes:
+          type: integer
+          description: 尾行 routes 条数
+          example: 2
+        driftCount:
+          type: integer
+          example: 0
+        lastCheckAt:
+          type: string
+          nullable: true
+        healthy:
+          type: boolean
+          description: 判红三条件的否：routesReadable=false ∨ 任一 drift severity=error ∨ drift>0
+      required: [readable, routes, driftCount, lastCheckAt, healthy]
+
+    OrchestrationRoute:
+      type: object
+      description: g21 产物尾行内的路由条目（由 g21 从 routes.yaml 解析并校验后落盘）
+      properties:
+        id:
+          type: string
+          example: gitee-release
+        skill:
+          type: string
+          example: gitee-release
+        entry:
+          type: string
+          description: 入口文件（相对仓根的 POSIX 路径，零盘符）
+          example: tools/gitee_release.py
+        forms:
+          type: array
+          items:
+            type: string
+            enum: [workbuddy, dsh]
+        trigger:
+          type: string
+          description: 触发条件（人读正则/关键词）
+      required: [id, skill, entry, forms, trigger]
+
+    OrchestrationDrift:
+      type: object
+      description: 单条漂移判据结果
+      properties:
+        routeId:
+          type: string
+        side:
+          type: string
+          enum: [workbuddy, dsh, routes]
+          description: 漂移侧（routes = routes.yaml 自身问题）
+        severity:
+          type: string
+          enum: [error, warn]
+          description: severity=error 参与判红
+        reason:
+          type: string
+      required: [routeId, side, severity, reason]
+
+    OrchestrationCheckError:
+      type: object
+      description: g21 崩溃行的 error 透传（门禁自身故障；正常完成行为 null）
+      properties:
+        code:
+          type: string
+          description: 故障码（缺省 GATE_CRASHED）
+          example: PARSE_FAILED
+        msg:
+          type: string
+          description: 故障信息（截断至 500 字符）
+      required: [code, msg]
+
+    OverviewResponse:
+      type: object
+      properties:
+        portal:
+          $ref: '#/components/schemas/OverviewPortal'
+        library:
+          $ref: '#/components/schemas/OverviewLibrary'
+        alerts:
+          $ref: '#/components/schemas/OverviewAlerts'
+        gates:
+          $ref: '#/components/schemas/OverviewGates'
+        orchestration:
+          $ref: '#/components/schemas/OrchestrationSummary'
+        generatedAt:
+          type: string
+          format: date-time
+          description: 本次聚合生成时间（缓存命中时为缓存写入时间）
+        cached:
+          type: boolean
+          description: 是否命中 30s TTL 内存缓存
+      required: [portal, library, alerts, gates, orchestration, generatedAt, cached]
+
+    OrchestrationResponse:
+      type: object
+      properties:
+        readable:
+          type: boolean
+          description: g21-runs.jsonl 是否存在可解析的尾行
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrchestrationRoute'
+        drift:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrchestrationDrift'
+        lastCheckAt:
+          type: string
+          nullable: true
+        lastCheckError:
+          $ref: '#/components/schemas/OrchestrationCheckError'
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            driftCount:
+              type: integer
+          required: [total, driftCount]
+        healthy:
+          type: boolean
+      required: [readable, routes, drift, lastCheckAt, lastCheckError, summary, healthy]
 
     Error:
       type: object

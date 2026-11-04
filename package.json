@@ -20,6 +20,7 @@
     "metrics:gates": "python tools/gate/gate_metrics.py --snapshot",
     "sbom": "python tools/sbom.py",
     "licenses": "python tools/license_matrix.py",
-    "sarif": "python tools/sarif.py"
+    "sarif": "python tools/sarif.py",
+    "smoke:e2e": "node scripts/smoke_e2e.mjs"
   }
 }

@@ -88,6 +88,23 @@
       长期记忆（自学习回路）：记忆月账在 `docs/记录/记忆/`（按月分卷，条目只增不改）。会话开始与动手前，若挂载了 allin MCP server，用 `mcp__allin-governance__memory.read` 召回相关经验，没有 server 就直接读当月卷；门禁红、修复完成、踩坑、或用户要求记住时，用 `mcp__allin-governance__memory.append`（写操作，需 confirm=true）记账一条到当月卷；两样都不可用时写进会话交接卷。当月卷未建或未登记时不要自行建文件，先走文档流程登记。
 
       记忆分层与取代：条目分 `临时`（默认，可被晋升）与 `永久`（已固化为 skill 或长期事实）两层；旧条目一律不删，纠错时另起新条目带 supersedes 注明被取代的日期，召回时**默认隐藏被取代者**（只增不改 ⇒ 用覆盖代替删除）。晋升通道：同一 tag 的有效条目累计 ≥3 条即进入 `mcp__allin-governance__memory.promotable` 候选，须走文档流程固化为专项 skill（建 skill → 同步双载体 → 过门禁），并在记忆卷追加一条「已晋升」条目。
+
+      任务路由表（15 个专项 skill，匹配即转交不重造；台账唯一事实源 `tools/orchestration/routes.yaml`，由 `tools/gate/agent_parity.py` 门禁做三方对账，改本清单、SKILL.md §4 或 routes.yaml 任一侧必跑它）：
+      - DSH 本地部署拉不起来 / 会话异常 → dsh-deploy-repair <!-- route:dsh-deploy-repair -->
+      - C 盘扫描清理（只读扫描优先） → c-drive-scan-clean <!-- route:c-drive-scan-clean -->
+      - Cordis 4.x 集成 / 迁移 → cordis-v4-integration <!-- route:cordis-v4-integration -->
+      - Electron 便携版 Gitee 发版 → electron-portable-gitee-release <!-- route:electron-portable-gitee-release -->
+      - Gitee 被墙/大文件 fetch 不到 → gitee-blocked-file-fetch <!-- route:gitee-blocked-file-fetch -->
+      - 从解压目录推送到 Gitee → gitee-push-from-extracted-dir <!-- route:gitee-push-from-extracted-dir -->
+      - GitHub release 源码归档下载 → github-release-source-archive-download <!-- route:github-release-source-archive-download -->
+      - lab 多语言引擎循环赛每日自动化 → lab-tournament-daily-automation <!-- route:lab-tournament-daily-automation -->
+      - 多语言棋盘引擎实验 → multilang-board-engine-lab <!-- route:multilang-board-engine-lab -->
+      - pluginplayer Windows 构建 → pluginplayer-win-build <!-- route:pluginplayer-win-build -->
+      - pyglet 应用打包分发 → pyglet-app-package-dist <!-- route:pyglet-app-package-dist -->
+      - PyPI 发布准备 → pypi-publish-prep <!-- route:pypi-publish-prep -->
+      - 仓库远端→本地同步 → repo-sync-remote-to-local <!-- route:repo-sync-remote-to-local -->
+      - venv CA 证书安全巡检（GHSA-6q48） → venv-ca-security-audit <!-- route:venv-ca-security-audit -->
+      - Windows Node 环境诊断 → windows-node-env-diagnose <!-- route:windows-node-env-diagnose -->
       <!-- GOVERNANCE:END -->
 - id: agent-instructions
   name: '@deepseek-ai/dsh-agent-instructions'

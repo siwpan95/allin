@@ -1,0 +1,27 @@
+# tools/orchestration/routes.yaml —— 15 专项 skill 路由表 · 机器可读唯一事实源
+#
+# 对账三方（g21 · tools/gate/agent_parity.py）：
+#   本文件 ⇄ .workbuddy/skills/allin-governance-agent/SKILL.md（workbuddy 形态锚点）
+#        ⇄ preset/allin/allin.patch.yml GOVERNANCE 段（dsh 形态锚点，<!-- route:<id> -->）
+# 改任一侧文本必跑：python tools/gate/agent_parity.py
+# schema 纪律（受控子集，g21 fail-loud）：version 恒 1；条目单行 flow map；
+#   字段固定 id/skill/entry/forms/trigger/lastVerified；entry 为仓根相对 POSIX 路径（禁盘符）；
+#   trigger ≤120 字（人写措辞不要求与 SKILL.md 逐字一致，对账靠锚点不靠文本相等）；
+#   lastVerified = 最近一次人工实测验证日期（>90 天仅 WARN 不红）。
+version: 1
+routes:
+  - { id: dsh-deploy-repair, skill: dsh-deploy-repair, entry: .workbuddy/skills/dsh-deploy-repair/SKILL.md, forms: [workbuddy, dsh], trigger: DSH 本地部署拉不起来 / 会话异常, lastVerified: "2026-11-04" }
+  - { id: c-drive-scan-clean, skill: c-drive-scan-clean, entry: .workbuddy/skills/c-drive-scan-clean/SKILL.md, forms: [workbuddy, dsh], trigger: C 盘扫描清理（只读扫描优先）, lastVerified: "2026-11-04" }
+  - { id: cordis-v4-integration, skill: cordis-v4-integration, entry: .workbuddy/skills/cordis-v4-integration/SKILL.md, forms: [workbuddy, dsh], trigger: Cordis 4.x 集成 / 迁移, lastVerified: "2026-11-04" }
+  - { id: electron-portable-gitee-release, skill: electron-portable-gitee-release, entry: .workbuddy/skills/electron-portable-gitee-release/SKILL.md, forms: [workbuddy, dsh], trigger: Electron 便携版 Gitee 发版, lastVerified: "2026-11-04" }
+  - { id: gitee-blocked-file-fetch, skill: gitee-blocked-file-fetch, entry: .workbuddy/skills/gitee-blocked-file-fetch/SKILL.md, forms: [workbuddy, dsh], trigger: Gitee 被墙/大文件 fetch 不到, lastVerified: "2026-11-04" }
+  - { id: gitee-push-from-extracted-dir, skill: gitee-push-from-extracted-dir, entry: .workbuddy/skills/gitee-push-from-extracted-dir/SKILL.md, forms: [workbuddy, dsh], trigger: 从解压目录推送到 Gitee, lastVerified: "2026-11-04" }
+  - { id: github-release-source-archive-download, skill: github-release-source-archive-download, entry: .workbuddy/skills/github-release-source-archive-download/SKILL.md, forms: [workbuddy, dsh], trigger: GitHub release 源码归档下载, lastVerified: "2026-11-04" }
+  - { id: lab-tournament-daily-automation, skill: lab-tournament-daily-automation, entry: .workbuddy/skills/lab-tournament-daily-automation/SKILL.md, forms: [workbuddy, dsh], trigger: lab 多语言引擎循环赛每日自动化, lastVerified: "2026-11-04" }
+  - { id: multilang-board-engine-lab, skill: multilang-board-engine-lab, entry: .workbuddy/skills/multilang-board-engine-lab/SKILL.md, forms: [workbuddy, dsh], trigger: 多语言棋盘引擎实验, lastVerified: "2026-11-04" }
+  - { id: pluginplayer-win-build, skill: pluginplayer-win-build, entry: .workbuddy/skills/pluginplayer-win-build/SKILL.md, forms: [workbuddy, dsh], trigger: pluginplayer Windows 构建, lastVerified: "2026-11-04" }
+  - { id: pyglet-app-package-dist, skill: pyglet-app-package-dist, entry: .workbuddy/skills/pyglet-app-package-dist/SKILL.md, forms: [workbuddy, dsh], trigger: pyglet 应用打包分发, lastVerified: "2026-11-04" }
+  - { id: pypi-publish-prep, skill: pypi-publish-prep, entry: .workbuddy/skills/pypi-publish-prep/SKILL.md, forms: [workbuddy, dsh], trigger: PyPI 发布准备, lastVerified: "2026-11-04" }
+  - { id: repo-sync-remote-to-local, skill: repo-sync-remote-to-local, entry: .workbuddy/skills/repo-sync-remote-to-local/SKILL.md, forms: [workbuddy, dsh], trigger: 仓库远端→本地同步, lastVerified: "2026-11-04" }
+  - { id: venv-ca-security-audit, skill: venv-ca-security-audit, entry: .workbuddy/skills/venv-ca-security-audit/SKILL.md, forms: [workbuddy, dsh], trigger: venv CA 证书安全巡检（GHSA-6q48）, lastVerified: "2026-11-04" }
+  - { id: windows-node-env-diagnose, skill: windows-node-env-diagnose, entry: .workbuddy/skills/windows-node-env-diagnose/SKILL.md, forms: [workbuddy, dsh], trigger: Windows Node 环境诊断, lastVerified: "2026-11-04" }

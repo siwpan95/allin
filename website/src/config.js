@@ -57,6 +57,14 @@ const config = {
   upload: {
     maxBytes: Number.parseInt(process.env.MAX_UPLOAD_MB || '5', 10) * 1024 * 1024,
   },
+  portal: {
+    // 治理面（platform portal）回环地址发现：显式 baseUrl 优先（测试/特殊部署用），
+    // 否则读 platform 的 data/portal.port 端口发现文件（PORT=0 动态端口机制）。
+    // 读不到文件 / 文件内容不是合法端口 → 视为「平台未启动」，代理层降级，不报错。
+    baseUrl: (process.env.PORTAL_BASE_URL || '').trim(),
+    portFile: path.resolve(ROOT, process.env.PORTAL_PORT_FILE || '../platform/data/portal.port'),
+    timeoutMs: Number.parseInt(process.env.PORTAL_TIMEOUT_MS || '3000', 10),
+  },
   site: {
     name: 'ALLIN LAB',
     tagline: 'allin 项目的开发与维护服务',

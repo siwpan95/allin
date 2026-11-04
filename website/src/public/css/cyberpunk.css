@@ -400,3 +400,61 @@ li { margin-bottom: 0.35rem; }
   .glitch::before, .glitch::after { animation: none; }
   * { transition: none !important; }
 }
+
+/* ===== 治理看板（governance dashboard / admin）=====
+   仅消费既有 CSS 变量；状态语义三冗余：色（--ok/--warn/--error）+ 图标（●▲×◷■）+ 文本。 */
+
+.gov-card .row { margin-bottom: 0; }
+
+.gov-pill .gov-pill__icon { margin-right: 0.35rem; }
+
+.gov-body { display: grid; gap: 0.55rem; }
+
+/* 骨架占位：首帧 fetch 前的加载态（prefers-reduced-motion 时退化为静态灰块） */
+.gov-skeleton {
+  height: 0.85rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.06), rgba(0, 240, 255, 0.16), rgba(0, 240, 255, 0.06));
+  background-size: 200% 100%;
+  animation: gov-shimmer 1.4s ease infinite;
+}
+.gov-skeleton--short { width: 55%; }
+@keyframes gov-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* 两段式确认武装态：红色脉冲边框提示，颜色之外靠文案变化传达 */
+.gov-btn--armed {
+  color: var(--error);
+  border-color: rgba(255, 92, 122, 0.6);
+  animation: gov-pulse 1s ease infinite;
+}
+@keyframes gov-pulse {
+  50% { box-shadow: 0 0 16px rgba(255, 92, 122, 0.45); }
+}
+
+/* 漂移行标记（× 前缀由图标承担，不单靠颜色） */
+.gov-drift-row td:first-child::before {
+  content: '× ';
+  color: var(--error);
+  font-family: var(--mono);
+}
+
+/* 审计过滤条输入件（管理台治理页） */
+.gov-filter-input {
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  margin-top: 0.2rem;
+}
+.gov-filter-input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gov-skeleton { animation: none; background: rgba(136, 150, 168, 0.18); }
+  .gov-btn--armed { animation: none; }
+}

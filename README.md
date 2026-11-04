@@ -50,12 +50,12 @@
 | `LICENSE` / `.gitignore` | MIT 许可 + 忽略规则（密钥/构建物一律不入库） |
 | `docs/` | **文档枢纽**：[总目录 `INDEX.md`](docs/INDEX.md) + 四分类（[`规范/`](docs/规范/) 约束 · [`事实源/`](docs/事实源/) 活台账 · [`记录/`](docs/记录/) 证据流水 · `md/` 历史树）。接手从 [`docs/README.md`](docs/README.md) 进 |
 | `preset/` | **治理模式的载体**：`preset/allin/` = DSH agent preset「工作区治理」的 0.1.7+ 声明式可重装副本（见下节与 [`preset/allin/安装说明.md`](preset/allin/安装说明.md)） |
-| `tools/` | 工作区门禁与工具（死根路径 + AST 未定义名 + **文档索引契约** + 别名重建，见其 README） |
+| `tools/` | 工作区门禁与工具（死根路径 + AST 未定义名 + **文档索引契约** + 别名重建，见其 README）；子件 `tools/orchestration/`（编排路由事实源 `routes.yaml`，ADR-0010）与 `tools/deploy/`（部署实施物：备份/计划任务脚本，只写不注册） |
 | `platform/` | **全项目集成平台**（2026-10-26 由原 `siwpan/allin-platform` 整仓并入）：门户 + 内核 + 注册表 + harness 黄金值门禁。入口 [`platform/README.md`](platform/README.md)，契约 [`SPEC-203`](docs/规范/SPEC-203-allin-platform契约.md) |
 | `kernel/` | **治理内核**（2026-10-27 立档）：Python/Cordis 服务图 + `allin` CLI 前门（`allin_cli.py`），四大支柱 `docs/platform/preset/tools` 经 `kernel/configs/cordis.allin.yml` 配置树挂载。说明见 [`kernel/README.md`](kernel/README.md) |
 | `packages/` | **可安装包**（2026-10-31 立档）：把本仓**通用**的部分装成外部可直接消费的产物。当前一个包 [`allin-governance`](packages/allin-governance/)（PyPI 名，现版本 **`0.0.0a2`**，演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准），子命令：`init` 生成可跑的最小治理骨架（14 道门禁，实测 `npm run check:governance` exit 0；a2 起 `--with-exceptions` 可带 g18）、`repocheck` 离线体检、`verify`（a2 新增，按 `GENERATED.json` 复核快照 sha256）；源码都映射自本仓（**不复制**，一份源码两处消费） |
 | `architecture/` | **架构图源与 ADR**（2026-10-27）：组件级架构图 [`system-architecture.svg`](architecture/system-architecture.svg) + 数据流图 [`data-flow.svg`](architecture/data-flow.svg) + [`adr/`](architecture/adr/README.md) 现行决策。**权威架构叙事 = [`SPEC-204-系统架构`](docs/规范/SPEC-204-系统架构.md)**（ADR-0007，2026-11-04 迁入文档契约管辖；本目录只留图与决策，不承载正文） |
-| `website/` | **allin 项目官网**（2026-11-02 立）：开发与维护服务的对外站点，本地部署运行（默认端口 9042，已登记 `事实源/ports.yaml`）。四页导航 + 注册/登录/会话保持 + **AES-256-GCM 信封加密**存储（图片/文件/文案全入库存密文）。入口 [`website/README.md`](website/README.md) |
+| `website/` | **allin 项目官网**（2026-11-02 立）：开发与维护服务的对外站点，本地部署运行（默认端口 9042，已登记 `事实源/ports.yaml`）。四页导航 + 注册/登录/会话保持 + **AES-256-GCM 信封加密**存储（图片/文件/文案全入库存密文）。**2026-11-05 起含治理看板**：`/member/dashboard`（平台状态/门禁健康/编排健康，只读 BFF 代理）与 `/admin/governance`（admin 启停 + 审计过滤，ADR-0010）。入口 [`website/README.md`](website/README.md) |
 | `audit-fragments/` | 深度审核的**过程证据**（报告本体已归 [`docs/记录/审计/`](docs/记录/审计/)） |
 | `siwpan旧机配置汇总.html` | 旧机（已退役）机器事实源，作换机基线 |
 
@@ -314,4 +314,4 @@ python tools/repocheck/main.py packages/allin-governance --exclude src,tests --s
 
 ---
 
-*最后更新：2026-11-03（Gitee 组合口径 137 → **138**（2026-11-03 匿名 API 分页实测：page1=100 / page2=38 / page3=0），并订正「其余 N 仓」推算式为 **137 减本仓自身**；实测远端 137 个项目仓与本机 `G:\repos` 137 目录双向差集为 0，差额 = 本仓自身落在 `G:\allin`。@`DESKTOP-8RSV60V` 实测。前史：2026-10-30 README 去单机化——标题与正文不再写死 `/projects/allin` 等单一机器路径，仓根/发布区/检出规模统一指向 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)；Gitee 组合口径 135 → **137**（2026-10-30 API 实测）并重跑 `build_portfolio.py --apply` 刷新 PORTFOLIO.md；DSH 仓外 checkout 落点标注随机器。@`SIWPAN` 实测。更早：2026-10-28 治理对账 `ef2a545`（订正门禁 15→19 陈旧口径、修 g15 自检假阳性、落地 REC-AU-17/18））*
+*最后更新：2026-11-05（**三面贯通智能化升级落地（ADR-0010）**：`smoke:e2e` 北极星冒烟 6 检查点 + g21 编排对账门禁 + portal `/api/overview`·`/api/orchestration` + website 治理看板 + kernel `status` 子命令 + `tools/deploy/` 守护面；叙事见 [`SPEC-204 §6`](docs/规范/SPEC-204-系统架构.md)。前史：2026-11-03（Gitee 组合口径 137 → **138**（2026-11-03 匿名 API 分页实测：page1=100 / page2=38 / page3=0），并订正「其余 N 仓」推算式为 **137 减本仓自身**；实测远端 137 个项目仓与本机 `G:\repos` 137 目录双向差集为 0，差额 = 本仓自身落在 `G:\allin`。@`DESKTOP-8RSV60V` 实测。前史：2026-10-30 README 去单机化——标题与正文不再写死 `/projects/allin` 等单一机器路径，仓根/发布区/检出规模统一指向 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md)；Gitee 组合口径 135 → **137**（2026-10-30 API 实测）并重跑 `build_portfolio.py --apply` 刷新 PORTFOLIO.md；DSH 仓外 checkout 落点标注随机器。@`SIWPAN` 实测。更早：2026-10-28 治理对账 `ef2a545`（订正门禁 15→19 陈旧口径、修 g15 自检假阳性、落地 REC-AU-17/18））*

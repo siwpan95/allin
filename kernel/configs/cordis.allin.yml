@@ -17,3 +17,5 @@
   id: preset
 - name: tools
   id: tools
+- name: status
+  id: status

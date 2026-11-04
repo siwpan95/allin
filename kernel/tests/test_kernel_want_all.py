@@ -2,7 +2,7 @@
 """回归测试：WANT_ALL 支柱清单从 cordis.allin.yml 推导（ADR-0006）。
 
 覆盖两条：
-  1) 真实配置下 WANT_ALL == 四大支柱（推导正确）；
+  1) 真实配置下 WANT_ALL == 四大支柱 + status 只读汇总（推导正确）；
   2) yml 写入 registry.SERVICES 白名单外的 id → import kernel.tree 即报错
      （fail-loud 提前到导入期；用子进程 + ALLIN_CONFIGS 指向伪造配置树复现）。
 """
@@ -19,7 +19,9 @@ class WantAllDerivationTest(unittest.TestCase):
     def test_want_all_derived_from_real_config(self):
         from kernel.tree import WANT_ALL
 
-        self.assertEqual(WANT_ALL, ('docs', 'platform', 'preset', 'tools'))
+        self.assertEqual(
+            WANT_ALL, ('docs', 'platform', 'preset', 'tools', 'status')
+        )
 
     def test_unknown_id_fails_loud_at_import(self):
         with tempfile.TemporaryDirectory() as tmp:

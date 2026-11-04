@@ -1,0 +1,9 @@
+<%# 编排健康卡（三态：门禁自身故障 / 全绿 / 判出漂移）+ 可折叠路由明细。数据由 governance.js 填充。 %>
+<%- include('card-shell', {
+  name: 'orchestration',
+  title: '编排健康 · 治理大脑双形态',
+  extra: `<div class="gov-collapse">
+  <button class="btn btn--sm btn--ghost" type="button" id="gov-routes-toggle" aria-expanded="false" aria-controls="gov-routes-body">展开路由明细</button>
+  <div id="gov-routes-body" hidden></div>
+</div>`
+}) %>
