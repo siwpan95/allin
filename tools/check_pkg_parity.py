@@ -123,6 +123,15 @@ def main() -> int:
             pkg_dir = installed_pkg_dir(module_name, overrides)
         except ImportError as e:
             print(f"ENV-ERROR: {module_name} 未安装（先 pip install packages/allin-governance 再跑本脚本）：{e}")
+            print(
+                "  ⚠ 若你用的是**可编辑安装**（pip install -e packages/allin-governance），"
+                "本脚本多半仍会报此错 —— 可编辑安装不把跨目录 package-dir 映射"
+                "（allin_governance._repocheck / _gatesuite）落进 site-packages，"
+                "而对账的正是**已落盘的发布物**。请改用真实 wheel 安装：\n"
+                "      pip install --force-reinstall --no-deps packages/allin-governance\n"
+                "  （CI 的口径即如此，见 gates.yml 的『可安装包映射对账』步骤；"
+                "另可用 --pkg-dir 直接指定已装包目录绕过 importlib 定位。）"
+            )
             return 3
         pkg_files = collect(pkg_dir)
         repo_files = collect(repo_dir)
