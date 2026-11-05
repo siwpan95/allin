@@ -1,6 +1,8 @@
 # `tools/facts` —— 机器事实的采集与判定
 
-把「机器事实靠人肉复测」变成两条命令。适用于 `docs/事实源/机器/<机器名>.md`。
+把「机器事实靠人肉复测」变成两条命令。适用于 `docs/事实源/机器/` 下的分区文件 ——
+落点双形态（2026-11-06 起）：顶层 `<机器名>.md`，或一机一目录的 `<机器名>/<机器名>.md`
+（附属/README 等非同名文件不是分区文件）。
 
 ## 为什么有这个目录
 
@@ -16,7 +18,7 @@
 ## 两个脚本，职责严格分离
 
 ```bash
-# 只采集，不做判断 —— 输出可直接贴入 docs/事实源/机器/<机器名>.md
+# 只采集，不做判断 —— 输出可直接贴入分区文件（`机器/<机器名>.md` 或 `机器/<机器名>/<机器名>.md`）
 python tools/facts/measure.py
 python tools/facts/measure.py --out /tmp/facts.md
 
@@ -72,7 +74,7 @@ python tools/facts/verify_facts.py --selftest         # 造必错样本，证明
 
 1. 在该机跑 `python tools/facts/measure.py --out <临时文件>`
 2. **人工裁决**：与上一版逐项比对；不符的先复测再改，**旧值以「（原 …）」保留在同一格**
-3. 新建 `docs/事实源/机器/<机器名>.md`（照现有三份结构），并在 `机器分区索引.md` §1 登记
+3. 新建 `docs/事实源/机器/<机器名>/<机器名>.md`（**一机一目录**；过渡期允许顶层单文件，两种形态 g20 均兼容），并在 `机器分区索引.md` §1 登记
 4. 跑 `verify_facts.py`，应得 `findings 0`
 
 **采集值是原始值，不是事实。** 未经复测裁决的采集结果不得直接覆盖旧值。
@@ -115,7 +117,7 @@ python tools/facts/verify_facts.py --selftest         # 造必错样本，证明
 最快的两步：
 
 ```bash
-# ① 采集本机事实（输出可直接贴进 docs/事实源/机器/<机器名>.md）
+# ① 采集本机事实（输出可直接贴进分区文件：`机器/<机器名>.md` 或 `机器/<机器名>/<机器名>.md`）
 python tools/facts/measure.py
 # ② 判定本机分区文件：0 = 干净，1 = 有 finding
 python tools/facts/verify_facts.py

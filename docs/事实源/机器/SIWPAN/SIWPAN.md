@@ -1,5 +1,11 @@
 # 机器事实 · `SIWPAN`（第三台接入机器，曾改名）
 
+> **时点** 2026-11-06（**@`SIWPAN` 分区文件夹化** —— 结构治理：本文件由 `机器/SIWPAN.md`
+> 迁入 `机器/SIWPAN/SIWPAN.md`（一机一目录，参照业界「一机一档」惯例；收敛口径见
+> [`机器分区索引.md`](../../机器分区索引.md) §7 布局沿革）。本文件夹
+> `D:\projects\allin\docs\事实源\机器\SIWPAN` 现已存在；文件夹内新增 `附属/`
+> （一次性产物随档保管区），收编仓根 `siwpan旧机配置汇总.html`；
+> g20 门禁与 verify_facts 已同步升级为双形态收集（顶层与文件夹并存为合法过渡态）。）
 > **时点** 2026-11-01（**@`SIWPAN` 受管密钥库建成** —— 用户批准「建受管库收编」：
 > `~/.dsvault/`（`vault.enc` AES-256-GCM + PBKDF2 200k；`deepseek_vault.py` CLI；
 > 解锁口令机器生成、DPAPI 封存 `pass.bin`）。**偏差记档**：8RSV60V 走「口令存凭据管理器 +
@@ -10,13 +16,13 @@
 > 账号口令）/ `deepseek_api_key`（原 `Desktop\deepseek.txt`，实测有效余额 310.17）——
 > **4/4 回程一致、密文字节级 0 明文痕迹，两个明文文件已删除**，g03 真红线清零。）
 > **时点** 2026-10-31（**@`SIWPAN` 推送配置升级** —— 用户指令「配 GitHub 侧镜像推送」：
-> origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 [`DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9 同款口径。
+> origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 [`DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V.md) §9 同款口径。
 > ⚠ 旧值「本机不补配 pushurl」作废 —— 那是 2026-10-29 对 `DESKTOP-KQABATS` 的交代，被错误外推到本机；
 > 各机推送配置以用户逐机指令为准。SSH 前提实测：`id_ed25519` 认证通过（`Hi siwpan95!`），
 > 双通道首推两行 up-to-date、双侧 ls-remote 与 HEAD 逐字符相等。）
 > **时点** 2026-10-30（**@`SIWPAN` 全量复测补录** —— `tools/facts/measure.py` 采集 + 人工裁决；
 >   本次补齐盘位卷标、工作区落点、仓数口径、运行时与解释器清单、推送口径，
->   并按 [`机器分区索引.md`](../机器分区索引.md) §0 归属规则只写本机事实。）
+>   并按 [`机器分区索引.md`](../../机器分区索引.md) §0 归属规则只写本机事实。）
 >   ⚠ **订正（取代旧表述）**：commit `4e329c4` 的**提交信息**里写有
 >   「`SIWPAN` 分区目前仅标识 + 差异两节，需在其宿主机实测补录」——该表述**已被本补录取代**
 >   （本文件现含 §1–§8 七节全量台账 + 可机检断言，`verify_facts` 0 findings；文件树中无该旧表述副本，
@@ -30,8 +36,8 @@
 >   `Get-CimInstance Win32_*`、`git rev-parse --show-toplevel`、Gitee API 匿名查询
 > **失效条件** 换机、加减盘、重装系统、换运行时版本后**立即失效**；每次涉及机器事实的动作前
 >   **现场复测**，不要照抄本文件。
-> **上位判据** [`../../规范/SPEC-006-机器与路径约定.md`](../../规范/SPEC-006-机器与路径约定.md)。
-> **本文件只记录 `SIWPAN` 这台**；其他机器见 [`../机器分区索引.md`](../机器分区索引.md) §1。
+> **上位判据** [`../../../规范/SPEC-006-机器与路径约定.md`](../../../规范/SPEC-006-机器与路径约定.md)。
+> **本文件只记录 `SIWPAN` 这台**；其他机器见 [`../机器分区索引.md`](../../机器分区索引.md) §1。
 
 ---
 
@@ -76,7 +82,7 @@
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **138** | API 匿名分页实测（**2026-11-03 复测**：page1=100 / page2=38 / page3=0；2026-10-30 首测为 137，差值即新仓 `dsh-release-archiver`）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5 |
+| **远端仓总数**（Gitee `siwpan`） | **138** | API 匿名分页实测（**2026-11-03 复测**：page1=100 / page2=38 / page3=0；2026-10-30 首测为 137，差值即新仓 `dsh-release-archiver`）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../../机器分区索引.md) §5 |
 | **本机发布区目录数** | **138** | `D:\projects\repos` **138** 个仓（2026-11-03 晚补检出 `dsh-release-archiver`；上午复测时为 137） |
 | 含 `.git` | **138 / 138** | 逐目录实测 |
 | 含 `origin` | **138 / 138** | 逐仓读 `.git/config` 判 `[remote "origin"]`（新仓 origin = `https://gitee.com/siwpan/dsh-release-archiver.git`） |
@@ -132,7 +138,7 @@
 
 - **首推实测（2026-10-31）**：配置后 `git push origin master` 两行 `Everything up-to-date`（exit 0）；
   随后的记账提交经双通道真实推送，双侧 `ls-remote` 与 `rev-parse HEAD` 逐字符相等。
-- **另一台的对照**（口径相反，勿套用）：[`./DESKTOP-KQABATS.md`](./DESKTOP-KQABATS.md) §7「推送与远端镜像」（该机 pushurl 0 条、
+- **另一台的对照**（口径相反，勿套用）：[`../DESKTOP-KQABATS.md`](../DESKTOP-KQABATS.md) §7「推送与远端镜像」（该机 pushurl 0 条、
   用户 2026-10-29 明确不补配——**逐机指令，不外推**）。
 - ⚠ **跨机漂移现行（2026-10-30 实证）**：本机作业期间远端两次被其它机推进
   （`5a1d767→c9586d3` DIVERGED、`8b46e67→7f3fecc` PURE_BEHIND）——

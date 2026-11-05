@@ -44,6 +44,19 @@ Scope is the header block(s) carrying the **newest** ``> **时点**`` date. Olde
 blocks are history: judging them would force people to rewrite the past, and a
 fact source that cannot keep its own history is worth less than one that can.
 
+Layout evolution (2026-11-06, one-machine-one-folder)
+-----------------------------------------------------
+The partition docs used to sit flat as ``机器/<机器名>.md``. They are moving to
+``机器/<机器名>/<机器名>.md`` (one folder per machine, room for attachments under
+``附属/``). The migration is per-machine (cross-machine discipline: each machine
+moves its own file), so during the transition **both layouts coexist**:
+top-level ``<机器名>.md`` and foldered ``<机器名>/<机器名>.md`` are both collected;
+anything else inside a machine folder (``README.md``, ``附属/*``) is not a
+partition doc and is ignored. A stem present in **both** layouts is migration
+residue and blocks -- two same-named partition docs would make "which file is
+the truth" undecidable. Once all machines have moved, top-level ``*.md`` goes
+to zero and this dual collection keeps working unchanged.
+
 Single implementation
 ---------------------
 The criteria live here, in the gate, and ``tools/facts/verify_facts.py`` imports
@@ -210,6 +223,34 @@ def current_machine() -> str:
     return platform.node().lower()
 
 
+def collect_machine_docs(target: Path) -> tuple[list[Path], list[tuple[str, Path, Path]]]:
+    """Collect partition docs across both layouts (flat + one-machine-one-folder).
+
+    Returns ``(docs, duplicates)``:
+
+    * ``docs`` -- top-level ``<机器名>.md`` plus foldered ``<机器名>/<机器名>.md``
+      (a subdir md counts only when its stem equals its parent dir name;
+      ``README.md`` and ``附属/*`` are not partition docs).
+    * ``duplicates`` -- ``[(stem, top_path, sub_path), ...]`` for stems present
+      in **both** layouts. That is migration residue: two same-named partition
+      docs make the "which file is the truth" decision ambiguous, so callers
+      must block instead of silently picking one.
+    """
+    top = sorted(target.glob("*.md"))
+    top_stems = {p.stem.lower(): p for p in top}
+    docs = list(top)
+    duplicates: list[tuple[str, Path, Path]] = []
+    for sub in sorted(target.glob("*/*.md")):
+        if sub.stem.lower() != sub.parent.name.lower():
+            continue
+        clash = top_stems.get(sub.stem.lower())
+        if clash is not None:
+            duplicates.append((sub.stem.lower(), clash, sub))
+        else:
+            docs.append(sub)
+    return docs, duplicates
+
+
 def scan(root: Path) -> Report:
     report = Report(title=TITLE)
     target = root / TARGET_DIR
@@ -217,8 +258,15 @@ def scan(root: Path) -> Report:
         report.skip("no machine fact directory")
         return report
     me = current_machine()
+    docs, duplicates = collect_machine_docs(target)
+    for stem, top_path, sub_path in duplicates:
+        report.block("duplicate", top_path.name, 0,
+                     f"同名分区文件并存于顶层与子目录（迁移残留）：`{top_path.name}` 与 `{sub_path}` "
+                     f"—— 判定对象歧义，先删除其一（收敛口径见 机器分区索引.md §7）")
+    if duplicates:
+        return report
     own: Path | None = None
-    for path in sorted(target.glob("*.md")):
+    for path in docs:
         if path.stem.lower() == me:
             own = path
             continue
@@ -281,10 +329,34 @@ def selfcheck() -> int:
     else:
         clean += 1
 
-    print(f"selfcheck: caught={caught} clean={clean} misreports={misreports}")
+    # Layout coverage (2026-11-06): dual-layout collection + residue detection.
+    # selfcheck never calls scan() (hostname-dependent in sandboxes); the layout
+    # logic is fully covered through the pure collector below.
+    layout_misreports = 0
+    boxed = machine / "boxed"
+    boxed.mkdir()
+    (boxed / "boxed.md").write_text("x", encoding="utf-8")
+    (boxed / "README.md").write_text("x", encoding="utf-8")
+    attached = boxed / "附属"
+    attached.mkdir()
+    (attached / "note.md").write_text("x", encoding="utf-8")
+    (machine / "flat.md").write_text("x", encoding="utf-8")
+    docs, dups = collect_machine_docs(machine)
+    if dups or sorted(docs) != sorted([good, machine / "flat.md", boxed / "boxed.md"]):
+        layout_misreports += 1
+    (machine / "flat2.md").write_text("x", encoding="utf-8")
+    (machine / "flat2").mkdir()
+    (machine / "flat2" / "flat2.md").write_text("x", encoding="utf-8")
+    _, dups = collect_machine_docs(machine)
+    if len(dups) != 1 or dups[0][0] != "flat2":
+        layout_misreports += 1
+
+    print(f"selfcheck: caught={caught} clean={clean} misreports={misreports} layout_misreports={layout_misreports}")
+    # ⚠ SELFCHECK JSON 行是 g00-meta 的严格契约（恰好三键、紧凑分隔符，见 g00_meta.SELFCHECK_LINE），
+    # 布局结果只放上一行的人类可读输出；布局失配通过本函数的退出码阻断，不进这行 JSON。
     print("SELFCHECK " + json.dumps({"caught": caught, "clean": clean, "misreports": misreports},
                                     separators=(",", ":")))
-    return EXIT_OK if caught == 2 and clean == 1 and misreports == 0 else EXIT_BLOCKING
+    return EXIT_OK if caught == 2 and clean == 1 and misreports == 0 and layout_misreports == 0 else EXIT_BLOCKING
 
 
 def main(argv: list[str]) -> int:

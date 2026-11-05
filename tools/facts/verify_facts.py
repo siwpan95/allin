@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""verify_facts -- 命令行入口：校验 `docs/事实源/机器/*.md` 的断言是否与磁盘一致。
+"""verify_facts -- 命令行入口：校验 `docs/事实源/机器/` 分区文件的断言是否与磁盘一致。
+
+分区文件落点（2026-11-06 起双形态兼容）：顶层 `机器/<机器名>.md`，或一机一目录的
+`机器/<机器名>/<机器名>.md`（附属/README 等非同名文件不是分区文件）。
 
 判据**不在本文件**，在门禁 `tools/gate/governance/gates/g20_facts.py`。
 这里只是把它包成可直接跑的 CLI。
@@ -102,9 +105,17 @@ def main(argv: list[str] | None = None) -> int:
             print("ENV ERROR: 找不到仓根（需含 docs/ 与 preset/）", file=sys.stderr)
             return EXIT_ENV
         target_dir = root / gate.TARGET_DIR
-        candidates = sorted(target_dir.glob("*.md"))
+        docs, duplicates = gate.collect_machine_docs(target_dir)
+        if duplicates:
+            for stem, top_path, sub_path in duplicates:
+                print(f"ENV ERROR: 同名分区文件并存于顶层与子目录（迁移残留）：{top_path} 与 {sub_path} "
+                      f"—— 判定对象歧义，先删除其一（收敛口径见 docs/事实源/机器分区索引.md §7）",
+                      file=sys.stderr)
+            return EXIT_ENV
+        candidates = docs
         if not candidates:
-            print(f"ENV ERROR: {target_dir} 下没有 md 文件", file=sys.stderr)
+            print(f"ENV ERROR: {target_dir} 下没有分区文件"
+                  f"（顶层 `<机器名>.md` 或一机一目录的 `<机器名>/<机器名>.md`）", file=sys.stderr)
             return EXIT_ENV
         if args.all:
             files, skipped = candidates, []
@@ -114,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
             skipped = [p.name for p in candidates if p.stem.lower() != me]
             if not files:
                 print(f"ENV ERROR: {target_dir} 下没有当前机器（{me}）的分区文件 —— "
-                      f"新增机器流程见 docs/事实源/机器分区索引.md §1（或用 --all 显式跨机诊断）",
+                      f"新增机器流程见 docs/事实源/机器分区索引.md §6（或用 --all 显式跨机诊断）",
                       file=sys.stderr)
                 return EXIT_ENV
 

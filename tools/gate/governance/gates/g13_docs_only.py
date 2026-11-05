@@ -31,9 +31,11 @@ TITLE = "governance: the docs tree holds documents"
 
 SCOPE_PREFIX = "docs/"
 
-#: Extensions allowed under docs/: prose, generated catalogs, and screenshots.
+#: Extensions allowed under docs/: prose, generated catalogs, screenshots, and
+#: archived reports (2026-11-06: .html added for machine-folder attached artifacts,
+#: e.g. docs/事实源/机器/<机器名>/附属/ holds one-off HTML reports as raw evidence).
 ALLOWED_SUFFIXES = (".md", ".mdx", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg",
-                    ".gif", ".webp", ".svg", ".csv", ".mmd", ".css")
+                    ".gif", ".webp", ".svg", ".csv", ".mmd", ".css", ".html")
 
 #: Extensions that must never appear under docs/ even though they are text.
 BLOCKED_SUFFIXES = (".py", ".sh", ".bash", ".ps1", ".cmd", ".bat", ".js", ".mjs", ".ts", ".tsx",
