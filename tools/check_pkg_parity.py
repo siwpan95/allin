@@ -19,8 +19,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import sys
 from pathlib import Path
+
+# Windows CI runner 的 stdout 默认 ANSI(cp1252)：本脚本逐文件打印中文进度，
+# 不 reconfigure 会在第一行「包内 N 文件已对账」就 UnicodeEncodeError，独立 step
+# 直接 exit 1 且看不到任何差异明细（2026-11-04 CI 实测）。与 check_gate_drift.py
+# 同一层兜底；reconfigure 是 3.7+ API，仓要求 3.9+，被替换的流没有该方法时静默跳过。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 # 已安装包内模块 → 仓内真身目录
 PAIRS = [
@@ -46,7 +57,21 @@ REPO_ONLY_OK = {
 
 
 def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    data = path.read_bytes()
+    # 铁律 12（见 tools/gate/check_gate_drift.py）：跨副本比对不归一化 EOL 会得出
+    # 假差异。Windows 上 setuptools 以文本模式构建 wheel 会把 .py 写成 CRLF，而
+    # 仓内 .gitattributes 强制 eol=lf；两侧是同一份源码，只是换行形态不同，不是漂移。
+    # 实测：把已装包内一份 .py 改 CRLF，旧实现即报「哈希不等」（Linux 全 LF 不复现）。
+    # 这两个目录全是文本源码（.py/.md/.txt/.yml/.json/.ts/.spec/.toml），无二进制，
+    # 统一按 LF 归一后再取 sha256。
+    data = data.replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
+def gh_escape(s: str) -> str:
+    # GitHub Actions 的 ::error:: workflow command 数据里 % / CR / LF 必须百分号编码，
+    # 否则 annotation 会被截断。job logs 端点匿名 403，annotations 是唯一公开可读通道。
+    return s.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
 def collect(root: Path) -> dict:
@@ -117,6 +142,11 @@ def main() -> int:
               f"或 pyproject 映射/包数据清单需修正）：")
         for p in problems:
             print(f"  - {p}")
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            # 这个 step 是 gates.yml 里独立的 run:，不经 run_all_gates.sh 的 run()，
+            # 上面的明细落在 job logs 里匿名 403；逐条推成 annotation 才能直接定位。
+            for p in problems:
+                print(f"::error::包映射对账失败：{gh_escape(p)}")
         return 1
     print("\n包映射对账通过：已安装包与仓内真身逐文件 sha256 一致。")
     return 0
