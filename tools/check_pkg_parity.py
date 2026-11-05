@@ -23,6 +23,16 @@ import os
 import sys
 from pathlib import Path
 
+# Windows CI runner 的 stdout 默认 ANSI(cp1252)：本脚本逐文件打印中文进度，
+# 不 reconfigure 会在第一行「包内 N 文件已对账」就 UnicodeEncodeError，独立 step
+# 直接 exit 1 且看不到任何差异明细（2026-11-04 CI 实测）。与 check_gate_drift.py
+# 同一层兜底；reconfigure 是 3.7+ API，仓要求 3.9+，被替换的流没有该方法时静默跳过。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # 已安装包内模块 → 仓内真身目录
 PAIRS = [
     ("allin_governance._repocheck", "tools/repocheck"),
