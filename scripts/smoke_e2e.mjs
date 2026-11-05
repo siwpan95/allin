@@ -182,7 +182,7 @@ async function portalDiscover() {
         const j = await res.json();
         if (j && j.platform === 'allin-platform') {
           portalReused = true;
-          return { port: n, child: null };
+          return { port: n, child: null, log: '' };
         }
       }
     }
@@ -198,25 +198,31 @@ async function portalDiscover() {
   child.stdout.on('data', (d) => { stdout += d.toString(); });
   child.stderr.on('data', (d) => { stdout += d.toString(); });
 
-  // 就绪判据优先匹配启动行（含实际端口），兜底探活 /api/status
-  for (let i = 0; i < 24; i += 1) {   // ≤6s
+  // 就绪判据优先匹配启动行（含实际端口），兜底探活 /api/status。
+  // 旧口径 24×250ms=6s：CI Windows runner 冷启动（Node + @allin/core + registry
+  // 扫描 146 项目）实测会超过 6s，本机却 1s 内就绪 —— 典型「只看本机会漏」。
+  // 与 CP4 website 的 20s 上限对齐，仍在 OVERALL_BUDGET_MS=60s 内。
+  for (let i = 0; i < 80; i += 1) {   // ≤20s
     const m = /\[allin-platform portal\] http:\/\/127\.0\.0\.1:(\d+)\//.exec(stdout);
     if (m) {
       try {
         const res = await fetchT(`http://127.0.0.1:${m[1]}/api/status`, {}, 1500);
-        if (res.ok) return { port: Number(m[1]), child };
+        if (res.ok) return { port: Number(m[1]), child, log: stdout };
       } catch { /* 还没起来 */ }
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  return { port: null, child };
+  return { port: null, child, log: stdout };
 }
 
 async function checkpointPortal() {
   const t = Date.now();
-  const { port, child } = await portalDiscover();
+  const { port, child, log } = await portalDiscover();
   if (!port) {
-    step('CP3', 'portal 回环探活（临时实例）', false, 'portal 面：临时实例 6s 内未就绪（启动行/探活均未命中）', false, Date.now() - t);
+    const tail = (log || '').trim().slice(-300) || '(子进程无任何输出)';
+    step('CP3', 'portal 回环探活（临时实例）', false,
+      `portal 面：临时实例 20s 内未就绪（启动行/探活均未命中）；子进程输出尾部：${tail}`,
+      false, Date.now() - t);
     return;
   }
   try {
