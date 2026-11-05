@@ -47,6 +47,14 @@ function step(id, name, ok, detail = '', skipped = false, ms = 0) {
   results.push({ id, name, ok, detail, skipped, ms });
   const mark = skipped ? 'SKIP' : (ok ? 'PASS' : 'FAIL');
   console.log(`  ${mark}  ${`[${id}] ${name}`.padEnd(44, ' ')}${detail}`);
+  // GitHub Actions 的 job logs 端点匿名 403（需 admin），annotations 是唯一公开
+  // 可读通道。失败检查点逐条推成 ::error::，否则 CI 红了只看到通用 exit code 1。
+  // workflow command 数据里的 % / CR / LF 必须百分号编码，否则 annotation 会被截断。
+  if (!ok && !skipped && process.env.GITHUB_ACTIONS === 'true') {
+    const msg = `e2e [${id}] ${name} 失败：${detail}`
+      .replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    console.log(`::error::${msg}`);
+  }
 }
 
 function elapsed() { return Date.now() - T0; }

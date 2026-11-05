@@ -174,7 +174,7 @@ jobs:
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
         run: |
-          npm ci --prefix website
+          npm ci --prefix website || { echo "::error::npm ci --prefix website 失败（e2e 前置依赖安装）"; exit 1; }
           npm run smoke:e2e
 
   website-smoke:
