@@ -1,5 +1,14 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-05（**@`DESKTOP-8RSV60V` 本机全量治理对账复测** ——
+>   `G:\repos` **137 个仓（无增减）**：实测 **137 目录 / 137 含 `.git` / 137 含 origin**（逐仓 `git remote get-url origin` 全通）。
+>   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
+>   承 2026-11-03 结论：远端 137 项目仓与本机 137 目录**双向差集 = 0**，差额 = 本仓自身，对账式 **137 = 140 − 3** 不变。
+>   本轮新增事实：**allin agent 挂载校验 PASS**（`verify-mount.ps1 -Boot` 五层；
+>   漂移层经 `DSH_REPO` 接通现役检出后 **PASS：insert plugin 20 ⊆ shipped 22、同序、零破坏性指纹**，
+>   `time-context`/`tool-schedule` 为上游新增未引用——演进非破坏；profile 用户层含 5 条平台层插件行 + 治理 preset 本体）。
+>   门禁实证：`npm run check` 四件套全绿 + `check:agent` 6/6 + `smoke:e2e` 6/6。详见交接卷 §131。）
+
 > **时点** 2026-11-03（**@`DESKTOP-8RSV60V` 仓数口径复测 —— 计数未变，改的是陈旧口径** ——
 >   `G:\repos` **137** 个仓（原 136，2026-11-02 记 137，本轮**无增减**）：
 >   实测 **137 目录 / 137 含 `.git` / 137 含 origin**（逐仓 `git remote get-url origin` 全通，无 origin 缺失）。
@@ -8,7 +17,7 @@
 >   ⇒ 远端 138 与本机 137 的差额恰为**本仓自身**（`allin` 落在 `G:\allin`，不在 `G:\repos`）。
 >   对账式仍成立：**137 = 140 − 3**（FACT-08 分级对象 136 + 4 容器 = 140；差额 3 = `calculator` /
 >   `happy-childrens-day` / `sin-virtue-game` 三仓已归档移出，不在本机 `repos` 顶层）。
->   门禁实证：`npm run check:governance` = **20/20 clean**。)
+>   门禁实证：`npm run check:governance` = **20/20 clean**。）
 
 > **时点** 2026-11-02（**@`DESKTOP-8RSV60V` 本机 +1 仓并完成远端** —— `G:\repos` **137** 个仓（原 136），
 >   新增 `dsh-release-archiver`（DSH 发布源码归档自动化建项，首提交 `3755c4c`，tag `v1.0.0`，

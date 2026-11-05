@@ -371,6 +371,7 @@ if (-not (Test-Path -LiteralPath $sourcePatch)) {
 Write-Step "③ 漂移层：比对随包 cordis preset 的 capability 集合"
 $shippedPaths = @(
   "$webProfile\node_modules\@deepseek-ai\dsh-web-app\presets\cordis.patch.yml",
+  "$env:DSH_REPO\packages\bundle\web-app\presets\cordis.patch.yml",   # 2026-11-05 补：DSH_REPO 指 harness 检出根（与 Find-Dsh 同一语义；DSH_HOME 兼管 webProfile 不可用于指检出）
   "$env:DSH_HOME\packages\bundle\web-app\presets\cordis.patch.yml",   # 由 DSH_HOME 指到检出（无盘符，2026-09-28 替换原写死盘符路径）
   "$PSScriptRoot\..\..\..\..\packages\bundle\web-app\presets\cordis.patch.yml"
 )
