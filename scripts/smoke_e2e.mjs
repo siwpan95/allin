@@ -195,33 +195,48 @@ async function portalDiscover() {
   });
   spawnedChildren.push({ child, name: 'portal-temp' });
   let stdout = '';
+  let exited = null;
   child.stdout.on('data', (d) => { stdout += d.toString(); });
   child.stderr.on('data', (d) => { stdout += d.toString(); });
+  child.on('exit', (code, signal) => { exited = { code, signal }; });
+  child.on('error', (e) => { stdout += `\n[spawn error] ${e.message}`; exited = { code: -1, signal: null }; });
 
   // 就绪判据优先匹配启动行（含实际端口），兜底探活 /api/status。
-  // 旧口径 24×250ms=6s：CI Windows runner 冷启动（Node + @allin/core + registry
-  // 扫描 146 项目）实测会超过 6s，本机却 1s 内就绪 —— 典型「只看本机会漏」。
-  // 与 CP4 website 的 20s 上限对齐，仍在 OVERALL_BUDGET_MS=60s 内。
+  // 20s 窗口（原 6s）与 CP4 website 对齐，给冷启动留余量；但 2026-11-05
+  // run 42030794703 实测：CI Windows 干净检出缺 platform/node_modules 时，
+  // portal 的 ESM import '@allin/core' 会 ERR_MODULE_NOT_FOUND **启动即崩**，
+  // 此时再等 20s 纯属空转，且旧 detail 只报「未就绪」把真因藏住。
+  // 故监听 exit 立刻跳出，把「启动即崩」与「冷启动慢」分开报。
   for (let i = 0; i < 80; i += 1) {   // ≤20s
+    if (exited) break;
     const m = /\[allin-platform portal\] http:\/\/127\.0\.0\.1:(\d+)\//.exec(stdout);
     if (m) {
       try {
         const res = await fetchT(`http://127.0.0.1:${m[1]}/api/status`, {}, 1500);
-        if (res.ok) return { port: Number(m[1]), child, log: stdout };
+        if (res.ok) return { port: Number(m[1]), child, log: stdout, exited: null };
       } catch { /* 还没起来 */ }
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  return { port: null, child, log: stdout };
+  return { port: null, child, log: stdout, exited };
 }
 
 async function checkpointPortal() {
   const t = Date.now();
-  const { port, child, log } = await portalDiscover();
+  const { port, child, log, exited } = await portalDiscover();
   if (!port) {
     const tail = (log || '').trim().slice(-300) || '(子进程无任何输出)';
+    const why = exited
+      ? `临时实例启动即退出（exit=${exited.code}${exited.signal ? ` signal=${exited.signal}` : ''}）`
+      : '临时实例 20s 内未就绪（启动行/探活均未命中）';
+    // 干净检出最常见的启动崩溃：scripts/bootstrap.sh 只装 Python 依赖，
+    // platform 的 workspace 链接不存在。给出可执行命令，避免下次又只看到
+    // 「未就绪」去猜超时（上一轮就是这样误判成冷启动慢，白等 20s）。
+    const hint = /Cannot find package '@allin\/core'/.test(log || '')
+      ? '；缺 platform workspace 依赖 —— 先跑 cd platform && npm install（CI 见 gates.yml 的 npm ci --prefix platform）'
+      : '';
     step('CP3', 'portal 回环探活（临时实例）', false,
-      `portal 面：临时实例 20s 内未就绪（启动行/探活均未命中）；子进程输出尾部：${tail}`,
+      `portal 面：${why}${hint}；子进程输出尾部：${tail}`,
       false, Date.now() - t);
     return;
   }

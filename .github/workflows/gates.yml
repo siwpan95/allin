@@ -169,12 +169,21 @@ jobs:
       # verify-mount/DSH 子项在 CI 无挂载层，脚本自动 skip（skip ≠ fail）。
       # 只放 Windows job：website 临时实例链路（node:sqlite / 路径 / env 面）按本机形态验证，
       # Linux 复刻属后续演进；gates-posix 不动。
+      #
+      # 前置依赖（run 42030794703 实测教训）：scripts/bootstrap.sh 只装 Python 依赖
+      # + 建 docs 别名，**不装 Node 依赖** —— 「cd platform && npm install」只是它
+      # 打印的下一步提示。干净检出里 platform/node_modules（被 platform/.gitignore
+      # 忽略）不存在，而 portal 是 ESM、首行 import '@allin/core' 会直接
+      # ERR_MODULE_NOT_FOUND **启动即崩**。此前误判成冷启动慢、把就绪窗口 6s→20s，
+      # 白等 20s 也没用。故这里必须显式装两侧 Node 依赖：platform 的 @allin/core
+      # 是 workspace link，npm ci 才会建出来；website 侧同理。
       - name: 端到端三面冒烟（smoke:e2e，北极星）
         shell: bash
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/Scripts/python.exe
         run: |
           npm ci --prefix website || { echo "::error::npm ci --prefix website 失败（e2e 前置依赖安装）"; exit 1; }
+          npm ci --prefix platform || { echo "::error::npm ci --prefix platform 失败（portal 的 @allin/core workspace 链接）"; exit 1; }
           npm run smoke:e2e
 
   website-smoke:
