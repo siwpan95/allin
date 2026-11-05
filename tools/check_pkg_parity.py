@@ -29,8 +29,20 @@ PAIRS = [
 ]
 
 # 仓内侧允许存在而不进包的文件（合法排除：运行时产物 / 编辑器杂项 / 点目录——
-# setuptools 不会把 .github/.pytest_cache 等点目录打进包，属正常非对称）
-REPO_ONLY_OK = {"__pycache__"}
+# setuptools 不会把 .github/.pytest_cache 等点目录打进包，属正常非对称）。
+#
+# 另有一类：tools/repocheck 自身作为独立包携带的开发/构建元数据。映射成
+# allin_governance._repocheck 后，包内只需 .py 源码 + pyproject 已列的
+# README/LICENSE/CHANGELOG；下面这些是 repocheck 自己的发布/贡献/打包文件，
+# 与治理门禁运行时无关，刻意不随 wheel（2026-11-04 对账首跑定位，8 处）。
+# 注意别把运行时事实源加进来 —— exceptions.yml / registry-known-gaps.txt /
+# preset/* 属于必须进包的那一侧，已由 pyproject 的 package-data 补齐。
+REPO_ONLY_OK = {
+    "__pycache__",
+    "CONTRIBUTING.md", "SECURITY.md", "SKILL.md", "pyproject.toml",
+    "repocheck-dbg.spec", "repocheck.spec",
+    "requirements-dev.txt", "requirements.txt",
+}
 
 
 def sha256_of(path: Path) -> str:

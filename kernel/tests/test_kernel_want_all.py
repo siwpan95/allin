@@ -5,6 +5,10 @@
   1) 真实配置下 WANT_ALL == 四大支柱 + status 只读汇总（推导正确）；
   2) yml 写入 registry.SERVICES 白名单外的 id → import kernel.tree 即报错
      （fail-loud 提前到导入期；用子进程 + ALLIN_CONFIGS 指向伪造配置树复现）。
+
+子进程输出含中文（RuntimeError 点名越界 id），故 subprocess.run 必须显式
+encoding="utf-8"：只给 text=True 会按宿主 locale 解码，Windows CI 的 cp1252
+读线程抛 UnicodeDecodeError 后 stderr 变 None，测试会以 TypeError 假红（2026-11-04）。
 """
 import os
 import subprocess
@@ -31,7 +35,8 @@ class WantAllDerivationTest(unittest.TestCase):
             env['ALLIN_CONFIGS'] = tmp
             result = subprocess.run(
                 [sys.executable, '-c', 'import kernel.tree'],
-                capture_output=True, text=True, env=env, cwd=ROOT, timeout=120,
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                env=env, cwd=ROOT, timeout=120,
             )
             self.assertNotEqual(result.returncode, 0, '白名单外的 id 必须让导入失败')
             combined = result.stdout + result.stderr
@@ -53,7 +58,8 @@ class WantAllDerivationTest(unittest.TestCase):
             result = subprocess.run(
                 [sys.executable, '-c',
                  'import kernel.tree; print(repr(kernel.tree.WANT_ALL))'],
-                capture_output=True, text=True, env=env, cwd=ROOT, timeout=120,
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                env=env, cwd=ROOT, timeout=120,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("('tools', 'docs')", result.stdout)

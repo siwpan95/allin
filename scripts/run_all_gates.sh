@@ -66,13 +66,12 @@ else
 fi
 # 让门禁套件用同一个解释器：run.ts 优先采纳 DSH_GOVERNANCE_PYTHON。
 export DSH_GOVERNANCE_PYTHON="$PY"
-# Windows CI runner 的 Python stdout 默认是 ANSI(cp1252)：门禁脚本里的中文诊断
-# （check_gate_drift.py 等）一 print 就 UnicodeEncodeError，把整批门禁拖红，而
-# Linux runner 是 UTF-8 天生不复现 —— 又一个「只看一边会漏」的平台相关假红。
-# 统一钉死 UTF-8 stdio：本脚本派生的所有 Python 子进程（含 run.ts 再派生的）都继承，
-# GitHub Actions 两个 job 与 Gitee Go 共用本脚本，故一次生效、两侧口径一致。
-# 用 :- 尊重调用方显式指定的编码，不覆盖有意的配置。
-export PYTHONIOENCODING="${PYTHONIOENCODING:-utf-8}"
+# 【不要在这里 export PYTHONIOENCODING】—— 2026-11-04 实测教训：
+# Windows CI runner 的 stdout 默认 cp1252，中文诊断会 UnicodeEncodeError；但改成
+# 全局 PYTHONIOENCODING=utf-8 会连**测试 spawn 的子进程**一起改：那些用
+# subprocess.run(text=True) 且未指定 encoding 的旧测试会按 cp1252 解码 UTF-8 中文，
+# 读线程抛 UnicodeDecodeError 后 stderr 变成 None，测试反而崩（kernel/tests 已实测复现）。
+# 正确做法：由具体脚本自己 reconfigure stdio（见 check_gate_drift.py），别动全局环境。
 fail=0
 failures=()
 

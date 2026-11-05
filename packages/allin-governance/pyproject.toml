@@ -86,6 +86,9 @@ packages = [
 
 [tool.setuptools.package-data]
 "allin_governance._repocheck" = ["README.md", "LICENSE", "CHANGELOG.md"]
-# run.ts 与 registry.json 是套件的入口与事实源，baseline/*.txt 是棘轮空壳；
-# preset/ 不随包（g14/g16 判的是 allin 自己的载体，已在 init 的排除清单里说明）。
-"allin_governance._gatesuite" = ["*.ts", "*.json", "RULES.md", "README.md", "baseline/*.txt"]
+# run.ts 与 registry.json 是套件的入口与事实源，baseline/*.txt 是棘轮空壳。
+# 另有三类**运行时必需/随包分发**的非 .py 文件，缺了 wheel 跑门禁就判不全：
+#   exceptions.yml（g18 读）、registry-known-gaps.txt（g17/g18 读）、
+#   preset/allin.patch.yml + README.md（g14 的 SHIPPED 基准，见 g14_preset.py）。
+# 2026-11-04 check_pkg_parity.py 首跑实测这 4 份漏收，对账 12 处红。
+"allin_governance._gatesuite" = ["*.ts", "*.json", "*.yml", "*.txt", "RULES.md", "README.md", "baseline/*.txt", "preset/*.yml", "preset/*.md"]
