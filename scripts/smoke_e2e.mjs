@@ -25,11 +25,27 @@ import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolvePython, pythonEnv } from './resolve_python.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.ALLIN_ROOT ? path.resolve(process.env.ALLIN_ROOT) : path.resolve(__dirname, '..');
 const E2E_PORT = Number(process.env.ALLIN_E2E_WEBSITE_PORT || 9156);
-const PY = process.env.ALLIN_PYTHON || 'python';
+
+// 解释器解析**不另写一套**：与 scripts/run_all_gates.sh 共用 scripts/resolve_python.mjs
+// （ALLIN_PYTHON → 仓内 .venv → PATH，且优先选带 PyYAML 的候选）。
+//
+// 2026-11-06 实测教训：此处原写 `process.env.ALLIN_PYTHON || 'python'`，默认落到
+// PATH 上无 PyYAML 的便携 3.13.14 ⇒ CP1/CP2 报 `ModuleNotFoundError: yaml` 假红；
+// 而 CI 两侧 job 都设了 ALLIN_PYTHON ⇒ **CI 永远绿、本机永远红**，本地跑批又不含
+// 本脚本 ⇒ 这个盲区此前无人发现（「门禁写了不跑 = 没有门禁」的第四例）。
+//
+// ⚠ 修复点与加固点要分清：**假红的根因是解释器选错**（落到了 PATH 上无 PyYAML 的
+// 便携 3.13.14），resolvePython() 选对解释器才是**修复**；连 PATH 一起注入是**加固**
+// （防脚本内部再 spawn 裸 `python` 时回落），别把功劳记在后者头上。
+const PY_RESOLVED = resolvePython();
+const PY = PY_RESOLVED.python;
+// 子进程环境：把解释器目录提到 PATH 最前，避免裸 `python` 落回便携解释器。
+const PY_ENV = pythonEnv(PY_RESOLVED);
 const AUDIT_DIR = process.env.ALLIN_GATE_AUDIT
   ? path.resolve(process.env.ALLIN_GATE_AUDIT)
   : path.join(ROOT, 'tools', 'gate', 'audit');
@@ -155,7 +171,7 @@ function writeEvidence(meta) {
 
 async function checkpointCliFront() {
   const t = Date.now();
-  const r = await runCmd(PY, ['allin_cli.py', 'preset', 'list'], { timeoutMs: 30_000 });
+  const r = await runCmd(PY, ['allin_cli.py', 'preset', 'list'], { timeoutMs: 30_000, env: PY_ENV });
   const ok = r.code === 0 && r.out.trim().length > 0;
   step('CP1', 'CLI 前门（preset list 只读）', ok,
     ok ? 'exit 0' : `cli 面 exit=${r.code} ${r.err.split('\n')[0] || '无输出'}`.slice(0, 160),
@@ -164,7 +180,7 @@ async function checkpointCliFront() {
 
 async function checkpointKernelProbe() {
   const t = Date.now();
-  const r = await runCmd(PY, ['allin_cli.py', 'platform', 'registry-count'], { timeoutMs: 30_000 });
+  const r = await runCmd(PY, ['allin_cli.py', 'platform', 'registry-count'], { timeoutMs: 30_000, env: PY_ENV });
   const ok = r.code === 0 && /registry 项目条目/.test(r.out);
   step('CP2', 'kernel 探测（platform registry-count 只读）', ok,
     ok ? r.out.trim().split('\n')[0] : `kernel 面 exit=${r.code} ${(r.err || r.out).split('\n')[0]}`.slice(0, 160),
@@ -300,7 +316,7 @@ async function checkpointG21() {
     step('CP5', 'g21 漂移判据', true, 'g21 门禁尚未实施（tools/gate/agent_parity.py 不存在），skip（skip ≠ fail）', true, Date.now() - t);
     return;
   }
-  const r = await runCmd(PY, [gate], { timeoutMs: 60_000 });
+  const r = await runCmd(PY, [gate], { timeoutMs: 60_000, env: PY_ENV });
   if (r.code !== 0) {
     step('CP5', 'g21 漂移判据', false, `判据面：g21 exit=${r.code}，输出：${(r.err || r.out).trim().split('\n')[0]}`.slice(0, 160), false, Date.now() - t);
     return;

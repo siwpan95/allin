@@ -231,6 +231,27 @@ _run_repo_hygiene
 #    故 CI 跑 --selfcheck 做工具自身逻辑回归（EOL 归一化 / 真漂移判红 / 缺对端 SKIP / 同目录守卫）。
 run "$PY" tools/gate/check_gate_drift.py --selfcheck
 
+# --- ⑤ 北极星三面冒烟（smoke:e2e）——
+#    2026-11-06 补入。此前它在 CI 的 gates-windows job 里单独跑（且显式设了
+#    ALLIN_PYTHON），但**本地跑批不含它** ⇒ 本机默认环境（PATH 上是无 PyYAML 的
+#    便携 Python）下 CP1/CP2 报 ModuleNotFoundError: yaml 假红，CI 却永远绿
+#    —— 「CI 绿 / 本机红」的机制性盲区。门禁写了不跑 = 没有门禁（第四例）。
+#    修法：smoke_e2e.mjs 改用 scripts/resolve_python.mjs（与本脚本同源解析链：
+#    ALLIN_PYTHON → 仓内 .venv → PATH，优先选带 PyYAML 的候选）。
+#
+#    降级口径（对齐上面 _run_repo_hygiene 的既有模式）：冒烟依赖两侧 Node 依赖
+#    （platform/node_modules 的 @allin/core workspace link + website/node_modules）。
+#    干净检出里它们不存在（被 .gitignore 忽略）⇒ 此时记 SKIP，不计入失败 ——
+#    「没有可跑的对象」不是「北极星不合格」。依赖在位时则真跑、真判红。
+if [ ! -d "$ROOT/platform/node_modules/@allin/core" ] || [ ! -d "$ROOT/website/node_modules" ]; then
+  echo "==> npm run smoke:e2e"
+  echo "    [SKIP] 两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
+  echo "    [SKIP] 装依赖后复跑：npm ci --prefix website && npm ci --prefix platform"
+  log_run "smoke:e2e:skip(missing-node-deps)" 0 0
+else
+  run npm run smoke:e2e
+fi
+
 # --- 2026-11-04 工程审查补齐：把已有测试接进跑批（测试写了不跑 = 没有测试）---
 # ⑤ kernel 单元测试：导入冒烟 + 无 watchdog 回归（vendor/cordis hmr 降级路径，
 #    该缺陷此前因测试从未进跑批而潜伏——kernel 在零依赖环境整体不可导入）。
