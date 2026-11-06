@@ -189,7 +189,7 @@
 | SSH 前提 | `~/.ssh/id_ed25519`（ED25519，指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`）在 GitHub 已注册（key id `168363891`）；`ssh -T git@github.com` ⇒ **`Hi siwpan95!`**；`~/.ssh/config` 有 `github.com` 与 `ssh.github.com:443` 两段（`IdentitiesOnly yes`，原配置备份 `config.bak-20261101`） |
 
 - **作业口径（2026-11-01 用户指令，取代 2026-10-29 的「不补配」）**：该机**改为双核**，
-  与 [`../DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V.md) §9、[`../SIWPAN/SIWPAN.md`](../SIWPAN/SIWPAN.md) §7 **三台口径一致**。
+  与 [`../DESKTOP-8RSV60V/DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V/DESKTOP-8RSV60V.md) §9、[`../SIWPAN/SIWPAN.md`](../SIWPAN/SIWPAN.md) §7 **三台口径一致**。
   ⚠ 2026-10-29「该机不补配 GitHub pushurl」的交代**已被本条取代**（**逐机指令，不外推**——
   这是 `@SIWPAN` 在 `2a6da31` 里踩过并已写明的教训）。
 - ⚠ **git 语义坑（实测）**：remote 一旦配了**显式 pushurl**，`url` 就不再是推送目标

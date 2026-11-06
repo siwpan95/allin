@@ -16,7 +16,7 @@
 > 账号口令）/ `deepseek_api_key`（原 `Desktop\deepseek.txt`，实测有效余额 310.17）——
 > **4/4 回程一致、密文字节级 0 明文痕迹，两个明文文件已删除**，g03 真红线清零。）
 > **时点** 2026-10-31（**@`SIWPAN` 推送配置升级** —— 用户指令「配 GitHub 侧镜像推送」：
-> origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 [`DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V.md) §9 同款口径。
+> origin 双 pushurl（Gitee + `git@github.com:siwpan95/allin.git` SSH），与 [`DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V/DESKTOP-8RSV60V.md) §9 同款口径。
 > ⚠ 旧值「本机不补配 pushurl」作废 —— 那是 2026-10-29 对 `DESKTOP-KQABATS` 的交代，被错误外推到本机；
 > 各机推送配置以用户逐机指令为准。SSH 前提实测：`id_ed25519` 认证通过（`Hi siwpan95!`），
 > 双通道首推两行 up-to-date、双侧 ls-remote 与 HEAD 逐字符相等。）

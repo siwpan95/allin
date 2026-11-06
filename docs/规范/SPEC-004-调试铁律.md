@@ -164,7 +164,7 @@
     - **纪律**：遇到「进程无输出直接消失」，先跑最小复现判定是否本缺陷，再去查自己的代码；**不要**在无 traceback 的情况下盲目调试业务逻辑。
     - **同轮唯一失败的台（与本节无关，另立事实）**：`/Python314_embed_backup`(3.14.6) 对**相对导入与绝对导入都**
       `exit 1` 带 traceback ⇒ 那是 **embeddable 布局的 `._pth` 隔离**（脚本目录不进 `sys.path`），
-      **embeddable 构建不能当普通解释器用**（详见 `事实源/机器/DESKTOP-8RSV60V.md §4.1`）。
+      **embeddable 构建不能当普通解释器用**（详见 `事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md §4.1`）。
 
 49. **本机可用 Python 清单与选型（2026-09-25 实测）**：
     | 解释器 | 实际版本 | tkinter | 可用性（2026-10-08 复测重排） |
@@ -180,7 +180,7 @@
       ⇒ **选型三步：① `-V` 定版本 ② `-c "import tkinter"` 定 GUI 能力 ③ 建项目级 `.venv` 钉住。**
     - **坑**：目录名写 `3.13.12`，**实际版本是 3.13.14** —— **判定版本一律用 `python -V`，不要信目录名**。
     - **坑（2026-10-08 新增）**：原表首行的 `/Python314` **已不存在**；全工作区曾有 **61 处**代码/脚本引用它
-      （详见 `事实源/机器/DESKTOP-8RSV60V.md §4.1`）⇒ **引用解释器一律去符盘**（`SPEC-001 §铁律 5`）。
+      （详见 `事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md §4.1`）⇒ **引用解释器一律去符盘**（`SPEC-001 §铁律 5`）。
     - **另一个真损坏**：`/workbuddy/.workbuddy/binaries/python/envs/default/Scripts/python.exe` 是 venv，其 `pyvenv.cfg` 指向 **`/Users/13122/...`（旧机路径，已不存在）**，运行报 `did not find executable ... exit 103`。**这些 WorkBuddy venv 在换机后已全部失效，需重建**（本机死根路径门禁报出的 `/Users/13122` 多由此而来）。
     - **推荐用法**：给每个需要 Python 的项目建**项目级 `.venv`**：
       `/workbuddy/.workbuddy/binaries/python/versions/3.13.12/python.exe -m venv <项目>\.venv`，
