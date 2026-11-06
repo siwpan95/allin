@@ -6,7 +6,7 @@
 本门禁是它的可执行落地，判据与 allin 仓的 `tools/gate/docs_index.py` **同源**（两处落点、各自自包含）。
 本仓没有 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` —— 该契约为选用制，不强制每个仓采用。
 
-判据（D1–D14）：
+判据（D1–D15）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -23,8 +23,9 @@
   D13 列语义契约 —— INDEX 登记表行里未加限定词的 `§N` 归本行链接的文档（详见 SPEC-005 §3.6）
 
   D14 书写规范 —— 裸 `§N` 默认指本文件（SPEC-005 §3.7）
+  D15 字节完整 —— 文档不得含非法控制字符 / 行内代码跨度内 TAB（SPEC-005 §3.8）
 
-  ⚠ **D9–D14 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
+  ⚠ **D9–D15 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
   本门禁与仓内 `tools/gate/docs_index.py` **import 同一份** ⇒ 结构上杜绝两份判据漂移
   （`SPEC-004` 调试铁律 64 的同一教训：两份都能跑、都"看着对"，差异只有人工 diff 才看得见）。
 
@@ -49,7 +50,7 @@ import tempfile
 # (run.ts spawns this gate from tools/gate, not from the repo root).
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime"))
 import govlib  # noqa: E402  (path is fixed up immediately above)
-import docs_contract  # noqa: E402  —— D9/D10/D11 判据的**唯一实现**（与仓内 docs_index.py 同源一份）
+import docs_contract  # noqa: E402  —— D9–D15 判据的**唯一实现**（与仓内 docs_index.py 同源一份）
 
 EXIT_OK, EXIT_FAIL, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
 
@@ -327,6 +328,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d12(docs, rep)
     docs_contract.check_d13(docs, root, rep)
     docs_contract.check_d14(docs, root, files, rep)
+    docs_contract.check_d15(docs, files, rep)
     return rep
 
 

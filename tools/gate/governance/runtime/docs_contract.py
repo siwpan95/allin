@@ -670,6 +670,54 @@ def check_d14(docs: str, root: str, files: list[str], rep) -> None:
             offset += len(line)
 
 
+# ---------------------------------------------------------------- D15
+#: 文档里允许的控制字符只有 LF / CR / TAB；其余 ord<32 一律视为**转义损坏**。
+#: 来源：经 Python 字面量或 bash heredoc 写含反斜杠的文档时，
+#: 反斜杠+a → U+0007、反斜杠+b → U+0008、反斜杠+f → U+000C、反斜杠+t → 真 TAB，
+#: 首字符被静默吃掉，而脚本照常报成功（记忆月账 2026-11-06 三次复发）。
+CTRL_ALLOWED = frozenset((10, 13, 9))
+
+
+def _code_spans(line: str):
+    """行内反引号跨度（成对切分取奇数段）：路径 / 短 SHA / 命令都写在这里。"""
+    parts = line.split("`")
+    for k in range(1, len(parts), 2):
+        yield parts[k]
+
+
+def check_d15(docs: str, files: list[str], rep) -> None:
+    """**字节级文档完整性**（SPEC-005 §3.8）。
+
+    两面判据，刻意保守（宁可漏也不错报）：
+
+    (a) 任何 `ord(c) < 32` 且不是 LF / CR / TAB ⇒ 阻断。这类损坏**不被 D1–D14、
+        `g19-docs-refs`、`g01-paths` 任何一条覆盖**（`g01` 只判写死什么盘符，
+        不判盘符 / 短 SHA 是否被转义吃掉）。
+    (b) **行内反引号跨度内出现 TAB** ⇒ 阻断。TAB 在普通正文与 diff 快照里合法，
+        但代码跨度里的路径 / 短 SHA 出现 TAB 只可能是转义损坏 ⇒ 实测真实树 0 假红。
+
+    范围：**全部 docs 文件（含 `记录/` 历史卷）** —— 与 D9 / D14 刻意排除 `记录/`
+    不同，字节损坏不分活文档与历史证据；7 处存量正出在 2026-08 / 2026-09 两卷。
+    """
+    for f in files:
+        full = os.path.join(docs, f.replace("/", os.sep))
+        text = read_text(full)
+        # 按换行切分，不用 splitlines()：后者把 U+000C 当行边界且会**丢弃**该字符，
+        # 恰好放过 form-feed 型损坏（实测 splitlines 会把含 U+000C 的行拆成两段）。
+        for ln, line in enumerate(text.split("\n"), 1):
+            bad = sorted({ord(c) for c in line if ord(c) < 32 and ord(c) not in CTRL_ALLOWED})
+            if bad:
+                rep.block("D15", "%s:%d 含非法控制字符 %s（多为反斜杠转义吃掉首字符；"
+                          "写完必须回读整行 repr）" % (f, ln, ", ".join("U+%04X" % o for o in bad)))
+                continue
+            for span in _code_spans(line):
+                if "\t" in span:
+                    rep.block("D15", "%s:%d 的行内代码跨度含 TAB（反斜杠+t 转义损坏，"
+                              "路径 / 短 SHA 已静默缺字）" % (f, ln))
+                    break
+        rep.exempt("D15-file-clean")
+
+
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
     """造一个迷你枢纽（只含新判据所需的结构）。
@@ -691,6 +739,8 @@ def _fixture(kind: str, base: str) -> str:
     broken_row_contract = (kind == "row-contract-dangling")
     broken_row_id = (kind == "row-id-dangling")
     broken_bare = (kind == "bare-ref-dangling")
+    broken_ctrl = (kind == "ctrl-char")
+    broken_tab = (kind == "tab-in-code")
 
     # 被引的索引（中文别名「索引」指向它；**布局照真实仓**：索引在 事实源/ 下、机器文件在其 机器/ 子目录）
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
@@ -716,9 +766,14 @@ def _fixture(kind: str, base: str) -> str:
         f.write("# 观测\n\n## 1. 记录\n\n## 2. 口径\n\n%s\n" % refs)
 
     hi = "2026-10-16" if broken_range else "2026-10-31"
+    body = "正文（2026-10-31 记）。\n"
+    if broken_ctrl:
+        body += "损坏行" + chr(7) + "e51d1c。\n"
+    if broken_tab:
+        body += "见 `G:" + chr(9) + "ools` 路径。\n"
     with io.open(os.path.join(docs, "记录", "交接", "2026-10.md"), "w", encoding="utf-8") as f:
         f.write("# 会话交接 · 2026-10 卷（2026-10-04 ~ %s）\n\n"
-                "## 一、总体状态\n\n## 五十八、收尾\n\n正文（2026-10-31 记）。\n" % hi)
+                "## 一、总体状态\n\n## 五十八、收尾\n\n%s" % (hi, body))
 
     # INDEX：登记行 + 两处份数自述 + 供 D13 用的行号（FACT-01）与登记表行
     rec_n = 5 if broken_count else 1
@@ -747,18 +802,23 @@ def _fixture(kind: str, base: str) -> str:
 
 
 def selfcheck_extra() -> dict[str, int]:
-    """对三处新判据各造一个真实破坏用例 + 一个干净用例。
+    """对新增判据各造一个真实破坏用例 + 一个干净用例。
 
     自检用例放在**共享模块**里 ⇒ 两个落点（仓内 docs_index.py / 分发版 g15）共用同一套，
     不会各写一套而漂移（与 D 系列判据同一条纪律）。
+
+    ⚠ **逐维隔离**（本卷 2026-11-01 17:30 事故）：`caught` 高不等于每条判据都被验证过，
+    曾出现三个用例都被同一个 D9 命中、而 D10/D11 从未执行的假象。故 D15 的两个用例
+    额外断言「拦下它的必须是 D15 自己」，否则计入 misreports 让自检失败。
     """
     import shutil
     import tempfile
 
+    d15_cases = ("ctrl-char", "tab-in-code")
     caught = clean = misreports = 0
     for kind in ("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
                  "range-too-narrow", "count-line-drift", "index-range-drift",
-                 "row-contract-dangling", "row-id-dangling", "bare-ref-dangling"):
+                 "row-contract-dangling", "row-id-dangling", "bare-ref-dangling") + d15_cases:
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
@@ -769,8 +829,13 @@ def selfcheck_extra() -> dict[str, int]:
             check_d12(docs, rep)
             check_d13(docs, os.path.dirname(docs), rep)
             check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
+            check_d15(docs, _mini_files(docs), rep)
             if rep.blocking:
                 caught += 1
+                if kind in d15_cases and any(c != "D15" for c, _ in rep.blocking):
+                    misreports += 1
+                    print("MISREPORT %s caught by non-D15 gate: %s"
+                          % (kind, [c for c, _ in rep.blocking]))
             else:
                 print("MISSED case not caught: %s" % kind)
         finally:
@@ -786,6 +851,7 @@ def selfcheck_extra() -> dict[str, int]:
         check_d12(docs, rep)
         check_d13(docs, os.path.dirname(docs), rep)
         check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
+        check_d15(docs, _mini_files(docs), rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_arch_assets.py —— 架构资产对账门禁（ADR-0009）。
 
-背景：`architecture/`（两张 SVG + adr/）在文档契约判据（docs_index D1–D14 / g19）之外，
+背景：`architecture/`（两张 SVG + adr/）在文档契约判据（docs_index D1–D15 / g19）之外，
 是本仓唯一免检的架构叙事资产。2026-11-04 体检实测其内 5 处漂移静默存活近一月
 （ADR 索引缺 0006–0008、SVG 缺 packages/website 子系统、图内门禁数/D 范围/仓数
 三处数字落后两代）。ADR-0007 只把**叙事正文**迁进了 SPEC-204，图源与 ADR 仍在
@@ -31,7 +31,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 _STATUS_CLOSED = {"proposed", "accepted", "superseded"}  # adr/README 声明的状态闭集
-_EN = "\u2013"  # 图与规范用的 en dash（g00–g20 / D1–D14 同一字符，别想当然写成 '-'）
+_EN = "\u2013"  # 图与规范用的 en dash（g00–g20 / D1–D15 同一字符，别想当然写成 '-'）
 
 
 def _read(rel: str) -> str:
@@ -116,7 +116,7 @@ def check_svg_drange(rep: Report) -> None:
     spec = _read(os.path.join("docs", "规范", "SPEC-204-系统架构.md"))
     m = re.search(r"docs_index\(D(\d+)" + _EN + r"D(\d+)\)", spec)
     if not m:
-        rep.block("SPEC-204 缺 docs_index(D1–D14) 形状的声明 —— 锚没了，SVG 对账失去基准")
+        rep.block("SPEC-204 缺 docs_index(D1–D15) 形状的声明 —— 锚没了，SVG 对账失去基准")
         return
     rng = f"D{m.group(1)}{_EN}D{m.group(2)}"
     svg = _read("architecture/system-architecture.svg")

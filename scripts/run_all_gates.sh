@@ -3,7 +3,7 @@
 #
 # 依次跑三类门禁：
 #   1) 20 道治理门禁 g00-meta…g20-facts（npm run check:governance）
-#   2) 文档索引契约 D1–D8（npm run check:docs = python tools/gate/docs_index.py）
+#   2) 文档索引契约 D1–D15（npm run check:docs = python tools/gate/docs_index.py）
 #   3) 本仓 monorepo 自检口径的 repocheck（README §本仓自检口径：排除 tools/，跳过规则 1/7）
 #
 # 行为：任一失败继续跑完其余，最后汇总并以非 0 退出码收尾，便于 agent 判定。
@@ -191,6 +191,9 @@ echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
 run "$PY" tools/gate/docs_index.py
+# docs_index 自检（D1–D15 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
+# 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。
+run "$PY" tools/gate/docs_index.py --selfcheck
 # agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
 # registry 是否一致）。这组固定样例补的就是这一层 —— 改配置/提示词/工具面前后各跑一次。
 run "$PY" tools/gate/agent_regression.py

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """docs_index.py —— 文档枢纽「索引契约」门禁（SPEC-005 的机械保障）。
 
-判据（D1–D14）：
+判据（D1–D15）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -22,7 +22,8 @@
   D13 列语义契约 —— INDEX 登记表行里未加限定词的 `§N` 归本行链接的文档；限定词分「文档限定词」与
                   「INDEX 行号」两类，后者归该行号登记的文档（详见 SPEC-005 §3.6）
   D14 书写规范 —— 裸 `§N` 默认指本文件（SPEC-005 §3.7）；指别处必须写全目标
-  （D9–D14 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
+  D15 字节完整 —— 文档不得含非法控制字符 / 行内代码跨度内 TAB（SPEC-005 §3.8）
+  （D9–D15 的判据在 `governance/runtime/docs_contract.py` —— 与分发版 g15-docs-contract 同源一份）
 
 契约（与本仓其它门禁一致）：
   退出码 0 干净 / 1 基线之外的新阻断 / 2 用法错误 / 3 环境错误
@@ -40,7 +41,7 @@ import shutil
 import sys
 import tempfile
 
-# 共享判据（D9/D10/D11/D12）—— 与分发版 `g15-docs-contract` **同源一份**：
+# 共享判据（D9–D15）—— 与分发版 `g15-docs-contract` **同源一份**：
 # 新判据只写 `governance/runtime/docs_contract.py` 这一个地方，两个入口都 import 它。
 # 理由（`SPEC-004` 调试铁律 64 的同一教训）：「两份必须一致」只写在文档里必然漂移，
 # 而两份都能跑、都"看着对"，差异只有人工 diff 才看得见 ⇒ 结构上杜绝，不靠记得同步。
@@ -320,6 +321,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d12(docs, rep)
     docs_contract.check_d13(docs, root, rep)
     docs_contract.check_d14(docs, root, files, rep)
+    docs_contract.check_d15(docs, files, rep)
     return rep
 
 
@@ -459,11 +461,29 @@ def build_fixture(kind: str, base: str) -> str:
 
 def selfcheck() -> int:
     caught = clean = misreports = 0
+    # Windows 非管理员 / 未开开发者模式时 os.symlink 抛 OSError ⇒ build_fixture 建不出
+    # 四个 ASCII 别名 ⇒ 干净用例被 D6「别名缺失」误报，自检恒 exit 1（本机实测）。
+    # 真实树的 D6 照常判（本机四个 junction 均在，D6-ok=4）；自检夹具里显式跳过 D6
+    # 并计入 SKIPPED，不把环境限制伪装成绿灯，也不静默放水。
+    skip_aliases = False
+    if os.name == "nt":
+        probe = tempfile.mkdtemp(prefix="docsidx_symlink_")
+        try:
+            os.makedirs(os.path.join(probe, "real"), exist_ok=True)
+            try:
+                os.symlink(os.path.join(probe, "real"), os.path.join(probe, "link"),
+                           target_is_directory=True)
+            except OSError:
+                skip_aliases = True
+        finally:
+            shutil.rmtree(probe, ignore_errors=True)
+    if skip_aliases:
+        print("SELFCHECK note: Windows 无符号链接权限 ⇒ 夹具 D6 别名判据 SKIPPED (not a pass)")
     for kind, desc, expect_clean in SELFCHECK_CASES:
         tmp = tempfile.mkdtemp(prefix="docsidx_")
         try:
             build_fixture(kind, tmp)
-            args = argparse.Namespace(root=tmp, quiet=True, no_aliases=False,
+            args = argparse.Namespace(root=tmp, quiet=True, no_aliases=skip_aliases,
                                       list_all=False, write_baseline=False)
             rep = run(tmp, args)
             ok = not rep.blocking
