@@ -16,7 +16,7 @@ broken gate but a coverage gap, one layer below the three that already exist:
 
 What is judged -- and deliberately nothing else
 -----------------------------------------------
-Only the two claim types that are mechanically decidable. Noise is how a gate
+Only the claim types that are mechanically decidable. Noise is how a gate
 gets switched off, so everything else is left to humans:
 
 * ``path-exists`` -- a line claiming a machine absolute path *exists*
@@ -28,6 +28,40 @@ gets switched off, so everything else is left to humans:
   (archive directories hold loose files), while no unit or ``个仓`` / ``个目录``
   counts directories only -- ``<盘>:\\repos`` may hold 136 directories *plus*
   4 files, and counting everything yields 140, i.e. a false drift.
+* ``self-identity`` -- a line that calls a machine "本机" must name the machine
+  it means (2026-11-06). See "The 本机 ambiguity" below.
+
+The 本机 ambiguity
+------------------
+Each partition file is written *by* one machine and describes *that* machine,
+yet every one of them says "本机" ("this machine") about itself -- so the word
+carries no machine identity of its own. An agent that opens the wrong
+partition file therefore reads a perfectly coherent description of **another**
+machine and can carry it away as if it were its own (observed 2026-11-06 on
+``@DESKTOP-8RSV60V``: the ``@DESKTOP-KQABATS`` file was read and treated as
+this machine's own facts -- its "publish area: 23 repos, work area ``E:``" is
+wrong for this machine in every particular).
+
+``机器分区索引.md`` §0 rule 3 already requires "引用『本机』必须带机器名",
+but nothing checked it -- a rule with no gate is a rule that decays. Two
+mechanically decidable halves:
+
+* **anchor** -- a "本机" line must carry a machine name (its own or another
+  machine's) on the same line. A bare "本机" is undecidable *by construction*:
+  nothing in the sentence says which machine it means.
+* **ownership** -- when the "本机" line names an absolute path, that path must
+  resolve on the machine that owns the file. Judged **only for the current
+  machine's own file**: another machine's path legitimately does not exist
+  here, so judging it locally would be the same "wrong disk" mistake the
+  machine-scoping rule below exists to prevent.
+
+Scope and honest limits: the anchor half is checked in the newest timepoint
+block (same scope as the other two claim types). The ownership half is
+deliberately narrower -- it cannot see a *stale* value that still exists, and
+it cannot see a wrong value written into a sentence with no absolute path in
+it. It catches the mechanical residue of the identity mix-up; it does not
+replace the discipline of naming one's machine before touching machine facts
+(``机器分区索引.md`` §3).
 
 Machine scoping (2026-10-30, cross-machine fix)
 -----------------------------------------------
@@ -103,6 +137,16 @@ NEGATIVE = re.compile(r"现已不存在|已不存在|均不存在|MISSING|已删
 COUNT_BOLD = re.compile(r"\*\*(\d+)\*\*\s*(项|个仓|个目录|个)?")
 COUNT_PLAIN = re.compile(r"(\d+)\s*(项|个仓|个目录)")
 
+#: A self-reference to "this machine" -- meaningless without a machine name
+#: beside it, because every partition file calls itself 本机 (see the module
+#: docstring, "The 本机 ambiguity").
+SELF_REF = re.compile(r"本机|这台机|该机")
+
+#: A machine name as it appears in prose: ``DESKTOP-8RSV60V`` / ``SIWPAN``.
+#: Matched case-insensitively -- Windows hostnames are, and the files use both
+#: ``@`SIWPAN` `` and bare ``SIWPAN``.
+MACHINE_NAME = re.compile(r"DESKTOP-[A-Za-z0-9]+|SIWPAN", re.IGNORECASE)
+
 
 def strip_tail(raw: str) -> str:
     return raw.rstrip("`.,;:)]}'\"、）。】")
@@ -159,8 +203,61 @@ def count_entries(path: Path, mode: str = "dirs") -> int:
         return -1
 
 
-def check_text(text: str, label: str) -> tuple[list[dict], str]:
-    """Judge one fact-source document. Returns (findings, timepoint string)."""
+def check_self_identity(block: str, label: str, owner: str | None) -> list[dict]:
+    """Judge the "本机" self-references of one partition file.
+
+    Two mechanically decidable halves (see the module docstring, "The 本机
+    ambiguity"):
+
+    * **anchor** -- a line that says 本机 must name a machine on the same line.
+      A bare 本机 cannot be resolved by anything reading the sentence.
+    * **ownership** -- a 本机 line carrying an absolute path must have that
+      path resolve **on the machine that owns this file**. ``owner`` is the
+      owning machine (the file's stem) and is only passed for the file that
+      belongs to the machine running the gate; for another machine's file the
+      ownership half is skipped (its paths legitimately do not exist here).
+
+    ``block`` is the newest-timepoint scope, the same scope the other two
+    claim types use.
+    """
+    findings: list[dict] = []
+
+    for lineno, line in enumerate(block.splitlines(), 1):
+        if not SELF_REF.search(line):
+            continue
+
+        # --- ownership: 本机 + an absolute path => that path is claimed to be ours
+        if owner is not None:
+            for raw in ABS_PATH.findall(line):
+                target = strip_tail(raw)
+                if len(target) < 4:
+                    continue
+                if not Path(target).exists():
+                    findings.append({
+                        "kind": "SELF-OWNERSHIP", "file": label, "line": lineno,
+                        "claim": f"本机自述引用了本机不存在的路径：{target}"
+                                 f"（该文件属于 {owner}；他机路径不得写成本机事实）",
+                        "path": target})
+
+        # --- anchor: 本机 must name its machine on the same line
+        if not MACHINE_NAME.search(line):
+            findings.append({
+                "kind": "SELF-ANCHOR", "file": label, "line": lineno,
+                "claim": "本机自述未标明机器名 —— 各机分区文件都以「本机」自称，"
+                         "裸「本机」无法判定指哪台机器（须写明机器名，"
+                         "见 机器分区索引.md §0 归属规则第 3 条）"})
+
+    return findings
+
+
+def check_text(text: str, label: str, owner: str | None = None) -> tuple[list[dict], str]:
+    """Judge one fact-source document. Returns (findings, timepoint string).
+
+    ``owner`` names the machine the file belongs to (its stem). It is passed
+    only for the file of the machine running the gate; the ownership half of
+    the self-identity check is skipped without it, because another machine's
+    paths legitimately do not exist here.
+    """
     block, stamp = header_scope(text)
     findings: list[dict] = []
 
@@ -200,6 +297,8 @@ def check_text(text: str, label: str) -> tuple[list[dict], str]:
                              "claim": f"声称 {claimed}（口径 {mode}），实际 {actual}：{target_path}",
                              "path": str(target_path), "claimed": claimed,
                              "actual": actual, "mode": mode})
+
+    findings.extend(check_self_identity(block, label, owner))
     return findings, stamp
 
 
@@ -279,7 +378,9 @@ def scan(root: Path) -> Report:
         return report
     report.scanned += 1
     text = own.read_text(encoding="utf-8", errors="replace")
-    findings, stamp = check_text(text, own.name)
+    # ``owner`` scopes the ownership half of the self-identity check to the
+    # machine running the gate -- another machine's paths do not exist here.
+    findings, stamp = check_text(text, own.name, owner=own.stem)
     report.note(f"{own.name}: {evaluate_staleness(stamp)}")
     for fd in findings:
         report.block(fd["kind"].lower(), fd["file"], fd["line"], fd["claim"])
@@ -323,6 +424,67 @@ def selfcheck() -> int:
             misreports += 1
         probe_doc.unlink()
 
+    # Self-identity (2026-11-06): each half is isolated -- the fixture must be
+    # caught by *that* half, not by another criterion riding along. A bare 本机
+    # is caught by the anchor half; a 本机 line carrying a path that does not
+    # exist here is caught by the ownership half.
+    #
+    # ⚠ The anchor half needs a **real** machine name (``MACHINE_NAME`` only
+    # knows ``DESKTOP-*`` / ``SIWPAN``) -- a placeholder like ``SOME-MACHINE``
+    # is not an anchor and would make the fixture fail for the wrong reason.
+    ANCHOR = "DESKTOP-8RSV60V"
+    self_cases = [
+        # (payload, expected kind, owner) -- owner None => ownership half skipped
+        ("bare-self.md",
+         "> **时点** 2026-10-30（自检：裸本机）\n> 本机发布区 **23** 个目录\n",
+         "self-anchor", None),
+        ("owned-self.md",
+         f"> **时点** 2026-10-30（自检：他机路径当本机）\n> 本机发布区 `{absent}` **23** 个目录\n",
+         "self-ownership", ANCHOR),
+        ("anchored-self.md",
+         f"> **时点** 2026-10-30（自检：带锚点且路径存在）\n"
+         f"> @`{ANCHOR}` 本机发布区 `{probe}` 现已存在\n",
+         None, ANCHOR),
+    ]
+    for name, payload, expected, owner in self_cases:
+        probe_doc = machine / name
+        probe_doc.write_text(payload, encoding="utf-8")
+        findings, _ = check_text(payload, name, owner=owner)
+        kinds = {f["kind"].lower() for f in findings}
+        if expected is None:
+            # clean case: nothing may fire
+            if findings:
+                misreports += 1
+            else:
+                clean += 1
+        elif expected in kinds:
+            caught += 1
+        else:
+            misreports += 1
+        # ⚠ 逐维隔离（2026-11-06，承交接 §134 的「三个用例都被同一个 D9 命中」教训）：
+        # 断言「拦下它的是它自己那一半」，且**不得有别的判据混进来**。
+        # 否则 caught 只是个高数，两条判据可能从未各自执行过。
+        if expected == "self-anchor":
+            if "count" in kinds or "path-exists" in kinds:
+                misreports += 1
+        if expected == "self-ownership":
+            if "count" in kinds or "path-exists" in kinds:
+                misreports += 1
+        probe_doc.unlink()
+
+    # The ownership half must NOT fire for another machine's file: its paths
+    # legitimately do not exist on this machine. Without this, the criterion
+    # would re-introduce the cross-machine false positive (交接 §133.4).
+    foreign_payload = (
+        "> **时点** 2026-10-30（自检：他机文件）\n"
+        f"> @`{ANCHOR}` 本机发布区 `{absent}` **23** 个目录\n"
+    )
+    foreign_findings, _ = check_text(foreign_payload, "other-machine.md", owner=None)
+    if any(f["kind"].lower() == "self-ownership" for f in foreign_findings):
+        misreports += 1
+    else:
+        clean += 1
+
     good_findings, _ = check_text(good.read_text(encoding="utf-8"), good.name)
     if good_findings:
         misreports += 1
@@ -356,7 +518,10 @@ def selfcheck() -> int:
     # 布局结果只放上一行的人类可读输出；布局失配通过本函数的退出码阻断，不进这行 JSON。
     print("SELFCHECK " + json.dumps({"caught": caught, "clean": clean, "misreports": misreports},
                                     separators=(",", ":")))
-    return EXIT_OK if caught == 2 and clean == 1 and misreports == 0 and layout_misreports == 0 else EXIT_BLOCKING
+    # caught: count / path-exists / self-anchor / self-ownership
+    # clean:  the good fixture / anchored-self / another machine's file
+    return (EXIT_OK if caught == 4 and clean == 3 and misreports == 0
+            and layout_misreports == 0 else EXIT_BLOCKING)
 
 
 def main(argv: list[str]) -> int:

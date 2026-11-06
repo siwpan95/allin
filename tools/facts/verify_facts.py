@@ -17,12 +17,15 @@
 
 判据范围（详见门禁模块 docstring）
 ---------------------------------
-只判两类可机械判的断言，作用域是文件头部**日期最新的时点块**：
+只判三类可机械判的断言，作用域是文件头部**日期最新的时点块**：
 
 * ``path-exists`` —— 行内声称某机器绝对路径「现已存在 / 现存 / 仍在位」则必须存在；
   声称「现已不存在 / 已不存在 / 均不存在 / MISSING / 已删 / 已移除」则必须不存在。
 * ``count`` —— 绝对路径后跟 ``**N**`` 或 ``N 项`` 时，实际条目数必须等于 N。
   口径按单位切换：``项`` 数全部条目，无单位或 ``个仓`` / ``个目录`` 只数目录。
+* ``self-identity`` —— 「本机」自述必须标明机器名（``self-anchor``），
+  且其引用的绝对路径必须在本机存在（``self-ownership``，**仅判本机那一份文件**：
+  他机路径在本机本就不存在，判了就是跨机误报）。
 
 用法
 ----
@@ -131,9 +134,16 @@ def main(argv: list[str] | None = None) -> int:
 
     all_findings: list[dict] = []
     freshness: dict[str, str] = {}
+    me = gate.current_machine()
     for path in files:
         text = path.read_text(encoding="utf-8", errors="replace")
-        findings, stamp = gate.check_text(text, path.name)
+        # ``owner`` scopes the self-identity criterion's ownership half to the
+        # file of the machine running this CLI. For another machine's file it
+        # stays None -- that machine's paths legitimately do not exist here,
+        # and judging them locally is the cross-machine false positive that
+        # 交接 §133.4 recorded.
+        owner = path.stem if path.stem.lower() == me else None
+        findings, stamp = gate.check_text(text, path.name, owner=owner)
         all_findings.extend(findings)
         freshness[path.name] = gate.evaluate_staleness(stamp)
 
