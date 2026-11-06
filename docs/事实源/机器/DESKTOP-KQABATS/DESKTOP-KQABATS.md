@@ -1,5 +1,18 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-06 19:30（**@`DESKTOP-KQABATS` 分区文件夹化** —— 结构治理：本文件由 `机器/DESKTOP-KQABATS.md`
+>   迁入 `机器/DESKTOP-KQABATS/DESKTOP-KQABATS.md`（一机一目录，参照业界「一机一档」惯例；收敛口径见
+>   [`../../事实源/机器分区索引.md`](../../机器分区索引.md) §7 布局沿革）。本文件夹
+>   `E:\projects\allin\docs\事实源\机器\DESKTOP-KQABATS` 现已存在；`附属/`（一次性产物随档保管区）
+>   **本机暂无实物，未建**（空目录不入库，扩位判据见同目录 `README.md`）。
+>   迁移用 `git mv` 保留历史（R100），**未改任何事实取值**；仅因层级深一层，修正了文件内 4 处
+>   相对路径引用（`../机器分区索引.md` → `../../机器分区索引.md`；`./DESKTOP-8RSV60V.md` → `../DESKTOP-8RSV60V.md`；
+>   `./SIWPAN.md` → `../SIWPAN/SIWPAN.md`）。[`机器分区索引.md`](../../机器分区索引.md) **§5.1** 待修项由 @`SIWPAN` 于 2026-11-06 登记，本机**自迁自改**（铁律 6）。
+>   **迁移前复测**（[`机器分区索引.md`](../../机器分区索引.md) **§0** 归属纪律：改事实源前先复测）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **23** 个目录（逐目录实测 `.git` **23/23**）；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存** —— **7 项断言与 2026-11-03 记值一致，事实未漂移**。）
 > **时点** 2026-11-03 05:55（**@`DESKTOP-KQABATS` 跨机待修项自修 + 远端对齐** —— 用户指令「对齐远端，完成交接，完成后提交推送」：
 >   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
 >   本机发布区 `E:\projects\repos` **23** 个目录（逐目录 `Test-Path .git` 与 `git remote get-url origin` 全通，与 2026-11-02 记数一致，本轮无增减）；
@@ -38,7 +51,7 @@
 > **失效条件** 换机、加减盘、重装系统、换运行时版本后**立即失效**；每次涉及机器事实的动作前
 >   **现场复测**，不要照抄本文件。
 > **上位判据** [`../../规范/SPEC-006-机器与路径约定.md`](../../规范/SPEC-006-机器与路径约定.md)。
-> **本文件只记录 `DESKTOP-KQABATS` 这台**；其他机器见 [`../机器分区索引.md`](../机器分区索引.md) §1。
+> **本文件只记录 `DESKTOP-KQABATS` 这台**；其他机器见 [`../../机器分区索引.md`](../../机器分区索引.md) §1。
 
 ---
 
@@ -105,7 +118,7 @@
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **138** | 跨机共识值，唯一登记处见 [`../机器分区索引.md`](../机器分区索引.md) §5；2026-11-03 本机匿名 API 分页复核一致（page1=100 / page2=38 / page3=0） |
+| **远端仓总数**（Gitee `siwpan`） | **138** | 跨机共识值，唯一登记处见 [`../../机器分区索引.md`](../../机器分区索引.md) §5；2026-11-03 本机匿名 API 分页复核一致（page1=100 / page2=38 / page3=0） |
 | **本机发布区目录数** | **23** | `Get-ChildItem E:\projects\repos -Directory` |
 | 含 `.git` | **23 / 23** | 逐目录 `Test-Path .git` |
 | 含 `origin` | **23 / 23** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
@@ -176,7 +189,7 @@
 | SSH 前提 | `~/.ssh/id_ed25519`（ED25519，指纹 `SHA256:J3AOgf16/jQBC8tBkV7Uit+wwxQYveGOtxTjakQ+Q6w`）在 GitHub 已注册（key id `168363891`）；`ssh -T git@github.com` ⇒ **`Hi siwpan95!`**；`~/.ssh/config` 有 `github.com` 与 `ssh.github.com:443` 两段（`IdentitiesOnly yes`，原配置备份 `config.bak-20261101`） |
 
 - **作业口径（2026-11-01 用户指令，取代 2026-10-29 的「不补配」）**：该机**改为双核**，
-  与 [`./DESKTOP-8RSV60V.md`](./DESKTOP-8RSV60V.md) §9、[`./SIWPAN.md`](./SIWPAN.md) §7 **三台口径一致**。
+  与 [`../DESKTOP-8RSV60V.md`](../DESKTOP-8RSV60V.md) §9、[`../SIWPAN/SIWPAN.md`](../SIWPAN/SIWPAN.md) §7 **三台口径一致**。
   ⚠ 2026-10-29「该机不补配 GitHub pushurl」的交代**已被本条取代**（**逐机指令，不外推**——
   这是 `@SIWPAN` 在 `2a6da31` 里踩过并已写明的教训）。
 - ⚠ **git 语义坑（实测）**：remote 一旦配了**显式 pushurl**，`url` 就不再是推送目标
