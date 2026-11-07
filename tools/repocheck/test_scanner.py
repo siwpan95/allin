@@ -594,6 +594,35 @@ def test_summarize_and_payload(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# --profile：场景预设把「该跳过哪些规则」收编进工具（2026-11-07）
+# ---------------------------------------------------------------------------
+
+def test_profile_definitions_are_valid():
+    """预设引用的规则 id 必须真实存在（防规则增删后预设静默漂移）。"""
+    import cli
+    known = {rule.id for rule in scanner.RULES}
+    for name, spec in cli.PROFILES.items():
+        ids = set(spec["skip_rules"])
+        assert ids <= known, f"profile {name} 引用了不存在的规则 id：{ids - known}"
+
+
+def test_profile_parse_and_conflict(capsys):
+    """--profile 正常解析；与 --skip-rules 并存时显式拒绝（退出码 2）。"""
+    import cli
+    args = cli.parse([".", "--profile", "monorepo"])
+    assert args.profile == "monorepo"
+    assert args.skip_rules == ()          # parse 阶段不展开，展开发生在 run()
+    # 不存在的根：互斥检查在前、根检查在后——能走到「根不存在」（exit 3）
+    # 就证明 profile 已被接受（否则会在互斥处先退 2）。
+    rc = cli.run(cli.parse([".__no_such_root__", "--profile", "component"]))
+    assert rc == 3
+    # 并存 = 两套豁免口径，退出码 2（参数错误）
+    rc2 = cli.run(cli.parse([".", "--profile", "monorepo", "--skip-rules", "3"]))
+    assert rc2 == 2
+    assert "互斥" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
 # 真 git 仓库：验证 tag / 版本 / 提交次数语义
 # ---------------------------------------------------------------------------
 

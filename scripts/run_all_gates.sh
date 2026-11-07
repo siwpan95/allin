@@ -74,6 +74,18 @@ export DSH_GOVERNANCE_PYTHON="$PY"
 # 正确做法：由具体脚本自己 reconfigure stdio（见 check_gate_drift.py），别动全局环境。
 fail=0
 failures=()
+# SKIP 计数（2026-11-07）：SKIP ≠ 通过，但此前它只散落在各步的 echo 里，
+# 汇总段完全不可见 —— 「长期 SKIP 变默认绿灯」的评审意见正中这里。
+# note_skip() 统一三件事：echo 留痕、log_run 记账（标签口径与历史完全一致，
+# 不动 gate_metrics 的解析面）、skips[] 聚合供汇总行展示。
+skips=()
+
+note_skip() {
+  # $1=log 标签（沿用既有 <工具>:skip(<原因>) 口径） $2=人读原因
+  echo "    [SKIP] $2"
+  log_run "$1" 0 0
+  skips+=("$1")
+}
 
 # ---------------------------------------------------------------- 执行留痕
 # 门禁结果此前只往 stdout 一打就没了，算不出「逃逸率 / 证据新鲜度 / 例外燃尽」。
@@ -170,8 +182,8 @@ _run_repo_hygiene() {
   fi
   if [ -z "$repos_root" ] || [ ! -d "$repos_root" ]; then
     echo "==> $PY tools/repo_hygiene.py --all"
-    echo "    [SKIP] 未检测到发布区（无同级 repos/ 且未设 \$PROJECTS_ROOT）：无可扫仓，非卫生不合格"
-    log_run "repo_hygiene:skip(no-publish-area)" 0 0
+    note_skip "repo_hygiene:skip(no-publish-area)" \
+      "未检测到发布区（无同级 repos/ 且未设 \$PROJECTS_ROOT）：无可扫仓，非卫生不合格"
     return 0
   fi
   local has_repo=0
@@ -180,8 +192,8 @@ _run_repo_hygiene() {
   done
   if [ "$has_repo" -eq 0 ]; then
     echo "==> $PY tools/repo_hygiene.py --all"
-    echo "    [SKIP] 发布区 $repos_root 下没有任何 git 仓：无可扫对象，非卫生不合格"
-    log_run "repo_hygiene:skip(empty-publish-area)" 0 0
+    note_skip "repo_hygiene:skip(empty-publish-area)" \
+      "发布区 $repos_root 下没有任何 git 仓：无可扫对象，非卫生不合格"
     return 0
   fi
   run "$PY" tools/repo_hygiene.py --all
@@ -206,21 +218,24 @@ run "$PY" tools/gate/agent_parity.py
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
 run "$PY" preset/allin/refresh-gov-block.py --check
-run "$PY" tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error
+# monorepo 扫描口径已收编进 repocheck 本身（--profile，2026-11-07）：规则豁免
+# 语义由工具统一定义，不再在本脚本手写 --skip-rules（曾散落三处，属第二套口径的温床）。
+# 中间目录名单是本仓布局事实，仍由 --exclude 提供。
+run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error
 # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
 # packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
 # 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。
 # packages/ 当前只有一个包；新增包时要在这里补一行（或改成循环）。
 if [ -d packages/allin-governance ]; then
   run "$PY" tools/repocheck/main.py packages/allin-governance \
-      --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
+      --profile component --exclude src,tests --fail-on error
 fi
 
 # --- 2026-11-01 补齐三项此前未接进自动化的辅助门禁 ---
 # 起因：README §本仓自检口径承诺 A/B/C 三条，脚本却只跑了 A) 与 C)，
 # B) 自 2026-10-30 起一直红着没人发现。**门禁写了不跑 = 没有门禁**，故一并补入。
 # ① README §本仓自检口径 B)：A) 已把 tools/ 排除，故 tools/ 的子件在这里单独体检。
-run "$PY" tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error
+run "$PY" tools/repocheck/main.py tools/ --profile component --exclude gate --fail-on error
 # ② .ps1 编码：PowerShell 5.1 对无 UTF-8 BOM 的脚本按 ANSI 解码，
 #    中文变乱码并报一堆假语法错误（本机边界里那条"一边绿一边红"的编码指纹）。
 run "$PY" tools/gate/check_ps1_bom.py
@@ -248,9 +263,9 @@ run "$PY" tools/gate/check_gate_drift.py --selfcheck
 #    「没有可跑的对象」不是「北极星不合格」。依赖在位时则真跑、真判红。
 if [ ! -d "$ROOT/platform/node_modules/@allin/core" ] || [ ! -d "$ROOT/website/node_modules" ]; then
   echo "==> npm run smoke:e2e"
-  echo "    [SKIP] 两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
+  note_skip "smoke:e2e:skip(missing-node-deps)" \
+    "两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
   echo "    [SKIP] 装依赖后复跑：npm ci --prefix website && npm ci --prefix platform"
-  log_run "smoke:e2e:skip(missing-node-deps)" 0 0
 else
   run npm run smoke:e2e
 fi
@@ -291,12 +306,22 @@ if [ "${1:-}" = "--with-platform" ]; then
     run npm --prefix platform test
     run npm --prefix platform run harness
   else
-    echo "    [SKIP] 未找到 platform/ 目录"
-    log_run "platform:skip(no-platform-dir)" 0 0
+    note_skip "platform:skip(no-platform-dir)" "未找到 platform/ 目录"
   fi
 fi
 
 echo "----------------------------------------"
+# SKIP 聚合展示（2026-11-07）：让「没检查」在第一眼的汇总里就和「检查通过」分开，
+# 不需要人去翻分步输出或注释。SKIP 数量是治理盲区的直接指标——长期非零的 SKIP
+# 名单应当被定期审视（升 fixture / 收编口径 / 补环境），而不是默认绿灯。
+if [ "${#skips[@]}" -gt 0 ]; then
+  echo "SKIP ${#skips[@]} 项（not a pass，不计入失败）："
+  printf '  - %s\n' "${skips[@]}"
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    printf '::warning::门禁批含 %s 项 SKIP（skip ≠ pass）：%s\n' \
+      "${#skips[@]}" "$(gh_escape "$(printf '%s; ' "${skips[@]}")")"
+  fi
+fi
 if [ "$fail" -ne 0 ]; then
   echo "门禁未全绿，失败项："
   for f in "${failures[@]}"; do echo "  - $f"; done

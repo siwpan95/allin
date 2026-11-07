@@ -56,7 +56,8 @@ repocheck G:/repos
 | `--output PATH` / `-o` | 无 | 写入文件；省略则输出到标准输出 |
 | `--fail-on WHEN` | `none` | `none` / `any` / `error` / `warn` / `score:N` |
 | `--min-severity LEVEL` | `info` | 只显示该级别及以上，不影响评分 |
-| `--skip-rules IDS` | 无 | 逗号分隔的规则 id，临时豁免误报 |
+| `--skip-rules IDS` | 无 | 逗号分隔的规则 id，临时豁免误报；**与 `--profile` 互斥** |
+| `--profile NAME` | 无 | 场景预设，一次性设定该场景的 `--skip-rules`：`monorepo`（monorepo 仓根扫描，自动跳过规则 1,7——内部中间目录不是独立项目）与 `component`（monorepo 子件扫描，跳过规则 1,2,4,5——版本控制/README/依赖/LICENSE 由仓根统一持有）。被排除的目录名单属各仓布局事实，仍由 `--exclude` 提供 |
 | `--workers N` | `1` | 按项目并发数（IO 与子进程为主，4~8 通常最快） |
 | `--no-color` | 关 | 关闭 ANSI 颜色 |
 | `--dump-profile` | 关 | 打印规则清单与能力矩阵（不扫描） |

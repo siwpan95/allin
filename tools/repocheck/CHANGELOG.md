@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`--profile {monorepo,component}`**（2026-11-07）：把「什么场景该跳过哪些规则」
+  的口径收编进工具本身，不再散落在各仓跑批脚本里（allin 仓 `run_all_gates.sh`
+  曾三处手写 `--skip-rules`，属第二套口径的温床）。`monorepo` = 仓根扫描
+  （跳过规则 1 缺 .git、7 旧路径残留——内部中间目录不是独立项目）；`component`
+  = monorepo 子件扫描（跳过规则 1,2,4,5——版本控制/README/依赖/LICENSE 由
+  仓根统一持有）。与 `--skip-rules` 显式互斥（并存退出码 2），杜绝一次扫描
+  两套豁免口径。目录名单仍由 `--exclude` 提供——那是各仓布局事实，不进工具。
+  `run_all_gates.sh` 与 CI `gates.yml` 已同步切换为 profile 调用。
+
 ### Changed
 
 - **规则 3（无测试）扩口**（2026-10-30）：monorepo workspace 的嵌套

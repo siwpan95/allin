@@ -95,6 +95,13 @@ interface GateEntry {
   baseline: string | null
   selfcheck: boolean
   /**
+   * One-line "how to fix" shown by the aggregate when this gate fails.
+   * Declared next to the gate itself (2026-11-07) so the remediation hint
+   * ships with the registry instead of living in tribal memory. Optional:
+   * a missing hint degrades to a pointer at governance/RULES.md.
+   */
+  remediation?: string
+  /**
    * Where the gate may run. `local` (default) works offline against the working
    * tree; `push` needs authoritative remote evidence (`git ls-remote`). Tier
    * selection keeps `push` gates out so a pre-commit run never fails on a
@@ -314,6 +321,13 @@ function main(argv: string[]): number {
   const failed = outcomes.filter(outcome => outcome.code !== EXIT_OK)
   console.log(`governance: ${outcomes.length - failed.length}/${outcomes.length} gate(s) clean`
     + (failed.length === 0 ? '' : `; failed: ${failed.map(outcome => outcome.gate.id).join(', ')}`))
+  // 失败即给修法（2026-11-07）：评审意见「失败时该找谁/怎么修」——提示文本与门禁
+  // 同处 registry.json 声明，没有第三份清单可漂移。字段缺失时降级为 RULES.md 指针。
+  for (const outcome of failed) {
+    const hint = outcome.gate.remediation
+      ?? '（注册表未登记 remediation，属注册表欠账）见 governance/RULES.md 与 governance/exceptions.yml'
+    console.log(`governance: remediation ${outcome.gate.id}: ${hint}`)
+  }
   if (platformSkipped.length > 0) {
     // 单独一行，且明写 SKIPPED (not a pass) —— 不让「跳过的」混进「干净的」分子里。
     console.log(`governance: SKIPPED (not a pass) on ${HOST_PLATFORM}: `

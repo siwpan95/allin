@@ -22,7 +22,8 @@
         "git"
       ],
       "baseline": null,
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "门禁契约自证失败 = registry.json / RULES.md / 门禁 --help 三者漂移。按报错条目补齐缺失字段或开关；新增门禁先读 RULES.md §二契约再登记。"
     },
     {
       "id": "g01-paths",
@@ -45,7 +46,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g01-paths.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "先分「事实过期」还是「门禁没看见」：路径确已失效→改正文指向现行位置；属文档合法引用→按 classify 口径补豁免标记或落 exceptions.yml；勿为绿灯放宽门禁判定。"
     },
     {
       "id": "g03-credentials",
@@ -68,7 +70,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g03-credentials.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "真密钥→立即作废轮换、收进受管库（如 ~/.dsvault），再清索引痕迹；合成样本/文档引用→行尾加 gov-credentials: allow 文档化豁免标记（拆串书写无效；git grep --cached 扫暂存区，改完先 git add 再验）。"
     },
     {
       "id": "g04-push-evidence",
@@ -94,7 +97,8 @@
       ],
       "baseline": "governance/baseline/g04-push-evidence.txt",
       "selfcheck": true,
-      "context": "push"
+      "context": "push",
+      "remediation": "DIVERGED 阻断：先 fetch 定性远端改动，严禁直接强推；LOCAL_AHEAD→推送收口；REMOTE_AHEAD→先拉入对账。网络不可达/补取失败记 SKIP（不是通过），恢复后复跑。"
     },
     {
       "id": "g05-hygiene",
@@ -120,7 +124,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g05-hygiene.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "被跟踪的产物/字节码→git rm --cached + 补 .gitignore 覆盖面；缺根三件套→补 LICENSE/README/.gitignore；超限大文件→先对账必要性再移出索引；归档目录补 README/MANIFEST。"
     },
     {
       "id": "g06-numbering",
@@ -142,7 +147,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g06-numbering.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "序号版本文件从最小号起补齐断档；中英配对文档按原文逐项对齐列表形状（列表数/编号标签/条目数），代码围栏内不计。"
     },
     {
       "id": "g07-doc-freshness",
@@ -163,7 +169,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g07-doc-freshness.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "在文档开头 20 行内补「时点」；自称快照的另补失效或「以…为准」条款。历史件按「订正块只增不改史实」补记，不回改原文。"
     },
     {
       "id": "g08-deletion-evidence",
@@ -184,7 +191,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g08-deletion-evidence.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "补「功能面 × 接任者」对照表（表头标记 + ≥2 行）证明冗余退役三查过；确属无接任者任一面→不可删，先恢复或放缓；显式豁免用 gov-deletion: allow 并留痕。"
     },
     {
       "id": "g09-python-hygiene",
@@ -205,7 +213,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g09-python-hygiene.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "文本 I/O（open/read_text/write_text）显式 encoding=；盘符路径改 raw 字符串或正斜杠（反斜杠+d / 反斜杠+a 这类转义伪影）；-W error::SyntaxWarning 编译红→修语法。存量冻结在 baseline 只拦新增，修新不修旧。"
     },
     {
       "id": "g10-failloud-probe",
@@ -227,7 +236,8 @@
         "git"
       ],
       "baseline": null,
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "某门禁喂必败 root 仍静默绿/静默失败：查该门禁的异常吞咽与退出码路径——门禁必须失败得响亮（非 0 退出 + 报错信息）；修完跑其 --selfcheck 回归。"
     },
     {
       "id": "g11-undef-names",
@@ -247,7 +257,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g11-undef-names.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "报「读了但全文件未定义」：补 import/定义或修正拼写；动态注入导致的误报→在门禁夹具/基线留档，勿裸豁免。"
     },
     {
       "id": "g12-integrity",
@@ -268,7 +279,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g12-integrity.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "HEAD 不可解析或对象不可读属 git 池/盘健康问题：先 git fsck 定位（--deep 追加 connectivity-only）；盘级故障（事件日志/脏位）明确不在本门禁，另有归属。"
     },
     {
       "id": "g13-docs-only",
@@ -289,7 +301,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g13-docs-only.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "docs/ 出现白名单外扩展名/脚本/二进制：移到正确落点（scripts/、tools/）；确属文档形态的例外→先论证再扩白名单；可执行位在 Windows 无意义，检出侧去掉该位。"
     },
     {
       "id": "g14-preset",
@@ -312,7 +325,8 @@
       ],
       "baseline": null,
       "selfcheck": true,
-      "profileProbe": true
+      "profileProbe": true,
+      "remediation": "治理段漂移：先跑 preset/allin/refresh-gov-block.py --check 定位载体，canonical 改动需人工裁决后 --write 修复派生副本；profile 探针红→部署面载体缺失/悬空，先给载体再谈绿灯（勿放宽判定）。"
     },
     {
       "id": "g15-docs-contract",
@@ -333,7 +347,8 @@
         "python>=3.9"
       ],
       "baseline": "governance/baseline/g15-docs-contract.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "按 docs_index.py --list-all 的阻断码（D1–D7）逐条修：登记索引/补头部字段/修 ASCII 别名/补卷号覆盖区间。docs 缺 INDEX.md 时是 SKIP 不是通过——先建索引。"
     },
     {
       "id": "g16-skill-preset-parity",
@@ -355,7 +370,8 @@
         "python>=3.9"
       ],
       "baseline": "governance/baseline/g16-skill-preset-parity.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "三载体（SKILL.md / allin.patch.yml / agent.cordis.yml）治理面必须同源：以 canonical 治理段为准改偏的那侧；核心事实（命令/路径）三侧同名出现；提到的门禁 id 必须在 registry.json 真实存在。"
     },
     {
       "id": "g17-registry",
@@ -377,7 +393,8 @@
         "git"
       ],
       "baseline": "governance/baseline/g17-registry.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "发布区有仓未登记：补 registry.json 登记项（id 必须等于文件名）；确属豁免→registry-known-gaps.txt 写明理由声明（未登记又未声明即阻断）；生命周期标签只报告不阻断。"
     },
     {
       "id": "g18-exceptions",
@@ -398,7 +415,8 @@
         "PyYAML"
       ],
       "baseline": "governance/baseline/g18-exceptions.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "例外必须九字段齐全（id/kind/gate/target/reason/compensating/approver/expires/status）：expires 过期仍 open → 复核后续期或转 closed；新接受的先登记再豁免，例外是显式可审计的。"
     },
     {
       "id": "g19-docs-refs",
@@ -418,7 +436,8 @@
         "python>=3.9"
       ],
       "baseline": "governance/baseline/g19-docs-refs.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "文档断言失败 = 命令/脚本/路径不存在：改正文指向现行位置；历史记录按「只增不改史实」补订正块；已废弃规范置头部状态「已废弃」整体免判；勿靠删断言灭红。"
     },
     {
       "id": "g20-facts",
@@ -437,7 +456,8 @@
         "python>=3.9"
       ],
       "baseline": "governance/baseline/g20-facts.txt",
-      "selfcheck": true
+      "selfcheck": true,
+      "remediation": "实测后只改当前机器自己的分区文件（追加新时点块，历史时点块不判不改）；他机分区按铁律 6 留交接请求，不代改；计数口径按单位：项=全部条目，个仓/个目录=只数目录。"
     }
   ]
 }

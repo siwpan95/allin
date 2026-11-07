@@ -25,6 +25,26 @@ from rulebase import RANK
 # 参数类型校验
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# 命名预设（profile）：把「什么场景该跳过哪些规则」的口径收编进工具本身。
+# 此前这套口径散落在各仓的跑批脚本里（如 allin 仓 scripts/run_all_gates.sh
+# 曾三处手写 --skip-rules），脚本一多就会漂移出第二套口径。
+# 注意边界：profile 只收编**规则语义**；被排除的目录名单（如 monorepo 的
+# 中间目录）是各仓布局事实，仍由调用方经 --exclude 提供。
+PROFILES: dict[str, dict[str, object]] = {
+    "monorepo": {
+        "skip_rules": (1, 7),
+        "doc": "monorepo 仓根扫描：内部中间目录不是独立项目 —— 规则 1（缺 .git）"
+               "与 7（旧仓库路径残留）必然假阳性；中间目录名单用 --exclude 给出",
+    },
+    "component": {
+        "skip_rules": (1, 2, 4, 5),
+        "doc": "monorepo 子件扫描（子目录本身不是仓根）：版本控制 / README / "
+               "依赖声明 / LICENSE 由仓根统一持有，规则 1 / 2 / 4 / 5 不适用",
+    },
+}
+
+
 def _fail_on(value: str) -> str:
     """校验 ``--fail-on`` 取值。"""
     spec = value.strip().lower()
@@ -101,6 +121,7 @@ EPILOG = """\
   repocheck . --fail-on score:8.0    任一项目低于 8 分即失败
   repocheck . --min-severity warn    只显示 warn 及以上
   repocheck . --skip-rules 27,28     临时豁免低价值规则
+  repocheck . --profile monorepo     monorepo 仓根扫描（自动跳过规则 1,7）
   repocheck --dump-profile --json    查看规则清单与可选依赖能力
 """
 
@@ -137,6 +158,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--min-severity", type=_severity, default="info", metavar="LEVEL",
         help="只显示该级别及以上（info / warn / error，默认 info）")
+    parser.add_argument(
+        "--profile", choices=sorted(PROFILES), default=None, metavar="NAME",
+        help="场景预设，一次性设定该场景的 --skip-rules（与 --skip-rules 互斥）："
+             + "; ".join(f"{name}={PROFILES[name]['doc']}" for name in sorted(PROFILES)))
     parser.add_argument(
         "--skip-rules", type=_rule_ids, default=(), metavar="IDS",
         help="逗号分隔的规则 id，临时豁免误报")
@@ -254,6 +279,16 @@ def run(args: argparse.Namespace) -> int:
     """按解析好的参数执行，返回退出码。"""
     # 冻结包 / GBK 控制台都可能让 stdout 用的是本地编码，先统一成 UTF-8
     _ensure_streams()
+
+    # profile 与 --skip-rules 互斥：两者并存 = 同一次扫描出现两套豁免口径，
+    # 事后无人说得清哪份是准的。显式拒绝，逼调用方二选一。
+    if getattr(args, "profile", None) and args.skip_rules:
+        print("错误：--profile 与 --skip-rules 互斥（二选一，避免两套豁免口径并存）",
+              file=sys.stderr)
+        return 2
+    # 防御：parse() 之外的调用方（GUI、嵌入）可能不携带 profile 字段
+    if getattr(args, "profile", None):
+        args.skip_rules = tuple(PROFILES[args.profile]["skip_rules"])  # type: ignore[assignment]
 
     if args.dump_profile:
         profile = scanner.dump_profile()

@@ -76,7 +76,7 @@ jobs:
       - name: 本仓 monorepo 自检
         run: |
           .venv/bin/python tools/repocheck/main.py . \
-            --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error
+            --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error
 
       # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故一并排除；
       # packages/ 内部的单个包按「子件」口径单独体检（下一行）；website/ 另起 website-smoke
@@ -84,7 +84,7 @@ jobs:
       - name: 可安装包自检（packages/allin-governance）
         run: |
           .venv/bin/python tools/repocheck/main.py packages/allin-governance \
-            --exclude src,tests --skip-rules 1,2,4,5 --fail-on error
+            --profile component --exclude src,tests --fail-on error
 
       - name: 可安装包单测（allin-governance CLI 包装边界 + init 边界，含覆盖率）
         run: |
