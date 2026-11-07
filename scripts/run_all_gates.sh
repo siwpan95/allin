@@ -202,6 +202,10 @@ _run_repo_hygiene() {
 echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
+# 门禁工具自身回归（selfcheck-all）：证明「每道门禁仍能检出问题」，堵住
+# 「门禁被改坏却 CI 常绿」的盲区（S2 · 2026-11-08 审查闭环）。与 check:governance
+# 同源调用链（run.ts --selfcheck-all），不引入新依赖、不触外部资源。
+run npm run check:governance:selfcheck
 run "$PY" tools/gate/docs_index.py
 # docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。
@@ -262,10 +266,20 @@ run "$PY" tools/gate/check_gate_drift.py --selfcheck
 #    干净检出里它们不存在（被 .gitignore 忽略）⇒ 此时记 SKIP，不计入失败 ——
 #    「没有可跑的对象」不是「北极星不合格」。依赖在位时则真跑、真判红。
 if [ ! -d "$ROOT/platform/node_modules/@allin/core" ] || [ ! -d "$ROOT/website/node_modules" ]; then
-  echo "==> npm run smoke:e2e"
-  note_skip "smoke:e2e:skip(missing-node-deps)" \
-    "两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
-  echo "    [SKIP] 装依赖后复跑：npm ci --prefix website && npm ci --prefix platform"
+  if [ "${ALLIN_E2E_REQUIRE_DEPS:-}" = "1" ]; then
+    # 强约束模式：本环境声明「北极星必须真跑」，缺依赖即失败（而非静默 SKIP）。
+    # 用于北极星失明不可接受的宿主/计划任务环境（S3 · 2026-11-08 审查闭环）。
+    echo "==> npm run smoke:e2e（ALLIN_E2E_REQUIRE_DEPS=1：缺依赖按失败处理）"
+    run npm run smoke:e2e
+  else
+    # 默认降级：缺依赖记 SKIP（not a pass），不计入失败——「没有可跑的对象」
+    # 不是「北极星不合格」。SKIP 已在汇总行显式可见（S3 同次闭环）。
+    echo "==> npm run smoke:e2e"
+    note_skip "smoke:e2e:skip(missing-node-deps)" \
+      "两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
+    echo "    [SKIP] 装依赖后复跑：npm ci --prefix website && npm ci --prefix platform"
+    echo "    [SKIP] 强约束环境可设 ALLIN_E2E_REQUIRE_DEPS=1 让缺依赖直接失败"
+  fi
 else
   run npm run smoke:e2e
 fi
@@ -292,6 +306,15 @@ run "$PY" tools/gate/check_arch_assets.py
 #    每次跑批顺带证明「月度幂等守卫 / 表内自洽 / 发布区软观测」没被改坏。
 #    门禁写了不跑 = 没有门禁（第五例）。
 run "$PY" tools/deploy/monthly_audit.py --selfcheck
+# 备份恢复演练（B3 闭环 · 2026-11-08 审查）：证明备份可还原、数据耐久性可验证。
+# 仅 Windows（有 PowerShell）真跑；其余平台缺解释器记 SKIP（not a pass），
+# 与既有「缺依赖即 SKIP」纪律一致，不强行跨平台。
+if command -v powershell.exe >/dev/null 2>&1; then
+  run powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/deploy/test_restore_drill.ps1
+else
+  note_skip "restore-drill:skip(no-powershell)" \
+    "当前平台无 PowerShell，无法跑备份恢复演练（Windows 专属，月度随 monthly-audit 跑）"
+fi
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"

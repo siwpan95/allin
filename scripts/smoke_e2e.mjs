@@ -358,6 +358,39 @@ async function checkpointVerifyMount() {
     false, Date.now() - t);
 }
 
+/**
+ * 北极星状态契约（S1 闭环，2026-11-08 审查）：断言核心 `allin status --json --strict`
+ * 退出码 0 且 JSON 含三面键（platform/gates/orchestration）+ corrupt 数组。
+ * 这是头号特性「三面贯通状态」的机器消费契约——此前 6 检查点从不调它（盲区），
+ * 头号特性回归不可见；此检查点把它变成北极星的一部分。
+ */
+async function checkpointStatus() {
+  const t = Date.now();
+  const r = await runCmd(PY, ['allin_cli.py', 'status', '--json', '--strict'], { timeoutMs: 30_000, env: PY_ENV });
+  if (r.code !== 0) {
+    step('STATUS', '核心 allin status --json --strict 契约', false,
+      `status 面 exit=${r.code} ${(r.err || r.out).split('\n')[0] || '无输出'}`.slice(0, 160),
+      false, Date.now() - t);
+    return;
+  }
+  let j;
+  try {
+    j = JSON.parse(r.out);
+  } catch (e) {
+    step('STATUS', '核心 allin status --json --strict 契约', false,
+      `status 面：stdout 非 JSON（${String(e).slice(0, 100)}）out=${(r.out || '').slice(0, 80)}`,
+      false, Date.now() - t);
+    return;
+  }
+  const keys = ['platform', 'gates', 'orchestration', 'corrupt'];
+  const missing = keys.filter((k) => !(k in j));
+  const ok = missing.length === 0 && Array.isArray(j.corrupt);
+  step('STATUS', '核心 allin status --json --strict 契约', ok,
+    ok ? 'exit 0 · 三面键齐（platform/gates/orchestration）+ corrupt[]'
+       : `status 面：缺键 ${missing.join(',') || 'corrupt 非数组'}`,
+    false, Date.now() - t);
+}
+
 async function main() {
   console.log('\n  allin · 端到端三面冒烟（smoke:e2e）');
   console.log('  ----------------------------------------------------------');
@@ -383,6 +416,7 @@ async function main() {
 
   await checkpointCliFront();
   await checkpointKernelProbe();
+  await checkpointStatus();
   await checkpointPortal();
   await checkpointWebsite();
   await checkpointG21();

@@ -72,6 +72,21 @@ stages:
         strategy:
           retry: "0"
 
+      # 2026-11-08 审查闭环 B1：platform 集成/接口测试接入 Gitee Go 流水线
+      # （与 GitHub 侧 platform-test job 同口径，两侧不允许漂移）。
+      - step: build@nodejs
+        name: platform_test
+        displayName: 平台集成/接口测试（node --test）
+        nodeVersion: "22"
+        commands:
+          - npm ci --prefix platform
+          - npm --prefix platform test
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
       - step: build@python
         name: check_docs_index
         displayName: 文档别名 + 文档索引契约（D6 完整判）
