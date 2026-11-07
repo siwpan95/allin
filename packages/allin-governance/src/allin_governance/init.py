@@ -168,6 +168,28 @@ BASELINE_HEADER = """# Baseline ratchet for this gate. One finding key per line.
 #   python tools/gate/governance/gates/{gate}.py --no-baseline --list-all
 """
 
+#: 2026-11-07 凭据门禁 F-01 加固后的**必需生成物**：g03-credentials 不再无条件
+#: 相信被扫描内容里的 `gov-credentials: allow` 注解，只认这份受评审的仓内白名单。
+#: 套件自带的门禁脚本含合成自检夹具（实测 g03_credentials.py 有 12 处会被自己
+#: 判红），init 若不生成这份白名单，新仓第一天就是一屏红 —— 且红的正是门禁自己。
+#: 路径是 g03 里写死的常量，不能挪到套装目录内。
+ANNOTATION_ALLOWLIST_REL = "scripts/secret-scan-allowlist.txt"
+ANNOTATION_MARKER = "gov-credentials: allow"
+
+ANNOTATION_ALLOWLIST_HEADER = """# 内联豁免注解白名单 —— 凭据门禁与 CI 增量扫描共用同一份配置
+# ==========================================================================
+# 只有列在本文件的仓库自有夹具文件里，内联豁免注解才会让 g03 跳过该行；
+# 注解出现在其它文件一律不豁免，且 CI 增量扫描会直接判失败（fail closed）。
+# 这是受评审的仓内配置：新增夹具请先在这里登记，而不是把声明写进提交内容。
+#
+# 维护规则：一行一个仓相对路径（POSIX 分隔符）；`#` 开头为注释，空行忽略。
+# 删除条目之前先确认该文件内确实不再有需要豁免的合成夹具。
+#
+# 下面一段由 allin-governance init 按本次出厂套件的实际内容推导；
+# 升级骨架时若新增夹具，只补登记缺失项，不会覆盖你自己加的条目。
+
+"""
+
 
 # --------------------------------------------------------------------------- #
 # 套件来源
@@ -446,6 +468,57 @@ def _registry_subset(source: Path, gate_ids: tuple[str, ...]) -> dict:
     }
 
 
+def _annotation_allowlist_entries(suite: Path, gate_ids: tuple[str, ...],
+                                  generated: dict[str, str]) -> list[str]:
+    """从本次**实际出厂**的套件内容推导需要登记白名单的文件。
+
+    不手写清单：手写一份等于把「哪些门禁脚本带合成夹具」再实现一次，门禁改了
+    而清单没改就会漂移，而漂移的形态恰好是「init 完第一件事就是修门禁」。
+    套件源脚本与生成物文本都查一遍，规则由内容决定、不由记忆决定。
+    """
+    root = SUITE_RELATIVE.as_posix()
+    entries: set[str] = set()
+    for gate_id in gate_ids:
+        name = _gate_script_name(gate_id)
+        source = suite / "gates" / name
+        if ANNOTATION_MARKER in source.read_text(encoding="utf-8", errors="replace"):
+            entries.add(f"{root}/gates/{name}")
+    for relative, text in generated.items():
+        if ANNOTATION_MARKER in text:
+            entries.add(relative)
+    return sorted(entries)
+
+
+def _merge_annotation_allowlist(target: Path, plan: Plan, entries: list[str]) -> None:
+    """生成/合并骨架的凭据注解白名单。
+
+    它是**受评审的仓库配置**，不是套装快照：`--force` 也不许整体覆盖，否则会抹掉
+    使用者自己登记的夹具 —— 那等于替别人改动凭据豁免面。与 `.gitignore` 同一口径：
+    缺失时创建，已存在时只追加缺的条目。
+    """
+    rel = ANNOTATION_ALLOWLIST_REL
+    path = target / rel
+    if not path.exists():
+        plan.write(rel, ANNOTATION_ALLOWLIST_HEADER + "\n".join(entries) + "\n", force=False)
+        return
+    text = path.read_text(encoding="utf-8", errors="replace")
+    registered = {line.strip() for line in text.splitlines()
+                  if line.strip() and not line.strip().startswith("#")}
+    missing = [entry for entry in entries if entry not in registered]
+    if not missing:
+        plan.kept.append(rel)
+        # 这份配置在 GENERATED.json 之前生成，会进「快照可核对」的清单。
+        # 二次 --force 时若只记 kept、不回写哈希，清单就会少一项 ⇒ 清单本身
+        # 被重写 ⇒ 「升级」与「什么都没变」在 git 里长得一样（幂等性破口）。
+        plan.hashes[rel] = _sha256(path)
+        return
+    merged = (text.rstrip("\n") + "\n"
+              + "\n# --- allin-governance：本次出厂套件新增的夹具（原有条目未动）---\n"
+              + "\n".join(missing) + "\n")
+    plan.write(rel, merged, force=True)
+    plan.notes.append(f"{rel} 追加了 {len(missing)} 条自带夹具登记（原有条目未动）")
+
+
 def _merge_gitignore(target: Path, plan: Plan) -> None:
     """补齐 `.gitignore` 的凭据面。
 
@@ -617,10 +690,12 @@ def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | N
 
     # 2) 注册表与规则映射
     registry = _registry_subset(suite, gate_ids)
+    rules_text = rules_markdown(version, generated_at, gate_ids)
+    readme_text = suite_readme(version, generated_at, gate_ids)
     plan.write(f"{root}/registry.json",
                json.dumps(registry, ensure_ascii=False, indent=2) + "\n", force=force)
-    plan.write(f"{root}/RULES.md", rules_markdown(version, generated_at, gate_ids), force=force)
-    plan.write(f"{root}/README.md", suite_readme(version, generated_at, gate_ids), force=force)
+    plan.write(f"{root}/RULES.md", rules_text, force=force)
+    plan.write(f"{root}/README.md", readme_text, force=force)
     if with_exceptions:
         plan.write(f"{root}/exceptions.yml", EXCEPTIONS_TEMPLATE, force=force)
 
@@ -630,6 +705,13 @@ def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | N
             "已带 g18-exceptions：它需要 PyYAML（pip install pyyaml）。"
             "例外台账在 tools/gate/governance/exceptions.yml，空表即全部通过"
         )
+
+    # 2c) 凭据注解白名单（F-01 之后是门禁能跑绿的前提，不是可选装饰）。
+    #     必须在 GENERATED.json 之前写，好让这份配置也进「快照可核对」的清单。
+    annotation_entries = _annotation_allowlist_entries(
+        suite, gate_ids, {f"{root}/RULES.md": rules_text, f"{root}/README.md": readme_text}
+    )
+    _merge_annotation_allowlist(target, plan, annotation_entries)
 
     # 3) 生成清单：把「快照 vs 上游」的差异变成可逐字节判的事实
     manifest = {

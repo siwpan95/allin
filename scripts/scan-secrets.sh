@@ -38,6 +38,25 @@ cd "$ROOT" || exit 1
 ALLOWLIST="$ROOT/scripts/secret-scan-allowlist.txt"
 
 # ---------------------------------------------------------------------------
+# Windows / MSYS2 路径归一（2026-11-07 实测修复）
+#
+# Git Bash 下 TMPDIR 常是 Windows 原生路径（如 C:\Users\<user>\AppData\Local\Temp，仅示例），
+# `mktemp -d "${TMPDIR:-/tmp}/xxx"` 会把它原样拼进返回值 ⇒ 混合分隔符路径。
+# 这类路径经 `awk -v var="$path"` 传入时，awk 会**解析赋值里的反斜杠转义序列**：
+# `\U` `\p` `\A` `\L` `\T` 被吞成 `U` `p` `A` `L` `T`，于是
+# `print >> abuse` 重定向到 `C:UserspswAppDataLocalTemp/...` 而失败。
+# 两层防护：① 临时目录统一转成 POSIX 路径；② 路径改经 ENVIRON 传入 awk
+# （ENVIRON 不做转义解析，即便将来仍有反斜杠也不会被吞）。
+# ---------------------------------------------------------------------------
+posix_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -u "$1"
+  else
+    printf '%s' "$1"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # 把 `git diff -U0` 折成「只含新增行」的扫描文件，同时记录越权的注解。
 #   $1 raw diff   $2 输出（新增行）   $3 输出（越权注解所属文件，一行一个）
 #
@@ -48,8 +67,12 @@ filter_added_lines() {
   local raw="$1" added="$2" abuse="$3"
   : > "$added"
   : > "$abuse"
-  awk -v allowlist="$ALLOWLIST" -v abuse="$abuse" '
+  # 不用 -v：awk 会解析 -v 赋值里的反斜杠转义序列，Windows 路径会被改写。
+  # ENVIRON 拿到的是未经解释的原文，重定向/读文件时按字面量使用。
+  ALLIN_ALLOWLIST="$ALLOWLIST" ALLIN_ABUSE="$abuse" awk '
     BEGIN {
+      allowlist = ENVIRON["ALLIN_ALLOWLIST"]
+      abuse = ENVIRON["ALLIN_ABUSE"]
       while ((getline rec < allowlist) > 0) {
         sub(/\r$/, "", rec)
         if (rec == "" || rec ~ /^[[:space:]]*#/) continue
@@ -90,7 +113,8 @@ filter_added_lines() {
 # ---------------------------------------------------------------------------
 selftest() {
   local t raw added abuse fail=0
-  t="$(mktemp -d "${TMPDIR:-/tmp}/allin-secrets-selftest-XXXXXX")"
+  t="$(posix_path "$(mktemp -d "${TMPDIR:-/tmp}/allin-secrets-selftest-XXXXXX")")" || return 3
+  [ -n "$t" ] || { echo 'ENV ERROR: 无法创建自检临时目录' >&2; return 3; }
   raw="$t/diff.raw"; added="$t/added-lines.txt"; abuse="$t/abuse.txt"
   cat > "$raw" <<'DIFF'
 diff --git a/src/wallet.js b/src/wallet.js
@@ -178,7 +202,8 @@ fi
 # 传目录是它最标准的用法，避开不同版本对「单文件 source」的行为差异。
 # 关键：payload/ 里**只放过滤后的 added-lines.txt**；raw diff 与越权记录放在
 # 外层，绝不进入 gitleaks 的扫描面（F-02）。
-SCAN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/allin-secrets-XXXXXX")"
+SCAN_DIR="$(posix_path "$(mktemp -d "${TMPDIR:-/tmp}/allin-secrets-XXXXXX")")"
+[ -n "$SCAN_DIR" ] || { echo "ENV ERROR: 无法创建扫描临时目录" >&2; exit 3; }
 PAYLOAD="$SCAN_DIR/payload"
 RAW="$SCAN_DIR/diff.raw"
 ABUSE="$SCAN_DIR/annotation-abuse.txt"

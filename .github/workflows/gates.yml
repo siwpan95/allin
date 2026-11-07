@@ -20,6 +20,12 @@
 #   5. Windows job 补跑 g20-facts —— 那一道只有 Windows 能判，且它判的正是
 #      「本机事实声称与磁盘是否一致」，在 Windows runner 上才有本机磁盘。
 #      这是本仓唯一「两套 runner 各跑一部分」的分工，两边合起来才是 20 道。
+#
+# 2026-11-07 运行时升级：所有 action 钉迁到 node24 版（checkout v7.0.1 /
+# setup-node v7.1.0 / setup-python v7.1.0）。旧 v4/v5 钉跑的是已弃用的
+# Node.js 20 runtime，会造成间歇性基础设施失败。SHA 与官方 tag、dependabot
+# PR #7/#11/#12 三方核对一致；Pages 侧的配套升级见 deploy-pages.yml。
+# 升级不改任何判据：`fetch-depth: 0`、`node-version`、`python-version` 均保持原值。
 
 name: governance-gates
 
@@ -42,15 +48,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20   # 2026-11-07 加固：防止卡死的步骤无限占用 runner
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0   # g12-integrity 要解析 HEAD 可达对象；浅克隆会让它判不全
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: '22'
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: '3.13'
 
@@ -117,15 +123,15 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 25   # Windows runner 启动与 npm install 更慢，留足但不设无限
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: '22'
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: '3.13'
 
@@ -193,11 +199,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: '22'
 
@@ -233,7 +239,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0   # 需要 PR base sha 可达，才算得准增量
 

@@ -14,8 +14,10 @@
    `--force` 的语义是升级套装，不是替人重写文档；
 6. 已有 `package.json` / `.gitignore` 时**合并**而不是取代。
 
-不测「跑完门禁是不是绿的」：那需要 Node，属于 CI 的端到端步骤
+不测「跑完 14 道门禁是不是绿的」：聚合器需要 Node，属于 CI 的端到端步骤
 （`.github/workflows/gates.yml` 的 `scaffold` job），放这里只会让单测依赖 Node。
+**例外**：`g03-credentials` 这道单跑是纯 Python，且 2026-11-07 的缺陷正是
+「init 完骨架被自己带的夹具判红」—— 这条回归必须留在单测里，不能只靠 CI。
 
 跑法：``python -m pytest packages/allin-governance -q``
 """
@@ -213,6 +215,54 @@ def test_without_flag_g18_stays_out(tmp_path: Path) -> None:
     )
     assert "g18-exceptions" not in [entry["id"] for entry in payload["gates"]]
     assert not (tmp_path / "tools/gate/governance/exceptions.yml").exists()
+
+
+def _load_credentials_gate():
+    """从**本次 init 实际用的套件目录**加载 g03，避免测到另一份副本。"""
+    import importlib
+
+    suite = init_module.suite_dir()
+    sys.path.insert(0, str(suite / "gates"))
+    return importlib.import_module("g03_credentials")
+
+
+def test_scaffold_ships_annotation_allowlist(tmp_path: Path) -> None:
+    """F-01 之后 g03 只认仓内白名单；init 必须把自带夹具登记进去。
+
+    少了这份文件，`g03_credentials.py` 里 12 处合成自检夹具会被骨架自己的
+    凭据门禁判红 —— 实测 cbb7b86 之后 `init` 完就是一屏红。
+    """
+    assert _run(tmp_path) == 0
+    allowlist = (tmp_path / init_module.ANNOTATION_ALLOWLIST_REL).read_text(encoding="utf-8")
+    registered = {line.strip() for line in allowlist.splitlines()
+                  if line.strip() and not line.strip().startswith("#")}
+    assert "tools/gate/governance/gates/g03_credentials.py" in registered
+    # 白名单必须覆盖**所有**带注解的出厂脚本，不能只修当下这一个。
+    gate = _load_credentials_gate()
+    for name in (init_module.SUITE_RELATIVE / "gates").glob("*.py"):
+        if gate.ANNOTATION in name.read_text(encoding="utf-8", errors="replace"):
+            assert name.as_posix() in registered, name.as_posix()
+
+
+def test_scaffold_credentials_gate_is_green(tmp_path: Path) -> None:
+    """端到端判据（纯 Python 单跑）：init 完的骨架不能被自己的夹具判红。"""
+    assert _run(tmp_path) == 0
+    gate = _load_credentials_gate()
+    report = gate.scan(tmp_path, machine_roots=[])
+    assert not report.findings, report.render()
+
+
+def test_annotation_allowlist_merge_keeps_user_entries(tmp_path: Path) -> None:
+    """白名单是受评审的仓库配置：`--force` 也不许覆盖使用者自己的条目。"""
+    path = tmp_path / init_module.ANNOTATION_ALLOWLIST_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("# 我自己的配置\nmy/own/fixture.py\n", encoding="utf-8")
+
+    assert _run(tmp_path, "--force") == 0
+    text = path.read_text(encoding="utf-8")
+    assert "my/own/fixture.py" in text
+    assert "tools/gate/governance/gates/g03_credentials.py" in text
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 0
 
 
 def test_verify_reports_clean_snapshot(tmp_path: Path) -> None:
