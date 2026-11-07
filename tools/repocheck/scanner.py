@@ -40,7 +40,7 @@ from rules_misc import RULES_MISC
 from rules_vcs import RULES_VCS
 from scanctx import ProjectContext
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 SCHEMA_VERSION = 2
 
 #: 默认排除的目录名（不扫描、不识别为项目、检查项目时跳过）。

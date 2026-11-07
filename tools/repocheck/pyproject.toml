@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repocheck"
-version = "2.0.0"
+version = "2.1.0"
 description = "离线仓库体检：30 条规则检查工程卫生并给出 0-10 健康分"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -27,6 +27,7 @@ __all__ = ["__version__"]
 #: 仍是**占位版本系列**（REC-AU-21 D1.3），版本递增对应可复述的差异：
 #:   a0 占住名字；a1 修掉 cp1252 控制台崩溃（见 `_stdio`）；
 #:   a2 加 `verify` 与 `init --with-exceptions`，并让 sdist 变成自包含（物化构建）；
-#:   a3 补收 a2 wheel 缺失的 4 份运行时事实源（parity 对账收口）+ 门禁判据加固。
+#:   a3 补收 a2 wheel 缺失的 4 份运行时事实源（parity 对账收口）+ 门禁判据加固；
+#:   a4 repocheck `--profile` 场景预设 + 门禁失败修法提示（registry remediation）。
 #: 仍不承诺 API 稳定；正式形态按实际演进再发。
-__version__ = "0.0.0a3"
+__version__ = "0.0.0a4"
