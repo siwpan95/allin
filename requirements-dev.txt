@@ -20,7 +20,7 @@
 # g18-exceptions 要解析 governance/exceptions.yml；kernel/tree.py 要读
 # cordis 配置树（kernel/configs/cordis.allin.yml）。缺它时门禁会报
 # ledger-unusable 假红，而提交信息常写成「19/19 clean」—— 这是一个真实踩过的坑。
-PyYAML>=6.0
+PyYAML>=6.0.3
 
 # watchdog —— cordis 的 hmr 可选增强（等价于 cordis[hmr]）。
 # 缺它 cordis 不崩，会退回 mtime 轮询实现；装上则文件变更能实时触发重载。
