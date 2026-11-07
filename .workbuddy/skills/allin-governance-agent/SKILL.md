@@ -184,7 +184,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 | pyglet 应用打包分发 | `pyglet-app-package-dist` <!-- route:pyglet-app-package-dist --> |
 | PyPI 发布准备 | `pypi-publish-prep` <!-- route:pypi-publish-prep --> |
 | 仓库远端→本地同步 | `repo-sync-remote-to-local` <!-- route:repo-sync-remote-to-local --> |
-| venv CA 证书安全巡检（GHSA-6q48） | `venv-ca-security-audit` <!-- route:venv-ca-security-audit --> |
+| venv 安全巡检与加固 | `venv-security-audit` <!-- route:venv-security-audit --> |
 | Windows Node 环境诊断 | `windows-node-env-diagnose` <!-- route:windows-node-env-diagnose --> |
 
 > 路由台账唯一事实源：`tools/orchestration/routes.yaml`（机器可读，锚点 `<!-- route:<id> -->`

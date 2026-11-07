@@ -83,7 +83,7 @@
   `gitee-push-from-extracted-dir` / `github-release-source-archive-download` /
   `lab-tournament-daily-automation` / `multilang-board-engine-lab` / `pluginplayer-win-build` /
   `pyglet-app-package-dist` / `pypi-publish-prep` / `repo-sync-remote-to-local` /
-  `venv-ca-security-audit` / `windows-node-env-diagnose`），匹配到即转交，不重造。
+  `venv-security-audit` / `windows-node-env-diagnose`），匹配到即转交，不重造。
   **2026-11-05 起该路由表有机器可读台账**（`tools/orchestration/routes.yaml`）与
   **g21 三方对账门禁**（`tools/gate/agent_parity.py`，锚点计数=1，已接 `run_all_gates.sh`；详见 §6）。
 - Agent 自身负责：治理放行判断、四事实源阅读、门禁总调度、文档新增流程、推送/发版纪律把守。
@@ -103,7 +103,7 @@
   - `PlatformService`：`npm run check:repos` 等 Node 工具。
   - `PresetService`：preset 组合包只读盘点（`list`/`show`/`apply` 默认 dry-run；apply 落地未实现，
     见 `preset_service.py` TODO）。
-  - `ToolService`：`gitee_release.py` / 凭据脚本 / `venv_ca_audit.py` / 已吸收技能清单；
+  - `ToolService`：`gitee_release.py` / 凭据脚本 / `venv_security.py` / 已吸收技能清单；
     令牌取自 `GITEE_TOKEN` 或 `git credential fill`，**绝不硬编码**。
 
 ### 2.3 执行面 B —— platform 集成平台（`platform/`，Node + Cordis，聚合不融合）

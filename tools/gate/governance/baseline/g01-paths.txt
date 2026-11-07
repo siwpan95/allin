@@ -3,6 +3,6 @@
 #   python governance/gates/<gate>.py --no-baseline --list-all
 #
 # 2026-10-27 状态：本门禁已通过「内容层清理」彻底清偿 —— 全部机器相关绝对路径
-# （scan_hardcoded.ps1 自检夹具、repo_hygiene_exemptions.csv 数据行、venv_ca_audit.py
+# （scan_hardcoded.ps1 自检夹具、repo_hygiene_exemptions.csv 数据行、venv_security.py
 # 的 DEFAULT_ROOT/BASE_MAP）均已改为拼接/环境变量/相对写法，源码不再出现字面盘符路径。
 # 故本基线为空，g01 在 --no-baseline 与默认口径下均为 0 阻塞。

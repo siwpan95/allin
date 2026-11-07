@@ -64,15 +64,16 @@ class ToolService(Service):
         cmd = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, action]
         return _run(cmd, cwd=ROOT)
 
-    # ---- venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）----
+    # ---- venv 安全巡检与加固（通用检查框架）----
     def venv_audit(self, args):
-        """调度 tools/security/venv_ca_audit.py。
+        """调度 tools/security/venv_security.py（通用 venv 安全巡检与加固）。
 
-        用法：allin tools venv-audit <scan|apply|verify> [root] [jobs]
-        判据：certifi >= 2026.10.19 / pip >= 26.2.2 / uv >= 0.13.4，
-        且活跃 CA 捆绑包内不得出现 'emSign ECC Root CA - G3'。
+        用法：allin tools venv-audit <scan|apply|verify> [root] [jobs] [--check ID]
+              allin tools venv-audit --list
+        检查项：pip 引导 / home 修复 / pip-certifi-uv 基线 / emSign G3 /
+        离线漏洞基线 / venv 完整性 / ~ip 孤儿隔离。
         """
-        tool = os.path.join(TOOLS_DIR, 'security', 'venv_ca_audit.py')
+        tool = os.path.join(TOOLS_DIR, 'security', 'venv_security.py')
         if not os.path.isfile(tool):
             raise FileNotFoundError(f'巡检工具不存在: {tool}')
         cmd = [sys.executable, tool] + list(args)

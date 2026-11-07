@@ -192,7 +192,7 @@ python tools/repocheck/main.py packages/allin-governance --exclude src,tests --s
 | --- | --- | --- |
 | 规则 1「无版本控制」 | `--skip-rules 1` | monorepo 子件本就没有自己的 `.git`，属结构固有（因此健康分上限被压到 6.0） |
 | 规则 7「旧路径残留」 | `--skip-rules 7` | 唯一命中是 `tools/gate/scan_hardcoded.ps1` —— 它**本身就是路径门禁脚本**，内含 `X:\foo`、`G:/fake/` 等测试夹具与注释举例（第 228 行仅出现在注释说明里） |
-| 规则 2「无 README」 | B) `--skip-rules 2` | `tools/security` 是单文件标准库脚本（`venv_ca_audit.py`），其用法记在 `.workbuddy/skills/venv-ca-security-audit/` 与仓内文档。**2026-11-01 订正**：本格原写「`tools/` 下只有两个子件」，属描述漂移 —— 实测被扫描器识别的子件为 **5** 个（`facts` / `repocheck` / `reposcan` / `security` / `tier_archive`），其中 `facts` 与 `tier_archive` 是后来新增的子目录，本表没跟上 |
+| 规则 2「无 README」 | B) `--skip-rules 2` | `tools/security` 是单文件标准库脚本（`venv_security.py`），其用法记在 `.workbuddy/skills/venv-security-audit/` 与仓内文档。**2026-11-01 订正**：本格原写「`tools/` 下只有两个子件」，属描述漂移 —— 实测被扫描器识别的子件为 **5** 个（`facts` / `repocheck` / `reposcan` / `security` / `tier_archive`），其中 `facts` 与 `tier_archive` 是后来新增的子目录，本表没跟上 |
 | 规则 4「无依赖声明」 | B) `--skip-rules 4` | 同上：单文件脚本、只用标准库，无第三方依赖可声明（`tools/repocheck` 有 `pyproject.toml`） |
 | 规则 5「无 LICENSE」 | B) `--skip-rules 5` | 二者都是本仓的子目录（非独立仓），许可随**仓根 LICENSE** 覆盖（铁律 0/4 的「根 LICENSE 存在」已满足） |
 | 规则 3「无测试」 | ✅ **已修（2026-10-30）** | 原「规则只查项目根下的 `tests/`/`test/`，对 monorepo workspace 误报」的盲区已扩口：嵌套 `test/`/`tests/` 目录（路径段精确匹配）与 `*.test.*`/`*.spec.*`（任意层级）均被认可，`platform` 下的全部 `.test.mjs`（2026-11-01 实测 8 个文件、42 条用例）不再需要记偏差；回归用例 4 条，套件 60 项全绿（见 `tools/repocheck/CHANGELOG.md` Unreleased）。注：此处原写死「7 个 `.test.mjs`」，随文件增减必漂移 ⇒ **2026-11-01 改为指名总数 + 括号快照**，后续不必再同步这句 |

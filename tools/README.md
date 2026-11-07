@@ -14,7 +14,7 @@
 | `gate/` | 工作区门禁集合（文档索引契约等） | 见 `gate/README.md` |
 | **`facts/`** | **机器事实的采集与判定**（`measure.py` 只采集 / `verify_facts.py` 只判定），补 `g07`/`g19`/`g01` 三者都没覆盖的「事实源断言过期」 | `python tools/facts/verify_facts.py --selftest` |
 | **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
-| **`security/venv_ca_audit.py`** | **venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）** | `allin tools venv-audit scan G:/repos` |
+| **`security/venv_security.py`** | **venv 安全巡检与加固（通用检查框架，7 项）** | `allin tools venv-audit scan /repos` |
 | **`verify_projects.py`** | **逐项无头验证 registry 项目（T1 `verify.command` / T2 启动命令 / T3 包导入，其余 T4）** | `python tools/verify_projects.py --workers 8` |
 | **`reposcan/`** | **发布区仓库领域×技术栈分类工具链（判定表随源码入库，渲染产物本机重跑再生）** | `python tools/reposcan/scan_repos.py` |
 
@@ -148,9 +148,11 @@ python tools/gate/watchdog.py --selfcheck
 
 ---
 
-## `security/venv_ca_audit.py` — venv CA 证书安全巡检与加固（GHSA-6q48-6c7w-9gw2）
+## `security/venv_security.py` — venv 安全巡检与加固（通用检查框架）
 
-2026-10-20 披露的 **CRITICAL** 事件（CVSS 9.1，CWE-295，无 CVE）：certifi `>= 2019.03.09, < 2026.10.19`
+通用框架，7 项检查：`pip-bootstrap` / `broken-home-repair` / `pip-certifi-uv-baseline` /
+`ca-emsign-g3` / `dep-vuln-baseline` / `venv-integrity` / `orphan-quarantine`。
+其中 `ca-emsign-g3` 对应 2026-10-20 披露的 **CRITICAL** 事件（CVSS 9.1，CWE-295，无 CVE）：certifi `>= 2019.03.09, < 2026.10.19`
 的 CA 捆绑包含 `emSign ECC Root CA - G3` 根证书，eMudhra 签发并链到该根的 **8 张中间 CA 私钥已泄露**并被吊销；
 持泄露私钥者可签发「对任意主机名都像真的」证书，叠加 on-path 即可 **MITM**。
 受影响组件含 `requests` / `urllib3` / **`pip`**。修复：certifi `>= 2026.10.19`、pip `>= 26.2.2`、uv `>= 0.13.4`。
@@ -158,9 +160,10 @@ python tools/gate/watchdog.py --selfcheck
 **统一调度入口**（走 cordis 内核）：
 
 ```bash
-allin tools venv-audit scan   G:/repos        # 只读扫描
-allin tools venv-audit apply  G:/repos 8      # 加固（幂等）
-allin tools venv-audit verify G:/repos 8      # 功能级审计
+allin tools venv-audit scan   /repos         # 只读扫描
+allin tools venv-audit apply  /repos 8       # 加固（幂等）
+allin tools venv-audit verify /repos 8       # 功能级审计
+allin tools venv-audit --list                # 列出 7 项检查
 ```
 
 ### 两条别判错的判据
@@ -185,7 +188,7 @@ Windows 上 pip 自升级时删不掉正在运行的自身包目录，于是改�
 （边界：若活跃 `pip` 目录缺失而 `~ip` 存在，说明孤儿顶掉了唯一 pip ⇒ 改为**还原** `~ip`→`pip` 修 venv。）
 
 > 完整判据推导、踩坑与完成判据见项目级技能
-> [`.workbuddy/skills/venv-ca-security-audit/SKILL.md`](../.workbuddy/skills/venv-ca-security-audit/SKILL.md)。
+> [`.workbuddy/skills/venv-security-audit/SKILL.md`](../.workbuddy/skills/venv-security-audit/SKILL.md)。
 
 ---
 

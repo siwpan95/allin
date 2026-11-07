@@ -23,5 +23,5 @@ routes:
   - { id: pyglet-app-package-dist, skill: pyglet-app-package-dist, entry: .workbuddy/skills/pyglet-app-package-dist/SKILL.md, forms: [workbuddy, dsh], trigger: pyglet 应用打包分发, lastVerified: "2026-11-04" }
   - { id: pypi-publish-prep, skill: pypi-publish-prep, entry: .workbuddy/skills/pypi-publish-prep/SKILL.md, forms: [workbuddy, dsh], trigger: PyPI 发布准备, lastVerified: "2026-11-04" }
   - { id: repo-sync-remote-to-local, skill: repo-sync-remote-to-local, entry: .workbuddy/skills/repo-sync-remote-to-local/SKILL.md, forms: [workbuddy, dsh], trigger: 仓库远端→本地同步, lastVerified: "2026-11-04" }
-  - { id: venv-ca-security-audit, skill: venv-ca-security-audit, entry: .workbuddy/skills/venv-ca-security-audit/SKILL.md, forms: [workbuddy, dsh], trigger: venv CA 证书安全巡检（GHSA-6q48）, lastVerified: "2026-11-04" }
+  - { id: venv-security-audit, skill: venv-security-audit, entry: .workbuddy/skills/venv-security-audit/SKILL.md, forms: [workbuddy, dsh], trigger: venv 安全巡检与加固, lastVerified: "2026-11-07" }
   - { id: windows-node-env-diagnose, skill: windows-node-env-diagnose, entry: .workbuddy/skills/windows-node-env-diagnose/SKILL.md, forms: [workbuddy, dsh], trigger: Windows Node 环境诊断, lastVerified: "2026-11-04" }
