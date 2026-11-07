@@ -11,10 +11,10 @@
 
 ### 修复：a2 的 wheel 缺 4 份运行时事实源（本版最大的事）
 
-a2 的 wheel 里**没有** `exceptions.yml`、`registry-known-gaps.txt`、
-`preset/allin.patch.yml`、`preset/README.md` —— 这 4 份是 g18 / g17 / g14
-的运行时判据文件，缺了它们，装出来的包跑这些门禁会**判不全**（少报，不是报错，
-所以不打开对账根本看不见）。
+a2 的 wheel 里**没有** 4 份运行时判据文件：`exceptions.yml`、`registry-known-gaps.txt`，
+以及包内 `preset/` 目录下的 `allin.patch.yml` 与 `README.md`（这三类路径均指 wheel
+内部的布局，不是本仓路径）—— 对应 g18 / g17 / g14 的运行时判据。缺了它们，装出来的包
+跑这些门禁会**判不全**（少报，不是报错，所以不打开对账根本看不见）。
 
 发现方式值得一提：新增的包映射对账脚本（`tools/check_pkg_parity.py`，随 allin 仓
 入库并接进 CI 双平台）把「已安装包 ↔ 仓内真身」逐文件 sha256 对账，首跑即对出
