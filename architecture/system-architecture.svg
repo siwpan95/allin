@@ -72,7 +72,7 @@
   <text x="60" y="548" class="ttl" fill="#92400e">L3 · 治理门禁（监工）tools/gate/</text>
   <g>
     <rect x="60" y="560" width="300" height="28" rx="6" class="chip"/><text x="72" y="579" class="chip-t">g00–g20  20 道治理门禁（缺 g02，run.ts 聚合）</text>
-    <rect x="372" y="560" width="280" height="28" rx="6" class="chip"/><text x="384" y="579" class="chip-t">docs_index  D1–D15 文档索引契约</text>
+    <rect x="372" y="560" width="280" height="28" rx="6" class="chip"/><text x="384" y="579" class="chip-t">docs_index  D1–D17 文档索引契约</text>
     <rect x="664" y="560" width="260" height="28" rx="6" class="chip"/><text x="676" y="579" class="chip-t">repocheck  30 规则仓库体检</text>
     <rect x="936" y="560" width="248" height="28" rx="6" class="chip"/><text x="948" y="579" class="chip-t">repo_hygiene  H1–H8 卫生棘轮</text>
   </g>

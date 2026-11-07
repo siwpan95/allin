@@ -6,7 +6,7 @@
 本门禁是它的可执行落地，判据与 allin 仓的 `tools/gate/docs_index.py` **同源**（两处落点、各自自包含）。
 本仓没有 `docs/INDEX.md` 时记 `SKIPPED (not a pass)` —— 该契约为选用制，不强制每个仓采用。
 
-判据（D1–D15）：
+判据（D1–D17）：
   D1 登记完整 —— docs/ 下每份非历史文档都能在 INDEX.md 里找到
   D2 索引有效 —— INDEX.md 里每条指向 docs/ 的链接都指向真实存在的文件
   D3 规范头部 —— 每份 规范/SPEC-*.md 八项字段齐备（编号/效力/状态/生效/最后修订/适用面/承载体/引用格式）
@@ -24,8 +24,10 @@
 
   D14 书写规范 —— 裸 `§N` 默认指本文件（SPEC-005 §3.7）
   D15 字节完整 —— 文档不得含非法控制字符 / 行内代码跨度内 TAB（SPEC-005 §3.8）
+  D16 计划闭环 —— 组合分级执行顺序表状态机闭集 + 完成/搁置/偏差行必须带记录区证据（SPEC-005 §3.9）
+  D17 事实源留痕 —— 事实源 md 最新时点块必须含指向 记录/ 的指针（SPEC-005 §3.10）
 
-  ⚠ **D9–D15 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
+  ⚠ **D9–D17 的判据不在本文件**：唯一实现是 `governance/runtime/docs_contract.py`，
   本门禁与仓内 `tools/gate/docs_index.py` **import 同一份** ⇒ 结构上杜绝两份判据漂移
   （`SPEC-004` 调试铁律 64 的同一教训：两份都能跑、都"看着对"，差异只有人工 diff 才看得见）。
 
@@ -50,7 +52,7 @@ import tempfile
 # (run.ts spawns this gate from tools/gate, not from the repo root).
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime"))
 import govlib  # noqa: E402  (path is fixed up immediately above)
-import docs_contract  # noqa: E402  —— D9–D15 判据的**唯一实现**（与仓内 docs_index.py 同源一份）
+import docs_contract  # noqa: E402  —— D9–D17 判据的**唯一实现**（与仓内 docs_index.py 同源一份）
 
 EXIT_OK, EXIT_FAIL, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
 
@@ -329,6 +331,8 @@ def run(root: str, args) -> Report:
     docs_contract.check_d13(docs, root, rep)
     docs_contract.check_d14(docs, root, files, rep)
     docs_contract.check_d15(docs, files, rep)
+    docs_contract.check_d16(docs, rep)
+    docs_contract.check_d17(docs, files, rep)
     return rep
 
 
@@ -435,7 +439,17 @@ def build_fixture(kind: str, base: str) -> str:
         f.write(spec)
 
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
-        f.write("# 机器分区索引\n\n> **时点** 2026-09-28\n")
+        f.write("# 机器分区索引\n\n> **时点** 2026-09-28\n"
+                "> **留痕** [交接卷 2026-08](../记录/交接/2026-08.md)\n")
+    # D16 计划台账夹具（默认合法：状态在闭集内 + 证据指向记录区；D8/D1 计数同步 +1）
+    with io.open(os.path.join(docs, "事实源", "组合分级决策索引.md"), "w", encoding="utf-8") as f:
+        f.write("# 组合分级决策索引\n\n"
+                "> **时点** 2026-09-28\n"
+                "> **留痕** [交接卷 2026-08](../记录/交接/2026-08.md)\n\n"
+                "## 执行顺序\n\n"
+                "| # | 计划项 | 状态 | 证据 / 偏差 |\n"
+                "| --- | --- | --- | --- |\n"
+                "| 1 | ① 平台层硬化 | ✅ 完成 | [交接卷 2026-08](../记录/交接/2026-08.md) |\n")
 
     vol1 = "2026-08.md"
     vol2 = "2026-09.md"
@@ -458,8 +472,8 @@ def build_fixture(kind: str, base: str) -> str:
             f.write("# 门面\n")
     os.makedirs(os.path.join(docs, "md"), exist_ok=True)   # 历史树真身（D6 需要）
 
-    # 自述份数行（D8）：夹具实际为 根 2 + 规范 1 + 事实源 1 + 记录 3 = 7
-    c_root, c_spec, c_fact, c_rec = 2, 1, 1, 3
+    # 自述份数行（D8）：夹具实际为 根 2 + 规范 1 + 事实源 2 + 记录 3 = 8
+    c_root, c_spec, c_fact, c_rec = 2, 1, 2, 3
     if kind == "count-drift":
         c_root += 1          # 故意写错一项
     c_total = c_root + c_spec + c_fact + c_rec
@@ -471,6 +485,7 @@ def build_fixture(kind: str, base: str) -> str:
              "| HUB-02 | [INDEX.md](INDEX.md) |",
              "| SPEC-001 | [铁律](规范/%s) |" % spec_name,
              "| FACT-01 | [机器分区索引](事实源/机器分区索引.md) |",
+             "| FACT-02 | [组合分级决策索引](事实源/组合分级决策索引.md) |",
              "| REC-AU-01 | [盘点](记录/审计/%s) |" % rec,
              "| REC-HO-01 | [2026-08](记录/交接/%s) |" % vol1,
              "| REC-HO-02 | [%s](记录/交接/%s) |" % (vol2[:-3], vol2)]

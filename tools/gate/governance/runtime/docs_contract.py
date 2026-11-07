@@ -718,6 +718,127 @@ def check_d15(docs: str, files: list[str], rep) -> None:
         rep.exempt("D15-file-clean")
 
 
+# ---------------------------------------------------------------- D16 / D17
+#: D16 —— 计划闭环（SPEC-005 §3.9）：计划台账的**状态机闭集**。
+#: ERP 的灵魂是「计划下达 → 执行反馈 → 偏差修正」闭环（MRP II 不变的底层逻辑）；
+#: allin 的组合分级执行顺序表此前状态写在叙述句尾、无证据指针，靠自觉回写。
+#: 状态取出闭集 ⇒ 报红；宣布完成 / 搁置 / 偏差却查无实据 ⇒ 报红。
+PLAN_FILE = "事实源/组合分级决策索引.md"
+PLAN_STATUSES = ("⏳ 待执行", "🔄 进行中", "✅ 完成", "⏸ 搁置", "⚠ 偏差挂起")
+#: 需要证据指针的状态：完成（宣布了就要有账）、偏差挂起（偏差必须登记）、搁置（须指向指令出处）
+_PLAN_EVIDENCE_PREFIXES = ("✅", "⚠", "⏸")
+#: 证据指针形态：markdown 链接目标含 `记录/`，或反引号跨度含 `记录/`（与 D17 同一判定函数）
+_RECORD_LINK = re.compile(r"\]\(([^)\s]*记录/[^)\s]*)\)")
+
+
+def _has_record_ref(text: str) -> bool:
+    """一段文字是否含指向 `docs/记录/` 的指针（链接目标或反引号路径）。"""
+    if _RECORD_LINK.search(text):
+        return True
+    return any("记录/" in span for span in _code_spans(text))
+
+
+def check_d16(docs: str, rep) -> None:
+    """**计划闭环**（SPEC-005 §3.9）。范围：仅 `事实源/组合分级决策索引.md` 的执行顺序表。"""
+    path = os.path.join(docs, PLAN_FILE.replace("/", os.sep))
+    if not os.path.isfile(path):
+        rep.block("D16", "计划台账缺失：%s（执行顺序状态机表是 D16 的判定对象）" % PLAN_FILE)
+        return
+    lines = read_text(path).split("\n")
+    start = next((i for i, l in enumerate(lines)
+                  if l.startswith("## ") and "执行顺序" in l), None)
+    if start is None:
+        rep.block("D16", "%s 缺「## …执行顺序…」计划节" % PLAN_FILE)
+        return
+    i = start + 1
+    while i < len(lines) and not lines[i].startswith("|"):
+        if lines[i].startswith("## "):  # 计划节里没有任何表格就遇到了下一节
+            break
+        i += 1
+    if i >= len(lines) or not lines[i].startswith("|"):
+        rep.block("D16", "%s 执行顺序节缺状态机表（叙述行不判，D16 只认表格）" % PLAN_FILE)
+        return
+    rows = []
+    while i < len(lines) and lines[i].startswith("|"):
+        rows.append(lines[i])
+        i += 1
+    if len(rows) < 3:
+        rep.block("D16", "执行顺序状态机表不完整（需表头 + 分隔行 + 至少一条计划项）")
+        return
+    header = [c.strip() for c in rows[0].strip().strip("|").split("|")]
+    status_idx = next((k for k, c in enumerate(header) if "状态" in c), None)
+    ev_idx = next((k for k, c in enumerate(header) if "证据" in c), None)
+    if status_idx is None or ev_idx is None:
+        rep.block("D16", "执行顺序表缺「状态」列或「证据」列（表头：%s）" % " | ".join(header))
+        return
+    for row in rows[2:]:
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        if cells and all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+            continue  # 分隔行
+        status = cells[status_idx] if status_idx < len(cells) else ""
+        if status not in PLAN_STATUSES:
+            rep.block("D16", "%s 执行顺序表状态取出闭集：%r（闭集：%s）"
+                      % (PLAN_FILE, status, " / ".join(PLAN_STATUSES)))
+            continue
+        if status.startswith(_PLAN_EVIDENCE_PREFIXES):
+            evidence = cells[ev_idx] if ev_idx < len(cells) else ""
+            if _has_record_ref(evidence):
+                rep.exempt("D16-evidence-ok")
+            else:
+                rep.block("D16", "%s 执行顺序表「%s」行状态为 %s 但证据列缺 记录/ 指针"
+                          " —— 宣布完成/搁置/偏差必须留得住账" % (PLAN_FILE, cells[0] or "?", status))
+        else:
+            rep.exempt("D16-open-row")
+    rep.exempt("D16-plan-scanned")
+
+
+#: D17 —— 事实源留痕（SPEC-005 §3.10）：事实源 md（README 除外）**日期最新的时点块**
+#: 必须含指向 `docs/记录/` 的指针。事实源是活台账、记录区是只增不改的账本 ——
+#: 变更发生了就必须在账本里留得住证据（实测漏洞：SIWPAN 文件夹化当日发起方未留痕，
+#: 只在拉入方的交接卷里有间接记载）。无时点块的文件豁免（如 `端口分配表.md`）。
+#: 作用域算法与 g20_facts.header_scope 同一逻辑（最新日期的所有块），但刻意独立实现：
+#: 判据层（docs_contract）不 import 门禁层（g20 必须自包含，见其 docstring）。
+
+
+def _newest_timepoint_block(text: str):
+    """返回日期最新的时点块文本（与 g20.header_scope 同算法）；无时点块返回 None。"""
+    lines = text.split("\n")
+    starts = [i for i, l in enumerate(lines) if l.startswith(">") and "**时点**" in l]
+    if not starts:
+        return None
+    blocks = []
+    for idx, s in enumerate(starts):
+        stop = starts[idx + 1] if idx + 1 < len(starts) else len(lines)
+        for j in range(s + 1, stop):
+            if lines[j].startswith("## "):
+                stop = j
+                break
+        chunk = "\n".join(lines[s:stop])
+        d = re.search(r"20\d\d[-/年]\d{1,2}[-/月]\d{1,2}", chunk)
+        key = tuple(int(x) for x in re.findall(r"\d+", d.group(0))[:3]) if d else (0, 0, 0)
+        blocks.append((key, chunk))
+    newest = max(b[0] for b in blocks)
+    return "\n".join(b[1] for b in blocks if b[0] == newest)
+
+
+def check_d17(docs: str, files: list[str], rep) -> None:
+    """**事实源留痕**（SPEC-005 §3.10）。范围：`事实源/**/*.md`，README 除外。"""
+    for f in files:
+        seg = f.split("/")
+        if len(seg) < 2 or seg[0] != "事实源" or seg[-1] == "README.md":
+            continue
+        text = read_text(os.path.join(docs, f.replace("/", os.sep)))
+        blk = _newest_timepoint_block(text)
+        if blk is None:
+            rep.exempt("D17-no-timepoint")
+            continue
+        if _has_record_ref(blk):
+            rep.exempt("D17-traced")
+        else:
+            rep.block("D17", "%s 最新时点块缺 记录/ 留痕指针 —— 变更必须留得住证据"
+                      "（补一行 `> **留痕**` 指向交接卷条目 / 记录文件）" % f)
+
+
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
     """造一个迷你枢纽（只含新判据所需的结构）。
@@ -741,6 +862,22 @@ def _fixture(kind: str, base: str) -> str:
     broken_bare = (kind == "bare-ref-dangling")
     broken_ctrl = (kind == "ctrl-char")
     broken_tab = (kind == "tab-in-code")
+    broken_status = (kind == "plan-status-invalid")
+    broken_evidence = (kind == "plan-evidence-missing")
+    broken_trace = (kind == "fact-no-record-ref")
+
+    # D16/D17 夹具：计划台账（默认合法：状态在闭集内 + 证据指向记录区）
+    plan_status = "❓ 自创态" if broken_status else "✅ 完成"
+    plan_evidence = ("证据写成了叙述句，没有指向记录区的指针" if broken_evidence
+                     else "[交接卷 2026-10](../记录/交接/2026-10.md)（落实批次）")
+    with io.open(os.path.join(docs, "事实源", "组合分级决策索引.md"), "w", encoding="utf-8") as f:
+        f.write("# 组合分级决策索引\n\n"
+                "> **时点** 2026-10-29（建档）\n"
+                "> **留痕** [交接卷 2026-10](../记录/交接/2026-10.md)\n\n"
+                "## 执行顺序\n\n"
+                "| # | 计划项 | 状态 | 证据 / 偏差 |\n"
+                "| --- | --- | --- | --- |\n"
+                "| 1 | ① 平台层硬化 | %s | %s |\n" % (plan_status, plan_evidence))
 
     # 被引的索引（中文别名「索引」指向它；**布局照真实仓**：索引在 事实源/ 下、机器文件在其 机器/ 子目录）
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
@@ -752,6 +889,8 @@ def _fixture(kind: str, base: str) -> str:
                 "> **生效** 2026-09-28 ｜ **最后修订** 2026-09-28 ｜ **适用面** 全域\n"
                 "> **承载体** 测试 ｜ **引用格式** SPEC-005 §5\n\n## 5. 头部契约\n\n正文。\n")
     # 引用方：三种目标形态各一处（逐维破坏）
+    # 观测.md 顶部带时点块 + 留痕（D17 默认合法）；fact-no-record-ref 用例去掉留痕行
+    obs_trace = "" if broken_trace else "> **留痕** [交接卷 2026-10](../记录/交接/2026-10.md)\n"
     if broken_spec:
         refs = "见 `SPEC-005` §99；见 `机器分区索引.md` §1；见 索引 §2"
     elif broken_alias:
@@ -763,7 +902,8 @@ def _fixture(kind: str, base: str) -> str:
     else:
         refs = "见 `SPEC-005` §5；见 `机器分区索引.md` §1；见 索引 §2；另见 §2"
     with io.open(os.path.join(docs, "事实源", "观测.md"), "w", encoding="utf-8") as f:
-        f.write("# 观测\n\n## 1. 记录\n\n## 2. 口径\n\n%s\n" % refs)
+        f.write("# 观测\n\n> **时点** 2026-10-31（建档）\n%s\n## 1. 记录\n\n## 2. 口径\n\n%s\n"
+                % (obs_trace, refs))
 
     hi = "2026-10-16" if broken_range else "2026-10-31"
     body = "正文（2026-10-31 记）。\n"
@@ -815,10 +955,13 @@ def selfcheck_extra() -> dict[str, int]:
     import tempfile
 
     d15_cases = ("ctrl-char", "tab-in-code")
+    d16_cases = ("plan-status-invalid", "plan-evidence-missing")
+    d17_cases = ("fact-no-record-ref",)
     caught = clean = misreports = 0
-    for kind in ("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
-                 "range-too-narrow", "count-line-drift", "index-range-drift",
-                 "row-contract-dangling", "row-id-dangling", "bare-ref-dangling") + d15_cases:
+    for kind in (("anchor-dangling", "spec-anchor-dangling", "alias-anchor-dangling",
+                  "range-too-narrow", "count-line-drift", "index-range-drift",
+                  "row-contract-dangling", "row-id-dangling", "bare-ref-dangling")
+                 + d15_cases + d16_cases + d17_cases):
         tmp = tempfile.mkdtemp(prefix="docscontract_")
         try:
             docs = _fixture(kind, tmp)
@@ -830,11 +973,21 @@ def selfcheck_extra() -> dict[str, int]:
             check_d13(docs, os.path.dirname(docs), rep)
             check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
             check_d15(docs, _mini_files(docs), rep)
+            check_d16(docs, rep)
+            check_d17(docs, _mini_files(docs), rep)
             if rep.blocking:
                 caught += 1
                 if kind in d15_cases and any(c != "D15" for c, _ in rep.blocking):
                     misreports += 1
                     print("MISREPORT %s caught by non-D15 gate: %s"
+                          % (kind, [c for c, _ in rep.blocking]))
+                if kind in d16_cases and not any(c == "D16" for c, _ in rep.blocking):
+                    misreports += 1
+                    print("MISREPORT %s not caught by D16 itself: %s"
+                          % (kind, [c for c, _ in rep.blocking]))
+                if kind in d17_cases and not any(c == "D17" for c, _ in rep.blocking):
+                    misreports += 1
+                    print("MISREPORT %s not caught by D17 itself: %s"
                           % (kind, [c for c, _ in rep.blocking]))
             else:
                 print("MISSED case not caught: %s" % kind)
@@ -852,6 +1005,8 @@ def selfcheck_extra() -> dict[str, int]:
         check_d13(docs, os.path.dirname(docs), rep)
         check_d14(docs, os.path.dirname(docs), _mini_files(docs), rep)
         check_d15(docs, _mini_files(docs), rep)
+        check_d16(docs, rep)
+        check_d17(docs, _mini_files(docs), rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))

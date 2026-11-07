@@ -48,7 +48,7 @@
         └───────────────────┘         └──────────────────────────────────┘
                  │ subprocess                      │ 读写共享状态
             ┌─────────────────────────────────────────────────────┐
-  治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D15) │
+  治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D17) │
    (监工)    │  repocheck(30规则) · repo_hygiene(H1–H8)            │
             └─────────────────────────────────────────────────────┘
                  │ 校验对象 / 推送目标
@@ -133,7 +133,7 @@
 ### 2.4 治理门禁（监工）—— `tools/gate/`
 - **20 道治理门禁** `g00-meta` … `g20-facts`：`tools/gate/governance/run.ts` 聚合，
   `npm run check:governance` 驱动，全绿 `exit 0`；`check:governance:selfcheck` 自证。
-- **文档索引契约** `docs_index.py`：D1–D15（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数…）。
+- **文档索引契约** `docs_index.py`：D1–D17（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数/计划闭环/事实源留痕…）。
 - **仓库体检** `repocheck/main.py`：30 规则，0–10 健康分，text/json/csv/html 导出。
 - **仓库卫生** `repo_hygiene.py`：H1–H8 基线棘轮（`--all` 跑全量）。
 
