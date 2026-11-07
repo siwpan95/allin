@@ -14,10 +14,16 @@
 //
 // 严重度：发现 error 一律 exit 1（fail-loud）；远端 API 不可用时降级为 warn，
 //         不计入 error —— 网络抖动不是治理对象的错，但要看得见。
+//
+// 2026-11-07 判据同源修正：墓碑条目（status: archived/retired）跳过远端存活检查 ——
+//   它们的 publish.repo 只是「撤退记录」，远端本就该不存在；
+//   `checkout: remote-only` 条目由 @allin/core 的 skipLocalExistence() 豁免本机
+//   path 存在性（registry 是全局清单，各机检出集不同，本机缺检出 ≠ 治理缺陷）。
+//   两处都只放宽「不该判的那一面」，形状 / 禁盘符 / id 等校验一个不放。
 import path from "node:path"
 import fs from "node:fs"
 import { fileURLToPath } from "node:url"
-import { loadRegistry, REPOS_ROOT } from "@allin/core"
+import { loadRegistry, REPOS_ROOT, isTombstone } from "@allin/core"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(__dirname, "..", "registry", "projects")
@@ -66,6 +72,11 @@ if (!OFFLINE) {
 
 if (remote) {
   for (const e of entries) {
+    // 墓碑条目（status: archived/retired）：工作树已移出 repos/、远端多已删除，
+    // publish.repo 字段只是「撤退记录」（calculator / happy-childrens-day / sin-virtue-game
+    // 三仓，见各自 yaml 注释与 FACT-08 的 137 = 140 − 3）。用 @allin/core 的
+    // isTombstone 同源判定，避免把已归档仓当成活跃锚点判红；仍保留条目与字段，不删历史。
+    if (isTombstone(e)) continue
     const repo = e.publish && e.publish.repo            // 形如 siwpan/xxx
     const p = e.path || ""
 

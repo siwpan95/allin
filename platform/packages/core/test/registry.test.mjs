@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { loadRegistry, validateEntry, loadPorts } from '../src/registry.js'
+import { loadRegistry, validateEntry, loadPorts, isTombstone, skipLocalExistence } from '../src/registry.js'
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-reg-'))
 // 测试不绑定具体机器（2026-09-24 强化）：good 条目的 path 用必然存在的目录，
@@ -117,4 +117,26 @@ test('validateEntry: 端口归属核对（8000 = radio 与 id radio 一致）', 
     port: 8000, launch: { command: 'x' },
   }, ports)
   assert.ok(errs2.some(e => e.includes('不一致')))
+})
+
+// ── 2026-11-07：全局清单 vs 本机检出集（remote-only 只豁免存在性）──────────
+// registry 是全局清单，各机检出集不同；本机缺检出 ≠ 治理缺陷。但豁免必须**窄**：
+// 去掉声明要能重新报「path 不存在」，禁盘符等形状校验一条都不许跟着放宽。
+test('skipLocalExistence: remote-only 只豁免存在性，形状校验照旧', () => {
+  const ports = loadPorts()
+  const remoteOnly = {
+    id: 'write-agent', name: 'x', category: 'ai', version: '1',
+    path: 'repos/no-such-checkout', checkout: 'remote-only',
+    launch: { command: 'python -m app.main' },
+  }
+  assert.ok(isTombstone({ status: 'archived' }), '墓碑判定仍有效')
+  assert.ok(!isTombstone(remoteOnly), 'remote-only 不是墓碑：活跃但在别机')
+  assert.ok(skipLocalExistence(remoteOnly))
+  assert.ok(!skipLocalExistence({ ...remoteOnly, checkout: undefined }), '未声明则照旧 fail-loud')
+  assert.deepEqual(withMode('exists', () => validateEntry(remoteOnly, ports)), [],
+    '显式声明后豁免 path 存在性')
+  assert.ok(withMode('exists', () => validateEntry({ ...remoteOnly, checkout: undefined }, ports))
+    .some(e => e.includes('不存在')), '去掉声明必须重新报 path 不存在')
+  assert.ok(withMode('exists', () => validateEntry({ ...remoteOnly, path: 'G:\\repos\\x' }, ports))
+    .some(e => e.includes('盘符')), '豁免不等于放行：禁盘符形状校验照旧')
 })

@@ -77,10 +77,20 @@ export const KNOWN_GAMEPLAY = [
 // 「path 必须存在于本机」，等于逼我们必须删掉这份「撤退记录」才能绿灯 —— 语义冲突。
 // ⇒ 墓碑条目豁免**存在性**，但形状校验一个不放（仍然必须写 path、仍然禁盘符），
 //   避免豁免退化成「随便写」。活性条目（无 status / status: active）照旧 fail-loud。
+//
+// 2026-11-07 增量：`checkout: remote-only` —— registry 是**全局清单**，各机检出集不同
+// （如 write-agent 在 @DESKTOP-8RSV60V 新建并推送，@SIWPAN 本机尚未检出）。
+// 「本机没这个目录」不等于「治理缺陷」；显式声明后同样只豁免存在性，形状校验照旧。
+// 与墓碑同族但语义不同：墓碑 = 已撤退，remote-only = 活跃但在别机。
 const TOMBSTONE_STATUS = new Set(['archived', 'retired'])
 
-function isTombstone(entry) {
+export function isTombstone(entry) {
   return TOMBSTONE_STATUS.has(String(entry.status ?? '').trim().toLowerCase())
+}
+
+/** 是否豁免 path 存在性校验（形状校验一律不放）。 */
+export function skipLocalExistence(entry) {
+  return isTombstone(entry) || String(entry.checkout ?? '').trim().toLowerCase() === 'remote-only'
 }
 
 /**
@@ -95,7 +105,7 @@ export function validateEntry(entry, ports) {
   if (entry.id && !/^[a-z0-9][a-z0-9-]*$/.test(entry.id)) errors.push(`bad id: ${entry.id}`)
   if (!entry.path) errors.push('missing path（去符盘纪律：repos/<仓名>）')
   else if (RX_DRIVE.test(entry.path)) errors.push(`path 禁止盘符（去符盘铁律，应写 repos/<仓名>）: ${entry.path}`)
-  else if (pathCheckMode() === 'exists' && !isTombstone(entry) && !fs.existsSync(resolvePath(entry.path))) {
+  else if (pathCheckMode() === 'exists' && !skipLocalExistence(entry) && !fs.existsSync(resolvePath(entry.path))) {
     errors.push(`path 不存在: ${entry.path} → 解析为 ${resolvePath(entry.path)}`)
   }
   if (!entry.launch || !entry.launch.command) errors.push('missing launch.command')

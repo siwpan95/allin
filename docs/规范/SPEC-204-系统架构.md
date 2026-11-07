@@ -118,6 +118,10 @@
 - **内核 `@allin/core`**（`platform/packages/core`）：
   - `registry.js`：`loadRegistry()` / `validateEntry()`（fail-loud，必填字段 + id 形状 +
     launch.command + 端口查表 + 归属核对）/ `resolvePath()`（**去盘符**，唯一路径解析入口）。
+  - **2026-11-07 判据同源**：`isTombstone()`（archived/retired）与 `skipLocalExistence()`
+    （另加 `checkout: remote-only`）**只豁免 `path` 存在性** —— 必填字段 / 禁盘符 / id 形状 /
+    端口查表一个不放。`check_repos.mjs` 复用同一判定跳过墓碑条目的远端锚点检查：
+    registry 是全局清单、各机检出集不同，已归档仓的 `publish.repo` 仅留作撤退记录。
   - `launch.js`：`startEntry()`（detached 子进程）/ `stopEntry()`（优雅停止优先，回退树杀）/
     `isRunning()` / `runningInfo()` / `shutdownAll()` / `logTask()`（日志即事实源，超 5MB 轮转）。
   - `workshop.js`：`listWorkshop()` / `subscribe()` / `unsubscribe()`（先停再删，杜绝孤儿进程）/
