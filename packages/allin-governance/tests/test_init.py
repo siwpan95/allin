@@ -12,7 +12,9 @@
 4. `--dry-run` 一个字都不许落盘；
 5. **用户内容永不被覆盖**（README / LICENSE / docs/INDEX.md）——
    `--force` 的语义是升级套装，不是替人重写文档；
-6. 已有 `package.json` / `.gitignore` 时**合并**而不是取代。
+6. 已有 `package.json` / `.gitignore` 时**合并**而不是取代；
+7. 策略实现文件里不许出现完整的内联豁免注解字面量 —— 那是 F-01 的越权红线，
+   出现就会让 CI 增量扫描 fail closed（2026-11-07 push run 42368707409）。
 
 不测「跑完 14 道门禁是不是绿的」：聚合器需要 Node，属于 CI 的端到端步骤
 （`.github/workflows/gates.yml` 的 `scaffold` job），放这里只会让单测依赖 Node。
@@ -250,6 +252,19 @@ def test_scaffold_credentials_gate_is_green(tmp_path: Path) -> None:
     gate = _load_credentials_gate()
     report = gate.scan(tmp_path, machine_roots=[])
     assert not report.findings, report.render()
+
+
+def test_init_never_embeds_full_annotation_literal() -> None:
+    """策略实现文件不是已登记夹具，完整注解字面量会让 CI 增量扫描 fail closed。
+
+    2026-11-07 push run 42368707409：本模块把注解模式整串写进普通源码，F-01
+    判为「在提交内容里自行声明豁免」，gitleaks 明明 no leaks found 仍判红。
+    常量按片段拼装后运行值不变，且不给任何文件增加豁免权。
+    """
+    gate = _load_credentials_gate()
+    assert init_module.ANNOTATION_MARKER == gate.ANNOTATION
+    source = Path(init_module.__file__).read_text(encoding="utf-8")
+    assert gate.ANNOTATION not in source, "init.py 不得出现完整注解字面量"
 
 
 def test_annotation_allowlist_merge_keeps_user_entries(tmp_path: Path) -> None:

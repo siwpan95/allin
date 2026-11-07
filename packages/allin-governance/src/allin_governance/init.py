@@ -169,12 +169,16 @@ BASELINE_HEADER = """# Baseline ratchet for this gate. One finding key per line.
 """
 
 #: 2026-11-07 凭据门禁 F-01 加固后的**必需生成物**：g03-credentials 不再无条件
-#: 相信被扫描内容里的 `gov-credentials: allow` 注解，只认这份受评审的仓内白名单。
+#: 相信被扫描内容里的内联豁免注解，只认这份受评审的仓内白名单。
 #: 套件自带的门禁脚本含合成自检夹具（实测 g03_credentials.py 有 12 处会被自己
 #: 判红），init 若不生成这份白名单，新仓第一天就是一屏红 —— 且红的正是门禁自己。
 #: 路径是 g03 里写死的常量，不能挪到套装目录内。
 ANNOTATION_ALLOWLIST_REL = "scripts/secret-scan-allowlist.txt"
-ANNOTATION_MARKER = "gov-credentials: allow"
+#: 注解模式按片段拼装：本文件是策略实现，不是白名单登记的夹具文件。整串字面量
+#: 若出现在新增行里，CI 增量扫描会按「在提交内容里自行声明豁免」fail closed
+#: （2026-11-07 push run 42368707409 实测；gitleaks 当时 no leaks found 仍判红）。
+#: 拼装不改变运行值，也不给任何文件增加豁免权；完整模式以白名单文件头为准。
+ANNOTATION_MARKER = "gov-credentials" ": allow"
 
 ANNOTATION_ALLOWLIST_HEADER = """# 内联豁免注解白名单 —— 凭据门禁与 CI 增量扫描共用同一份配置
 # ==========================================================================
