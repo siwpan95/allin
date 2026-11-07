@@ -97,6 +97,13 @@ bin-release/
 # 版本间 diff 回归拦截即失效。基线是 runner 在 `--commit-baseline` 时写回的已知良好状态。
 !/tools/gate/audit/agent_regression_golden.json
 !/tools/gate/audit/agent_regression_baseline.json
+# 例外：**docs_index 基线必须入库（2026-11-07）**。
+# D9–D17 的阻断是**内容判定**（机器无关）：一台机器挂账的基线条目，在别机上
+# 是同一份被跟踪文件的同一条发现。基线若机器本地，A 机挂账、B 机 pull 后
+# 立刻报 new blocking（实测：D17 的 `DESKTOP-KQABATS.md` 留痕缺口）。
+# 与 g15 基线（`governance/baseline/g15-docs-contract.txt`，已入库）同一性质：
+# 跨机共享的时间棘轮，不是可重生成的机器状态。
+!/tools/gate/audit/docs_index_baseline.txt
 
 # reposcan 生成产物（脚本产出，不入版本控制；g01 会因内含机器路径报红，g05 判 output/ 为 artifact 目录）
 tools/reposcan/repos_meta.json
