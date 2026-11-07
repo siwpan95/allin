@@ -20,7 +20,7 @@ description: >
 |---|---|---|
 | `pip-bootstrap` | pip 缺失/损坏 → `ensurepip` 引导（损坏先改名 `.bak` 备份） | 是 |
 | `broken-home-repair` | `pyvenv.cfg` 的 `home` 指向失效基准解释器 → 按版本映射修复 | 是 |
-| `pip-certifi-uv-baseline` | pip ≥ 26.2.2 / certifi ≥ 2026.10.19 / uv ≥ 0.13.4 | 是 |
+| `pip-certifi-uv-baseline` | pip ≥ 26.2.2 / certifi ≥ 2026.10.19（**uv 已移到全局层**，见下） | 是 |
 | `ca-emsign-g3` | 活跃 CA 捆绑包内 `emSign ECC Root CA - G3` 残留（GHSA-6q48） | 是（强制重装 pip） |
 | `dep-vuln-baseline` | 离线已知漏洞基线（内置 `ADVISORIES` 表） | 否（只报告） |
 | `venv-integrity` | 解释器 / 元数据 / 重复 dist-info | 否（只报告） |
@@ -51,7 +51,7 @@ description: >
 |---|---|---|---|
 | 1 | 独立 certifi 包 | `site-packages/certifi/cacert.pem` | 用户直接 `import certifi` 的信任源 |
 | 2 | **pip 的 vendored certifi** | `site-packages/pip/_vendor/certifi/cacert.pem` | **公告点名的受影响组件**；且多数 venv 根本没装独立 certifi |
-| 3 | uv | PATH 上的 `uv` | `uv < 0.13.4` 的 vendored webpki-roots 同含 G3（修复：uv 0.13.4 / webpki-roots 1.0.10） |
+| 3 | uv（**全局**） | PATH 上的 `uv`（全机 1 个，非 venv 内） | `uv < 0.13.4` 的 vendored webpki-roots 同含 G3（修复：uv 0.13.4 / webpki-roots 1.0.10）；由 `UV_BASELINE` 单独报告一次 |
 
 **踩坑记录（2026-10-26 修正）**：旧版 `verify` 只做 `python -c "import certifi; ..."`。
 多数 venv 没装独立 certifi → `import certifi` 直接失败 → **该面被静默跳过**；
@@ -104,13 +104,30 @@ allin tools venv-audit scan   /repos --check ca-emsign-g3   # 只跑单项
 
 未设置对应变量时该版本跳过 home 修复（不影响 `scan` / 其余检查）。
 
+## 全局 uv 基线（2026-11-08 修正计数口径）
+
+`uv` 是 PATH 上的独立二进制，**全机只有 1 个**，不属于任何 venv；`apply` 不处理它。
+旧实现把 `standalone_uv_version()` 的结果注入每个 venv 的上下文，导致同一条全局 issue
+被记 N 次（`verify issue=N/N` 假象）。现行口径：
+
+- `uv_baseline_status()` 是唯一判据；`scan` / `apply` / `verify` 各打印**一次**
+  `UV_BASELINE status=<ok|ISSUE|not-found|unparseable> ...`，汇总行追加 `uv_status=`。
+- 逐 venv 的 `issue` / `vulnerable` **不再包含 uv**；`--check` 只过滤 venv 级检查，
+  不影响全局层报告。
+- `uv_status=ISSUE` 时 `verify` 返回 2（即使 `issue=0`），避免「报告了却 exit 0」被当绿灯；
+  全局 uv 须单独升级：standalone 用 `uv self update`，pip 安装的用
+  `pip install --upgrade uv`（**先备份旧二进制**）。
+- 检查 id `pip-certifi-uv-baseline` 含 `uv` 仅为兼容既有 `--check` 调用保留。
+
 ## 完成判据（硬性）
 
-**真正完成 = `verify` 作为独立前台命令完整跑完，且输出里 `VERIFY_SUMMARY ... issue=0` 实际可见。**
+**真正完成 = `verify` 作为独立前台命令完整跑完，且输出里 `VERIFY_SUMMARY ... issue=0`
+与 `uv_status=ok` 同时实际可见（或 `UV_BASELINE status=ok` 可见）。**
 
 - 本环境后台 Bash 任务不跨轮存活（轮次结束即杀）。
 - 完成通知、后台退出码、"Successfully installed" 字样、被截断的输出**都不是**完成证据。
-- 未看到 `issue=0` 即本轮未完成，下轮从头重跑（脚本幂等无副作用）。
+- 只有 `issue=0` 但 `uv_status=ISSUE` ⇒ 全局 uv 未达标，本轮**未完成**（此时 exit 2）。
+- 未看到完整汇总行即本轮未完成，下轮从头重跑（脚本幂等无副作用）。
 - 禁止据中间输出宣称完成。
 
 ## 已知环境异常（2026-10-21 发现，源头未定位）

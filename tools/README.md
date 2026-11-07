@@ -155,7 +155,7 @@ python tools/gate/watchdog.py --selfcheck
 其中 `ca-emsign-g3` 对应 2026-10-20 披露的 **CRITICAL** 事件（CVSS 9.1，CWE-295，无 CVE）：certifi `>= 2019.03.09, < 2026.10.19`
 的 CA 捆绑包含 `emSign ECC Root CA - G3` 根证书，eMudhra 签发并链到该根的 **8 张中间 CA 私钥已泄露**并被吊销；
 持泄露私钥者可签发「对任意主机名都像真的」证书，叠加 on-path 即可 **MITM**。
-受影响组件含 `requests` / `urllib3` / **`pip`**。修复：certifi `>= 2026.10.19`、pip `>= 26.2.2`、uv `>= 0.13.4`。
+受影响组件含 `requests` / `urllib3` / **`pip`**。修复：certifi `>= 2026.10.19`、pip `>= 26.2.2`、uv `>= 0.13.4`（uv 属全局层，判据见下）。
 
 **统一调度入口**（走 cordis 内核）：
 
@@ -165,6 +165,20 @@ allin tools venv-audit apply  /repos 8       # 加固（幂等）
 allin tools venv-audit verify /repos 8       # 功能级审计
 allin tools venv-audit --list                # 列出 7 项检查
 ```
+
+### 全局 uv 基线（不计入逐 venv 计数）
+
+`uv` 是 PATH 上的独立二进制（全机 1 个），不是 venv 内对象，`apply` 按「只动扫描根下的 venv」
+边界不处理它。旧实现把同一条全局 issue 记到每个 venv，出现 `verify issue=N/N` 假象
+（2026-11-07 远端实跑发现，2026-11-08 修复）。现行口径：
+
+- `scan` / `apply` / `verify` 各打印**一次** `UV_BASELINE status=<ok|ISSUE|not-found|unparseable> ...`，
+  汇总行追加 `uv_status=`；`--check` 只过滤 venv 级检查，不影响全局层。
+- 逐 venv 的 `vulnerable` / `issue` 只统计 venv 级问题；`uv_baseline_status()` 是唯一判据。
+- `verify` 在 `uv_status=ISSUE` 时返回 2，即使 `issue=0` —— 避免「报告了却 exit 0」被当绿灯。
+- 全局 uv 需单独升级：standalone 用 `uv self update`；pip 安装的用
+  `pip install --upgrade uv`（**先备份旧二进制**）。检查 id `pip-certifi-uv-baseline`
+  含 `uv` 仅为兼容既有 `--check` 调用保留。
 
 ### 两条别判错的判据
 

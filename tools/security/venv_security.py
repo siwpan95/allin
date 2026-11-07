@@ -13,7 +13,7 @@
 ----------------
   · pip-bootstrap         pip 缺失/损坏 → ensurepip 引导（损坏则先改名备份）
   · broken-home-repair    pyvenv.cfg 的 home 指向失效基准解释器 → 按版本映射修复
-  · pip-certifi-uv-baseline  pip / certifi / uv 版本基线
+  · pip-certifi-uv-baseline  pip / certifi 版本基线（id 含 uv 为兼容保留；uv 属全局层）
   · ca-emsign-g3          emSign ECC Root CA - G3（GHSA-6q48）活跃 CA 捆绑包残留
   · dep-vuln-baseline     离线已知漏洞基线（内置 ADVISORIES 表，可按公告扩充）
   · venv-integrity        venv 结构完整性（解释器/元数据/重复 dist-info）
@@ -30,11 +30,21 @@ certifi 2026.10.19 的捆绑包里仍保留 9~15 处未受影响的 ``emSign`` �
 1. 独立 certifi 包：``site-packages/certifi/cacert.pem``
 2. **pip 的 vendored certifi**：``site-packages/pip/_vendor/certifi/cacert.pem``
    （公告点名的受影响组件；多数 venv 根本没装独立 certifi，靠 ``import certifi`` 会静默跳过）
-3. uv：``uv < 0.13.4`` 的 vendored webpki-roots 同含 G3（修复：uv 0.13.4 / webpki-roots 1.0.10）
+3. uv：``uv < 0.13.4`` 的 vendored webpki-roots 同含 G3（修复：uv 0.13.4 / webpki-roots 1.0.10）。
+   ⚠ uv 是 PATH 上的**全局二进制**（全机 1 个），不属于任何 venv —— 见下「全局 uv 基线」。
 
 安全基线
 --------
   certifi >= 2026.10.19 ；pip >= 26.2.2 ；uv >= 0.13.4（已安装才检查）
+
+全局 uv 基线（2026-11-08 修复）
+------------------------------
+uv 在 PATH 上只有 1 个实例，不是 venv 内对象。旧实现把 ``standalone_uv_version()``
+的结果注入每个 venv 的 ctx，导致 N 个 venv 把同一条全局 issue 记 N 次
+（``verify issue=N/N`` 假象）。现由 ``uv_baseline_status()`` 作为唯一判据，
+``scan`` / ``apply`` / ``verify`` 各在汇总层打印一次 ``UV_BASELINE status=...``，
+并在汇总行追加 ``uv_status=...``；逐 venv 的 ``issue`` / ``vulnerable`` 不再包含它。
+``--check`` 只过滤 venv 级检查，不影响全局层报告。
 
 用法
 ----
@@ -270,6 +280,26 @@ def standalone_uv_version():
     return m.group(1) if m else None
 
 
+def uv_baseline_status(uv_ver):
+    """全局 uv 基线判定（**唯一实现**），返回 ``(status, detail)``。
+
+    uv 是 PATH 上的独立二进制，全机只有 1 个，不是 venv 内对象。
+    只能在命令汇总层报告一次；若经每个 venv 的 ctx 各记一次，
+    N 个 venv 会把同一条全局 issue 放大成 N 条（``verify issue=N/N`` 假象）。
+    """
+    if not uv_ver:
+        return "not-found", "no standalone uv on PATH (baseline skipped)"
+    t = ver_tuple(uv_ver)
+    if t is None:
+        return "unparseable", "cannot parse uv version %r" % uv_ver
+    if t < FLOORS["uv"]:
+        return "ISSUE", ("uv %s < %s；全局工具需单独升级，apply 不处理："
+                         "standalone 用 `uv self update`；pip 安装的用 "
+                         "`pip install --upgrade uv`（先备份旧二进制）"
+                         % (uv_ver, fmt_ver(FLOORS["uv"])))
+    return "ok", "uv %s >= %s" % (uv_ver, fmt_ver(FLOORS["uv"]))
+
+
 def probe(py):
     try:
         r = subprocess.run([py, "--version"], capture_output=True, text=True, timeout=60)
@@ -483,8 +513,13 @@ class BrokenHomeRepair(Check):
 
 
 class PipCertifiUvBaseline(Check):
+    """逐 venv 版本基线：pip / certifi。
+
+    id 含 "uv" 仅为兼容既有 --check 调用保留；uv 是 PATH 上的全局二进制，
+    其判据在 uv_baseline_status()，由命令汇总层各报告一次。
+    """
     id = "pip-certifi-uv-baseline"
-    title = "pip / certifi / uv 版本基线"
+    title = "pip / certifi 版本基线（uv 归全局 UV_BASELINE）"
     severity = "high"
     fixable = True
 
@@ -497,11 +532,6 @@ class PipCertifiUvBaseline(Check):
         cur = ver_tuple(pkgs.get("pip"))
         if cur is not None and cur < FLOORS["pip"]:
             issues.append("pip %s < %s" % (pkgs.get("pip"), fmt_ver(FLOORS["pip"])))
-        uvv = ctx.get("uv")
-        if uvv:
-            t = ver_tuple(uvv)
-            if t is not None and t < FLOORS["uv"]:
-                issues.append("uv %s < %s" % (uvv, fmt_ver(FLOORS["uv"])))
         return issues
 
     def verify(self, venv, ctx):
@@ -531,11 +561,6 @@ class PipCertifiUvBaseline(Check):
                 issues.append("certifi %s < %s" % (parts[0], fmt_ver(FLOORS["certifi"])))
             if len(parts) > 1 and parts[1] != "0":
                 issues.append("certifi bundle emSign-G3 x%s" % parts[1])
-        uvv = ctx.get("uv")
-        if uvv:
-            t = ver_tuple(uvv)
-            if t is not None and t < FLOORS["uv"]:
-                issues.append("uv %s < %s" % (uvv, fmt_ver(FLOORS["uv"])))
         return issues
 
     def apply(self, venv, ctx):
@@ -689,7 +714,8 @@ CHECKS_BY_ID = {c.id: c for c in CHECKS}
 
 # ----------------------------------------------------------------- 上下文与命令
 
-def build_ctx(venv, uv_ver):
+def build_ctx(venv):
+    """只构建 venv 内事实，不注入任何机器级全局对象（如 PATH 上的 uv）。"""
     py = os.path.join(venv, "Scripts", "python.exe")
     has = os.path.isfile(py)
     return {
@@ -698,7 +724,6 @@ def build_ctx(venv, uv_ver):
         "all_pkgs": read_all_pkgs(venv),
         "bundles": scan_bundles(venv),
         "orphans": orphan_entries(venv),
-        "uv": uv_ver,
     }
 
 
@@ -716,12 +741,14 @@ def cmd_scan(root, check_id=None):
         return 1
     venvs = find_venvs(root)
     uv_ver = standalone_uv_version()
+    uv_status, uv_detail = uv_baseline_status(uv_ver)
     checks = [CHECKS_BY_ID[check_id]] if check_id else CHECKS
     n_vuln = n_orphan = 0
     print("ROOT %s" % root)
     print("UV_STANDALONE %s" % (uv_ver or "not-found"))
+    print("UV_BASELINE status=%s %s" % (uv_status, uv_detail))
     for v in venvs:
-        ctx = build_ctx(v, uv_ver)
+        ctx = build_ctx(v)
         per, issues = [], []
         for c in checks:
             ci = c.scan(v, ctx)
@@ -746,14 +773,15 @@ def cmd_scan(root, check_id=None):
     print("VULNERABLE_TOTAL %d" % n_vuln)
     print("OK_TOTAL %d" % (len(venvs) - n_vuln))
     print("ORPHAN_VENV_TOTAL %d" % n_orphan)
-    print("SCAN_SUMMARY root=%s total=%d vulnerable=%d clean=%d orphan_venvs=%d uv=%s"
-          % (root, len(venvs), n_vuln, len(venvs) - n_vuln, n_orphan, uv_ver or "not-found"))
+    print("SCAN_SUMMARY root=%s total=%d vulnerable=%d clean=%d orphan_venvs=%d uv=%s uv_status=%s"
+          % (root, len(venvs), n_vuln, len(venvs) - n_vuln, n_orphan,
+             uv_ver or "not-found", uv_status))
     return 0
 
 
 def apply_venv(venv, only_id=None):
     """对单个 venv 执行加固。返回 (status, info)，status ∈ upgraded/noop/anomaly/failed。"""
-    ctx = build_ctx(venv, None)
+    ctx = build_ctx(venv)
     py = ctx["py"]
     if not py:
         return ("anomaly", "no Scripts/python.exe")
@@ -777,7 +805,7 @@ def apply_venv(venv, only_id=None):
             notes.append("%s: %s" % (cid, note))
 
     # 终检只看「可自动修复」的检查项；只报告项（dep-vuln / integrity）不参与 apply 成败
-    ctx2 = build_ctx(venv, None)
+    ctx2 = build_ctx(venv)
     scope = [CHECKS_BY_ID[only_id]] if only_id else [c for c in CHECKS if c.fixable]
     still = []
     for c in scope:
@@ -793,9 +821,13 @@ def cmd_apply(root, jobs, check_id=None):
         print("CHECK_NOT_FIXABLE " + check_id)
         return 1
     venvs = find_venvs(root)
+    uv_ver = standalone_uv_version()
+    uv_status, uv_detail = uv_baseline_status(uv_ver)
+    print("UV_STANDALONE %s" % (uv_ver or "not-found"))
+    print("UV_BASELINE status=%s %s" % (uv_status, uv_detail))
     items = []
     for v in venvs:
-        ctx = build_ctx(v, None)
+        ctx = build_ctx(v)
         if check_id:
             need = bool(CHECKS_BY_ID[check_id].scan(v, ctx))
         else:
@@ -834,8 +866,8 @@ def cmd_apply(root, jobs, check_id=None):
             print("[FAIL] %s  %s" % (v, info))
             failed += 1
             failures.append((v, info[:300]))
-    print("APPLY_SUMMARY root=%s upgraded=%d already_ok=%d failed=%d anomaly=%d"
-          % (root, upgraded, len(venvs) - len(items), failed, anomalies))
+    print("APPLY_SUMMARY root=%s upgraded=%d already_ok=%d failed=%d anomaly=%d uv_status=%s"
+          % (root, upgraded, len(venvs) - len(items), failed, anomalies, uv_status))
     for v, why in failures:
         print("  failed: %s (%s)" % (v, why))
     return 0 if not failed and not anomalies else 2
@@ -844,14 +876,17 @@ def cmd_apply(root, jobs, check_id=None):
 def cmd_verify(root, jobs, check_id=None):
     venvs = find_venvs(root)
     uv_ver = standalone_uv_version()
+    uv_status, uv_detail = uv_baseline_status(uv_ver)
     checks = [CHECKS_BY_ID[check_id]] if check_id else CHECKS
+    print("UV_STANDALONE %s" % (uv_ver or "not-found"))
+    print("UV_BASELINE status=%s %s" % (uv_status, uv_detail))
     results = [None] * len(venvs)
     lock = threading.Lock()
     done = [0]
 
     def run(i):
         v = venvs[i]
-        ctx = build_ctx(v, uv_ver)
+        ctx = build_ctx(v)
         issues = []
         for c in checks:
             issues.extend(c.verify(v, ctx))
@@ -868,9 +903,10 @@ def cmd_verify(root, jobs, check_id=None):
         if issues:
             bad += 1
             print("[ISSUE] %s  %s" % (v, "; ".join(issues)))
-    print("VERIFY_SUMMARY total=%d clean=%d issue=%d uv=%s"
-          % (len(venvs), len(venvs) - bad, bad, uv_ver or "not-found"))
-    return 0 if bad == 0 else 2
+    print("VERIFY_SUMMARY total=%d clean=%d issue=%d uv=%s uv_status=%s"
+          % (len(venvs), len(venvs) - bad, bad, uv_ver or "not-found", uv_status))
+    # issue 只统计 venv 级问题；全局 uv 单独判，避免「报告了却 exit 0」被当成绿灯。
+    return 0 if bad == 0 and uv_status != "ISSUE" else 2
 
 
 def main(argv):
