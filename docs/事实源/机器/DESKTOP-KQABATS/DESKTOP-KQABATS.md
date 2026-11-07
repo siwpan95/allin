@@ -13,6 +13,7 @@
 >   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
 >   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
 >   `E:\projects\_governance` **现存** —— **7 项断言与 2026-11-03 记值一致，事实未漂移**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百三十三（分区文件夹化自迁 + 远端对齐，@`DESKTOP-KQABATS` 本机自留痕闭合 D17）
 > **时点** 2026-11-03 05:55（**@`DESKTOP-KQABATS` 跨机待修项自修 + 远端对齐** —— 用户指令「对齐远端，完成交接，完成后提交推送」：
 >   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
 >   本机发布区 `E:\projects\repos` **23** 个目录（逐目录 `Test-Path .git` 与 `git remote get-url origin` 全通，与 2026-11-02 记数一致，本轮无增减）；
