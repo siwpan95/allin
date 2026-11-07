@@ -1,10 +1,11 @@
 ﻿<#
 .SYNOPSIS
-  注册 4 个 ALLIN-* 计划任务的配方脚本（P3 部署实施方案 §2 落地物）：
+  注册 5 个 ALLIN-* 计划任务的配方脚本（P3 部署实施方案 §2 落地物）：
   ① ALLIN-website-autostart  登录拉起 website 常驻（9042）
   ② ALLIN-portal-autostart   登录拉起 portal 常驻（PORT=0 临时端口）
   ③ ALLIN-daily-backup       每日 02:00 备份 + 7 天轮转 + 日志 14 天清理
   ④ ALLIN-weekly-e2e         每周日 smoke:e2e 三面贯通防漂移（SC6）
+  ⑤ ALLIN-monthly-audit      每周一触发 + 月度幂等守卫 = 月度治理盘点（ERP P2 备用路线）
 
 .DESCRIPTION
   - 全部免管理员：当前用户、登录/定时触发、不提权（不注册「不登录也运行」类任务——拍板口径）。
@@ -12,6 +13,8 @@
     缺参 fail-loud 给注册指引；盘符只进任务计划参数（注册期实参），绝不进仓内代码（g01）。
   - 回滚：-Unregister 一键注销全部 ALLIN-* 任务（P3 §5 回滚方案第 1 条）。
   - 本脚本只负责注册；运行行为由各包装器与 backup-allin.ps1 决定。
+  - 任务⑤ 是**跨机可复制的仓内调度**：配方随仓 clone，注册动作仍由人在各机执行；
+    不依赖 WorkBuddy 会话侧定时自动化（换机即失效，故 ERP P2 改走本备用路线）。
 
 .NOTES
   兼容 Windows PowerShell 5.1；本文件只写不自动执行注册——由人确认参数后在计划任务机器上运行。
@@ -29,6 +32,8 @@ param(
   [string]$WeeklyDay  = 'Sunday',
   # 任务④ 周触发时刻
   [string]$WeeklyAt   = '09:00',
+  # 任务⑤ 周触发时刻（月度语义由 monthly_audit.py 的幂等守卫保证）
+  [string]$MonthlyAt  = '09:00',
   # 回滚开关：注销全部 ALLIN-* 任务
   [switch]$Unregister
 )
@@ -59,7 +64,8 @@ if (-not $LogDir)     { Write-Warning '未设置 ALLIN_LOG_DIR——包装器将
 $deployDir   = Join-Path $RepoRoot 'tools\deploy'
 $websiteDir  = Join-Path $RepoRoot 'website'
 $platformDir = Join-Path $RepoRoot 'platform'
-foreach ($f in @('backup-allin.ps1', 'start-website-task.ps1', 'start-portal-task.ps1')) {
+foreach ($f in @('backup-allin.ps1', 'start-website-task.ps1', 'start-portal-task.ps1',
+                 'monthly-audit-task.ps1', 'monthly_audit.py')) {
   if (-not (Test-Path -LiteralPath (Join-Path $deployDir $f))) {
     Fail "缺少 $f —— 请确认 tools/deploy/ 部署物已随仓检出"
   }
@@ -131,9 +137,25 @@ New-AllinTask -Name $t4 `
                StartWhenAvailable = $true } `
   -Description 'allin 周度 smoke:e2e 三面贯通防漂移（P3 §2.6；SC6 北极星；CI 侧 gates-windows 单 step 双向对齐）'
 
+# ---- 任务⑤ 月度治理盘点（ERP 调研 P2 备用路线，2026-11-07）----
+# 触发器取「每周一」而不是「每月 1 日」：New-ScheduledTaskTrigger 没有 -Monthly，
+# 改走 XML / schtasks 会引入第二套配方与用户上下文；这里用纯 cmdlet 触发 +
+# monthly_audit.py 的「同月已有 status=ok 则 skip」守卫实现月度语义。附带好处：
+# StartWhenAvailable 关机补跑落到本月任意一天都照样能真跑，不会被「非 1 日」误 skip。
+$t5 = $Prefix + 'monthly-audit'
+New-AllinTask -Name $t5 `
+  -Action @{ Execute           = $psExe
+             Argument          = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -RepoRoot "{1}"' -f (Join-Path $deployDir 'monthly-audit-task.ps1'), $RepoRoot)
+             WorkingDirectory  = $RepoRoot } `
+  -Trigger (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At $MonthlyAt) `
+  -Settings @{ ExecutionTimeLimit = (New-TimeSpan -Hours 1)
+               MultipleInstances  = 'IgnoreNew'
+               StartWhenAvailable = $true } `
+  -Description 'allin 月度治理盘点（ERP P2 备用路线）：verify_facts + docs_index + repocheck + 组合分级对账；留痕 tools/gate/audit/monthly-audit-runs.jsonl；每周一触发，同月已 ok 则 skip'
+
 # ---------- 收口提示 ----------
 Write-Output ''
 Write-Output '全部注册完成。验证命令：'
 Write-Output '  Get-ScheduledTask -TaskName "ALLIN-*" | Format-Table TaskName,State'
-Write-Output '  Get-ScheduledTaskInfo -TaskName ALLIN-website-autostart,ALLIN-portal-autostart,ALLIN-daily-backup,ALLIN-weekly-e2e | Format-Table TaskName,LastRunTime,LastTaskResult'
-Write-Output '试跑：Start-ScheduledTask -TaskName ALLIN-daily-backup；回滚：pwsh -File register-tasks.ps1 -Unregister'
+Write-Output '  Get-ScheduledTaskInfo -TaskName ALLIN-website-autostart,ALLIN-portal-autostart,ALLIN-daily-backup,ALLIN-weekly-e2e,ALLIN-monthly-audit | Format-Table TaskName,LastRunTime,LastTaskResult'
+Write-Output '试跑：Start-ScheduledTask -TaskName ALLIN-daily-backup；月度盘点首跑建议先手工执行 monthly-audit-task.ps1 -Force 看产物；回滚：pwsh -File register-tasks.ps1 -Unregister'

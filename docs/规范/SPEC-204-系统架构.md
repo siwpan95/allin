@@ -1,7 +1,7 @@
 # SPEC-204 · allin 系统架构
 
 > **编号** SPEC-204 ｜ **效力** 准则 ｜ **状态** 生效
-> **生效** 2026-11-04 ｜ **最后修订** 2026-11-04 ｜ **适用面** allin 仓全部子系统的结构与边界
+> **生效** 2026-11-04 ｜ **最后修订** 2026-11-07 ｜ **适用面** allin 仓全部子系统的结构与边界
 > **承载体** `architecture/system-architecture.svg` · `architecture/data-flow.svg`（图源）+ `architecture/adr/`（现行决策）
 > **引用格式** SPEC-204 §1（总览）· §2（分层模块）· §4（安全边界）
 
@@ -247,9 +247,16 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 - **写路径唯一**：website admin+CSRF → BFF 代理 → portal 既有启停端点；浏览器零新增暴露面
   （只认 website 单源），portal Host 围栏/loopbackOnly 代码零改动。
 - **北极星验收**：`npm run smoke:e2e`（6 检查点，证据 `tools/gate/audit/e2e-runs.jsonl`）。
-- **部署守护面**：Task Scheduler 4 个 `ALLIN-*` 任务（登录自启/失败重启）+ 每日备份
+- **部署守护面**：Task Scheduler **5 个** `ALLIN-*` 任务（登录自启/失败重启）+ 每日备份
   （robocopy /MIR → 仓外异盘，checkpoint + manifest sha256 + 7 天轮转；密钥唯一通道 backup-key）；
-  脚本在 `tools/deploy/`，注册由人执行。
+  脚本在 `tools/deploy/`，注册由人执行。ADR-0010 冻结的是**首版 4 任务**，第 5 个为
+  2026-11-07 增量（不回改冻结决策）：`ALLIN-monthly-audit` = ERP 调研 P2 的**备用路线**，
+  把月度盘点从 WorkBuddy 会话侧定时自动化（换机即失效）改为**跨机可复制的仓内调度**：
+  `tools/deploy/monthly_audit.py` 复用 `verify_facts`(g20) / `docs_index`(D1–D17) /
+  repocheck / 组合分级表内自洽（137 = 140 − 3），留痕
+  `tools/gate/audit/monthly-audit-runs.jsonl`；纯标准库、零 npm / bash / WorkBuddy 依赖。
+  触发器取「每周一」+ Python 侧月度幂等守卫（同月已有 `status=ok` 即 skip），
+  发布区目录数按各机差异记为观测项而非硬判据。配方随仓 clone，注册动作仍由人在各机执行。
 
 ---
 

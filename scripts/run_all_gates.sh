@@ -3,7 +3,7 @@
 #
 # 依次跑三类门禁：
 #   1) 20 道治理门禁 g00-meta…g20-facts（npm run check:governance）
-#   2) 文档索引契约 D1–D15（npm run check:docs = python tools/gate/docs_index.py）
+#   2) 文档索引契约 D1–D17（npm run check:docs = python tools/gate/docs_index.py）
 #   3) 本仓 monorepo 自检口径的 repocheck（README §本仓自检口径：排除 tools/，跳过规则 1/7）
 #
 # 行为：任一失败继续跑完其余，最后汇总并以非 0 退出码收尾，便于 agent 判定。
@@ -191,7 +191,7 @@ echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
 run npm run check:governance
 run "$PY" tools/gate/docs_index.py
-# docs_index 自检（D1–D15 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
+# docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。
 run "$PY" tools/gate/docs_index.py --selfcheck
 # agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
@@ -272,6 +272,11 @@ run "$PY" tools/gate/check_readme_refs.py
 #    对账成退出码 —— 体检实测 5 处漂移（ADR 索引缺 0006–0008、图内三处数字落后两代）
 #    曾静默存活近月，此后同类漂移跑批即红。
 run "$PY" tools/gate/check_arch_assets.py
+# ⑨ 月度治理盘点器自身逻辑回归（ERP P2 备用路线，2026-11-07）：真跑由
+#    ALLIN-monthly-audit 计划任务负责（每台机器本地 JSONL），这里只跑夹具自测，
+#    每次跑批顺带证明「月度幂等守卫 / 表内自洽 / 发布区软观测」没被改坏。
+#    门禁写了不跑 = 没有门禁（第五例）。
+run "$PY" tools/deploy/monthly_audit.py --selfcheck
 
 if [ "${1:-}" = "--with-platform" ]; then
   echo "----------------------------------------"
