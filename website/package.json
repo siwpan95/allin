@@ -16,6 +16,8 @@
     "rotate-key": "node --experimental-sqlite scripts/rotate-key.js",
     "backup-key": "node --experimental-sqlite scripts/backup-key.js backup",
     "restore-key": "node --experimental-sqlite scripts/backup-key.js restore",
+    "backup:data": "node --experimental-sqlite scripts/backup-data.js",
+    "check:data-hygiene": "node scripts/check-data-hygiene.js",
     "verify:crypto": "node --experimental-sqlite scripts/verify-crypto.js",
     "smoke": "node --experimental-sqlite scripts/smoke-test.js",
     "test": "node --test \"test/*.test.js\"",

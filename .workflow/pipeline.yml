@@ -112,7 +112,8 @@ stages:
         displayName: 密钥增量扫描（gitleaks · 与 GitHub 侧同一脚本）
         pythonVersion: "3.13"
         commands:
-          - bash scripts/install-gitleaks.sh && bash scripts/scan-secrets.sh
+          # 与 GitHub 侧同口径：先跑过滤器自检（不需要 gitleaks/网络），再装扫描器并实扫。
+          - bash scripts/scan-secrets.sh --selftest && bash scripts/install-gitleaks.sh && bash scripts/scan-secrets.sh
         settings: []
         caches: []
         notify: []

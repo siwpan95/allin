@@ -110,6 +110,12 @@ SAMPLE_USERINFO = ("user:password", "user:pass", "username:password", "user:secr
 #: Same-line opt-out, used by fixture files that must contain a sample token.
 ANNOTATION = "gov-credentials: allow"
 
+#: 2026-11-07 安全加固 F-01：注解**不再是**「任何文件里出现就整行豁免」。
+#: 豁免权归仓库受评审的配置，不归被扫描内容本身 —— 与 CI 增量扫描
+#: scripts/scan-secrets.sh 共用同一份白名单，两侧口径不允许漂移。
+#: 文件缺失/不可读时按空集合处理（fail closed：宁可把夹具判红，不开口子）。
+ANNOTATION_ALLOWLIST_REL = "scripts/secret-scan-allowlist.txt"
+
 #: Files whose whole purpose is a documented sample, by suffix or infix.
 SAMPLE_FILE_SUFFIXES = (".example", ".sample", ".template", ".dist")
 SAMPLE_FILE_INFIXES = (".example.", ".sample.", ".template.", ".dist.")
@@ -327,8 +333,32 @@ def candidate_lines(root: Path) -> list[tuple[str, int, str]]:
     return found
 
 
+def annotation_allowlist(root: Path, extra: set[str] | None = None) -> frozenset[str]:
+    """Paths permitted to use the inline annotation.
+
+    The set comes from a tracked, reviewable allowlist shared with
+    ``scripts/scan-secrets.sh``. ``extra`` exists only so this gate's own
+    selfcheck sandbox can declare its fixture paths (a sandbox has no repo
+    config of its own). A missing or unreadable allowlist yields an EMPTY
+    set — fail closed rather than silently restoring the old blanket opt-out.
+    """
+    allowed: set[str] = set()
+    cfg = root / ANNOTATION_ALLOWLIST_REL
+    try:
+        for raw in cfg.read_text(encoding="utf-8").splitlines():
+            item = raw.strip()
+            if item and not item.startswith("#"):
+                allowed.add(item)
+    except (OSError, UnicodeError):
+        pass
+    if extra:
+        allowed.update(extra)
+    return frozenset(allowed)
+
+
 def scan(root: Path, *, include_docs: bool = True,
-         machine_roots: list[tuple[Path, int]] | None = None) -> Report:
+         machine_roots: list[tuple[Path, int]] | None = None,
+         annotation_paths: set[str] | None = None) -> Report:
     """Judge tracked content, `.git/config`, and machine-local plaintext files."""
     report = Report(title=TITLE)
     config_path = root / ".git" / "config"
@@ -351,15 +381,18 @@ def scan(root: Path, *, include_docs: bool = True,
 
     candidates = candidate_lines(root)
     report.scanned += len({path for path, _number, _line in candidates})
+    allowed_annotation = annotation_allowlist(root, annotation_paths)
     for path, number, line in candidates:
         name = Path(path).name
         if (name in SAMPLE_FILE_NAMES or name.endswith(SAMPLE_FILE_SUFFIXES)
                 or any(infix in name for infix in SAMPLE_FILE_INFIXES)):
             report.exempt("documented sample file")
             continue
-        if ANNOTATION in line:
-            report.exempt("inline annotation")
+        if ANNOTATION in line and path in allowed_annotation:
+            report.exempt("inline annotation (allowlisted fixture file)")
             continue
+        # 未登记文件里的注解不构成豁免（F-01）：照常走下面的形状判定。
+        # 注解本身只是被扫描内容的一部分，不能由提交者自行声明豁免权。
         matched = False
         for category, pattern in PATTERNS:
             match = pattern.search(line)
@@ -429,7 +462,9 @@ def selfcheck() -> int:
         # allowance inside a URL userinfo, not the inline opt-out.
         sandbox.write("src/push_example.ts",
                       "const push = 'https://<user>:${TOKEN}@gitee.com/<owner>/<repo>.git'\n")
-        report = scan(sandbox.path, machine_roots=[])
+        # 沙箱没有仓内白名单文件，显式声明本夹具路径（等价于此处的「受评审登记」）。
+        report = scan(sandbox.path, machine_roots=[],
+                      annotation_paths={"src/clean.ts"})
         blocked = {finding.kind for finding in report.findings}
         blocked_paths = {finding.path for finding in report.findings}
         check.detects("provider token", "provider-token" in blocked)
@@ -552,6 +587,24 @@ def selfcheck() -> int:
                       "hex-secret" in blocked_kinds and "src/very_long_hex.ts" in blocked_paths)
         check.quiet("40/64-char digests with no credential context stay quiet",
                     "src/quiet_digest.ts" in blocked_paths)
+
+    # 2026-11-07 安全加固 F-01：注解的豁免权归仓库配置，不归被扫描内容。
+    # 这两组用例是「外部贡献者追加一行注释掩盖真实 token」的最小复现。
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("src/hidden.ts",
+                      "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n")
+        report = scan(sandbox.path, machine_roots=[])
+        check.detects("an inline allow annotation outside the allowlist does not hide a real token",
+                      any(f.path == "src/hidden.ts" and f.kind == "provider-token"
+                          for f in report.findings))
+
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("src/fixture.ts",
+                      "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n")
+        report = scan(sandbox.path, machine_roots=[],
+                      annotation_paths={"src/fixture.ts"})
+        check.quiet("a selfcheck-declared fixture path still honours the annotation",
+                    any(f.path == "src/fixture.ts" for f in report.findings))
     return check.finish()
 
 

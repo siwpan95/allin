@@ -1,0 +1,27 @@
+# 安全敏感路径保护（2026-11-07 安全评估加固）
+#
+# 这些文件一旦被改动，就可能直接削弱凭据防线，或改掉「平台会以 shell 执行」的命令面。
+# 外部 PR 触及它们时须由仓库维护者显式评审 —— 豁免权归仓库配置，不归提交内容。
+# 注：Gitee 侧没有 CODEOWNERS 机制，同口径靠人工评审 + g03 / CI 增量扫描兜底。
+
+# ── 凭据防线：扫描器、门禁、注解白名单、CI、提交钩子 ──────────────────────
+/scripts/scan-secrets.sh                            @siwpan95
+/scripts/secret-scan-allowlist.txt                   @siwpan95
+/scripts/install-gitleaks.sh                        @siwpan95
+/tools/gate/governance/gates/g03_credentials.py     @siwpan95
+/tools/gate/governance/RULES.md                     @siwpan95
+/tools/repo_hygiene.py                              @siwpan95
+/.pre-commit-config.yaml                            @siwpan95
+/.github/workflows/                                 @siwpan95
+/.github/dependabot.yml                             @siwpan95
+/.workflow/                                         @siwpan95
+
+# ── 注册表条目会被 platform 以 shell 执行（既有设计）：改条目 ≈ 改可执行命令 ──
+/platform/registry/projects/                        @siwpan95
+/platform/packages/core/src/launch.js               @siwpan95
+/platform/apps/portal/src/index.js                  @siwpan95
+
+# ── 官网加密与鉴权面 ────────────────────────────────────────────────────
+/website/src/crypto/                                @siwpan95
+/website/src/middleware/                            @siwpan95
+/website/scripts/backup-key.js                      @siwpan95

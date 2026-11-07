@@ -28,7 +28,11 @@ class PlatformService(Service):
 
     # ---- npm run check:repos：本地路径 ⇄ 远端存活 ⇄ 目录/仓名错位 三向核对 ----
     def check_repos(self):
-        return subprocess.run(['npm', 'run', 'check:repos'], cwd=PLATFORM_DIR, shell=True)
+        # 2026-11-07 安全加固：参数全为常量，本无注入面，但不让固定命令再经 shell
+        # 解释一层（消除 shell 元字符 / .cmd 垫片带来的隐式行为）。Windows 上 npm
+        # 实际是 npm.cmd，不走 shell 时必须显式带扩展名才能解析到。
+        npm = 'npm.cmd' if os.name == 'nt' else 'npm'
+        return subprocess.run([npm, 'run', 'check:repos'], cwd=PLATFORM_DIR, shell=False)
 
     # ---- 直接跑某个 mjs 脚本 ----
     def run_mjs(self, script: str, *args):

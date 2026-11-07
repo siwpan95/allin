@@ -40,6 +40,7 @@ jobs:
   gates-posix:
     name: 治理门禁（Linux · 19 道跨平台 + 别名）
     runs-on: ubuntu-latest
+    timeout-minutes: 20   # 2026-11-07 加固：防止卡死的步骤无限占用 runner
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
@@ -114,6 +115,7 @@ jobs:
   gates-windows:
     name: 治理门禁（Windows · 完整 20 道，含 g20-facts）
     runs-on: windows-latest
+    timeout-minutes: 25   # Windows runner 启动与 npm install 更慢，留足但不设无限
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
@@ -189,6 +191,7 @@ jobs:
   website-smoke:
     name: 官网冒烟测试（Node · npm run smoke）
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
@@ -228,10 +231,16 @@ jobs:
   secrets-scan:
     name: 密钥增量扫描（gitleaks · 外部 PR 防线）
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0   # 需要 PR base sha 可达，才算得准增量
+
+      # F-01 自证：过滤器改坏时先在这里红，而不是等真密钥漏出去才发现。
+      # 不需要 gitleaks / 网络 / git 历史，任何 PR 都能跑（放在 checkout 之后）。
+      - name: 校验增量扫描过滤器（--selftest）
+        run: bash scripts/scan-secrets.sh --selftest
 
       # 版本与仓根 .pre-commit-config.yaml 的 gitleaks rev 严格同版（v8.18.4）。
       # 安装逻辑抽到 scripts/install-gitleaks.sh，GitHub / Gitee 两侧共用：

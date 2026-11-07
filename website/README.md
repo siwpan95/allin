@@ -96,6 +96,8 @@ ADMIN_SEED_PASSWORD='...' MEMBER_SEED_PASSWORD='...' npm run seed
 | `npm run verify:crypto` | 加密层自检（10 项，含篡改 / 错密钥 / 摘要不符） |
 | `npm run smoke` | 端到端冒烟（19 项，含落盘明文检查） |
 | `npm run rotate-key` | 密钥轮换 + 全量重新封装 |
+| `npm run backup:data` | 数据库一致性快照（只产出密文库，**不带密钥**） |
+| `npm run check:data-hygiene` | 运行时数据卫生体检（只读，检出「密钥与密文同处」） |
 
 ## 4. 配置（.env，全部可省略）
 
@@ -184,6 +186,33 @@ npm run verify:crypto && npm run smoke   # 恢复后必跑
 - `env` 来源（`SITE_MASTER_KEY_BASE64`）的材质不落盘、不进备份——它的灾备责任在注入通道/密钥管理服务本身；
 - **恢复演练月度化**：从备份 restore → verify:crypto 10/10 + smoke 19/19 全绿才算备份有效。
   （出处：2026-11-04 事故响应演练情景 A，SEV1；收口规范见 `docs/规范/SPEC-106-事故分级与响应约定.md` §6。）
+
+### 6.6 备份纪律：密钥与密文必须分开（2026-11-07 安全加固）
+
+**红线**：本站「全库密文」的安全前提是**主密钥不与数据库同处一份可复制的快照**。
+把 `data/` 整目录 `cp -r` 成备份，会同时带走 `site.db` 与 `data/keys/*.key` ——
+拿到这份目录的人能解开全部内容、全部邮箱与全部附件，加密等于没做。
+
+```bash
+# ✅ 正确：两条命令、两个落点，密钥备份还必须带口令
+npm run backup:data -- --out D:/backup/db        # 只产出 allin-site-db-<stamp>.db
+npm run backup-key -- --out E:/backup/keys --passphrase <强口令>   # 另一个介质
+
+# ❌ 错误：整目录复制（会被体检判红）
+cp -r data/ data-bak/
+
+# 只读体检：发现任何「库 + 密钥」同处即 exit 1，并给出处置步骤（不删任何文件）
+npm run check:data-hygiene
+```
+
+- `backup:data` 用 SQLite `VACUUM INTO` 出一致性快照：服务运行中可备份，源库只读，
+  不带 WAL/SHM 半写状态，**产物里没有 `keys/`、没有 `seed-accounts.json`**；
+- 两个脚本都**拒绝写进仓库目录内**（防 git / 网盘同步意外收走）；
+- `check:data-hygiene` 只读扫描，检出高危布局只报告、绝不代表人工删除；
+  处置（分离保管或删除过期快照）必须先人工确认，并在快照曾外发/上云时按全库泄露处置
+  （`npm run rotate-key` + 重置两个种子账号口令）；
+- `data/seed-accounts.json` 含明文种子口令（0600 + gitignore）。本机单用户可接受，
+  但共享主机 / 上云备份 / 曾外发过 `data/` 时必须重置这两个账号。
 
 ## 7. 账号与权限
 
