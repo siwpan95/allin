@@ -62,6 +62,10 @@ python tools/repocheck/main.py <目录>   # 离线仓库体检（无参数 = GUI
 **平台门户**：按需启动（默认端口 9000，已登记 [`docs/事实源/ports.yaml`](docs/事实源/ports.yaml)）；
 website 默认端口 9042，同样以 ports.yaml 登记为准。
 
+> `site/` 与 `website/` 不是一回事：**`site/`** 是 GitHub Pages 门面单页
+> （[`deploy-pages.yml`](.github/workflows/deploy-pages.yml) 的部署源，即顶部徽章指向的门面站）；
+> **`website/`** 是 ALLIN LAB 开发与维护服务官网（Node 加密站，本地运行，不进 Pages）。
+
 ## 使用示例
 
 ```bash
