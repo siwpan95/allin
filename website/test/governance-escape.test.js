@@ -5,10 +5,15 @@
 // （降级三态渲染 + 写操作失败回显），断言恶意载荷被转义、不出现可执行标签。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const GOV = path.resolve('website/src/public/js/governance.js');
+// 路径必须相对**本测试文件**解析，不能相对 process.cwd()：
+// npm test 与 CI 的 website-smoke job 都是 `working-directory: website`（cwd=website/），
+// 若写成 path.resolve('website/src/...') 会拼成 website/website/src/... ⇒ ERR_MODULE_NOT_FOUND。
+// 与同目录 security.test.js / authz.test.js 的口径一致（都按文件自身位置定位）。
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const GOV = path.resolve(HERE, '..', 'src', 'public', 'js', 'governance.js');
 
 // ---- DOM 桩 ----
 const elements = new Map();
