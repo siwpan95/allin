@@ -144,7 +144,11 @@ function destroySession(sessionId) {
 }
 
 function purgeExpiredSessions() {
-  return getDb().prepare("DELETE FROM sessions WHERE expires_at <= datetime('now')").run().changes;
+  // 2026-11-08 深度审核：expires_at 存 ISO 8601（含 'T'），SQLite
+  // datetime('now') 返回 'YYYY-MM-DD HH:MM:SS'（含空格）。字符串比较下
+  // 'T' > ' '，当天过期的会话永远清不掉并长期进入备份。改为同格式 ISO 参数。
+  const now = new Date().toISOString();
+  return getDb().prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now).changes;
 }
 
 function getSessionUser(sessionId) {

@@ -66,6 +66,11 @@ else
 fi
 # 让门禁套件用同一个解释器：run.ts 优先采纳 DSH_GOVERNANCE_PYTHON。
 export DSH_GOVERNANCE_PYTHON="$PY"
+# 2026-11-08 深度审核 A1：严格模式同时下发到单门禁层 ——
+# govlib.Report.skip() 在严格模式下不再以 exit 0 混进 clean。
+if [ "${ALLIN_STRICT_SKIP:-0}" = "1" ]; then
+  export ALLIN_GATE_STRICT_SKIP=1
+fi
 # 【不要在这里 export PYTHONIOENCODING】—— 2026-11-04 实测教训：
 # Windows CI runner 的 stdout 默认 cp1252，中文诊断会 UnicodeEncodeError；但改成
 # 全局 PYTHONIOENCODING=utf-8 会连**测试 spawn 的子进程**一起改：那些用
@@ -79,6 +84,26 @@ failures=()
 # note_skip() 统一三件事：echo 留痕、log_run 记账（标签口径与历史完全一致，
 # 不动 gate_metrics 的解析面）、skips[] 聚合供汇总行展示。
 skips=()
+# 2026-11-08 深度审核 A3：把「环境不适用」与「本应跑却没跑」分开。
+# 环境性 SKIP（CI 无发布区 / 缺 Node 依赖 / 无 PowerShell / 无 platform 目录）
+# 不是检查项缺失，记入 not_applicable；只有真实性 SKIP 才让 status=incomplete。
+# 这样 CI 的 status=clean 才真正表示「所有适用项都跑过且通过」，而不会被
+# 「含环境性 SKIP ⇒ 永远 incomplete」逼成常红，也不会再让没检查冒充通过。
+BENIGN_SKIP_PATTERNS=(
+  'repo_hygiene:skip('
+  'smoke:e2e:skip(missing-node-deps'
+  'restore-drill:skip(no-powershell'
+  'platform:skip(no-platform-dir'
+)
+not_applicable=()
+
+is_environmental_skip() {
+  local s="$1" p
+  for p in "${BENIGN_SKIP_PATTERNS[@]}"; do
+    case "$s" in *"$p"*) return 0 ;; esac
+  done
+  return 1
+}
 
 note_skip() {
   # $1=log 标签（沿用既有 <工具>:skip(<原因>) 口径） $2=人读原因
@@ -90,7 +115,11 @@ note_skip() {
   # 注意：SKIP 行**不丢弃** —— 丢了就没法单列计数，逃逸率分母与 p95 的口径
   # 由 tools/gate/gate_metrics.py 统一排除（见该文件 is_skipped / real_runs）。
   log_run "$1" 0 0 true
-  skips+=("$1")
+  if is_environmental_skip "$1"; then
+    not_applicable+=("$1")
+  else
+    skips+=("$1")
+  fi
 }
 
 # ---------------------------------------------------------------- 执行留痕
@@ -362,27 +391,10 @@ if [ "${#skips[@]}" -gt 0 ]; then
   fi
 fi
 # 机器可读汇总行：PR 模板 / CI 一律贴这一行，不再以「全部门禁通过。」作准出凭据。
-# status: clean（全检全绿）/ incomplete（含 SKIP，未检查项不算通过）/ failed
-# N-04 整改：区分「环境性 SKIP（无可跑对象，非缺陷）」与「真实性 SKIP（本应跑却未跑，属缺口）」。
-# 仅真实性 SKIP 才把 incomplete 升级为非 0（fail-loud），避免把「CI 无发布区」等环境事实
-# 误判为失败；环境性 SKIP 保持 exit 0，但汇总仍如实报 status=incomplete（PR 准出侧要求 status=clean）。
-BENIGN_SKIP_PATTERNS=(
-  'repo_hygiene:skip('
-  'smoke:e2e:skip(missing-node-deps'
-  'restore-drill:skip(no-powershell'
-  'platform:skip(no-platform-dir'
-)
-real_skip=0
-for s in "${skips[@]}"; do
-  benign=0
-  for p in "${BENIGN_SKIP_PATTERNS[@]}"; do
-    case "$s" in
-      *"$p"*) benign=1; break ;;
-    esac
-  done
-  if [ "$benign" -eq 0 ]; then real_skip=1; break; fi
-done
+# status: clean（所有适用项全检全绿）/ incomplete（含真实性 SKIP）/ failed
+# 环境不适用项单列 not_applicable：如实留痕，但不冒充检查、也不把 CI 逼成常红。
 SKIP_N="${#skips[@]}"
+NA_N="${#not_applicable[@]}"
 FAIL_N="${#failures[@]}"
 if [ "$fail" -ne 0 ]; then
   SUMMARY_STATUS="failed"
@@ -391,7 +403,12 @@ elif [ "$SKIP_N" -gt 0 ]; then
 else
   SUMMARY_STATUS="clean"
 fi
-printf 'ALLIN_GATE_SUMMARY status=%s fail=%s skips=%s\n' "$SUMMARY_STATUS" "$FAIL_N" "$SKIP_N"
+printf 'ALLIN_GATE_SUMMARY status=%s fail=%s skips=%s not_applicable=%s\n' \
+  "$SUMMARY_STATUS" "$FAIL_N" "$SKIP_N" "$NA_N"
+if [ "$NA_N" -gt 0 ]; then
+  echo "环境不适用 ${NA_N} 项（不声称通过）："
+  for s in "${not_applicable[@]}"; do echo "  - $s"; done
+fi
 
 if [ "$fail" -ne 0 ]; then
   echo "门禁未全绿，失败项："
@@ -404,21 +421,16 @@ if [ "$fail" -ne 0 ]; then
   exit 1
 fi
 if [ "$SKIP_N" -gt 0 ]; then
-  echo "门禁批未全检（含 ${SKIP_N} 项 SKIP）：未检查项不算通过，禁止以「全部门禁通过。」作准出。"
+  echo "门禁批未全检（含 ${SKIP_N} 项真实性 SKIP）：未检查项不算通过，禁止以「全部门禁通过。」作准出。"
   if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     printf '::warning::%s\n' "$(gh_escape "ALLIN_GATE_SUMMARY status=incomplete fail=0 skips=${SKIP_N}")"
   fi
-  # N-04 整改：incomplete 不再静默落 exit 0。存在真实性 SKIP（非环境性）即 fail-loud 退出 2，
-  # 与「SKIP ≠ pass」纪律一致；仅环境性 SKIP（无可跑对象）保持 exit 0，但汇总仍报 status=incomplete。
-  if [ "$real_skip" -eq 1 ]; then
-    echo "存在真实性 SKIP（非环境性），判定 exit 2（SKIP ≠ pass）。"
-    exit 2
-  fi
-  # 严格模式（CI 设 ALLIN_STRICT_SKIP=1）：即便全为环境性 SKIP 也强制非 0（按需开启）。
-  if [ "${ALLIN_STRICT_SKIP:-0}" = "1" ]; then
-    echo "ALLIN_STRICT_SKIP=1：含 SKIP 即判 exit 2。"
-    exit 2
-  fi
-else
-  echo "全部门禁通过。"
+  echo "存在真实性 SKIP（非环境性），判定 exit 2（SKIP ≠ pass）。"
+  exit 2
 fi
+# 严格模式：连环境不适用项也不接受（按需开启）。
+if [ "${ALLIN_STRICT_SKIP:-0}" = "1" ] && [ "$NA_N" -gt 0 ]; then
+  echo "ALLIN_STRICT_SKIP=1：含 ${NA_N} 项环境性 SKIP，判定 exit 2。"
+  exit 2
+fi
+echo "全部门禁通过（环境不适用 ${NA_N} 项已如实标注，不计入通过）。"

@@ -18,7 +18,19 @@ export function probePort(port, timeout = 800) {
   })
 }
 
+/** 健康探测只允许回环地址（2026-11-08 深度审核：yaml 可控即可 blind SSRF）。 */
+function healthUrlAllowed(raw) {
+  try {
+    const u = new URL(raw)
+    if (u.protocol !== 'http:' || u.username || u.password) return false
+    const host = u.hostname.replace(/^\[|\]$/g, '')
+    const extra = (process.env.ALLIN_PROBE_HOSTS || '').split(',').map(s => s.trim()).filter(Boolean)
+    return ['127.0.0.1', 'localhost', '::1'].includes(host) || extra.includes(host)
+  } catch { return false }
+}
+
 function probeUrl(url, timeout = 2000) {
+  if (!healthUrlAllowed(url)) return Promise.resolve(false)
   return new Promise((resolve) => {
     const req = http.get(url, { timeout }, (res) => {
       res.resume()

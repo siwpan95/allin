@@ -20,7 +20,12 @@ function parseCookies(header) {
   for (const part of header.split(';')) {
     const idx = part.indexOf('=');
     if (idx < 0) continue;
-    jar[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim());
+    // 2026-11-08 深度审核：畸形 Cookie（如 %E0%A4%A）让 decodeURIComponent
+    // 抛 URIError，挂在全局 attachUser 上 ⇒ 任意请求 500（请求级 DoS）。
+    // 单个坏 cookie 不应影响整次请求，按原值保留并继续。
+    let value = part.slice(idx + 1).trim();
+    try { value = decodeURIComponent(value); } catch { /* 保留原始值 */ }
+    jar[part.slice(0, idx).trim()] = value;
   }
   return jar;
 }

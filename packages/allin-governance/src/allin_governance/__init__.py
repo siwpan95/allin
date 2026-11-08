@@ -30,4 +30,4 @@ __all__ = ["__version__"]
 #:   a3 补收 a2 wheel 缺失的 4 份运行时事实源（parity 对账收口）+ 门禁判据加固；
 #:   a4 repocheck `--profile` 场景预设 + 门禁失败修法提示（registry remediation）。
 #: 仍不承诺 API 稳定；正式形态按实际演进再发。
-__version__ = "0.0.0a4"
+__version__ = "0.0.0a5"

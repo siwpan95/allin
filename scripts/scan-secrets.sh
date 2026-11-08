@@ -20,6 +20,12 @@
 #        自述不符：删除行实际上仍被扫描，把一个「删掉硬编码密钥」的 PR 判红。
 #        现在单独建 payload/ 子目录，里面**只有**过滤后的 added-lines.txt。
 #
+# 2026-11-08 深度审核 P0-2 加固：F-01 的 is_fixture() 仍留着一条「后缀通配」
+#   后门 —— 任何 *.example / *.sample / *.template / *.dist 都被当作仓库夹具，
+#   带上内联注解即可把该行从扫描面抹掉。后缀通配已彻底撤销：豁免只认
+#   scripts/secret-scan-allowlist.txt 登记的绝对路径；g03_credentials.py 同步
+#   取消样例文件整文件豁免，改由内容判定放行占位符。
+#
 # 用法（CI 与本地同一口径）：
 #   GITLEAKS_BASE_SHA=<base-sha> bash scripts/scan-secrets.sh
 #   GITLEAKS_BIN=<gitleaks 路径> GITLEAKS_BASE_SHA=<base-sha> bash scripts/scan-secrets.sh
@@ -81,11 +87,11 @@ filter_added_lines() {
       close(allowlist)
     }
     function is_fixture(f) {
-      if (f in allowed) return 1
-      # 文档化样例文件（.example / .sample / .template / .dist）整文件按样例处理，
-      # 与 g03 的 SAMPLE_FILE_SUFFIXES / INFIXES 同口径。
-      return (f ~ /\.(example|sample|template|dist)$/ ||
-              f ~ /\.(example|sample|template|dist)\./)
+      # P0-2（2026-11-08）：后缀通配已撤销。命名成 *.example / *.sample /
+      # *.template / *.dist 不需要任何权限，外部贡献者可随意新建 —— 用它当豁免
+      # 依据等于把「抹掉这一行」的能力交给被扫描内容。现在只认
+      # scripts/secret-scan-allowlist.txt 里受评审登记的仓库自有夹具路径。
+      return (f in allowed)
     }
     /^\+\+\+ / {
       f = substr($0, 5)
@@ -129,6 +135,11 @@ diff --git a/tools/repo_hygiene.py b/tools/repo_hygiene.py
 +++ b/tools/repo_hygiene.py
 @@ -1,0 +2 @@
 +wr(d, "t/fixture.log", "TOKEN_INSIDE_FIXTURE_0003")  # repo-hygiene: allow
+diff --git a/x.env.example b/x.env.example
+--- /dev/null
++++ b/x.env.example
+@@ -0,0 +1 @@
++TOKEN_SAMPLE_SUFFIX_0004 = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow
 DIFF
   filter_added_lines "$raw" "$added" "$abuse"
 
@@ -147,6 +158,12 @@ DIFF
   # ⑤ ++ 文件头本身不能混进扫描面
   grep -qF '+++ b/' "$added" \
     && { echo 'SELFT FAIL: diff 文件头混进了扫描面'; fail=1; }
+  # ⑥ P0-2：*.(example|sample|template|dist) 不是豁免权 —— 该行必须留在扫描面，
+  #    且越权注解必须被记录（否则「新建样例文件 + 注解」又能把真密钥抹掉）。
+  grep -qF 'TOKEN_SAMPLE_SUFFIX_0004' "$added" \
+    || { echo 'SELFT FAIL: 样例后缀仍把密钥行从扫描面抹掉'; fail=1; }
+  grep -qxF 'x.env.example' "$abuse" \
+    || { echo 'SELFT FAIL: 样例后缀里的越权注解未记录'; fail=1; }
 
   # Q-05：无扫描面跳过必须发机器可读 skip 标记（区别于 pass），且 GitHub Actions
   # 下必须发 ::notice::。在子 shell 里调用 handle_no_surface（其内 exit 0 仅退出子 shell）。
@@ -157,10 +174,10 @@ DIFF
   grep -q '::notice::SCAN_SECRETS status=skipped' "$t/s1" \
     || { echo 'SELFT FAIL: Q-05 未发 ::notice::（CI 静默绿风险）'; fail=1; }
 
-  rm -f "$raw" "$added" "$abuse"
+  rm -f "$raw" "$added" "$abuse" "$t/s1"
   rmdir "$t" 2>/dev/null || true
   if [ "$fail" -eq 0 ]; then
-    echo 'scan-secrets --selftest: 全部通过（越权注解 / 删除行 / 夹具豁免 / 文件头 / Q-05 skip 标记）'
+    echo 'scan-secrets --selftest: 全部通过（越权注解 / 删除行 / 夹具豁免 / 文件头 / 样例后缀不豁免 / Q-05 skip 标记）'
   fi
   return "$fail"
 }

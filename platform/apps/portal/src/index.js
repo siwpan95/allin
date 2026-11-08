@@ -365,9 +365,24 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404)
     return res.end('not found')
   }
+  // 2026-11-08 深度审核：字符串前缀挡不住 public/ 下的符号链接 / junction，
+  // 解析真实路径后再校验一次边界。
+  let publicReal = PUBLIC
+  try { publicReal = fs.realpathSync(PUBLIC) } catch { /* 保持原值 */ }
+  let real
+  try { real = fs.realpathSync(abs) } catch { res.writeHead(404); return res.end('not found') }
+  if (!real.startsWith(publicReal + path.sep) && real !== publicReal) {
+    res.writeHead(404)
+    return res.end('not found')
+  }
   res.setHeader('Content-Type', MIME[path.extname(abs)] || 'application/octet-stream')
   fs.createReadStream(abs).pipe(res)
 })
+
+// 2026-11-08 深度审核：此前无 body / 头部超时，慢请求可占连接至 Node 默认 5 分钟。
+server.requestTimeout = 30_000
+server.headersTimeout = 10_000
+server.keepAliveTimeout = 5_000
 
 server.listen(port, '127.0.0.1', () => {
   const actual = server.address().port

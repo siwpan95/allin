@@ -72,8 +72,11 @@ def test_repocheck_help_is_not_swallowed() -> None:
          "import sys; sys.path.insert(0, r'%s'); "
          "from allin_governance.cli import main; raise SystemExit(main(['repocheck', '--help']))"
          % (Path(__file__).resolve().parent.parent / "src")],
-        capture_output=True, text=True, timeout=120,
+        # 2026-11-08：Windows 下不指定 encoding 会按 GBK 解码子进程 UTF-8 输出，
+        # 读线程抛 UnicodeDecodeError 后 stdout/stderr 变 None（与 pytest.ini 注释
+        # 记录的教训同源）。显式 UTF-8 + replace，测试才不会假红。
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
     )
-    combined = result.stdout + result.stderr
+    combined = (result.stdout or "") + (result.stderr or "")
     assert "--fail-on" in combined, f"repocheck --help did not reach repocheck:\n{combined[:600]}"
     assert result.returncode == 0

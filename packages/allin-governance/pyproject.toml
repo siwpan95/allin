@@ -19,7 +19,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allin-governance"
-version = "0.0.0a4"
+version = "0.0.0a5"
 description = "工作区治理中枢：可执行门禁 + 文档枢纽契约 + 仓库体检，面向一人多仓与 AI 协作者"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -91,4 +91,6 @@ packages = [
 #   exceptions.yml（g18 读）、registry-known-gaps.txt（g17/g18 读）、
 #   preset/allin.patch.yml + README.md（g14 的 SHIPPED 基准，见 g14_preset.py）。
 # 2026-11-04 check_pkg_parity.py 首跑实测这 4 份漏收，对账 12 处红。
+# 注：仓内钩子在 tools/gate/hooks/pre-commit（不在 governance/ 下），且无代码引用，
+# 是否随包分发需维护者裁决；此处不臆造指向不存在目录的 glob。
 "allin_governance._gatesuite" = ["*.ts", "*.json", "*.yml", "*.txt", "RULES.md", "README.md", "baseline/*.txt", "preset/*.yml", "preset/*.md"]

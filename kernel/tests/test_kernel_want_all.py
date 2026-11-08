@@ -28,7 +28,9 @@ class WantAllDerivationTest(unittest.TestCase):
         )
 
     def test_unknown_id_fails_loud_at_import(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        # 2026-11-08 P0-1：ALLIN_CONFIGS 现在只允许仓内目录（配置树等同代码），
+        # 故临时配置树必须建在仓内，而不是系统临时目录。
+        with tempfile.TemporaryDirectory(dir=os.path.join(ROOT, 'kernel', 'configs')) as tmp:
             with open(os.path.join(tmp, 'cordis.allin.yml'), 'w', encoding='utf-8') as fh:
                 fh.write('- name: docs\n  id: docs\n- name: evil\n  id: evil\n')
             env = dict(os.environ)
@@ -50,7 +52,9 @@ class WantAllDerivationTest(unittest.TestCase):
         断言推导结果 == ('docs', 'tools') —— 证明「改 yml 即改清单」真实成立，
         这是新增第五支柱（先合法登记、再进 yml）时同一条推导路径的预演。
         """
-        with tempfile.TemporaryDirectory() as tmp:
+        # 2026-11-08 P0-1：ALLIN_CONFIGS 现在只允许仓内目录（配置树等同代码），
+        # 故临时配置树必须建在仓内，而不是系统临时目录。
+        with tempfile.TemporaryDirectory(dir=os.path.join(ROOT, 'kernel', 'configs')) as tmp:
             with open(os.path.join(tmp, 'cordis.allin.yml'), 'w', encoding='utf-8') as fh:
                 fh.write('- name: tools\n  id: tools\n- name: docs\n  id: docs\n')
             env = dict(os.environ)

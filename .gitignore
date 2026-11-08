@@ -42,6 +42,11 @@ dist/
 *.key
 *.pem
 .env
+# 2026-11-08 深度审核：数据库/密钥备份产物（含会话 sid 与主密钥材质）
+*.db
+*.bin
+allin-site-db-*
+allin-keybackup-*
 
 # ===== Windows 保留设备名文件（git 无法索引，跳过） =====
 /Life Reset Simulator/nul

@@ -61,7 +61,18 @@ def test_locate_prefers_valid_cordis_src_env(monkeypatch):
     d = tempfile.mkdtemp()
     os.makedirs(os.path.join(d, 'cordis'))
     monkeypatch.setenv('CORDIS_SRC', d)
+    # 2026-11-08 P0-1：仓外 cordis 源需要显式 opt-in（受评审的部署决策）。
+    monkeypatch.setenv('ALLIN_ALLOW_EXTERNAL_CORDIS', '1')
     assert _cordis_locate.locate() == d
+
+
+def test_locate_rejects_external_cordis_src_without_optin(monkeypatch):
+    d = tempfile.mkdtemp()
+    os.makedirs(os.path.join(d, 'cordis'))
+    monkeypatch.setenv('CORDIS_SRC', d)
+    monkeypatch.delenv('ALLIN_ALLOW_EXTERNAL_CORDIS', raising=False)
+    with pytest.raises(RuntimeError):
+        _cordis_locate.locate()
 
 
 def test_locate_invalid_cordis_src_falls_back(monkeypatch):

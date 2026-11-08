@@ -104,13 +104,21 @@ function start() {
   getDb(); // 触发建表 + 密钥环初始化
   const removed = userService.purgeExpiredSessions();
   const app = createApp();
-  const server = app.listen(config.port, () => {
+  // 2026-11-08 深度审核：app.listen(port) 不指定 host 会监听 0.0.0.0/::，
+  // 与「本地运行」口径不符；确需反向代理时显式设 SITE_BIND_HOST。
+  const bindHost = process.env.SITE_BIND_HOST || '127.0.0.1';
+  const server = app.listen(config.port, bindHost, () => {
     console.log(`\n  ALLIN 官网已启动`);
     console.log(`  地址      ${config.baseUrl}`);
+    console.log(`  绑定      ${bindHost}:${config.port}`);
     console.log(`  数据库    ${config.dbPath}`);
     console.log(`  密钥目录  ${config.keyDir}`);
     console.log(`  清理会话  ${removed} 条过期会话\n`);
   });
+  // 慢头/慢体占用：显式设置 HTTP 层超时，不依赖 Node 默认值。
+  server.requestTimeout = 30_000;
+  server.headersTimeout = 10_000;
+  server.keepAliveTimeout = 5_000;
 
   const shutdown = () => {
     server.close(() => process.exit(0));

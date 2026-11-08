@@ -242,9 +242,13 @@ def _check_sast(ctx: "ProjectContext") -> CheckResult:
     pre_commit = ".pre-commit-config.yaml"
     if ctx.has(pre_commit):
         text = ctx.text(pre_commit)
-        if text is None or _SAST_HOOK_RE.search(text):
+        # 2026-11-08 深度审核 A8：读不到（超大 / 含 NUL / 解码失败）不等于
+        # 「配置里有 SAST」。此前 text is None 直接 ok()，把不可读当成已配置。
+        if text is not None and _SAST_HOOK_RE.search(text):
             return CheckResult.ok()
-    return CheckResult.bad("无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）")
+    return CheckResult.bad(
+        "无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子），或配置不可读"
+    )
 
 
 # ---------------------------------------------------------------------------

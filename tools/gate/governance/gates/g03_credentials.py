@@ -116,7 +116,8 @@ ANNOTATION = "gov-credentials: allow"
 #: 文件缺失/不可读时按空集合处理（fail closed：宁可把夹具判红，不开口子）。
 ANNOTATION_ALLOWLIST_REL = "scripts/secret-scan-allowlist.txt"
 
-#: Files whose whole purpose is a documented sample, by suffix or infix.
+#: 历史常量：样例文件后缀。2026-11-08 起**不再**用于整文件豁免（P0-2），
+#: 保留仅为兼容外部引用与文档说明；豁免一律按内容判定。
 SAMPLE_FILE_SUFFIXES = (".example", ".sample", ".template", ".dist")
 SAMPLE_FILE_INFIXES = (".example.", ".sample.", ".template.", ".dist.")
 SAMPLE_FILE_NAMES = frozenset({".env.example", ".env.sample", ".env.template", ".env.dist"})
@@ -189,10 +190,10 @@ def machine_plaintext_findings(roots: list[tuple[Path, int]]) -> list[tuple[str,
                 p = here / fn
                 if p.suffix.lower() in MACHINE_SKIP_SUFFIX:
                     continue
-                if p.name in SAMPLE_FILE_NAMES or any(
-                        p.name.endswith(sfx) for sfx in SAMPLE_FILE_SUFFIXES) or any(
-                        infix in p.name for infix in SAMPLE_FILE_INFIXES):
-                    continue
+                # P0-2（2026-11-08）：文件名后缀不是豁免权。此前任何
+                # *.example / *.sample / *.dist 都被整文件跳过，等于给「把真密钥
+                # 塞进样例文件」留了直通口。现在照常参与内容判定：占位符由下方
+                # value_is_sample() 放行，真实凭据形状照常报红。
                 try:
                     if p.stat().st_size > MAX_FILE_BYTES:
                         continue
@@ -383,11 +384,9 @@ def scan(root: Path, *, include_docs: bool = True,
     report.scanned += len({path for path, _number, _line in candidates})
     allowed_annotation = annotation_allowlist(root, annotation_paths)
     for path, number, line in candidates:
-        name = Path(path).name
-        if (name in SAMPLE_FILE_NAMES or name.endswith(SAMPLE_FILE_SUFFIXES)
-                or any(infix in name for infix in SAMPLE_FILE_INFIXES)):
-            report.exempt("documented sample file")
-            continue
+        # P0-2（2026-11-08）：样例后缀不再整文件豁免。占位符由
+        # value_is_sample / looks_secret 按内容放行；真实令牌形状即使藏在
+        # .env.example 里也必须报红（见 selfcheck 的对应回归用例）。
         if ANNOTATION in line and path in allowed_annotation:
             report.exempt("inline annotation (allowlisted fixture file)")
             continue
@@ -499,10 +498,20 @@ def selfcheck() -> int:
         report = scan(sandbox.path, machine_roots=[])
         check.quiet("a repository with no credential shape", bool(report.findings))
 
+    # P0-2（2026-11-08）：样例后缀不再是豁免权。
     with govlib.Sandbox() as sandbox:
-        sandbox.write("src/config.sample.ts", "const key = 'sk-abcdefghijklmnopqrstuvwxyz012345'\n")  # gov-credentials: allow
+        sandbox.write("src/config.sample.ts",
+                      "const key = 'sk-abcdefghijklmnopqrstuvwxyz012345'\n")  # gov-credentials: allow
         report = scan(sandbox.path, machine_roots=[])
-        check.quiet("a documented sample file suffix", bool(report.findings))
+        check.detects("a real token shape hidden behind a .sample suffix",
+                      any(f.path.endswith("config.sample.ts") for f in report.findings))
+
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("src/config.example.ts",
+                      "const key = 'sk-example-placeholder-000000000000'\n")
+        report = scan(sandbox.path, machine_roots=[])
+        check.quiet("a placeholder inside a sample-suffixed file stays quiet",
+                    any("config.example.ts" in f.path for f in report.findings))
 
     # 第三面：机器本地明文凭据文件（2026-11-01）
     with govlib.Sandbox() as sandbox:

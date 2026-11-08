@@ -144,7 +144,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     _configure_stdio()
     args = build_parser().parse_args()
-    rc = dispatch(args)
+    try:
+        rc = dispatch(args)
+    except (AttributeError, FileNotFoundError, ImportError, RuntimeError, ValueError) as exc:
+        # 2026-11-08 深度审核：_boot / 服务方法的异常此前全部裸 traceback，
+        # 机器消费方无法区分故障类型。统一为可读诊断 + 环境错误码。
+        print(f'allin: 命令执行失败：{exc.__class__.__name__}: {exc}', file=sys.stderr)
+        return 3
     return _exit_code(rc)
 
 

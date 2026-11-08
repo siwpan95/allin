@@ -239,7 +239,15 @@ class Report:
         self.notes.append(message)
 
     def exit_code(self) -> int:
-        return EXIT_BLOCKING if self.findings else EXIT_OK
+        if self.findings:
+            return EXIT_BLOCKING
+        # 2026-11-08 深度审核 A1：SKIP ≠ pass。此前 render() 明写
+        # 「SKIPPED (not a pass)」，退出码却恒 0，聚合器把整类未检查当成 clean。
+        # 默认保持兼容（部分门禁在无对象时会记 skip）；严格模式下由
+        # ALLIN_GATE_STRICT_SKIP=1 让「没检查」以非零退出码暴露，供 CI 准出消费。
+        if self.skipped and os.environ.get('ALLIN_GATE_STRICT_SKIP') == '1':
+            return EXIT_USAGE
+        return EXIT_OK
 
     def render(self, sample_limit: int = SAMPLE_LIMIT) -> str:
         lines = [

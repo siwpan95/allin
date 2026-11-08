@@ -19,7 +19,7 @@
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `0.0.0a4`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   发布为 PyPI 包 `allin-governance`（当前版本 `0.0.0a5`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 
@@ -83,7 +83,8 @@ allin preset list
 allin docs portfolio --apply
 ```
 
-生成骨架包含 14 道门禁，子命令语义以 `allin-governance --help` 与
+生成骨架包含 14 道门禁的出厂子集（仓内注册表共 20 道，`init` 按「纯标准库即可运行」裁剪）；
+子命令语义以 `allin-governance --help` 与
 [`packages/allin-governance/README.md`](packages/allin-governance/README.md) 为准。
 
 ## 关键配置说明
@@ -126,4 +127,4 @@ allin docs portfolio --apply
 ---
 
 *最后更新：2026-11-08 —— 补 `site/` 与 `website/` 区分说明，
-allin-governance 版本口径同步至 `0.0.0a4`。体例沿革（2026-11-07 重写为中性直述）与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*
+allin-governance 版本口径同步至 `0.0.0a5`。体例沿革（2026-11-07 重写为中性直述）与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*

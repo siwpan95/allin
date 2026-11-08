@@ -32,8 +32,10 @@ class DocsService(Service):
     def aliases(self):
         script = os.path.join(ROOT, 'tools', 'gate', 'make_doc_aliases.ps1')
         if not os.path.isfile(script):
-            print('（make_doc_aliases.ps1 不存在）')
-            return None
+            # 2026-11-08 深度审核：缺脚本时 return None 会被 CLI 映射成 exit 0，
+            # 「什么都没做」假绿。改为环境错误码。
+            print('（make_doc_aliases.ps1 不存在）', file=sys.stderr)
+            return 3
         cmd = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script]
         return subprocess.run(cmd, cwd=ROOT)
 
@@ -41,6 +43,6 @@ class DocsService(Service):
     def index(self):
         tool = os.path.join(TOOLS_DIR, 'gate', 'docs_index.py')
         if not os.path.isfile(tool):
-            print('（docs_index.py 不存在）')
-            return None
+            print('（docs_index.py 不存在）', file=sys.stderr)
+            return 3
         return subprocess.run([sys.executable, tool], cwd=ROOT)

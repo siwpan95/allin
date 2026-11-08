@@ -7,3 +7,10 @@ keys/
 .env
 *.log
 .DS_Store
+
+# 2026-11-08 深度审核：备份产物兜底。backup:data / backup-key 要求写到仓外，
+# 但 --out 指错时可能落进版本库树 —— 显式忽略，防止会话凭据/密钥快照被 git 收走。
+*.db
+*.bin
+allin-site-db-*
+allin-keybackup-*

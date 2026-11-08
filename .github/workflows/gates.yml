@@ -16,7 +16,8 @@
 #   2. g17-registry 在 CI 上必然 SKIP（not a pass）——发布区不在本仓内。
 #      SKIP ≠ 通过，所以这个 job 不声称「20/20 全绿」。
 #   3. --no-profile：g14-preset 的 profile 探针读 DSH 部署面，CI 上不存在。
-#   4. --no-aliases：docs/spec 等 ASCII 别名是 junction/symlink，不入库。
+#   4. ASCII 别名（docs/spec 等 junction/symlink）不入库；run.ts 只支持
+#      --no-profile，不存在 --no-aliases 参数（旧注释已纠正，2026-11-08）。
 #   5. Windows job 补跑 g20-facts —— 那一道只有 Windows 能判，且它判的正是
 #      「本机事实声称与磁盘是否一致」，在 Windows runner 上才有本机磁盘。
 #      这是本仓唯一「两套 runner 各跑一部分」的分工，两边合起来才是 20 道。
@@ -68,13 +69,23 @@ jobs:
       - name: bootstrap（按上手指南的三条命令）
         run: bash scripts/bootstrap.sh
 
-      # ALLIN_STRICT_SKIP 默认 0：CI runner 无发布区，repo_hygiene 按设计记 SKIP，
-      # 开严格模式会把「环境不适用」误判为失败。准出侧改由 ALLIN_GATE_SUMMARY 的
-      # status=clean 判定（见 .gitee/PULL_REQUEST_TEMPLATE.zh-CN.md），含 SKIP 不再放行。
+      # 2026-11-08 深度审核 A1：此前注释声称「准出侧看 status=clean」，但 CI 里
+      # 没有任何 step 解析 ALLIN_GATE_SUMMARY ⇒ incomplete（含 SKIP）照样绿灯。
+      # 现在把 status=clean 做成机器判据：日志落盘 + 独立 step 断言。
       - name: 全部门禁（与本地同一条命令）
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
-        run: bash scripts/run_all_gates.sh
+        run: |
+          set -o pipefail
+          bash scripts/run_all_gates.sh | tee /tmp/allin-gates.log
+
+      - name: 准出断言（status=clean 才算通过）
+        run: |
+          if ! grep -q 'ALLIN_GATE_SUMMARY status=clean' /tmp/allin-gates.log; then
+            echo "::error::门禁汇总不是 status=clean；含 SKIP 的 incomplete / failed 不得作为准出凭据"
+            tail -n 30 /tmp/allin-gates.log
+            exit 1
+          fi
 
       - name: 本仓 monorepo 自检
         run: |

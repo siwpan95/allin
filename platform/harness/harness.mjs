@@ -14,6 +14,20 @@ const resolve = (s) => (s || '')
   .replaceAll('{node}', MANIFEST.runtime?.node || 'node')
   .replaceAll('{python}', MANIFEST.runtime?.python || 'python')
 
+// 2026-11-08 深度审核 A4：manifest 固定探活 :9000，而平台已改为 PORT=0
+// 并写端口发现文件 data/portal.port。固定端口会让「门户不在线」成为常态，
+// 配合 informational 用例忽略 errors ⇒ harness 恒报全绿。这里改为优先读
+// 实际绑定端口，环境变量 PLATFORM_PORTAL_URL 可显式覆盖。
+function probeTarget(c) {
+  if (process.env.PLATFORM_PORTAL_URL) return process.env.PLATFORM_PORTAL_URL
+  try {
+    const raw = fs.readFileSync(path.join(ROOT, 'data', 'portal.port'), 'utf8').trim()
+    const port = Number.parseInt(raw, 10)
+    if (Number.isInteger(port) && port > 0) return `http://127.0.0.1:${port}/`
+  } catch { /* 无端口发现文件：回退 manifest 声明，且失败必须计入 failures */ }
+  return c.target
+}
+
 // 挂载组件（组合即数据：enabled:false = 运行时下架，对齐 cordis.yml 语义）
 for (const c of MANIFEST.components) {
   if (c.enabled === false) continue
@@ -23,7 +37,7 @@ for (const c of MANIFEST.components) {
     register(c.id, {
       kind: 'probe', alive: () => true, ready: () => true,
       call: async () => {
-        const r = await fetch(c.target, { signal: AbortSignal.timeout(c.timeout ?? 5000) })
+        const r = await fetch(probeTarget(c), { signal: AbortSignal.timeout(c.timeout ?? 5000) })
         const body = await r.text()
         if (r.status !== 200) throw new Error('status ' + r.status)
         if (c.marker && !body.includes(c.marker)) throw new Error('marker missing: ' + c.marker)
@@ -51,11 +65,14 @@ for (const c of CASES) {
   const { consensus, diverged } = analyzeDivergence(sub)
   const match = c.expected === null ? true : (consensus !== null && JSON.stringify(consensus) === JSON.stringify(c.expected))
   if (c.expectConsensus && (diverged.length || errors.length || !match)) failures++
-  // E4 eval-invariant：informational 用例声明预期分歧名单，超出预期 = 真失败
+  // E4 eval-invariant：informational 用例声明预期分歧名单，超出预期 = 真失败。
+  // 2026-11-08 深度审核 A4：组件全部报错时 analyzeDivergence 得到
+  // consensus=null / diverged=[]，与 expectDiverged:[] 恰好相等 ⇒ 旧逻辑把
+  // 「一个组件都没跑起来」判成全绿。errors 必须独立计入 failures。
   if (!c.expectConsensus && Array.isArray(c.expectDiverged)) {
     const got = [...diverged].sort().join(',')
     const want = [...c.expectDiverged].sort().join(',')
-    if (got !== want) failures++
+    if (got !== want || errors.length) failures++
   }
   if (diverged.length || errors.length || (c.expected !== null && !match)) {
     events.push({ type: 'divergence', case: c.name, consensus, expected: c.expected, expectDiverged: c.expectDiverged ?? null, diverged, errors: errors.map((r) => r.id + ':' + r.error) })

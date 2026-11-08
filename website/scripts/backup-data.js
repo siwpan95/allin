@@ -36,9 +36,11 @@ function main() {
   if (!outDir) fail('用法：npm run backup:data -- --out <外部目录>');
 
   const resolved = path.resolve(outDir);
-  const root = path.resolve(config.root);
+  // 2026-11-08 深度审核 P1：围栏原先只挡 website/ 子树，父仓（版本库根）
+  // 仍可写，产物会被 git 收走。上移到仓库根。
+  const root = path.resolve(config.root, '..');
   if (resolved === root || resolved.startsWith(root + path.sep)) {
-    fail('数据库备份不得写进仓库目录内 —— 避免与 data/keys/ 落进同一棵会被整体复制的树。请换外部目录/介质。');
+    fail('数据库备份不得写进仓库目录内（含父仓根）—— 避免与 data/keys/ 落进同一棵会被整体复制的树。请换外部目录/介质。');
   }
   if (!fs.existsSync(config.dbPath)) {
     fail(`源库不存在：${config.dbPath}（先跑 npm run bootstrap）`);
@@ -61,6 +63,21 @@ function main() {
     fail(`VACUUM INTO 失败：${(err && err.message) || err}`);
   } finally {
     if (db) db.close();
+  }
+
+  // 2026-11-08 深度审核 P1：VACUUM INTO 复制整库，sessions 表里的 sid、
+  // csrf_token、ip 会明文进快照 —— 拿到备份无需主密钥即可冒充在线用户。
+  // 灾备快照只需要密文库，会话凭据不属于其中；生成后清空并物理压缩。
+  let backup;
+  try {
+    backup = new DatabaseSync(outFile);
+    backup.exec('DELETE FROM sessions');
+    backup.exec('VACUUM');
+  } catch (err) {
+    try { fs.unlinkSync(outFile); } catch { /* 尽力而为 */ }
+    fail(`备份快照清理会话表失败，已删除产物：${(err && err.message) || err}`);
+  } finally {
+    if (backup) backup.close();
   }
 
   const size = fs.statSync(outFile).size;

@@ -24,8 +24,11 @@ def get_gitee_token() -> str | None:
         out = subprocess.run(
             ['git', 'credential', 'fill'],
             input='protocol=https\nhost=gitee.com\n',
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
         )
+        if out.returncode != 0:
+            # 2026-11-08 深度审核：此前不检查 returncode，git 失败时静默返回 None。
+            return None
         for line in out.stdout.splitlines():
             if line.startswith('password='):
                 return line[len('password='):]
@@ -58,6 +61,12 @@ class ToolService(Service):
 
     # ---- 凭据脚本：gitee-credential.ps1 / tavily-credential.ps1 ----
     def credential(self, name: str, action: str = 'get'):
+        # 2026-11-08 深度审核：name 原样拼进文件名后经
+        # powershell -ExecutionPolicy Bypass -File 执行；`..\\` 或绝对路径可指向
+        # 任意 .ps1。凭据名是标识符，不是路径。
+        if (not isinstance(name, str) or not name
+                or not all(c.isalnum() or c in '_-' for c in name)):
+            raise ValueError(f'非法凭据名：{name!r}（只允许字母/数字/下划线/连字符）')
         script = os.path.join(TOOLS_DIR, 'credentials', f'{name}-credential.ps1')
         if not os.path.isfile(script):
             raise FileNotFoundError(f'凭据脚本不存在: {script}')

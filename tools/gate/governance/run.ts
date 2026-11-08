@@ -319,7 +319,10 @@ function main(argv: string[]): number {
     }
   }
   const failed = outcomes.filter(outcome => outcome.code !== EXIT_OK)
+  // 2026-11-08 深度审核 A2：`19/19 clean` 会把平台不适用的门禁隐藏起来。
+  // 跳过数量必须与分子同屏出现，否则「20 道」实际只判了 19 道却显示全绿。
   console.log(`governance: ${outcomes.length - failed.length}/${outcomes.length} gate(s) clean`
+    + (platformSkipped.length ? `; ${platformSkipped.length} SKIPPED (not a pass)` : '')
     + (failed.length === 0 ? '' : `; failed: ${failed.map(outcome => outcome.gate.id).join(', ')}`))
   // 失败即给修法（2026-11-07）：评审意见「失败时该找谁/怎么修」——提示文本与门禁
   // 同处 registry.json 声明，没有第三份清单可漂移。字段缺失时降级为 RULES.md 指针。

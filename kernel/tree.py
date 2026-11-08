@@ -29,8 +29,29 @@ from cordis import Context, Loader  # noqa: E402
 from kernel import registry  # noqa: E402
 from kernel.registry import SYNTH_PREFIX  # noqa: E402
 
-# 配置树目录（仓库资产，不随 wheel 分发；可用 ALLIN_CONFIGS 指向别处）
-CONFIG_DIR = os.environ.get('ALLIN_CONFIGS') or os.path.join(ROOT, 'kernel', 'configs')
+# 配置树目录（仓库资产，不随 wheel 分发）。
+# 安全：ALLIN_CONFIGS 只能指向仓内目录 —— 配置树等同可执行代码（见下方白名单说明），
+# 允许它指向任意外部路径就等于把「换掉整棵服务图」的能力交给环境变量。
+def _safe_config_dir() -> str:
+    default = os.path.join(ROOT, 'kernel', 'configs')
+    raw = os.environ.get('ALLIN_CONFIGS')
+    if not raw:
+        return default
+    candidate = os.path.realpath(raw)
+    root = os.path.realpath(ROOT)
+    try:
+        inside = os.path.commonpath((candidate, root)) == root
+    except ValueError:             # 不同盘符：commonpath 直接抛
+        inside = False
+    if not inside or not os.path.isdir(candidate):
+        raise RuntimeError(
+            f'ALLIN_CONFIGS 必须指向仓内已存在的目录（当前={raw!r}，仓根={root!r}）——'
+            '配置树会被 cordis 直接 import，拒绝外部路径以防服务图劫持。'
+        )
+    return candidate
+
+
+CONFIG_DIR = _safe_config_dir()
 
 ALLIN_CONFIG = 'cordis.allin.yml'
 
@@ -54,6 +75,13 @@ def _want_all_from_config() -> tuple:
     except FileNotFoundError:
         # 配置缺席（新装环境 / ALLIN_CONFIGS 指向空目录）时的出厂口径
         return ('docs', 'platform', 'preset', 'tools')
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        # 2026-11-08 深度审核：YAML 语法错、BOM/GBK 解码错、权限错此前让
+        # `import kernel.tree` 崩在导入期，连 `allin --help` 都不可用。
+        raise RuntimeError(
+            f'{ALLIN_CONFIG} 读取或解析失败（{exc.__class__.__name__}: {exc}）——'
+            '请检查 YAML 语法与文件编码（应为 UTF-8 无 BOM）。'
+        ) from exc
     ids = tuple(e['id'] for e in data if isinstance(e, dict) and e.get('id'))
     unknown = [i for i in ids if i not in registry.SERVICES]
     if unknown:
@@ -95,24 +123,53 @@ def _resolve_service_names(data, path: str) -> int:
     return n
 
 
-def _validate_entry_names(data, path: str) -> None:
-    """拒绝白名单之外的 entry name（会被 cordis 当模块名导入）。"""
-    if not isinstance(data, list):
+def _reject_js_expr(value, path: str, where: str) -> None:
+    """拒绝配置表达式：cordis 的 interpolate() 会对 __jsExpr 执行裸 eval()。"""
+    if isinstance(value, dict):
+        if '__jsExpr' in value:
+            raise ValueError(
+                f'配置树 {path} 的 {where} 含 __jsExpr —— cordis 的 evaluate() 会对其执行 '
+                'eval(expr, {"ctx": ctx})，配置不得携带可执行表达式。'
+            )
+        for key, item in value.items():
+            _reject_js_expr(item, path, f'{where}.{key}')
+    elif isinstance(value, (list, tuple)):
+        for i, item in enumerate(value):
+            _reject_js_expr(item, path, f'{where}[{i}]')
+
+
+def _validate_entries(data, path: str, where: str) -> None:
+    """递归校验所有层级的 entry name。
+
+    Group 的 config 是嵌套 entry 列表，cordis 经
+    EntryGroup.update → Entry._init → importlib.import_module 递归加载；
+    只校验顶层等于把白名单整体绕过（2026-11-08 深度审核 P0-1）。
+    """
+    if not isinstance(data, (list, tuple)):
         return
     for i, entry in enumerate(data):
+        loc = f'{where}[{i}]'
         if not isinstance(entry, dict):
             continue
         name = entry.get('name')
-        if not isinstance(name, str):
-            continue
-        if name in ALLOWED_NAME_EXACT or name.startswith(ALLOWED_NAME_PREFIXES):
-            continue
-        raise ValueError(
-            f'配置树 {path} 第 {i} 条 entry 的 name={name!r} 不在白名单内 —— '
-            f'entry name 会被 cordis 直接 import，等同于执行代码。'
-            f'允许前缀：{ALLOWED_NAME_PREFIXES}；或使用 registry.py 里的服务短名'
-            f'（{len(registry.SERVICES)} 个）。'
-        )
+        if isinstance(name, str) and not (
+            name in ALLOWED_NAME_EXACT or name.startswith(ALLOWED_NAME_PREFIXES)
+        ):
+            raise ValueError(
+                f'配置树 {path} 的 {loc} name={name!r} 不在白名单内 —— '
+                f'entry name 会被 cordis 直接 import，等同于执行代码。'
+                f'允许前缀：{ALLOWED_NAME_PREFIXES}；精确放行：{ALLOWED_NAME_EXACT}；'
+                f'或使用 registry.py 里的服务短名（{len(registry.SERVICES)} 个）。'
+            )
+        _reject_js_expr(entry, path, loc)
+        config = entry.get('config')
+        if isinstance(config, (list, tuple)):
+            _validate_entries(config, path, f'{loc}.config')
+
+
+def _validate_entry_names(data, path: str) -> None:
+    """拒绝白名单之外的 entry name（会被 cordis 当模块名导入）。"""
+    _validate_entries(data, path, 'root')
 
 
 async def load_tree(ctx, path: str):
@@ -137,15 +194,16 @@ async def load_tree(ctx, path: str):
 
 async def await_ready(ctx, loader, want=(), timeout: float = 8.0) -> bool:
     """等待配置树加载完成：want 中服务全部可达。"""
+    import time
     want = tuple(want)
-    dt = 1.0 / 60.0
-    elapsed = 0.0
-    while elapsed < timeout:
+    # 2026-11-08 深度审核：原实现用 elapsed += 1/60 配 sleep(0)，480 次循环
+    # 瞬间跑完，声称的 8s 超时根本不成立。改用单调时钟的实际墙钟。
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
         await loader.await_()
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         if all(getattr(ctx, n, None) is not None for n in want):
             return True
-        elapsed += dt
     missing = [n for n in want if getattr(ctx, n, None) is None]
     raise RuntimeError(
         f"配置树未在 {timeout}s 内就绪；缺失服务: {missing}\n"

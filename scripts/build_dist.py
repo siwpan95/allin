@@ -219,6 +219,17 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _configure_stdio() -> None:
+    """强制 UTF-8 输出：Windows GBK 控制台打印 ⚠ 会 UnicodeEncodeError。
+
+    与 allin_cli.py / govlib.configure_stdio() 同一口径（2026-11-08 实测）。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace", newline="\n")
+
+
 def _report(out_dir: Path, *, sdist: bool) -> None:
     print("\n产物：")
     for item in sorted(out_dir.iterdir()):
@@ -234,4 +245,5 @@ def _report(out_dir: Path, *, sdist: bool) -> None:
 
 
 if __name__ == "__main__":
+    _configure_stdio()
     raise SystemExit(main())

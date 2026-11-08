@@ -13,6 +13,27 @@ from kernel.cordis import Service
 from kernel.paths import PRESET_DIR
 
 
+def _resolve_preset(name: str) -> str:
+    """把 name 钉死在 PRESET_DIR 内的一级条目，拒绝 ../ 与绝对路径。
+
+    2026-11-08 深度审核：`show(name)` 原样 join 后 open().read()，`preset show
+    ..\\..\\.env` 可读仓内任意文件（含凭据）。preset 名是标识符，不是路径。
+    """
+    if (not isinstance(name, str) or not name or name in ('.', '..')
+            or os.path.isabs(name) or '/' in name or '\\' in name
+            or '\x00' in name):
+        raise ValueError(f'非法 preset 名：{name!r}（只允许 PRESET_DIR 下的一级名称）')
+    base = os.path.realpath(PRESET_DIR)
+    path = os.path.realpath(os.path.join(base, name))
+    try:
+        inside = os.path.commonpath((path, base)) == base
+    except ValueError:
+        inside = False
+    if not inside:
+        raise ValueError(f'preset 名越出 PRESET_DIR：{name!r}')
+    return path
+
+
 class PresetService(Service):
     def __init__(self, ctx, config=None):
         super().__init__(ctx, 'preset')
@@ -33,7 +54,7 @@ class PresetService(Service):
 
     # ---- 查看某个 preset 的内容（只读）----
     def show(self, name: str):
-        path = os.path.join(PRESET_DIR, name)
+        path = _resolve_preset(name)
         if not os.path.exists(path):
             raise FileNotFoundError(f'preset 不存在: {path}')
         if os.path.isdir(path):
@@ -51,7 +72,7 @@ class PresetService(Service):
     # 非零退出码。WJ-01 整改：消除「--yes 零动作」的假绿（此前 dry_run=False
     # 与 dry_run=True 行为完全一致、退出码恒 0）。
     def apply(self, name: str, dry_run: bool = True) -> dict:
-        path = os.path.join(PRESET_DIR, name)
+        path = _resolve_preset(name)
         if not os.path.exists(path):
             raise FileNotFoundError(f'preset 不存在: {path}')
         verb = '【dry-run】将应用' if dry_run else '应用'

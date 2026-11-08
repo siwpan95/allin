@@ -53,6 +53,12 @@ def _pid_alive(pid) -> bool:
     if sys.platform == 'win32':
         try:
             k32 = ctypes.windll.kernel32
+            # 2026-11-08 深度审核：未声明 restype/argtypes 时 ctypes 默认把
+            # 句柄当 c_int 返回，64 位进程上会被截断 ⇒ CloseHandle 关错句柄。
+            k32.OpenProcess.argtypes = (ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32)
+            k32.OpenProcess.restype = ctypes.c_void_p
+            k32.CloseHandle.argtypes = (ctypes.c_void_p,)
+            k32.CloseHandle.restype = ctypes.c_int
             handle = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
             if not handle:
                 return False
@@ -115,9 +121,16 @@ def _gate_summary(gate_runs: str):
         if not line:
             continue
         try:
-            runs.append(json.loads(line))
+            rec = json.loads(line)
         except ValueError:
             corrupt = True      # 坏行计数，但不阻塞（与 portal 侧跳过口径一致）
+            continue
+        if not isinstance(rec, dict):
+            # 2026-11-08 深度审核：合法 JSON 但非 dict（list/int/str）会让下面
+            # r.get(...) / tail[-1].get('ts') 抛未捕获 AttributeError。
+            corrupt = True
+            continue
+        runs.append(rec)
     tail = runs[-GATE_TAIL:]
     # SKIP 单列：仅 `skipped is True` 才算 SKIP；旧留痕无该字段按真跑兼容回放。
     # SKIP 不计入 failed / escapeRate / lastOkAt；inTail 与 lastRunAt 仍按全量 tail。
@@ -148,7 +161,8 @@ def _platform_summary(running_json: str = RUNNING_JSON, portal_port: str = PORTA
         else:
             return 'corrupt', {}
     entries = data if isinstance(data, dict) else {}
-    alive = {eid: rec for eid, rec in entries.items() if _pid_alive((rec or {}).get('pid'))}
+    alive = {eid: rec for eid, rec in entries.items()
+             if isinstance(rec, dict) and _pid_alive(rec.get('pid'))}
     stale = len(entries) - len(alive)
     port = None
     if os.path.exists(portal_port):

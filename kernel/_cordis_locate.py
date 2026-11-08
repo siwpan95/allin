@@ -36,10 +36,28 @@ def _find_spec():
         return None
 
 
+def _external_allowed(path: str) -> bool:
+    """CORDIS_SRC 默认只允许仓内目录；跨仓复用必须显式 opt-in。"""
+    if os.environ.get('ALLIN_ALLOW_EXTERNAL_CORDIS') == '1':
+        return True
+    root = os.path.realpath(repo_root())
+    candidate = os.path.realpath(path)
+    try:
+        return os.path.commonpath((candidate, root)) == root
+    except ValueError:             # 不同盘符
+        return False
+
+
 def locate() -> str | None:
     """返回可用的 cordis 源码目录；都不存在时返回 None。"""
     env = os.environ.get('CORDIS_SRC')
     if env and os.path.isdir(env) and os.path.isdir(os.path.join(env, 'cordis')):
+        if not _external_allowed(env):
+            raise RuntimeError(
+                f'CORDIS_SRC 指向仓外目录（{env!r}）—— cordis 提供 Loader / Service，'
+                '外部副本可劫持整个服务图。如确需跨仓复用，请显式设置 '
+                'ALLIN_ALLOW_EXTERNAL_CORDIS=1（受评审的部署决策）。'
+            )
         return env
     v = vendor_dir()
     if os.path.isdir(v) and os.path.isdir(os.path.join(v, 'cordis')):

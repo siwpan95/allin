@@ -76,7 +76,12 @@ function cmdBackup() {
     );
   }
   const resolvedOut = path.resolve(outDir);
-  if (resolvedOut.startsWith(path.resolve(config.root) + path.sep) && !resolvedOut.startsWith(os.tmpdir())) {
+  // 2026-11-08 深度审核 P1：围栏上移到仓库根（config.root 是 website 子目录），
+  // 且「恰好等于 website 根」也必须拦截（原先 startsWith(root+sep) 会漏掉等号情形）。
+  const repoRoot = path.resolve(config.root, '..');
+  if ((resolvedOut === repoRoot || resolvedOut === path.resolve(config.root)
+       || resolvedOut.startsWith(repoRoot + path.sep))
+      && !resolvedOut.startsWith(path.resolve(os.tmpdir()))) {
     fail(`备份不得写进仓库目录内（${resolvedOut}）—— 换外部介质/目录，防 git 意外收走。`);
   }
   const db = getDb();
@@ -150,6 +155,11 @@ function cmdRestore() {
   const db = getDb();
   const restored = [];
   for (const row of payload.rows) {
+    // 2026-11-08 深度审核 P1：key_id 原样拼进 path.join(keyDir, keyId+'.key')，
+    // 构造含 ../ 的备份即可写任意路径。key_id 必须是纯标识符。
+    if (!row || typeof row.key_id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(row.key_id)) {
+      fail(`备份中的 key_id 非法（疑似路径穿越）：${String(row && row.key_id)}`);
+    }
     db
       .prepare(
         `INSERT INTO crypto_keys (key_id, source, is_active) VALUES (?, ?, ?)
