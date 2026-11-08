@@ -278,9 +278,21 @@ async function main() {
   child.kill('SIGKILL');
 
   const failed = results.filter((r) => !r.ok);
+  // B4：把「分母自定」改成机器可读、可冻结的判据。
+  //   - case ID 唯一性：条件分支若重复记同名 step，属夹具缺陷，判红；
+  //   - 项数下限：无 seed 态实测 23 项、正常态 28 项；低于下限说明有分支被静默跳过，判红；
+  //   - 汇总行供 PR / CI 引用，不再用「X/X」这种自报自话的分母。
+  const ids = results.map((r) => r.name);
+  const duplicates = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+  const MIN_EXPECTED_STEPS = 23;
+  const countShort = results.length < MIN_EXPECTED_STEPS;
+  const status = failed.length || duplicates.length || countShort ? 'incomplete' : 'clean';
   console.log('  ----------------------------------------------------------');
-  console.log(`  ${results.length - failed.length}/${results.length} 通过\n`);
-  process.exit(failed.length ? 1 : 0);
+  console.log(`  ${results.length - failed.length}/${results.length} 通过`);
+  console.log(`  SMOKE_SUMMARY total=${results.length} passed=${results.length - failed.length} failed=${failed.length} min_expected=${MIN_EXPECTED_STEPS} duplicate_cases=${duplicates.length} status=${status}\n`);
+  if (duplicates.length) console.error(`  [FAIL] 重复 case ID：${duplicates.join(' / ')}`);
+  if (countShort) console.error(`  [FAIL] 冒烟项数 ${results.length} < 冻结下限 ${MIN_EXPECTED_STEPS}：有分支被静默跳过`);
+  process.exit(failed.length || duplicates.length || countShort ? 1 : 0);
 }
 
 main().catch((err) => {

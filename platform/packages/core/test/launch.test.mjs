@@ -67,7 +67,13 @@ test('stopEntry 可停止外部登记进程（跨进程树杀 + 条目清除）'
 
 test('子进程退出后 running.json 条目清除（exit 事件回弹）', async () => {
   const r = startEntry(fakeEntry('t2'), { owner: 'test' })
-  spawnSync('taskkill', ['/PID', String(r.pid), '/T', '/F'], { stdio: 'ignore' })
+  // 跨平台杀进程：原实现只调用 Windows 的 taskkill，Linux CI 会 ENOENT 使用例失败。
+  // B3 把 platform 测试接入 posix job 后这条必须可移植；POSIX 直接向 pid 发 SIGKILL。
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/PID', String(r.pid), '/T', '/F'], { stdio: 'ignore' })
+  } else {
+    try { process.kill(r.pid, 'SIGKILL') } catch { /* 子进程已退出 */ }
+  }
   const deadline = Date.now() + 5000
   while (Date.now() < deadline && isRunning('t2')) await new Promise((res) => setTimeout(res, 100))
   assert.equal(isRunning('t2'), false)

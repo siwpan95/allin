@@ -1,0 +1,21 @@
+=== T24 E2E 连续 10 次稳定性（B5 负向/flaky 整改验证）===
+command: for i in $(seq 1 10); do node scripts/smoke_e2e.mjs 2>&1; done（逐次取 ALLIN_E2E_SUMMARY）
+node: 22.22.2
+date: 2026-11-08
+
+run 1  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 2  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 3  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 4  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 5  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 6  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 7  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 8  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 9  rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+run 10 rc=0  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false
+
+TOTAL pass=10 fail=0
+
+结论：同 commit 连续 10 次全绿，原 B5「同 commit 连续 10 次全绿未做（本轮 1 次）」缺口已闭合；
+CP4 首页 marker 的 3 次带退避重试 + 60s 预算纳入退出码 + CP7 真实 portal 接通均稳定通过。
+仍缺：marker 缺失负向夹具（证明 CP4 检查在真实失败时确实 FAIL，防 false-green）——列为 B5 剩余子项。

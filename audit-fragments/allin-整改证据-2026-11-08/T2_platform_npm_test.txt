@@ -1,0 +1,285 @@
+
+> allin-platform@0.1.0 test
+> node --test packages/core/test/*.test.mjs apps/portal/test/*.test.mjs apps/cli/test/*.test.mjs test/*.test.mjs
+
+TAP version 13
+# Subtest: filterEntries 多关键词 AND 模糊匹配（id/名称/分类/标签）
+ok 1 - filterEntries 多关键词 AND 模糊匹配（id/名称/分类/标签）
+  ---
+  duration_ms: 2.7569
+  type: 'test'
+  ...
+# Subtest: displayWidth 中文按 2 列计
+ok 2 - displayWidth 中文按 2 列计
+  ---
+  duration_ms: 0.5925
+  type: 'test'
+  ...
+# Subtest: renderTable 中英文混排各行显示宽度一致
+ok 3 - renderTable 中英文混排各行显示宽度一致
+  ---
+  duration_ms: 0.9214
+  type: 'test'
+  ...
+# Subtest: readPortalPort 端口文件解析 / 缺失与损坏返回 null
+ok 4 - readPortalPort 端口文件解析 / 缺失与损坏返回 null
+  ---
+  duration_ms: 3.7669
+  type: 'test'
+  ...
+# [allin-platform portal] http://127.0.0.1:1205/
+# Subtest: GET /api/status
+ok 5 - GET /api/status
+  ---
+  duration_ms: 44.1473
+  type: 'test'
+  ...
+# Subtest: Host 围栏：回环 Host（127.0.0.1 / localhost / [::1]）放行
+ok 6 - Host 围栏：回环 Host（127.0.0.1 / localhost / [::1]）放行
+  ---
+  duration_ms: 19.4132
+  type: 'test'
+  ...
+# Subtest: Host 围栏：攻击域名 / 空 Host → 403（DNS rebinding 防护）
+ok 7 - Host 围栏：攻击域名 / 空 Host → 403（DNS rebinding 防护）
+  ---
+  duration_ms: 14.9015
+  type: 'test'
+  ...
+# Subtest: GET /api/library 与 registry 全集双向一致（problems 为空）
+ok 8 - GET /api/library 与 registry 全集双向一致（problems 为空）
+  ---
+  duration_ms: 1398.7953
+  type: 'test'
+  ...
+# Subtest: GET /api/library 挂机族子视图数据（order/note 回填）
+ok 9 - GET /api/library 挂机族子视图数据（order/note 回填）
+  ---
+  duration_ms: 1317.2967
+  type: 'test'
+  ...
+# Subtest: GET /api/library 返回 gameplay 标签（受控枚举回填）
+ok 10 - GET /api/library 返回 gameplay 标签（受控枚举回填）
+  ---
+  duration_ms: 1267.9531
+  type: 'test'
+  ...
+# Subtest: GET /api/workshop 目录 = 有 publish 的项目（无订阅 → 不触发 gitee 网络）
+ok 11 - GET /api/workshop 目录 = 有 publish 的项目（无订阅 → 不触发 gitee 网络）
+  ---
+  duration_ms: 38.0617
+  type: 'test'
+  ...
+# Subtest: GET /workshop/catalog 静态目录页（HTML）
+ok 12 - GET /workshop/catalog 静态目录页（HTML）
+  ---
+  duration_ms: 35.6497
+  type: 'test'
+  ...
+# Subtest: GET /api/workshop/audit 审计流水
+ok 13 - GET /api/workshop/audit 审计流水
+  ---
+  duration_ms: 5.0741
+  type: 'test'
+  ...
+# Subtest: GET /api/alerts E5 订阅视图（聚合分歧事件，无事件时为空数组）
+ok 14 - GET /api/alerts E5 订阅视图（聚合分歧事件，无事件时为空数组）
+  ---
+  duration_ms: 56.0038
+  type: 'test'
+  ...
+# Subtest: POST 启动未知项目 → 404（本地调用方带标记头）
+ok 15 - POST 启动未知项目 → 404（本地调用方带标记头）
+  ---
+  duration_ms: 34.3668
+  type: 'test'
+  ...
+# Subtest: CSRF 围栏：跨站 Origin / cross-site / 裸请求 → 403，且 shutdown 不执行
+ok 16 - CSRF 围栏：跨站 Origin / cross-site / 裸请求 → 403，且 shutdown 不执行
+  ---
+  duration_ms: 6.8793
+  type: 'test'
+  ...
+# Subtest: CSRF 围栏：本地标记头 / 同源浏览器信号 → 放行到业务逻辑
+ok 17 - CSRF 围栏：本地标记头 / 同源浏览器信号 → 放行到业务逻辑
+  ---
+  duration_ms: 55.9127
+  type: 'test'
+  ...
+# Subtest: fetchBranchCommitStatus 成功 → { ok, commit }
+ok 18 - fetchBranchCommitStatus 成功 → { ok, commit }
+  ---
+  duration_ms: 6.0111
+  type: 'test'
+  ...
+# Subtest: HTTP 非 200 → ok:false + error（不再伪装成 null/无更新）
+ok 19 - HTTP 非 200 → ok:false + error（不再伪装成 null/无更新）
+  ---
+  duration_ms: 0.7086
+  type: 'test'
+  ...
+# Subtest: 网络异常（fetch 抛错/超时）→ ok:false，不抛异常
+ok 20 - 网络异常（fetch 抛错/超时）→ ok:false，不抛异常
+  ---
+  duration_ms: 2.202
+  type: 'test'
+  ...
+# Subtest: 响应缺 commit.sha → ok:false
+ok 21 - 响应缺 commit.sha → ok:false
+  ---
+  duration_ms: 0.6744
+  type: 'test'
+  ...
+# Subtest: fetchBranchCommit 兼容封装：成功返回 sha / 失败返回 null
+ok 22 - fetchBranchCommit 兼容封装：成功返回 sha / 失败返回 null
+  ---
+  duration_ms: 1.1227
+  type: 'test'
+  ...
+# Subtest: startEntry 落 running.json（pid/owner/command）且重复启动被拒
+ok 23 - startEntry 落 running.json（pid/owner/command）且重复启动被拒
+  ---
+  duration_ms: 39.5065
+  type: 'test'
+  ...
+# Subtest: 外部登记条目：活 pid 可见、死 pid 惰性清理
+ok 24 - 外部登记条目：活 pid 可见、死 pid 惰性清理
+  ---
+  duration_ms: 6.5892
+  type: 'test'
+  ...
+# Subtest: stopEntry 可停止外部登记进程（跨进程树杀 + 条目清除）
+ok 25 - stopEntry 可停止外部登记进程（跨进程树杀 + 条目清除）
+  ---
+  duration_ms: 585.8857
+  type: 'test'
+  ...
+# Subtest: 子进程退出后 running.json 条目清除（exit 事件回弹）
+ok 26 - 子进程退出后 running.json 条目清除（exit 事件回弹）
+  ---
+  duration_ms: 565.9624
+  type: 'test'
+  ...
+# Subtest: running.json 损坏时回退 .bak（durable publish 纪律，Phase 1）
+ok 27 - running.json 损坏时回退 .bak（durable publish 纪律，Phase 1）
+  ---
+  duration_ms: 93.6291
+  type: 'test'
+  ...
+# Subtest: probePort：监听中 → true；未监听 → false
+ok 28 - probePort：监听中 → true；未监听 → false
+  ---
+  duration_ms: 28.356
+  type: 'test'
+  ...
+# Subtest: probeEntry：进程存活 + health 就绪 → via health-url
+ok 29 - probeEntry：进程存活 + health 就绪 → via health-url
+  ---
+  duration_ms: 22.1887
+  type: 'test'
+  ...
+# Subtest: probeEntry：进程存活 + 宽限期内端口未就绪 → via starting（慢启动纪律）
+ok 30 - probeEntry：进程存活 + 宽限期内端口未就绪 → via starting（慢启动纪律）
+  ---
+  duration_ms: 4.0407
+  type: 'test'
+  ...
+# Subtest: probeEntry：宽限期外 → via process（不再拖慢启动宽限）
+ok 31 - probeEntry：宽限期外 → via process（不再拖慢启动宽限）
+  ---
+  duration_ms: 2.6419
+  type: 'test'
+  ...
+# Subtest: probeEntry：无服务面 → process / no-probe
+ok 32 - probeEntry：无服务面 → process / no-probe
+  ---
+  duration_ms: 0.4488
+  type: 'test'
+  ...
+# Subtest: loadRegistry: 端口查表与必填字段 fail-loud
+ok 33 - loadRegistry: 端口查表与必填字段 fail-loud
+  ---
+  duration_ms: 8.9362
+  type: 'test'
+  ...
+# Subtest: validateEntry: gameplay 受控枚举 fail-loud（非法标签/非 game 误标）
+ok 34 - validateEntry: gameplay 受控枚举 fail-loud（非法标签/非 game 误标）
+  ---
+  duration_ms: 3.0034
+  type: 'test'
+  ...
+# Subtest: validateEntry: 墓碑条目豁免 path 存在性，但形状校验不放（2026-11-01）
+ok 35 - validateEntry: 墓碑条目豁免 path 存在性，但形状校验不放（2026-11-01）
+  ---
+  duration_ms: 1.9849
+  type: 'test'
+  ...
+# Subtest: validateEntry: 端口归属核对（8000 = radio 与 id radio 一致）
+ok 36 - validateEntry: 端口归属核对（8000 = radio 与 id radio 一致）
+  ---
+  duration_ms: 2.6192
+  type: 'test'
+  ...
+# Subtest: skipLocalExistence: remote-only 只豁免存在性，形状校验照旧
+ok 37 - skipLocalExistence: remote-only 只豁免存在性，形状校验照旧
+  ---
+  duration_ms: 1.6117
+  type: 'test'
+  ...
+# Subtest: 订阅 = clone 到 workshop-copies 并记录提交
+ok 38 - 订阅 = clone 到 workshop-copies 并记录提交
+  ---
+  duration_ms: 347.7611
+  type: 'test'
+  ...
+# Subtest: 更新 = 真实 git pull，旧提交入 history
+ok 39 - 更新 = 真实 git pull，旧提交入 history
+  ---
+  duration_ms: 1369.8962
+  type: 'test'
+  ...
+# Subtest: 回滚 = checkout 历史提交，副本内容回退
+ok 40 - 回滚 = checkout 历史提交，副本内容回退
+  ---
+  duration_ms: 348.4101
+  type: 'test'
+  ...
+# Subtest: 退订 = 删除副本 + 审计流水完整
+ok 41 - 退订 = 删除副本 + 审计流水完整
+  ---
+  duration_ms: 30.8852
+  type: 'test'
+  ...
+# Subtest: 多级回滚链（radio2：v9→v8→v7 全程可达）
+ok 42 - 多级回滚链（radio2：v9→v8→v7 全程可达）
+  ---
+  duration_ms: 5312.958
+  type: 'test'
+  ...
+# Subtest: 浅克隆对象缺失时 unshallow 兜底（陈旧 history 指向克隆前提交）
+ok 43 - 浅克隆对象缺失时 unshallow 兜底（陈旧 history 指向克隆前提交）
+  ---
+  duration_ms: 513.0992
+  type: 'test'
+  ...
+# Subtest: package.json 存在且含 workspaces
+ok 44 - package.json 存在且含 workspaces
+  ---
+  duration_ms: 1.67
+  type: 'test'
+  ...
+# Subtest: 顶层契约文件齐备（LICENSE / README / AGENTS）
+ok 45 - 顶层契约文件齐备（LICENSE / README / AGENTS）
+  ---
+  duration_ms: 1.1833
+  type: 'test'
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9870.4196

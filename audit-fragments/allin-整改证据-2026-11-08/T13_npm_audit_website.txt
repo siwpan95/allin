@@ -1,0 +1,4 @@
+npm warn audit request to https://registry.npmjs.org/-/npm/v1/security/audits/quick failed, reason: 
+undefined
+npm error audit endpoint returned an error
+npm error A complete log of this run can be found in: C:\Users\13122\AppData\Local\npm-cache\_logs\2026-11-08T00_21_58_895Z-debug-0.log

@@ -32,7 +32,7 @@ import sys
 import tempfile
 
 # Windows CI runner（Python 3.13，stdout 默认 ANSI cp1252）打印中文诊断会直接
-# UnicodeEncodeError 崩溃；run_all_gates.sh 已统一 export PYTHONIOENCODING=utf-8，
+# UnicodeEncodeError 崩溃；run_all_gates.sh:69 明确不在跑批层 export PYTHONIOENCODING，
 # 这里再给脚本自身钉一层：被单独调用（--selfcheck 不经跑批脚本）时也安全。
 # reconfigure 是 3.7+ API，仓要求 3.9+；被捕获/替换的流可能没有该方法，静默跳过。
 for _stream in (sys.stdout, sys.stderr):

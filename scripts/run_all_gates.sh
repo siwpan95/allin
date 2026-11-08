@@ -83,6 +83,12 @@ skips=()
 note_skip() {
   # $1=log 标签（沿用既有 <工具>:skip(<原因>) 口径） $2=人读原因
   echo "    [SKIP] $2"
+  # SKIP 是「没检查」，不是「执行成功」。留痕同时写两样东西：
+  #   · 结构化字段 "skipped":true —— 这是判定的**唯一真相源**；
+  #   · 标签里的 :skip(...) —— 仅为兼容本字段落地前的历史留痕（回退用）。
+  # log_run 第 4 个参数即 skipped（缺省 false；note_skip 传 true）。
+  # 注意：SKIP 行**不丢弃** —— 丢了就没法单列计数，逃逸率分母与 p95 的口径
+  # 由 tools/gate/gate_metrics.py 统一排除（见该文件 is_skipped / real_runs）。
   log_run "$1" 0 0 true
   skips+=("$1")
 }
@@ -299,7 +305,9 @@ fi
 run "$PY" -m unittest discover -s kernel/tests
 # ⑥ repocheck 自身 30 条规则的测试套件（695 行）。自带无 pytest 兜底跑法（仅标准库），
 #    从仓根直跑时脚本目录自动进 sys.path，import report/scanner 可解析。
-run "$PY" tools/repocheck/test_scanner.py
+# B1 整改：原来直跑脚本只走 test_scanner.py:723 的 _smoke()（约 10 项 check），
+# 62 个 pytest 用例虽全绿却从未进跑批。改为 pytest 全量收集，与 CI 口径一致。
+run "$PY" -m pytest tools/repocheck/test_scanner.py -q
 # ⑦ 仓根 README「可机检事实」护栏（2026-11-04 工程审查 Docu Top3-2 落地）：
 #    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
 #    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。
@@ -353,13 +361,40 @@ if [ "${#skips[@]}" -gt 0 ]; then
       "${#skips[@]}" "$(gh_escape "$(printf '%s; ' "${skips[@]}")")"
   fi
 fi
+# 机器可读汇总行：PR 模板 / CI 一律贴这一行，不再以「全部门禁通过。」作准出凭据。
+# status: clean（全检全绿）/ incomplete（含 SKIP，未检查项不算通过）/ failed
+SKIP_N="${#skips[@]}"
+FAIL_N="${#failures[@]}"
+if [ "$fail" -ne 0 ]; then
+  SUMMARY_STATUS="failed"
+elif [ "$SKIP_N" -gt 0 ]; then
+  SUMMARY_STATUS="incomplete"
+else
+  SUMMARY_STATUS="clean"
+fi
+printf 'ALLIN_GATE_SUMMARY status=%s fail=%s skips=%s\n' "$SUMMARY_STATUS" "$FAIL_N" "$SKIP_N"
+
 if [ "$fail" -ne 0 ]; then
   echo "门禁未全绿，失败项："
   for f in "${failures[@]}"; do echo "  - $f"; done
   if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     printf '::error::全部门禁未通过，共 %s 项失败：%s\n' \
       "${#failures[@]}" "$(gh_escape "$(printf '%s; ' "${failures[@]}")")"
+    printf '::error::%s\n' "$(gh_escape "ALLIN_GATE_SUMMARY status=failed fail=${FAIL_N} skips=${SKIP_N}")"
   fi
   exit 1
 fi
-echo "全部门禁通过。"
+if [ "$SKIP_N" -gt 0 ]; then
+  echo "门禁批未全检（含 ${SKIP_N} 项 SKIP）：未检查项不算通过，禁止以「全部门禁通过。」作准出。"
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    printf '::warning::%s\n' "$(gh_escape "ALLIN_GATE_SUMMARY status=incomplete fail=0 skips=${SKIP_N}")"
+  fi
+  # 严格模式（CI 设 ALLIN_STRICT_SKIP=1）：存在 SKIP 即非 0，与 gates.yml「SKIP ≠ pass」对齐。
+  # 本地默认 0 保持兼容，避免发布区缺席等环境性 SKIP 立刻把已有跑批拖红。
+  if [ "${ALLIN_STRICT_SKIP:-0}" = "1" ]; then
+    echo "ALLIN_STRICT_SKIP=1：含 SKIP 即判 exit 2。"
+    exit 2
+  fi
+else
+  echo "全部门禁通过。"
+fi

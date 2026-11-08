@@ -1,0 +1,19 @@
+
+> allin@0.1.0 smoke:e2e
+> node scripts/smoke_e2e.mjs
+
+
+  allin · 端到端三面冒烟（smoke:e2e）
+  ----------------------------------------------------------
+  PASS  [CP1] CLI 前门（preset list 只读）                exit 0
+  PASS  [CP2] kernel 探测（platform registry-count 只读） registry 项目条目：146
+  PASS  [CP3] portal 回环探活（临时实例）                     HTTP 200 port=9014 version=0.1.0
+  PASS  [CP4] website 临时实例探活                        healthz 200 · 首页 marker 命中 · 匿名 /member 302→login
+  PASS  [CP5] g21 漂移判据                              exit 0 · 尾行 drift=0 · checkedAt=2026-11-08T00:05:19Z
+  PASS  [CP6] verify-mount 漂移层                      exit 0
+  ----------------------------------------------------------
+  6/6 通过（skip 0）
+  ALLIN_E2E_SUMMARY effectivePassed=6 skipped=0 failed=0 budgetExceeded=false
+
+
+  证据已落盘：tools\gate\audit\e2e-runs.jsonl（7 行）

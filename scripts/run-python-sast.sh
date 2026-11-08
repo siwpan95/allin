@@ -37,6 +37,7 @@
 #   bash scripts/run-python-sast.sh --selfcheck   # 不联网/不装工具/不跑真扫描，注入假报告验退出码
 #   bash scripts/run-python-sast.sh              # 装钉版工具 → 真跑 bandit + pip-audit → 消费结果
 #   ALLIN_PYTHON=<解释器> bash scripts/run-python-sast.sh   # CI 指定解释器（默认 python3）
+#   数据源固定 OSV（pip-audit -s osv）：默认源境内实测不可达，详见实跑段落注释。
 #
 # 与 .github/workflows/gates.yml 的 python-sast job / .workflow/pipeline.yml 的
 # python_sast step 调同一个脚本，两侧不允许漂移。
@@ -439,9 +440,15 @@ bandit_rc=0
 tail -n 12 "$BANDIT_LOG"
 echo "    bandit exit=$bandit_rc"
 
-echo "==> pip-audit -r requirements-dev.txt -r requirements-release.txt -f json -o $AUDIT_REPORT"
+echo "==> pip-audit -r requirements-dev.txt -r requirements-release.txt -s osv -f json -o $AUDIT_REPORT"
 audit_rc=0
-"$PY" -m pip_audit -r requirements-dev.txt -r requirements-release.txt \
+# 数据源用 OSV（-s osv）而不是 pip-audit 默认源，理由是实测而非偏好：
+#   · 远端整改报告 T16/T19 记录：默认源在境内不可达、`-s osv` 可达并 exit 0；
+#   · 本机复测（2026-11-08）：`-s osv` 正常产出报告（51 deps / 0 vulns / fixes 字段在位），
+#     退出码 0。
+# 两侧 CI 必须同源：Gitee 侧另设 PIP_INDEX_URL 指向清华镜像（与 install_deps 同镜像），
+# 否则境内 runner 解析 requirements 时会超时 —— 那是安装环节，与审计源是两件事。
+"$PY" -m pip_audit -r requirements-dev.txt -r requirements-release.txt -s osv \
   -f json -o "$AUDIT_REPORT" > "$AUDIT_LOG" 2>&1 || audit_rc=$?
 tail -n 12 "$AUDIT_LOG"
 echo "    pip-audit exit=$audit_rc"

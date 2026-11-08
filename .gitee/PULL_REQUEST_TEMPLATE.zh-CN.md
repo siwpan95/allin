@@ -27,11 +27,15 @@ bash scripts/bootstrap.sh
 bash scripts/run_all_gates.sh
 ```
 
-最后一行输出：
+机器可读汇总行（`bash scripts/run_all_gates.sh` 会打印，复制整行）：
 
 ```text
-
+ALLIN_GATE_SUMMARY status=clean fail=0 skips=0
 ```
 
-> 只有「全部门禁通过。」才算干净。**没有贴这一行的 PR 我会先自己跑一遍再谈内容** ——
+> 判据：**`status=clean`**（`fail=0` 且 `skips=0`）才算干净。
+> `status=incomplete`（含 SKIP）**不是通过** —— SKIP 是「没检查」，见 `.github/workflows/gates.yml` 的「SKIP ≠ pass」；
+> 旧口径「全部门禁通过。」在含 SKIP 时仍会打印，已不再作为准出凭据。
+> `status=failed` 一律先修。**没有贴这一行、或 status 非 clean 的 PR 我会先自己跑一遍再谈内容** ——
 > 不是因为不信任，而是因为这套东西的可信度完全建立在"跑过"上。
+> 若能附上对应 CI run URL（GitHub Actions / Gitee Go），复核会更快。

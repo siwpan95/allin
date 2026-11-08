@@ -1,0 +1,20 @@
+=== T21 portal-proxy integration test (node --test) ===
+command: node --test website/test/portal-proxy.integration.test.js
+node: v22.22.2
+--- output tail ---
+ok 1 - U-Q09① PORTAL_UNREACHABLE：baseUrl 指向无监听端口 → 200 + degraded.code=PORTAL_UNREACHABLE
+ok 2 - U-Q09② PORTAL_FORBIDDEN：上游 403 → 200 + degraded.code=PORTAL_FORBIDDEN（fail-loud 不静默）
+ok 3 - U-Q09③ UPSTREAM_TIMEOUT（有快照）：超时 → 200 + degraded.code=UPSTREAM_TIMEOUT + 回退最近成功快照
+ok 4 - U-Q09④ UPSTREAM_TIMEOUT（无快照）：缓存为空时超时 → data=null（等价于 504 无缓存可回退）
+ok 5 - U-Q07① overview 数字一致：portal /api/overview 的 running/total 维度原样透传
+ok 6 - U-Q07② orchestration 数字一致：routes/drift 数量与 portal 响应一致
+ok 7 - U-Q07③ bridge 未上线（/api/overview 404）→ 退化为 /api/status + /api/library 聚合，数字一致
+ok 8 - getEntries 透传 /api/library items（管理台启停列表数据源）
+# tests 8
+# pass 8
+# fail 0
+# skipped 0
+--- summary ---
+# tests 8
+# pass 8
+# fail 0

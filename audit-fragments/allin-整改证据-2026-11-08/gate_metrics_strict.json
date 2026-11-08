@@ -1,0 +1,555 @@
+{
+  "window_days": 30,
+  "runs_total": 887,
+  "runs_in_window": 887,
+  "escape_rate": 0.0327,
+  "failed_runs": 29,
+  "failing_labels": [
+    "/d/projects/allin/.venv/Scripts/python.exe -m unittest discover -s kernel/tests",
+    "/d/projects/allin/.venv/Scripts/python.exe preset/allin/refresh-gov-block.py --check",
+    "/d/projects/allin/.venv/Scripts/python.exe tools/gate/agent_regression.py",
+    "/d/projects/allin/.venv/Scripts/python.exe tools/gate/docs_index.py",
+    "<PYTHON> preset/allin/refresh-gov-block.py --check",
+    "npm run check:governance",
+    "python3 -m unittest discover -s kernel/tests",
+    "python3 preset/allin/refresh-gov-block.py --check",
+    "python3 tools/gate/agent_regression.py",
+    "python3 tools/gate/check_ps1_bom.py"
+  ],
+  "evidence_freshness": {
+    "state": "fresh",
+    "age_hours": 2.0,
+    "last_run": "2026-11-07T22:02:11+00:00",
+    "last_green": "2026-11-07T22:02:11+00:00",
+    "last_green_inferred": false,
+    "green_batches": 62,
+    "batches": 81,
+    "last_batch_ok": true
+  },
+  "exceptions": {
+    "total": 78,
+    "by_source": {
+      "g01-paths": 0,
+      "g03-credentials": 16,
+      "g04-push-evidence": 0,
+      "g05-hygiene": 0,
+      "g06-numbering": 0,
+      "g07-doc-freshness": 1,
+      "g08-deletion-evidence": 0,
+      "g09-python-hygiene": 27,
+      "g11-undef-names": 0,
+      "g12-integrity": 0,
+      "g13-docs-only": 0,
+      "g15-docs-contract": 0,
+      "g19-docs-refs": 0,
+      "g20-facts": 0,
+      "repo_hygiene_exemptions.csv": 34
+    },
+    "schema": 2,
+    "source": "baseline-keys+hygiene-exemptions",
+    "declared_open": 5
+  },
+  "latency": {
+    "budget_ms": 60000,
+    "per_label": [
+      {
+        "label": "python3 tools/repo_hygiene.py --all",
+        "n": 19,
+        "p50": 162119,
+        "p95": 190505,
+        "max": 197415,
+        "over_budget": true
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repo_hygiene.py --all",
+        "n": 27,
+        "p50": 151370,
+        "p95": 162098,
+        "max": 176145,
+        "over_budget": true
+      },
+      {
+        "label": "<PYTHON> tools/repo_hygiene.py --all",
+        "n": 1,
+        "p50": 160262,
+        "p95": 160262,
+        "max": 160262,
+        "over_budget": true
+      },
+      {
+        "label": "npm run check:governance",
+        "n": 93,
+        "p50": 75843,
+        "p95": 98511,
+        "max": 214966,
+        "over_budget": true
+      },
+      {
+        "label": "npm run smoke:e2e",
+        "n": 20,
+        "p50": 6202,
+        "p95": 6636,
+        "max": 7269,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/agent_regression.py",
+        "n": 28,
+        "p50": 1843,
+        "p95": 1994,
+        "max": 2200,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/check_ps1_bom.py",
+        "n": 19,
+        "p50": 1352,
+        "p95": 1555,
+        "max": 1658,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/check_ps1_bom.py",
+        "n": 28,
+        "p50": 1317,
+        "p95": 1551,
+        "max": 2101,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/agent_regression.py",
+        "n": 43,
+        "p50": 1324,
+        "p95": 1545,
+        "max": 2301,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe -m unittest discover -s kernel/tests",
+        "n": 28,
+        "p50": 1366,
+        "p95": 1445,
+        "max": 1570,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/gate/check_ps1_bom.py",
+        "n": 1,
+        "p50": 1443,
+        "p95": 1443,
+        "max": 1443,
+        "over_budget": false
+      },
+      {
+        "label": "npm run check:docs",
+        "n": 14,
+        "p50": 1235,
+        "p95": 1428,
+        "max": 3237,
+        "over_budget": false
+      },
+      {
+        "label": "python3 -m unittest discover -s kernel/tests",
+        "n": 7,
+        "p50": 1023,
+        "p95": 1374,
+        "max": 1374,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/gate/agent_regression.py",
+        "n": 6,
+        "p50": 738,
+        "p95": 1339,
+        "max": 1339,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/docs_index.py",
+        "n": 28,
+        "p50": 1244,
+        "p95": 1312,
+        "max": 1338,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/docs_index.py --selfcheck",
+        "n": 19,
+        "p50": 887,
+        "p95": 934,
+        "max": 1263,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/docs_index.py",
+        "n": 43,
+        "p50": 808,
+        "p95": 886,
+        "max": 1327,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/test_scanner.py",
+        "n": 28,
+        "p50": 770,
+        "p95": 847,
+        "max": 943,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/gate/docs_index.py",
+        "n": 8,
+        "p50": 254,
+        "p95": 805,
+        "max": 805,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py tools/ --profile component --exclude gate --fail-on error",
+        "n": 4,
+        "p50": 675,
+        "p95": 687,
+        "max": 687,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error",
+        "n": 24,
+        "p50": 563,
+        "p95": 669,
+        "max": 700,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/test_scanner.py",
+        "n": 7,
+        "p50": 459,
+        "p95": 645,
+        "max": 645,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/agent_parity.py",
+        "n": 1,
+        "p50": 642,
+        "p95": 642,
+        "max": 642,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error",
+        "n": 1,
+        "p50": 627,
+        "p95": 627,
+        "max": 627,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error",
+        "n": 4,
+        "p50": 552,
+        "p95": 592,
+        "max": 592,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py packages/allin-governance --profile component --exclude src,tests --fail-on error",
+        "n": 4,
+        "p50": 517,
+        "p95": 529,
+        "max": 529,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/agent_parity.py",
+        "n": 28,
+        "p50": 417,
+        "p95": 527,
+        "max": 540,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/repocheck/main.py . --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error",
+        "n": 2,
+        "p50": 405,
+        "p95": 515,
+        "max": 515,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error",
+        "n": 24,
+        "p50": 466,
+        "p95": 507,
+        "max": 724,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/main.py tools/ --exclude gate --skip-rules 1,2,4,5 --fail-on error",
+        "n": 19,
+        "p50": 432,
+        "p95": 470,
+        "max": 576,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py packages/allin-governance --exclude src,tests --skip-rules 1,2,4,5 --fail-on error",
+        "n": 24,
+        "p50": 429,
+        "p95": 462,
+        "max": 466,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/repocheck/main.py . --exclude tools,vendor --skip-rules 1,7 --fail-on error",
+        "n": 19,
+        "p50": 411,
+        "p95": 440,
+        "max": 443,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/deploy/monthly_audit.py --selfcheck",
+        "n": 12,
+        "p50": 385,
+        "p95": 419,
+        "max": 482,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe preset/allin/refresh-gov-block.py --check",
+        "n": 28,
+        "p50": 367,
+        "p95": 414,
+        "max": 425,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error",
+        "n": 1,
+        "p50": 409,
+        "p95": 409,
+        "max": 409,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/check_gate_drift.py --selfcheck",
+        "n": 28,
+        "p50": 357,
+        "p95": 400,
+        "max": 460,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/repocheck/main.py packages/allin-governance --exclude src,tests --skip-rules 1,2,4,5 --fail-on error",
+        "n": 1,
+        "p50": 397,
+        "p95": 397,
+        "max": 397,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/check_readme_refs.py",
+        "n": 28,
+        "p50": 328,
+        "p95": 388,
+        "max": 423,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts,website --skip-rules 1,7 --fail-on error",
+        "n": 13,
+        "p50": 336,
+        "p95": 372,
+        "max": 390,
+        "over_budget": false
+      },
+      {
+        "label": "/d/projects/allin/.venv/Scripts/python.exe tools/gate/check_arch_assets.py",
+        "n": 28,
+        "p50": 320,
+        "p95": 357,
+        "max": 426,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/main.py . --exclude tools,vendor,preset --skip-rules 1,7 --fail-on error",
+        "n": 15,
+        "p50": 342,
+        "p95": 356,
+        "max": 459,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/main.py . --exclude tools,vendor,preset,packages,scripts --skip-rules 1,7 --fail-on error",
+        "n": 15,
+        "p50": 333,
+        "p95": 356,
+        "max": 404,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/repocheck/main.py packages/allin-governance --exclude src,tests --skip-rules 1,2,4,5 --fail-on error",
+        "n": 28,
+        "p50": 303,
+        "p95": 341,
+        "max": 371,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> preset/allin/refresh-gov-block.py --check",
+        "n": 3,
+        "p50": 257,
+        "p95": 316,
+        "max": 316,
+        "over_budget": false
+      },
+      {
+        "label": "python3 preset/allin/refresh-gov-block.py --check",
+        "n": 43,
+        "p50": 271,
+        "p95": 305,
+        "max": 351,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/check_gate_drift.py --selfcheck",
+        "n": 13,
+        "p50": 248,
+        "p95": 273,
+        "max": 320,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/check_arch_assets.py",
+        "n": 2,
+        "p50": 223,
+        "p95": 268,
+        "max": 268,
+        "over_budget": false
+      },
+      {
+        "label": "<PYTHON> tools/gate/check_gate_drift.py --selfcheck",
+        "n": 1,
+        "p50": 266,
+        "p95": 266,
+        "max": 266,
+        "over_budget": false
+      },
+      {
+        "label": "python3 tools/gate/check_readme_refs.py",
+        "n": 7,
+        "p50": 227,
+        "p95": 261,
+        "max": 261,
+        "over_budget": false
+      }
+    ],
+    "over_budget": [
+      "python3 tools/repo_hygiene.py --all",
+      "/d/projects/allin/.venv/Scripts/python.exe tools/repo_hygiene.py --all",
+      "<PYTHON> tools/repo_hygiene.py --all",
+      "npm run check:governance"
+    ]
+  },
+  "agent_ops": {
+    "state": "ok",
+    "sessions": 43,
+    "spans": 473,
+    "success_rate": 1.0,
+    "failed_sessions": 0,
+    "rejected_calls": 172,
+    "failed_calls": 0,
+    "steps_p50": 11,
+    "steps_p95": 11,
+    "steps_max": 11,
+    "by_tool": [
+      {
+        "tool": "memory.append",
+        "calls": 86,
+        "errors": 0,
+        "rejected": 86,
+        "total_ms": 3
+      },
+      {
+        "tool": "gate.list",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 73
+      },
+      {
+        "tool": "registry.query",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 953
+      },
+      {
+        "tool": "docs.search",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 3056
+      },
+      {
+        "tool": "record.append",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 43,
+        "total_ms": 4
+      },
+      {
+        "tool": "nope",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 43,
+        "total_ms": 1
+      },
+      {
+        "tool": "gate.history",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 66
+      },
+      {
+        "tool": "exceptions.list",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 28
+      },
+      {
+        "tool": "memory.read",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 49
+      },
+      {
+        "tool": "memory.promotable",
+        "calls": 43,
+        "errors": 0,
+        "rejected": 0,
+        "total_ms": 82
+      }
+    ],
+    "by_tier": {
+      "read": {
+        "tier": "read",
+        "calls": 344,
+        "failed": 0,
+        "rejected": 43
+      },
+      "write-reversible": {
+        "tier": "write-reversible",
+        "calls": 129,
+        "failed": 0,
+        "rejected": 129
+      }
+    },
+    "failed_traces": []
+  },
+  "exceptions_previous": null
+}

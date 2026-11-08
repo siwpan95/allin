@@ -92,10 +92,17 @@ stages:
       # 两侧不允许漂移。shadow mode：发现不阻断，基础设施失败 exit 3 阻断。
       # Gitee Go 的多个 command 不共享 shell 会话，故自检与实跑用**一条**命令串起（&&），
       # 不依赖跨 command 的 export / cwd；build@python 提供 python3（与 install_deps 一致）。
+      #
+      # PIP_INDEX_URL 指清华镜像：脚本内部要 `pip install -r requirements-sast.txt` 装钉版
+      # bandit / pip-audit，境内直连 PyPI 会超时（与 install_deps 用同一镜像源，不是优化而是前提）。
+      # 注意这是**安装**环节的镜像；依赖漏洞审计的数据源是 pip-audit 的 `-s osv`（脚本内固定），
+      # 两者不是同一件事，改一个不影响另一个。
       - step: build@python
         name: python_sast
         displayName: Python SAST + 依赖审计（shadow mode · 实跑）
         pythonVersion: "3.13"
+        env:
+          PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
         commands:
           - bash scripts/run-python-sast.sh --selfcheck && bash scripts/run-python-sast.sh
         settings: []
@@ -162,6 +169,73 @@ stages:
         pythonVersion: "3.13"
         commands:
           - python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet packages/allin-governance && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      # 2026-11-08 整改 B8：Gitee 侧补齐与 GitHub 侧对称的测试 / 覆盖率 / 指标 / 冒烟步骤。
+      # gates.yml:3 声称「两侧跑同一套命令」，此前本文件六个 step 全无这些命令。
+      #
+      # 合并裁断（2026-11-08）：远端原在此处还有一个 platform_unit 步骤（npm ci + npm test），
+      # 与本文件上游的 platform_test（第 78 行，本分支 B1 闭环）命令完全重复 —— 同一批
+      # node --test 跑两遍是纯浪费，且两处口径将来会漂移。删平台侧重复项，保留本分支的
+      # platform_test；远端在 GitHub gates-windows 内联的那份保留（Windows 侧唯一覆盖）。
+      - step: build@python
+        name: python_tests_cov
+        displayName: Python 单测与分支覆盖率（B1/B8）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python -m pytest kernel/tests packages/allin-governance/tests tools/repocheck/test_scanner.py -q --cov=kernel --cov=allin_governance --cov-branch --cov-report=term-missing
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      # 治理指标（B9/B10）：从远端原 metrics_and_security 步骤里**拆出来单独成步**。
+      # 原步骤把「指标」与「安全扫描」混在一起，其中两条安全命令已下线（见下）：
+      #   · `.venv/bin/python -m pip_audit -s osv` —— 与本文件 python_sast 步骤（共用脚本
+      #     scripts/run-python-sast.sh）重复扫描；且该步骤阻断口径与仓内既定决策相反。
+      #   · `.venv/bin/python -m bandit ... || echo "SAST_REVIEW_REQUIRED..."` —— 同上重复，
+      #     且 `|| echo` 把非 0 吞成 0，违反本仓「SKIPPED is not a pass」纪律。
+      # Python SAST/依赖审计统一由 python_sast 步骤执行（双侧共用一个脚本，不漂移）。
+      - step: build@python
+        name: metrics
+        displayName: 治理指标（B9/B10；指标口径由 gate_metrics.py 自检）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python tools/gate/gate_metrics.py --snapshot --strict --json
+          - .venv/bin/python tools/gate/gate_metrics.py --selfcheck
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      # Node 侧 SCA（供应链）：远端原 metrics_and_security 里那两条 npm audit 的覆盖，
+      # 按本仓纪律重写为共用脚本 scripts/run-node-sca.sh（GitHub node-sca job 调同一脚本）。
+      # shadow 模式：发现不阻断；端点不可达如实记为 caveat 而不是假称 0 漏洞、也不直接判红
+      # （境内 runner 端点可达性未验证，直接阻断会让 Gitee 永久红）。
+      - step: build@nodejs
+        name: node_sca
+        displayName: Node 依赖漏洞扫描（npm audit · 与 GitHub 侧同一脚本）
+        nodeVersion: "22"
+        commands:
+          - bash scripts/run-node-sca.sh --selfcheck && bash scripts/run-node-sca.sh
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@nodejs
+        name: website_smoke
+        displayName: 官网冒烟（B8，与 GitHub website-smoke job 同命令）
+        nodeVersion: "22"
+        commands:
+          - npm ci --prefix website && npm run bootstrap --prefix website && npm run smoke --prefix website && npm test --prefix website
         settings: []
         caches: []
         notify: []

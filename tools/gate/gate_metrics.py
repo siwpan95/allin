@@ -36,7 +36,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -47,6 +49,10 @@ AGENT_TRAIL = AUDIT / "agent-runs.jsonl"
 SNAPSHOTS = AUDIT / "exceptions-snapshots.jsonl"
 BASELINES = ROOT / "gate" / "governance" / "baseline"
 EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
+EXCEPTIONS_YML = ROOT / "gate" / "governance" / "exceptions.yml"
+# 燃尽快照口径版本。旧快照（值 51）来自另一套计数，跨口径相减会得到假 delta。
+SNAPSHOT_SCHEMA = 2
+SNAPSHOT_SOURCE = "baseline-keys+hygiene-exemptions"
 
 FRESH_HOURS = 24
 AGING_DAYS = 7
@@ -76,6 +82,17 @@ def load_runs(path: Path) -> list[dict]:
         except json.JSONDecodeError:
             continue
         if isinstance(record, dict) and "ts" in record:
+            # SKIP 是「没检查」，不是「执行成功」。旧口径把它写成 exit=0,ms=0，
+            # 若混进逃逸率分母 / 全绿批次判定 / p95，会把「没检查」算成「检查通过」。
+            #
+            # 但**这里不丢弃 SKIP 行** —— 丢弃会让 skipped_runs 恒为 0、可观测性归零，
+            # 「有多少项没检查」就再也问不出来了。改为**归一化**：
+            #   · 有 "skipped" 键 ⇒ 以该键为准（本字段落地后的真相源）；
+            #   · 无 "skipped" 键但 label 含 ":skip(" ⇒ 补 record["skipped"]=True
+            #     （本字段落地前的历史留痕，按标签回退兼容）。
+            # 原始 JSONL 文件本身**永不改写** —— 归一化只发生在内存里。
+            if "skipped" not in record and ":skip(" in str(record.get("label", "")):
+                record["skipped"] = True
             runs.append(record)
     return runs
 
@@ -116,25 +133,53 @@ def count_exceptions() -> dict[str, int]:
     return per_source
 
 
+def count_declared_exceptions() -> int | None:
+    """exceptions.yml 中 status != closed 的登记例外条数（第二套口径）。
+
+    冻结键/豁免行（count_exceptions）与登记表（本函数）是**不同对象**，必须分列展示；
+    旧实现把 51（旧口径快照）与 78（冻结键口径）相减得到的 delta 属跨口径比较，已废弃。
+    """
+    try:
+        import yaml
+        data = yaml.safe_load(EXCEPTIONS_YML.read_text(encoding="utf-8")) or {}
+        items = data.get("exceptions") or []
+        return sum(1 for item in items if isinstance(item, dict)
+                   and str(item.get("status", "open")).lower() != "closed")
+    except Exception:
+        return None
+
+
 def append_snapshot(total: int) -> None:
-    """Append the current exception count so a trend can exist later."""
+    """Append the current exception count, tagged with its counting schema."""
     try:
         AUDIT.mkdir(parents=True, exist_ok=True)
         with open(SNAPSHOTS, "a", encoding="utf-8", newline="\n") as handle:
-            handle.write(json.dumps({"ts": datetime.now(timezone.utc).isoformat(),
-                                     "exceptions": total}, ensure_ascii=False) + "\n")
+            handle.write(json.dumps({
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "exceptions": total,
+                "schema": SNAPSHOT_SCHEMA,
+                "source": SNAPSHOT_SOURCE,
+            }, ensure_ascii=False) + "\n")
     except OSError:
         pass
 
 
 def previous_snapshot() -> int | None:
+    """只与同口径（同 schema）的最近一条快照比较；跨口径不返回数字。
+
+    旧实现取 lines[-2]：main 在 append 之前调用本函数，[-2] 实际跳过了上一条；
+    且旧快照无 schema 字段，与当前计数口径不可比。两者一并修正。
+    """
     lines = [ln for ln in read_lines(SNAPSHOTS) if ln.strip()]
-    if len(lines) < 2:
-        return None
-    try:
-        return int(json.loads(lines[-2]).get("exceptions", 0))
-    except (json.JSONDecodeError, ValueError):
-        return None
+    for line in reversed(lines):
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if int(record.get("schema", 0)) != SNAPSHOT_SCHEMA:
+            return None  # 最近一条是旧口径：宁可不给 delta，也不做跨口径比较
+        return int(record.get("exceptions", 0))
+    return None
 
 
 def percentile(values: list[int], fraction: float) -> int:
@@ -326,14 +371,20 @@ def batch_stamp(items: list[dict]) -> datetime | None:
 # --------------------------------------------------------------- SKIP 单列口径
 # SKIP ≠ 通过。落盘 `skipped` 字段把「真跑」与「SKIP」分开：后者不计入
 # failed / escapeRate / lastOkAt，整批全 SKIP 的跑批也不得伪装成全绿。
-# 旧留痕（无 `skipped` 字段）一律按真跑兼容回放，历史全绿仍算全绿。
+#
+# 判定分两档（真相源 + 历史回退）：
+#   · 有 "skipped" 键 ⇒ 以该键为准（结构化字段是**唯一真相源**）；
+#   · 无 "skipped" 键 ⇒ 回退看标签里的 ":skip("（本字段落地前的历史留痕）。
+# 两条路都判否 ⇒ 按真跑处理，历史全绿仍算全绿（兼容回放）。
 def is_skipped(run: dict) -> bool:
-    """仅当显式 `skipped is True` 才算 SKIP；旧行无字段 ⇒ 按真跑处理（兼容回放）。"""
-    return run.get("skipped") is True
+    """SKIP 判定：优先结构化 `skipped` 键，缺失时回退到标签里的 `:skip(` 留痕。"""
+    if "skipped" in run:
+        return run["skipped"] is True
+    return ":skip(" in str(run.get("label", ""))
 
 
 def real_runs(runs: list[dict]) -> list[dict]:
-    """过滤掉 SKIP 行，只留真跑记录（旧行无字段 ⇒ 按真跑处理）。"""
+    """过滤掉 SKIP 行，只留真跑记录（无 skipped 键且标签无 :skip( ⇒ 按真跑处理）。"""
     return [r for r in runs if not is_skipped(r)]
 
 
@@ -431,8 +482,17 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
         "failed_runs": len(failed),
         "failing_labels": sorted({str(run.get("label", "")) for run in failed})[:10],
         "evidence_freshness": freshness,
-        "exceptions": {"total": total_exceptions, "by_source": exceptions},
-        "latency": latency(window, budget_ms),
+        "exceptions": {
+            "total": total_exceptions,
+            "by_source": exceptions,
+            "schema": SNAPSHOT_SCHEMA,
+            "source": SNAPSHOT_SOURCE,
+            # 第二套口径：exceptions.yml 的登记例外（status != closed），分列展示、不相减。
+            "declared_open": count_declared_exceptions(),
+        },
+        # 性能预算只统计**真跑行**：SKIP 行 ms=0，若混进 p95 会把「没检查」
+        # 当成「检查极快」，把慢门禁的 p95 拉低 —— 这正是远端口径里的洞，此处堵上。
+        "latency": latency(window_real, budget_ms),
         "agent_ops": agent_ops(agent_window),
     }
 
@@ -527,6 +587,13 @@ def selfcheck() -> int:
          真跑红 + SKIP 绿不判全绿、无 skipped 字段的 legacy 全绿仍算全绿、
          3 行含 1 SKIP + 1 真跑红 ⇒ 分母 2 / failed 1 / escape_rate 0.5。
          把 is_skipped 改成恒 False 时本方向必红（SELFCHECK_FAILED / exit 3）。
+      ⑥ 历史留痕归一化（可证伪）：一条**无 skipped 键**但 label 含 ":skip(" 的行
+         ⇒ ① 被计为 skipped_runs（+1）；② **没有**从 runs_total 里消失；
+         ③ escape_rate 分母不含它；④ latency 的 p95 不被它的 ms=0 拉低。
+         再注入一条 "skipped":true 的行 ⇒ 与上一条同口径（同样 +1、同样不消失）。
+         再注入一条普通真跑行 ⇒ skipped_runs 不变。
+         把 load_runs 改回「丢弃 SKIP 行」或把 latency 改回吃 window 全量时
+         本方向必红（SELFCHECK_FAILED / exit 3）。
     """
     print("== 治理度量 自测（跑批口径反假绿） ==")
     now = datetime(2026, 11, 4, 12, 0, tzinfo=timezone.utc)
@@ -615,6 +682,82 @@ def selfcheck() -> int:
              escape_rate_of(mixed3)))
     ok &= v5
 
+    # ⑥ 历史留痕归一化（合并远端口径后新增，**可证伪**）：
+    #    远端在 load_runs 里把 ":skip(" 行整行丢弃 ⇒ skipped_runs 恒为 0、
+    #    可观测性归零。本方向证明「不丢弃、只归一化」这四件事同时成立：
+    #      ① 无 skipped 键但 label 含 ":skip(" 的历史行被计为 skipped_runs（+1）；
+    #      ② 它**没有**从 runs_total 里消失；
+    #      ③ escape_rate 分母不含它；
+    #      ④ latency 的 p95 不被它的 ms=0 拉低。
+    #    走**真实文件**（load_runs 读磁盘）而不是直接构 dict —— 只有真读一遍
+    #    JSONL 才能证明归一化发生在解析面上。
+    tmp_dir = tempfile.mkdtemp(prefix="allin-gate-metrics-selfcheck-")
+    try:
+        trail = Path(tmp_dir) / "legacy-skip.jsonl"
+        base_ts = datetime.now(timezone.utc)
+
+        def _row(offset_s: int, label: str, exit_code: int, ms: int, **extra) -> dict:
+            stamp = (base_ts - timedelta(seconds=offset_s)).isoformat().replace("+00:00", "Z")
+            row = {"ts": stamp, "batch": "run-legacy", "commit": "c6",
+                   "label": label, "exit": exit_code, "ms": ms}
+            row.update(extra)
+            return row
+
+        legacy_rows = [
+            # ① 历史行：无 "skipped" 键，但 label 含 ":skip(" ⇒ 归一化后算 SKIP。
+            _row(40, "legacy-tool:skip(missing-deps)", 0, 0),
+            # ② 显式行：带 "skipped":true ⇒ 与上一条同口径。
+            _row(30, "explicit-tool:skip(missing-env)", 0, 0, skipped=True),
+            # ③ 两条真跑行（一条绿一条红）⇒ 逃逸率分母应当只含这两条。
+            _row(20, "real-tool:run", 0, 500),
+            _row(10, "real-tool:red", 1, 300),
+        ]
+        trail.write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in legacy_rows),
+            encoding="utf-8")
+        loaded6 = load_runs(trail)
+
+        # ② 没有任何一行被丢弃：4 行进、4 行出（丢掉两条 SKIP 就只剩 2）。
+        e6_keep = len(loaded6) == 4
+        # ① 两条 SKIP 行都被识别（历史行靠标签回退、显式行靠字段）。
+        e6_skip = (sum(1 for r in loaded6 if is_skipped(r)) == 2)
+        # 归一化确实落在解析面上：第一条历史行已被补上 "skipped": True。
+        e6_norm = all(("skipped" in r) for r in loaded6 if ":skip(" in str(r.get("label", "")))
+
+        m6 = build_metrics(loaded6, days=30)
+        # ① skipped_runs = 2（两条 SKIP 都单列计数，不是 0）。
+        e6_count = m6["skipped_runs"] == 2
+        # ② runs_total 仍是 4（SKIP 行没被丢）。
+        e6_total = m6["runs_total"] == 4
+        # ③ escape_rate 分母只含 2 条真跑（1 红 / 2 ⇒ 0.5），不含两条 SKIP。
+        e6_escape = (m6["runs_in_window_real"] == 2 and m6["failed_runs"] == 1
+                     and abs(m6["escape_rate"] - 0.5) < 1e-9)
+        # ④ latency 的 p95 不被 ms=0 拉低：SKIP 标签根本不进 per_label，
+        #    真跑标签的 p95 由真实耗时决定（500 / 300 ⇒ p95 非 0）。
+        per_label6 = {item["label"]: item for item in m6["latency"]["per_label"]}
+        e6_lat = (not any(":skip(" in str(lbl) for lbl in per_label6)
+                  and per_label6.get("real-tool:run", {}).get("p95", 0) > 0)
+
+        # 再注入一条普通真跑行 ⇒ skipped_runs 不变（口径不因新增真跑而漂移）。
+        trail.write_text(
+            trail.read_text(encoding="utf-8")
+            + json.dumps(_row(5, "real-tool:more", 0, 100), ensure_ascii=False) + "\n",
+            encoding="utf-8")
+        m6b = build_metrics(load_runs(trail), days=30)
+        e6_stable = (m6b["skipped_runs"] == 2 and m6b["runs_total"] == 5
+                     and m6b["runs_in_window_real"] == 3)
+
+        v6 = e6_keep and e6_skip and e6_norm and e6_count and e6_total \
+            and e6_escape and e6_lat and e6_stable
+        print("  ⑥ 历史留痕归一化（不丢弃）:      %s  [行数=%s, skipped_runs=%s, "
+              "runs_total=%s, 分母=%s/failed=%s/rate=%s, p95不受ms=0=%s, 加真跑后不变=%s]"
+              % ("✔" if v6 else "✘", len(loaded6), m6["skipped_runs"], m6["runs_total"],
+                 m6["runs_in_window_real"], m6["failed_runs"], m6["escape_rate"],
+                 e6_lat, e6_stable))
+        ok &= v6
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
     print("SELFCHECK_%s" % ("PASSED" if ok else "FAILED"))
     return 0 if ok else 3
 
@@ -628,6 +771,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--snapshot", action="store_true", help="append the current exception count to the trend file")
     parser.add_argument("--selfcheck", action="store_true", help="inject-and-prove the batch verdict (no trail needed)")
+    parser.add_argument("--strict", action="store_true",
+                        help="把指标升级为退出码：证据不可用/最近一批红/逃逸率超阈即返回 1")
+    parser.add_argument("--max-escape-rate", type=float, default=1.0,
+                        help="--strict 下的逃逸率上限（默认 1.0，即不因历史失败误伤；CI 可收紧）")
+    parser.add_argument("--max-exceptions", type=int, default=None,
+                        help="--strict 下的例外总数上限（不设则不判）")
     args = parser.parse_args(argv)
 
     if args.selfcheck:
@@ -646,6 +795,19 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({**metrics, "exceptions_previous": previous}, ensure_ascii=False, indent=2))
     else:
         print(render(metrics, previous))
+    if args.strict:
+        failures: list[str] = []
+        state = str(metrics["evidence_freshness"].get("state", "no-evidence"))
+        if state in ("no-evidence", "no-green-batch", "last-batch-red"):
+            failures.append(f"证据新鲜度不可用：state={state}")
+        if metrics["escape_rate"] > args.max_escape_rate:
+            failures.append(f"逃逸率 {metrics['escape_rate']:.4f} > 上限 {args.max_escape_rate}")
+        if args.max_exceptions is not None and metrics["exceptions"]["total"] > args.max_exceptions:
+            failures.append(f"例外总数 {metrics['exceptions']['total']} > 上限 {args.max_exceptions}")
+        if failures:
+            for reason in failures:
+                print(f"STRICT FAIL: {reason}", file=sys.stderr)
+            return 1
     return 0
 
 

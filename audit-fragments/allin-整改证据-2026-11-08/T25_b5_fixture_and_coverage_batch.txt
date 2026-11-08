@@ -1,0 +1,35 @@
+================================================================
+T25 · B5 负向夹具 + 准入覆盖率批次（2026-11-08）
+================================================================
+
+[1] B5 负向夹具（防 CP4 false-green）
+命令：node --test scripts/lib/homeMarker.test.js
+结果：5/5 PASS（exit 0）
+  - marker 命中：HTTP 200 + "ALLIN LAB" → true
+  - marker 缺失：HTTP 200 但无 marker → false   （防 false-green 核心）
+  - 非 200 状态码 → false
+  - text 非字符串（null/undefined/number）→ false
+  - 判定口径与 CP4 原内联逻辑逐情形一致（6 情形全对齐）
+配套改动：smoke_e2e.mjs 的 CP4 首页判定由内联
+  `home.status===200 && (await home.text()).includes('ALLIN LAB')`
+  改为调用纯函数 `isHomeMarkerPresent(home.status, await home.text())`
+  （import 已在脚本顶部，本就存在，仅替换调用点）。
+
+[2] 准入覆盖率批次（不碰阈值）
+新增件：
+  - kernel/tests/test_tree_coverage.py（7 例）
+      _resolve_service_names（短名解析+计数 / 非 list 返回 0）
+      _validate_entry_names（三类白名单放行 / 越界抛 ValueError / 非 list noop）
+      _want_all_from_config（配置缺失→出厂四元组 / 无 id entry→RuntimeError）
+  - packages/allin-governance/tests/test_cli_dispatch_coverage.py（4 例）
+      build_parser（返回 argparse + 子命令 choices 与 SUBCOMMANDS 对齐）
+      --version 退 0 / 非法子命令退 2 / 子命令 --help 经 REMAINDER 透传退 0
+
+[3] 覆盖率（T23 同口径：--cov=kernel --cov=allin_governance --cov-branch）
+结果：131 passed，TOTAL 917/274/278/42 = 67%
+  → 较 T23 的 63%（120 测试）提升 4 点（statements missed 302→274，+11 例）
+  - kernel/tree.py：61%（_resolve/_validate 边界新增覆盖）
+  - packages/allin-governance/.../cli.py：75%（build_parser/main 调度新增覆盖）
+  - kernel/registry.py：100%、platform_service.py：74%、_cordis_locate.py：70%（与 T23 持平）
+注：本轮仍**未设 --cov-fail-under**（P3 §4 两步走：阈值由业务方裁决）。
+另：全仓口径（--cov=.）为 66%（3186/999/1200/211），口径不同仅供参照。

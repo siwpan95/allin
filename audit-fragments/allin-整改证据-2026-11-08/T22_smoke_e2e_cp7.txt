@@ -1,0 +1,12 @@
+=== T22 smoke:e2e with CP7 (real portal->website degraded:null) ===
+command: node scripts/smoke_e2e.mjs
+node: v22.22.2
+--- checkpoint results ---
+  PASS  [CP1] CLI 前门（preset list 只读）                exit 0
+  PASS  [CP2] kernel 探测（platform registry-count 只读） registry 项目条目：146
+  PASS  [CP3] portal 回环探活（临时实例）                     HTTP 200 port=13879 version=0.1.0
+  PASS  [CP4] website 临时实例探活                        healthz 200 · 首页 marker 命中 · 匿名 /member 302→login
+  PASS  [CP7] 治理看板在线联动（portal→website degraded:null）HTTP 200 · degraded:null · portal 端口=13879 已接通 website
+  PASS  [CP5] g21 漂移判据                              exit 0 · 尾行 drift=0 · checkedAt=2026-11-08T01:17:57Z
+  PASS  [CP6] verify-mount 漂移层                      exit 0
+  ALLIN_E2E_SUMMARY effectivePassed=7 skipped=0 failed=0 budgetExceeded=false

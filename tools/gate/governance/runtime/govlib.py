@@ -188,7 +188,9 @@ def line_text(text: str, offset: int) -> str:
 
 def digest(value: str) -> str:
     """Short stable hash used to key baseline entries by content, not line number."""
-    return hashlib.sha1(value.encode("utf-8")).hexdigest()[:16]
+    # SHA1 此处仅作「内容 → 稳定短键」的非安全用途（基线按内容索引而非行号），
+    # 不是签名/口令哈希。显式声明 usedforsecurity=False，消除 bandit B324 假阳性。
+    return hashlib.sha1(value.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 # --------------------------------------------------------------------------- #
