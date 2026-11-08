@@ -1,0 +1,2 @@
+ERROR:pip_audit._cli:Could not connect to PyPI's vulnerability feed
+ERROR:pip_audit._cli:Tip: your network may be blocking this service. Try another service with `-s SERVICE`

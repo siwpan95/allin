@@ -1,0 +1,39 @@
+
+> allin-website@1.0.0 smoke
+> node --experimental-sqlite scripts/smoke-test.js
+
+
+  allin 官网 · 冒烟验证
+  ----------------------------------------------------------
+  PASS  页面 / 可达                       HTTP 200
+  PASS  页面 /services 可达               HTTP 200
+  PASS  页面 /about 可达                  HTTP 200
+  PASS  页面 /contact 可达                HTTP 200
+  PASS  样式表可加载                        HTTP 200
+  PASS  配图由数据库解密投递                    image/jpeg · 275951 字节
+  PASS  缺失资源回占位图                      HTTP 404
+  PASS  匿名访问受保护区跳转登录                  /login?next=%2Fmember&notice=login_required
+  PASS  匿名 JSON 请求返回 401              HTTP 401
+  PASS  注册成功并下发会话                     HTTP 302
+  PASS  登录后可进控制台                      HTTP 200
+  PASS  会员文件可下载（解密投递）                 HTTP 200
+  PASS  会员文件对匿名重定向登录                  HTTP 302
+  PASS  普通会员访问管理台被拒                   HTTP 403
+  PASS  匿名访问治理看板跳登录                   /login?next=%2Fmember%2Fdashboard&notice=login_required
+  PASS  匿名治理 API 返回 401               HTTP 401
+  PASS  治理看板可达（platform 离线仍 200）      HTTP 200
+  PASS  platform 离线时总览 API 200 + 降级标记 HTTP 200 · degraded=PORTAL_UNREACHABLE
+  PASS  platform 离线时编排 API 200 + 降级不报错HTTP 200
+  PASS  member 调治理写接口被拒 403           HTTP 403
+  PASS  留言提交（含附件）成功                   /contact?notice=contact_sent
+  PASS  管理员登录并进入管理台                   HTTP 200
+  PASS  管理台能看到刚提交的留言                  
+  PASS  管理员进入治理管理页                    HTTP 200
+  PASS  治理写接口缺 CSRF 被拒 403            HTTP 403
+  PASS  治理写接口非法 id 被拒 400             HTTP 400
+  PASS  登出后会话失效                       HTTP 302
+  PASS  数据库内无业务明文                     已检查 3 个标记
+  ----------------------------------------------------------
+  28/28 通过
+  SMOKE_SUMMARY total=28 passed=28 failed=0 min_expected=23 duplicate_cases=0 status=clean
+

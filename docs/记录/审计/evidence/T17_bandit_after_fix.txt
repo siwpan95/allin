@@ -1,0 +1,35 @@
+Run started:2026-11-08 00:26:41.427677+00:00
+
+Test results:
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b602_subprocess_popen_with_shell_equals_true.html
+   Location: tools\verify_projects.py:125:14
+124	    started = time.time()
+125	    process = subprocess.Popen(command, cwd=str(project), shell=True,
+126	                               env=env or {**os.environ, **HEADLESS_ENV},
+127	                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+128	                               stdin=subprocess.DEVNULL, text=True, encoding="utf-8",
+129	                               errors="replace")
+130	    try:
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 20215
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 384
+		Medium: 3
+		High: 1
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 4
+		High: 384
+Files skipped (0):

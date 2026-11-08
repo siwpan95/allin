@@ -1,0 +1,308 @@
+allin 治理门禁跑齐 @ /d/projects/allin
+----------------------------------------
+==> npm run check:governance
+
+> allin@0.1.0 check:governance
+> node tools/gate/governance/run.ts --no-profile
+
+governance: python 3.12 via D:/projects/allin/.venv/Scripts/python.exe; 20 gate(s); repository-only (--no-profile forwarded to 1 profile-reading gate(s))
+governance: gate contract self-verification: scanned 20 file(s); blocking 0; exempted 0; skipped 0.
+  note: g00-meta: contract ok (caught 7, clean 2)
+  note: g01-paths: contract ok (caught 3, clean 7)
+  note: g03-credentials: contract ok (caught 15, clean 9)
+  note: g04-push-evidence: contract ok (caught 12, clean 3)
+  note: g05-hygiene: contract ok (caught 6, clean 4)
+  note: g06-numbering: contract ok (caught 2, clean 2)
+  note: g07-doc-freshness: contract ok (caught 2, clean 3)
+  note: g08-deletion-evidence: contract ok (caught 2, clean 3)
+  note: g09-python-hygiene: contract ok (caught 4, clean 2)
+  note: g10-failloud-probe: contract ok (caught 2, clean 1)
+  note: g11-undef-names: contract ok (caught 3, clean 1)
+  note: g12-integrity: contract ok (caught 2, clean 1)
+  note: g13-docs-only: contract ok (caught 4, clean 1)
+  note: g14-preset: contract ok (caught 9, clean 2)
+  note: g15-docs-contract: contract ok (caught 23, clean 2)
+  note: g16-skill-preset-parity: contract ok (caught 8, clean 1)
+  note: g17-registry: contract ok (caught 5, clean 1)
+  note: g18-exceptions: contract ok (caught 4, clean 1)
+  note: g19-docs-refs: contract ok (caught 3, clean 2)
+  note: g20-facts: contract ok (caught 4, clean 3)
+governance: g00-meta -> exit 0
+governance: machine-specific absolute paths: scanned 865 file(s); blocking 0; exempted 2566; skipped 0.
+  exempted: annotated sample line=270, bare anchor without a path=139, binary or asset extension=7, comment line=15, documentation (report-only)=1387, escape or regex artefact=11, live path on this machine=488, operating-system path=14, path fragment inside a URL=20, path written for the other platform=72, placeholder in the sample path=65, test fixture or snapshot=3, vendored or generated tree=75
+governance: g01-paths -> exit 0
+governance: no credentials in tracked content, git config, or machine-local plaintext: scanned 237 file(s); blocking 0; exempted 1687; skipped 0.
+  exempted: URL points at a documentation host or sample pair=7, assignment value is a sample or an environment reference=2, assignment value is not secret-shaped=9, candidate line carried no credential shape=1580, documented sample file=3, hex run is a digest or low-entropy, not a token=58, inline annotation (allowlisted fixture file)=22, token shape carries a synthetic marker=6
+governance: g03-credentials -> exit 0
+governance: push readiness from authoritative remote evidence: scanned 2 file(s); blocking 0; exempted 0; skipped 0.
+  note: origin-push1/master: IN_SYNC (local d12b6c2cabe4, remote d12b6c2cabe4)
+  note: origin-push2/master: IN_SYNC (local d12b6c2cabe4, remote d12b6c2cabe4)
+governance: g04-push-evidence -> exit 0
+governance: repository hygiene on the tracked surface: scanned 3 file(s); blocking 0; exempted 947; skipped 0.
+  exempted: another owner's tree=70, tracked source or documentation=877
+governance: g05-hygiene -> exit 0
+governance: numbering contracts (series continuity, pair equality): scanned 0 file(s); blocking 0; exempted 0; skipped 1.
+  SKIPPED (not a pass): no tracked bilingual pair in scope=1
+governance: g06-numbering -> exit 0
+governance: declared fact sources carry a time point: scanned 3 file(s); blocking 0; exempted 4; skipped 0.
+  exempted: authority claim about something other than observed environment=2, dated declaration=2
+governance: g07-doc-freshness -> exit 0
+governance: deletions carry capability-surface evidence: scanned 1 file(s); blocking 0; exempted 1; skipped 0.
+  exempted: commit deletes nothing=1
+governance: g08-deletion-evidence -> exit 0
+governance: Python encoding, escape, and console discipline: scanned 103 file(s); blocking 0; exempted 511; skipped 0.
+  exempted: annotation or pattern definition=165, compiles without warnings=103, docstring prose=242, raw string literal=1
+governance: g09-python-hygiene -> exit 0
+governance: gates refuse an unusable input loudly: scanned 20 file(s); blocking 0; exempted 20; skipped 0.
+  exempted: refuses loudly=20
+governance: g10-failloud-probe -> exit 0
+governance: no name is loaded without being defined: scanned 103 file(s); blocking 0; exempted 0; skipped 0.
+governance: g11-undef-names -> exit 0
+governance: the object store reads and HEAD resolves: scanned 1 file(s); blocking 0; exempted 1; skipped 1.
+  exempted: every object reachable from HEAD reads back=1
+  SKIPPED (not a pass): deep connectivity check disabled (--deep enables it)=1
+governance: g12-integrity -> exit 0
+governance: the docs tree holds documents: scanned 337 file(s); blocking 0; exempted 337; skipped 0.
+  exempted: allowed document=337
+governance: g13-docs-only -> exit 0
+governance: the preset stays mountable and honest: scanned 1 file(s); blocking 0; exempted 1; skipped 0.
+  exempted: plugin sequence matches the shipped preset=1
+governance: g14-preset -> exit 0
+exempted: D1-registered=106 D10-range-covers=4 D11-count-agree=3 D12-open-range=1 D13-already-by-D9=20 D13-ambiguous-row=6 D13-anchor-ok=31 D13-in-link-label=1 D13-not-numeric=2 D13-qualified=3 D13-row-id-ok=1 D14-already-by-D9=120 D14-historic=3 D14-in-code=104 D14-qualified=30 D14-self-ok=91 D14-table-row=125 D15-file-clean=106 D16-evidence-ok=5 D16-plan-scanned=1 D17-no-timepoint=3 D17-traced=9 D2-dir-link=5 D2-resolved=106 D3-field=136 D4-dated=66 D4-nodate=34 D4-record-readme=2 D5-match=102 D6-ok=4 D7-range=4 D8-counts-agree=1 D9-anchor-ok=142 D9-historical-src=70 D9-no-target=331 D9-ref-format-field=18
+blocking=0 baseline=0 new=0 reported=0 skipped=0
+governance: g15-docs-contract -> exit 0
+governance: every governance carrier says the same facts: scanned 3 file(s); blocking 0; exempted 425; skipped 0.
+  exempted: carrier-line-clean=400, gate-id-known=13, parity-command=3, parity-path=9
+governance: g16-skill-preset-parity -> exit 0
+governance: the project registry is complete and knows its lifecycle: scanned 146 file(s); blocking 0; exempted 439; skipped 3.
+  exempted: id-name-agree=146, id-unique=146, registered=138, status-known=9
+  SKIPPED (not a pass): lifecycle (no local clone)=3
+  note: lifecycle over 143 local clone(s): active 143, dormant 0 (> 90d), archived-candidate 0 (> 365d)
+governance: g17-registry -> exit 0
+governance: accepted risk is registered, reasoned, and expires: scanned 6 file(s); blocking 0; exempted 24; skipped 0.
+  exempted: closed-exception=1, id-unique=6, kind-known=6, open-until-2027-01-31=5, status-known=6
+  note: 燃尽口径：冻结/豁免/缺口共 79 条，已登记例外 6 条（open 5）
+  note:    repo_hygiene_exemptions.csv: 34
+  note:    g09-python-hygiene: 27
+  note:    g03-credentials: 16
+  note:    g07-doc-freshness: 1
+  note:    registry-known-gaps.txt: 1
+governance: g18-exceptions -> exit 0
+governance: documentation claims resolve to something that exists: scanned 90 file(s); blocking 0; exempted 319; skipped 0.
+  exempted: deprecated spec (docs/规范/SPEC-104-DSH分发版使用.md)=1, out-of-scope tree (.workbuddy/)=16, out-of-scope tree (docs/md/)=231, out-of-scope tree (vendor/)=2, record-snapshot (path-ref not judged)=69
+governance: g19-docs-refs -> exit 0
+governance: machine fact sources still match reality: scanned 3 file(s); blocking 0; exempted 2; skipped 0.
+  exempted: another machine's facts (each machine verifies its own file)=2
+  note: skip DESKTOP-8RSV60V.md: 非当前机器（siwpan）的分区文件，留待该机自验
+  note: skip DESKTOP-KQABATS.md: 非当前机器（siwpan）的分区文件，留待该机自验
+  note: SIWPAN.md: 时点：2026-11-08（0 天前，在窗口内）
+governance: g20-facts -> exit 0
+governance: 20/20 gate(s) clean
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/docs_index.py
+exempted: D1-registered=106 D10-range-covers=4 D11-count-agree=3 D12-open-range=1 D13-already-by-D9=20 D13-ambiguous-row=6 D13-anchor-ok=31 D13-in-link-label=1 D13-not-numeric=2 D13-qualified=3 D13-row-id-ok=1 D14-already-by-D9=120 D14-historic=3 D14-in-code=104 D14-qualified=30 D14-self-ok=91 D14-table-row=125 D15-file-clean=106 D16-evidence-ok=5 D16-plan-scanned=1 D17-no-timepoint=3 D17-traced=9 D2-dir-link=5 D2-resolved=106 D3-field=136 D4-dated=66 D4-nodate=34 D4-record-readme=2 D5-match=102 D6-ok=4 D7-range=4 D8-counts-agree=1 D9-anchor-ok=142 D9-historical-src=70 D9-no-target=331 D9-ref-format-field=18
+blocking=0 baseline=0 new=0 reported=0 skipped=0
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/docs_index.py --selfcheck
+SELFCHECK {"caught":23,"clean":2,"misreports":0}
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/agent_regression.py
+ok   定位仓根 —— 仓根自证：docs/INDEX.md + preset/allin/locate-root.ps1
+ok   门禁数自述一致 —— 人格自述 20 道 vs registry 实际 20 道
+ok   MCP 工具面 —— 工具 13 个；缺失关键工具：无
+ok   MCP 自检 —— --selftest 退出码 0
+ok   多载体一致 —— g16 退出码 0
+ok   文档枢纽 —— docs_index 退出码 0
+----------------------------------------
+agent 行为回归：6/6 通过（黄金集 v1）
+对比基线（commit d172589 通过率 1.0）：当前 1.0
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/agent_parity.py
+==> g21 agent-parity（编排路由台账三方对账）
+    summary: total=15 ok=15 drift=0 warn=0
+    产物: tools/gate/audit/g21-runs.jsonl
+g21 agent-parity: 绿（台账与双形态锚点对账一致）
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe preset/allin/refresh-gov-block.py --check
+canonical: 66 lines / 5722 chars from preset/allin/allin.patch.yml
+agent: fresh 66 lines / 5722 chars
+profile: fresh 66 lines / 5722 chars
+bundle : fresh (byte-identical to the canonical patch)
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error
+根目录：.
+发现项目数：2
+健康分：均值 6.0 / 最低 6.0　通过率 99%
+
+== kernel  (kernel)  健康分 6.0
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   (跳过 10 项：no-dotgit, no-workflow, user)
+
+== platform  (platform)  健康分 6.0
+   ✓ 无达到阈值的问题
+   (跳过 10 项：no-dotgit, no-workflow, user)
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py packages/allin-governance --profile component --exclude src,tests --fail-on error
+根目录：packages/allin-governance
+发现项目数：1
+健康分：均值 6.0 / 最低 6.0　通过率 67%
+
+== allin-governance  (packages\allin-governance)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 13 项：no-dotgit, no-security-file, no-workflow, user)
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/repocheck/main.py tools/ --profile component --exclude gate --fail-on error
+根目录：tools/
+发现项目数：6
+健康分：均值 6.0 / 最低 6.0　通过率 67%
+
+== deploy  (tools\deploy)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 15 项：no-dotgit, no-license-file, no-security-file, no-workflow, user)
+
+== facts  (tools\facts)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 疑似 import 断裂风险：g20_facts
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 15 项：no-dotgit, no-license-file, no-security-file, no-workflow, user)
+
+== repocheck  (tools\repocheck)  健康分 6.0
+   ✓ 无达到阈值的问题
+   (跳过 11 项：no-dotgit, user)
+
+== reposcan  (tools\reposcan)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 15 项：no-dotgit, no-license-file, no-security-file, no-workflow, user)
+
+== security  (tools\security)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 17 项：no-dotgit, no-license-file, no-readme, no-security-file, no-workflow, user)
+
+== tier_archive  (tools\tier_archive)  健康分 6.0
+   [warn] 无测试：无 tests/ 或 test/ 目录，也无 test_*.py / *_test.py / *.test.* / *.spec.*
+   [warn] 无 SECURITY.md：根 / .github / docs 均无 SECURITY.md
+   [warn] 无 CONTRIBUTING：根 / .github / docs 均无 CONTRIBUTING*
+   [warn] CHANGELOG 结构不合格：根目录无 CHANGELOG*
+   [warn] 无 CI 配置：无 CI 配置（.github/workflows / .gitee / .gitlab-ci.yml 等均未找到）
+   [info] 无依赖更新工具：无 dependabot / renovate 配置
+   [info] 无 SAST 配置：无 SAST 配置（CodeQL / Semgrep / Sonar / pre-commit 钩子）
+   (跳过 15 项：no-dotgit, no-license-file, no-security-file, no-workflow, user)
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/check_ps1_bom.py
+== PowerShell 编码门禁 ==
+  扫描 25 个 .ps1（4 个根）
+  RESULT: 通过
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/repo_hygiene.py --all
+== 仓库卫生门禁 ==
+  范围: 138 个仓 | 跟踪面
+  已应用仓级豁免：豁免掉 219 条（表内 34 行生效）
+  命中分布: 无
+  RESULT: 通过（存量 0 条在基线内）
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/check_gate_drift.py --selfcheck
+== 门禁漂移检查 自测 ==
+  一致（仅 EOL 不同）判绿: ✔  [比较 1 个, 漂移 0]
+  真漂移判红:             ✔  [漂移 1]
+  对端缺失 SKIPPED:       ✔
+  单侧存在判归属差异:     ✔  [仅仓内 1, 仅工作副本 0, 漂移 0]
+  自动发现新脚本且漂移判红:   ✔  [发现 4 个, 比较 2 个, 漂移 1]
+  同目录守卫用例（构造同目录）: ✔
+SELFCHECK_PASSED
+    [ok]
+==> npm run smoke:e2e
+
+> allin@0.1.0 smoke:e2e
+> node scripts/smoke_e2e.mjs
+
+
+  allin · 端到端三面冒烟（smoke:e2e）
+  ----------------------------------------------------------
+  PASS  [CP1] CLI 前门（preset list 只读）                exit 0
+  PASS  [CP2] kernel 探测（platform registry-count 只读） registry 项目条目：146
+  PASS  [CP3] portal 回环探活（临时实例）                     HTTP 200 port=13754 version=0.1.0
+  PASS  [CP4] website 临时实例探活                        healthz 200 · 首页 marker 命中 · 匿名 /member 302→login
+  PASS  [CP5] g21 漂移判据                              exit 0 · 尾行 drift=0 · checkedAt=2026-11-08T00:09:51Z
+  PASS  [CP6] verify-mount 漂移层                      exit 0
+  ----------------------------------------------------------
+  6/6 通过（skip 0）
+  ALLIN_E2E_SUMMARY effectivePassed=6 skipped=0 failed=0 budgetExceeded=false
+
+
+  证据已落盘：tools\gate\audit\e2e-runs.jsonl（7 行）
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe -m unittest discover -s kernel/tests
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 0.824s
+
+OK
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe -m pytest tools/repocheck/test_scanner.py -q
+..............................................................           [100%]
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/check_readme_refs.py
+check_readme_refs：README 可机检事实干净（16 个仓内路径引用 + 版本 0.0.0a4 对账一致）。
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/gate/check_arch_assets.py
+== 架构资产对账（ADR-0009）==
+  [ok] adr 索引 ↔ 文件集合一致（10 条，状态闭集 + 链接名核对通过）
+  [ok] system-architecture.svg 门禁编号范围 g00–g20 ↔ gates/ 目录一致
+  [ok] system-architecture.svg 门禁总数 20 道 ↔ gates/ 目录一致
+  [ok] system-architecture.svg 缺号声明（g02） ↔ gates/ 目录一致
+  [ok] system-architecture.svg D 范围 ↔ SPEC-204 一致（D1–D17）
+  [ok] system-architecture.svg 仓数 ↔ PORTFOLIO.md 一致（138）
+  [ok] SPEC-204 仓数 ↔ PORTFOLIO.md 一致（138）
+  [ok] system-architecture.svg 标题带修订日期
+  [ok] data-flow.svg 标题带修订日期
+  [ok] website 默认端口 9042 ↔ ports.yaml 登记一致（allin-website）
+RESULT: 架构资产对账全绿
+    [ok]
+==> D:/projects/allin/.venv/Scripts/python.exe tools/deploy/monthly_audit.py --selfcheck
+== monthly_audit 自测（夹具，不写真实留痕）==
+  [PASS] 干净夹具判 ok
+  [PASS] 分层求和 / 合计 / 对账式解析正确
+  [PASS] 决策表断号被拦
+  [PASS] 合计与决策表行数不符被拦
+  [PASS] 对账式算术不自洽被拦
+  [PASS] 发布区偏差默认只观测、不阻断
+  [PASS] --strict-publish-area 能把偏差升级为阻断
+  [PASS] 空留痕不触发 skip
+  [PASS] 同月 ok 触发 skip
+  [PASS] 同月 failed 不阻断复验
+  [PASS] 上月 ok 不误 skip 本月
+  [PASS] 坏行不污染整份留痕
+  RESULT: 12/12 通过
+    [ok]
+----------------------------------------
+ALLIN_GATE_SUMMARY status=clean fail=0 skips=0
+全部门禁通过。

@@ -1,0 +1,297 @@
+
+> allin-website@1.0.0 test
+> node --test "test/*.test.js"
+
+TAP version 13
+# Subtest: BASE_ORIGIN 由 config.baseUrl 派生
+ok 1 - BASE_ORIGIN 由 config.baseUrl 派生
+  ---
+  duration_ms: 1.9614
+  type: 'test'
+  ...
+# Subtest: 空值 / 非字符串 → 收敛到 /member
+ok 2 - 空值 / 非字符串 → 收敛到 /member
+  ---
+  duration_ms: 0.3461
+  type: 'test'
+  ...
+# Subtest: 站内相对路径原样保留（含 query / hash）
+ok 3 - 站内相对路径原样保留（含 query / hash）
+  ---
+  duration_ms: 1.5924
+  type: 'test'
+  ...
+# Subtest: 同 origin 绝对 URL → 剥离 scheme/host，只回传站内路径
+ok 4 - 同 origin 绝对 URL → 剥离 scheme/host，只回传站内路径
+  ---
+  duration_ms: 0.3757
+  type: 'test'
+  ...
+# Subtest: 站外 / 协议相对 / 反斜杠归一化一律拒绝（原实现漏报的核心向量）
+ok 5 - 站外 / 协议相对 / 反斜杠归一化一律拒绝（原实现漏报的核心向量）
+  ---
+  duration_ms: 0.5593
+  type: 'test'
+  ...
+# Subtest: userinfo 混淆 / 域名与端口伪装一律拒绝
+ok 6 - userinfo 混淆 / 域名与端口伪装一律拒绝
+  ---
+  duration_ms: 0.5538
+  type: 'test'
+  ...
+# Subtest: 非 http(s) scheme 一律拒绝
+ok 7 - 非 http(s) scheme 一律拒绝
+  ---
+  duration_ms: 0.2019
+  type: 'test'
+  ...
+# Subtest: 字面控制字符 / CRLF 头注入一律拒绝
+ok 8 - 字面控制字符 / CRLF 头注入一律拒绝
+  ---
+  duration_ms: 0.1442
+  type: 'test'
+  ...
+# Subtest: 百分号编码的反斜杠不会变成字面反斜杠（Location 不二次解码）
+ok 9 - 百分号编码的反斜杠不会变成字面反斜杠（Location 不二次解码）
+  ---
+  duration_ms: 0.4499
+  type: 'test'
+  ...
+# Subtest: withNotice：无 query 时补 ?notice
+ok 10 - withNotice：无 query 时补 ?notice
+  ---
+  duration_ms: 0.5052
+  type: 'test'
+  ...
+# Subtest: withNotice：已有 query 时用 &，绝不拼出双 ?
+ok 11 - withNotice：已有 query 时用 &，绝不拼出双 ?
+  ---
+  duration_ms: 0.2264
+  type: 'test'
+  ...
+# Subtest: withNotice：带 hash 时 notice 插在 \# 之前，不落进 fragment
+ok 12 - withNotice：带 hash 时 notice 插在 \# 之前，不落进 fragment
+  ---
+  duration_ms: 0.1181
+  type: 'test'
+  ...
+# Subtest: withNotice 对 notice 做 URL 编码
+ok 13 - withNotice 对 notice 做 URL 编码
+  ---
+  duration_ms: 0.095
+  type: 'test'
+  ...
+# Subtest: 登录成功回跳组合：safeNext + withNotice 不产生双 ? 且仍为站内
+ok 14 - 登录成功回跳组合：safeNext + withNotice 不产生双 ? 且仍为站内
+  ---
+  duration_ms: 0.1538
+  type: 'test'
+  ...
+# (node:37860) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: gcm: encrypt → decrypt 往返还原明文，且 sha256Plain 一致
+ok 15 - gcm: encrypt → decrypt 往返还原明文，且 sha256Plain 一致
+  ---
+  duration_ms: 4.6664
+  type: 'test'
+  ...
+# Subtest: gcm: lookupHmac 对同一邮箱稳定、对主密钥敏感（轮换须重算）
+ok 16 - gcm: lookupHmac 对同一邮箱稳定、对主密钥敏感（轮换须重算）
+  ---
+  duration_ms: 0.6657
+  type: 'test'
+  ...
+# Subtest: gcm: 密文被篡改一位 → AUTH_FAILED，绝不返回部分明文
+ok 17 - gcm: 密文被篡改一位 → AUTH_FAILED，绝不返回部分明文
+  ---
+  duration_ms: 1.0606
+  type: 'test'
+  ...
+# Subtest: gcm: AAD 绑定业务主键 —— 密文整行搬到别的记录解不开
+ok 18 - gcm: AAD 绑定业务主键 —— 密文整行搬到别的记录解不开
+  ---
+  duration_ms: 0.609
+  type: 'test'
+  ...
+# Subtest: gcm: 错误主密钥 → AUTH_FAILED；缺密钥 → KEY_UNAVAILABLE；坏信封 → ENVELOPE_BAD
+ok 19 - gcm: 错误主密钥 → AUTH_FAILED；缺密钥 → KEY_UNAVAILABLE；坏信封 → ENVELOPE_BAD
+  ---
+  duration_ms: 0.7763
+  type: 'test'
+  ...
+# Subtest: gcm: tryDecrypt 宽容版返回 {ok:false,error} 而非抛出
+ok 20 - gcm: tryDecrypt 宽容版返回 {ok:false,error} 而非抛出
+  ---
+  duration_ms: 0.4904
+  type: 'test'
+  ...
+# Subtest: rotate: 旧密钥重加密到新密钥后，新钥可读、旧钥不可读（email HMAC 需同步重算）
+ok 21 - rotate: 旧密钥重加密到新密钥后，新钥可读、旧钥不可读（email HMAC 需同步重算）
+  ---
+  duration_ms: 2.202
+  type: 'test'
+  ...
+# Subtest: keystore: createKey 写 0600 key 文件并登记，getKeyMaterial 按材质取回
+ok 22 - keystore: createKey 写 0600 key 文件并登记，getKeyMaterial 按材质取回
+  ---
+  duration_ms: 51.1933
+  type: 'test'
+  ...
+# (node:47524) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: sameOriginGuard: Sec-Fetch-Site: cross-site → 403 且不放行到业务
+ok 23 - sameOriginGuard: Sec-Fetch-Site: cross-site → 403 且不放行到业务
+  ---
+  duration_ms: 40.9929
+  type: 'test'
+  ...
+# Subtest: sameOriginGuard: 异 Origin → 403（反代按 x-forwarded-proto 判定期望源）
+ok 24 - sameOriginGuard: 异 Origin → 403（反代按 x-forwarded-proto 判定期望源）
+  ---
+  duration_ms: 8.5794
+  type: 'test'
+  ...
+# Subtest: sameOriginGuard: 同源 Origin / same-origin / 裸请求均放行
+ok 25 - sameOriginGuard: 同源 Origin / same-origin / 裸请求均放行
+  ---
+  duration_ms: 0.3214
+  type: 'test'
+  ...
+# Subtest: sameOriginGuard: GET / HEAD / OPTIONS 不受写围栏影响
+ok 26 - sameOriginGuard: GET / HEAD / OPTIONS 不受写围栏影响
+  ---
+  duration_ms: 0.2393
+  type: 'test'
+  ...
+# Subtest: rateLimiter: 换 email 不能绕过 IP 桶（原实现键里混 ip，换邮箱即换桶）
+ok 27 - rateLimiter: 换 email 不能绕过 IP 桶（原实现键里混 ip，换邮箱即换桶）
+  ---
+  duration_ms: 1.7061
+  type: 'test'
+  ...
+# Subtest: rateLimiter: 同一 email 仍受 email 维 max 约束，与 ip 上限互不干扰
+ok 28 - rateLimiter: 同一 email 仍受 email 维 max 约束，与 ip 上限互不干扰
+  ---
+  duration_ms: 3.549
+  type: 'test'
+  ...
+# Subtest: contentService.withTransaction: 抛错时整体回滚，不留半写入
+ok 29 - contentService.withTransaction: 抛错时整体回滚，不留半写入
+  ---
+  duration_ms: 5.9134
+  type: 'test'
+  ...
+# Subtest: contentService.withTransaction: 内层复用外层事务，不重复 BEGIN
+ok 30 - contentService.withTransaction: 内层复用外层事务，不重复 BEGIN
+  ---
+  duration_ms: 3.1746
+  type: 'test'
+  ...
+# Subtest: contactService.createMessage: 校验失败既不写留言也不写审计
+ok 31 - contactService.createMessage: 校验失败既不写留言也不写审计
+  ---
+  duration_ms: 0.9808
+  type: 'test'
+  ...
+# Subtest: contactService.createMessage: 正常提交同时产出留言与审计（同一事务）
+ok 32 - contactService.createMessage: 正常提交同时产出留言与审计（同一事务）
+  ---
+  duration_ms: 3.1365
+  type: 'test'
+  ...
+# Subtest: assetService.deleteAsset: 删除生效（contact 孤儿附件补偿的基础）
+ok 33 - assetService.deleteAsset: 删除生效（contact 孤儿附件补偿的基础）
+  ---
+  duration_ms: 3.5023
+  type: 'test'
+  ...
+# Subtest: assetDelivery: SVG / 文本 / PDF 一律强制 attachment（防同源内联存储型 XSS）
+ok 34 - assetDelivery: SVG / 文本 / PDF 一律强制 attachment（防同源内联存储型 XSS）
+  ---
+  duration_ms: 11.3439
+  type: 'test'
+  ...
+# Subtest: assetDelivery: 非 public 资源即使是位图也强制下载
+ok 35 - assetDelivery: 非 public 资源即使是位图也强制下载
+  ---
+  duration_ms: 2.4311
+  type: 'test'
+  ...
+# Subtest: assetDelivery: public 位图保持内联（不误伤正常配图）
+ok 36 - assetDelivery: public 位图保持内联（不误伤正常配图）
+  ---
+  duration_ms: 2.5806
+  type: 'test'
+  ...
+# Subtest: assetDelivery: filename 白名单化，杜绝响应头注入
+ok 37 - assetDelivery: filename 白名单化，杜绝响应头注入
+  ---
+  duration_ms: 3.3573
+  type: 'test'
+  ...
+# (node:49404) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: randomPassword：500 次生成全部满足 validatePassword（原实现 12.8% 失败）
+ok 38 - randomPassword：500 次生成全部满足 validatePassword（原实现 12.8% 失败）
+  ---
+  duration_ms: 13.9253
+  type: 'test'
+  ...
+# Subtest: previousPasswords：读回账本，忽略 null 口令与脏记录
+ok 39 - previousPasswords：读回账本，忽略 null 口令与脏记录
+  ---
+  duration_ms: 2.7881
+  type: 'test'
+  ...
+# Subtest: previousPasswords：账本缺失 / 损坏时返回空对象而非抛错
+ok 40 - previousPasswords：账本缺失 / 损坏时返回空对象而非抛错
+  ---
+  duration_ms: 3.0381
+  type: 'test'
+  ...
+# Subtest: ensureUser 全分支（顺序执行，共享同一个隔离库）
+    # Subtest: 新建账号 → reused:false，写出的口令确实能解开库内 hash
+    ok 1 - 新建账号 → reused:false，写出的口令确实能解开库内 hash
+      ---
+      duration_ms: 298.2987
+      type: 'test'
+      ...
+    # Subtest: reused + 账本口令可复用 → 写回同一可登录口令，不写占位串
+    ok 2 - reused + 账本口令可复用 → 写回同一可登录口令，不写占位串
+      ---
+      duration_ms: 247.346
+      type: 'test'
+      ...
+    # Subtest: reused + env 与库内不一致 + 账本正确 → 忽略 env，写回可登录口令并注明
+    ok 3 - reused + env 与库内不一致 + 账本正确 → 忽略 env，写回可登录口令并注明
+      ---
+      duration_ms: 376.8609
+      type: 'test'
+      ...
+    # Subtest: reused + 候选全部不可复用 → password:null + 说明，绝不写假口令
+    ok 4 - reused + 候选全部不可复用 → password:null + 说明，绝不写假口令
+      ---
+      duration_ms: 244.8665
+      type: 'test'
+      ...
+    # Subtest: 新建分支：env 口令不合法时直接抛错，不创建半残账号
+    ok 5 - 新建分支：env 口令不合法时直接抛错，不创建半残账号
+      ---
+      duration_ms: 1.5363
+      type: 'test'
+      ...
+    1..5
+ok 41 - ensureUser 全分支（顺序执行，共享同一个隔离库）
+  ---
+  duration_ms: 1170.5542
+  type: 'test'
+  ...
+1..41
+# tests 46
+# suites 0
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1452.5643

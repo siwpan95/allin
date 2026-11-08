@@ -1,0 +1,17 @@
+================================================================
+T26 · smoke:e2e 复验（CP4 改用 isHomeMarkerPresent 后）
+================================================================
+命令：node scripts/smoke_e2e.mjs
+结果：exit 0，7/7 通过（effectivePassed=7 skipped=0 failed=0 budgetExceeded=false）
+
+  PASS  [CP1] CLI 前门（preset list 只读）                exit 0
+  PASS  [CP2] kernel 探测（platform registry-count 只读） registry 项目条目：146
+  PASS  [CP3] portal 回环探活（临时实例）                     HTTP 200 port=9356 version=0.1.0
+  PASS  [CP4] website 临时实例探活                        healthz 200 · 首页 marker 命中 · 匿名 /member 302→login
+  PASS  [CP7] 治理看板在线联动（portal→website degraded:null）HTTP 200 · degraded:null · portal 端口=9356 已接通 website
+  PASS  [CP5] g21 漂移判据                              exit 0 · 尾行 drift=0
+  PASS  [CP6] verify-mount 漂移层                      exit 0
+
+结论：CP4 首页判定改用纯函数 isHomeMarkerPresent 后，冒烟链路功能等价、依旧全绿；
+      配套的 B5 负向夹具（T25）已正面证明「marker 缺失→false」，CP4 不会再 false-green。
+证据落盘：tools/gate/audit/e2e-runs.jsonl（8 行）

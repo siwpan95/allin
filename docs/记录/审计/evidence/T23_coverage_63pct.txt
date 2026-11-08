@@ -1,0 +1,24 @@
+=== T23 覆盖率复测（B1 补充用例后）===
+command: .venv/Scripts/python -m pytest -q --cov=kernel --cov=allin_governance --cov-branch --cov-report=term-missing
+python: 3.12.13 (repo .venv)
+date: 2026-11-08
+
+新增文件：kernel/tests/test_kernel_units.py（11 个用例，覆盖 registry / _cordis_locate / platform_service 纯逻辑）
+
+TOTAL                                                      917    302    278     40    63%
+（改前：TOTAL 917 322 278 41 61%；本次 322→302 missing，+20 语句覆盖，总覆盖 61%→63%）
+
+逐模块变化（改前→改后）：
+  kernel/registry.py                                              36% → 100%（24/0）
+  kernel/services/platform_service.py                             52% → 74%（23/6）
+  kernel/_cordis_locate.py                                        67% → 70%（44/10）
+
+未动的高缺口模块（仍需补，但本次未碰以免引入不可靠测试）：
+  kernel/services/status_service.py  46%
+  kernel/tree.py                    30%
+  kernel/services/preset_service.py  21%
+  kernel/services/tools_service.py   22%
+  kernel/services/docs_service.py    36%
+
+测试总数：109（改前）+ 11（新增）= 120，全 pass，0 regression。
+注：覆盖率 63% 仍低于 P3 §4 目标 80%；阈值未设（按既定口径不硬设 --cov-fail-under，待全哥裁决）。
