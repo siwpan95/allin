@@ -1,0 +1,25 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#253649' }}>核验框架与方法</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>口径 · Gold Standard · 本轮修正</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1 }}>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '16px 20px', marginBottom: 16 }}>
+      <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#253649' }}>收录口径</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.7 }}>仅收录「明确发布主体 + 可核实官方来源 + 发布日期」的变化；无法获取精确日期者标注「待核实 / 推算」，不臆造。时间窗口 2026-03 — 2026-11（近 8 个月）。</Text>
+    </Box>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '16px 20px', marginBottom: 16 }}>
+      <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#253649' }}>核验 Gold Standard</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.7 }}>优先以厂商官方域名为准：openai.com / anthropic.com / blog.google / blogs.microsoft.com / apple.com / meta.com / salesforce.com / nvidia.com / deepseek.com / perplexity.ai；并用 WebFetch 直接核验关键页面日期与内容。聚合博客仅作线索。</Text>
+    </Box>
+    <Box style={{ background: '#FFF6F4', border: { left: { width: 4, color: '#C0392B' } }, padding: '16px 20px' }}>
+      <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#C0392B' }}>本轮（11-08）核验修正</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.7 }}>① Gemini 4 Argon 从「未证实」移入「已确认」（blog.google 官方公告 10/13）；② 新增 Gemini 4 Carbon、Genie 4 已确认条目；③ 补齐 Apple Siri AI = 6/8、NVIDIA OpenShell = 10/21、Perplexity Automations = 9/29 精确日期。</Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>02</Text>
+  </Box>
+</Slide>

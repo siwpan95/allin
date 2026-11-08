@@ -1,0 +1,12 @@
+<Slide style={{ padding: 60, background: '#171F2E', fontFamily: '思源黑体' }}>
+  <Box style={{ height: '100%', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 20, color: '#1FB6A6', fontWeight: 'bold', letterSpacing: 4 }}>CHAPTER 02</Text>
+    <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#FFFFFF', marginTop: 18, lineHeight: 1.15 }}>企业级平台与常驻代理</Text>
+    <Text style={{ fontSize: 22, color: '#AEB8C6', marginTop: 18 }}>平台层 · 7 项已确认变更</Text>
+    <Box style={{ height: 3, background: '#16A085', margin: '34px 0 0', width: 120 }} />
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#6B7686' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#6B7686' }}>08</Text>
+  </Box>
+</Slide>

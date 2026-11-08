@@ -1,0 +1,37 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#253649' }}>章节导览</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>四大维度 · 19 条已确认 + 7 条未证实</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1, flexDirection: 'column', gap: 18 }}>
+    <Box style={{ flexDirection: 'row', gap: 18, flex: 1 }}>
+      <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#2f6df0' } } }}>
+        <Text style={{ fontSize: 15, color: '#5A7CB7', fontWeight: 'bold', letterSpacing: 2 }}>CHAPTER 01</Text>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#253649', marginTop: 8 }}>前沿模型与代理能力</Text>
+        <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.6 }}>模型层：Gemini 4 系列、Claude 5.5 家族、DeepSeek V4.1-Flash 等 8 项。</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#16A085' } } }}>
+        <Text style={{ fontSize: 15, color: '#138D75', fontWeight: 'bold', letterSpacing: 2 }}>CHAPTER 02</Text>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#253649', marginTop: 8 }}>企业级平台与常驻代理</Text>
+        <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.6 }}>平台层：DevDay Dots、Copilot Autopilot、Agentforce Coworker 等 7 项。</Text>
+      </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 18, flex: 1 }}>
+      <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#8E44AD' } } }}>
+        <Text style={{ fontSize: 15, color: '#7D3C98', fontWeight: 'bold', letterSpacing: 2 }}>CHAPTER 03</Text>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#253649', marginTop: 8 }}>安全治理与开发者底座</Text>
+        <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.6 }}>基础层：NVIDIA OpenShell、Claude for Government、Agents SDK 等 4 项。</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#FDEDEC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#C0392B' } } }}>
+        <Text style={{ fontSize: 15, color: '#C0392B', fontWeight: 'bold', letterSpacing: 2 }}>CHAPTER 04</Text>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#253649', marginTop: 8 }}>传闻与未证实消息</Text>
+        <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 8, lineHeight: 1.6 }}>严格单列、逐条标注「未证实」并附来源，不混入已确认变更。</Text>
+      </Box>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>03</Text>
+  </Box>
+</Slide>

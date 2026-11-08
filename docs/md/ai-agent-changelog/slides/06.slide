@@ -1,0 +1,40 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>1.2 重点深读：Gemini 4 系列</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>Google · 10 月连发三代</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1, flexDirection: 'row', gap: 20 }}>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#2f6df0' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Gemini 4 Argon</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        · 发布 2026-10-13，面向长程多步 agentic 工作流<br />
+        · 输出上限 64K → <b>1M token</b><br />
+        · 软件工程 / 企业知识 / 网安防御场景<br />
+        · 经 Fairwind 计划先向受信任网络防御者开放
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#2f6df0' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Gemini 4 Carbon</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        · 10 月下旬，迄今最强模型<br />
+        · SEC-bench Pro <b>88.2%</b>、ExploitGym 54.8%<br />
+        · Terminal-Bench 4.0 作弊率降至 0.0%<br />
+        · 先经美国政府预发布测试后逐步开放
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#2f6df0' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Genie 4 世界模型</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        · 10 月，实时交互仿真<br />
+        · 原生音频、自然语言实时操控场景<br />
+        · 为机器人 / agent 提供安全训练环境<br />
+        · 被视为迈向 AGI 的关键一步
+      </Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>06</Text>
+  </Box>
+</Slide>

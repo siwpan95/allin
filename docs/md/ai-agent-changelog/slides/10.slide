@@ -1,0 +1,34 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>2.2 重点深读：常驻自主代理</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>从「对话」到「持续替你工作」</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1, flexDirection: 'row', gap: 20 }}>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#16A085' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Dots · OpenAI</Text>
+      <Text style={{ fontSize: 13, color: '#138D75', marginTop: 4 }}>2026-09-29 DevDay</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        常驻、自带云端电脑、由 GPT-6 Astra 驱动的自主智能体；可界定自主范围、持续代用户工作。配套 GPT-6.1 Sol 与 Agents API 公测。
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#16A085' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Autopilot · Microsoft</Text>
+      <Text style={{ fontSize: 13, color: '#138D75', marginTop: 4 }}>2026-09-25 Copilot</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        原 Scout，具独立身份 / 记忆 / 电脑 / 工作区的「数字同事」；可监控频道、长时间后台运行。配 Managed Runtime 在 M365 内安全运行代码。
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 22, border: { top: { width: 4, color: '#16A085' } } }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#253649' }}>Coworker · Salesforce</Text>
+      <Text style={{ fontSize: 13, color: '#138D75', marginTop: 4 }}>2026-07-15</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 10, lineHeight: 1.65 }}>
+        内建 Data 360 的「自主 AI 队友」；跨 300+ 企业源检索、主动洞察、编排 Agentforce 代理；headless-first，可驻留多平台。
+      </Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>10</Text>
+  </Box>
+</Slide>

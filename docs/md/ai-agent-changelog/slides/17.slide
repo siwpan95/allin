@@ -1,0 +1,19 @@
+<Slide style={{ padding: 60, background: '#171F2E', fontFamily: '思源黑体' }}>
+  <Box style={{ height: '100%', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 18, color: '#5A7CB7', fontWeight: 'bold', letterSpacing: 3 }}>
+      CLOSING
+    </Text>
+    <Text style={{ fontSize: 60, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 1.18, marginTop: 22 }}>
+      可核实，才入册。
+    </Text>
+    <Text style={{ fontSize: 22, color: '#AEB8C6', marginTop: 26, lineHeight: 1.7, maxWidth: 900 }}>
+      19 条已确认变更，均附官方来源与对照基线；7 条未证实消息严格单列、逐条标注「未证实」并附来源。<br />
+      传闻不是事实，官方公告才是锚点。
+    </Text>
+    <Box style={{ height: 2, background: '#2f6df0', margin: '38px 0 22px', width: 560 }} />
+    <Text style={{ fontSize: 16, color: '#87909B', lineHeight: 1.7 }}>
+      时间窗口 2026-03 — 2026-11 · 整理日期 2026-11-08<br />
+      配套交付：结构化 HTML 日志 · Markdown 清单 · Excel 清单
+    </Text>
+  </Box>
+</Slide>

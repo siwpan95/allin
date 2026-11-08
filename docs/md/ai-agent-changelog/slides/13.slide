@@ -1,0 +1,27 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>3.2 重点深读：Agent 安全与合规</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>把「能执行」关进「可信边界」</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1, flexDirection: 'row', gap: 20 }}>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 24, border: { top: { width: 4, color: '#8E44AD' } } }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#253649' }}>NVIDIA OpenShell</Text>
+      <Text style={{ fontSize: 13, color: '#7D3C98', marginTop: 4 }}>2026-10-21 · GTC Berlin</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 12, lineHeight: 1.7 }}>
+        开源运行时 OpenShell（沙箱执行 + 策略强制、零信任、进程外不可绕过）+ Sentry 硬件隔离监控（BlueField-4 上带外、毫秒级隔离 / quarantine）+ Vera CPU（沙箱性能较传统高至 80%）；Anthropic / OpenAI / Google / Microsoft / Meta / AWS 等数十家共建。
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 24, border: { top: { width: 4, color: '#8E44AD' } } }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#253649' }}>Claude for Government</Text>
+      <Text style={{ fontSize: 13, color: '#7D3C98', marginTop: 4 }}>2026-09-30 · GA</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 12, lineHeight: 1.7 }}>
+        达到 FedRAMP High 授权并正式可用；与 GSA 扩展合作，提供 40% 折扣并覆盖州 / 地方 / 部落 / 属地政府，预计为政府节省约 10 亿美元。此前政府可用层级与覆盖范围更窄，无全产品面 FedRAMP High GA。
+      </Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>13</Text>
+  </Box>
+</Slide>

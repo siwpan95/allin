@@ -1,0 +1,25 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>1.3 重点深读：开放 / 降本模型</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>让代理「跑得起、用得广」</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 22px' }} />
+  <Box style={{ flex: 1, flexDirection: 'row', gap: 20 }}>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 24, border: { top: { width: 4, color: '#16A085' } } }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#253649' }}>DeepSeek-V4.1-Flash</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 12, lineHeight: 1.7 }}>
+        发布 2026-09-10。552B MoE（激活 8B/16B）、原生视觉、新 Causal Encoder–Decoder 架构；<b>KV cache 降至前代 1/4（HBM）/ 1/8（SSD）</b>，推理成本大幅下降；MIT 许可、API 已上线、非高峰半价；V4-Pro 路由至该模型。
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F8FC', borderRadius: 12, padding: 24, border: { top: { width: 4, color: '#16A085' } } }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#253649' }}>Claude Haiku 5.5</Text>
+      <Text style={{ fontSize: 14, color: '#5B6675', marginTop: 12, lineHeight: 1.7 }}>
+        发布 2026-10-07。迄今最快最强小模型，面向高吞吐（摘要、子代理、浏览器使用）；<b>价格较 Haiku 4.5 低 90%/50%</b>；同步将 Sonnet 5.5 缓存读取价下调 50%，多数 agentic 任务成本降约 20%；Python/TS SDK 新增 computer / browser use（beta）。
+      </Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>07</Text>
+  </Box>
+</Slide>

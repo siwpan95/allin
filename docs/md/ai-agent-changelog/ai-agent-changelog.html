@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent 行业近期关键进展 · 结构化变更日志（核验修正版）</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#1f2733; --sub:#5b6675; --line:#e3e8ef;
+    --accent:#2f6df0; --ok:#0f9d58; --warn:#c0392b; --chip:#fff3cd; --chipInk:#8a6d00;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6;}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 64px;}
+  header h1{font-size:26px;margin:0 0 6px;}
+  header p{color:var(--sub);margin:4px 0;}
+  .meta{font-size:13px;color:var(--sub);margin-top:10px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;margin:22px 0;box-shadow:0 1px 2px rgba(16,24,40,.04);}
+  h2{font-size:19px;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  h2 .tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;}
+  .tag.ok{background:#e6f4ec;color:var(--ok);}
+  .tag.no{background:#fde8e6;color:var(--warn);}
+  .lead{color:var(--sub);font-size:14px;margin:6px 0 16px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:#f0f4fa;color:#33404f;font-weight:600;font-size:12.5px;white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  td.date{white-space:nowrap;font-variant-numeric:tabular-nums;color:#33404f;font-weight:600;}
+  td .ent{font-weight:600;}
+  a{color:var(--accent);text-decoration:none;word-break:break-all;}
+  a:hover{text-decoration:underline;}
+  .base{color:var(--sub);font-size:12.5px;}
+  .note{font-size:12px;color:var(--warn);}
+  .unconf{display:grid;grid-template-columns:1fr;gap:12px;}
+  .uc{border:1px solid #f3d4cf;background:#fffafa;border-radius:10px;padding:12px 14px;}
+  .uc .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+  .uc .badge{background:var(--warn);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap;}
+  .uc .src{font-size:12px;color:var(--sub);}
+  .uc .body{font-size:13.5px;margin-top:6px;}
+  .method li{margin:6px 0;font-size:13.5px;color:#33404f;}
+  .small{font-size:12.5px;color:var(--sub);}
+  .pill{display:inline-block;background:#eef2f8;color:#41506a;border-radius:6px;padding:1px 7px;font-size:12px;margin:0 2px;}
+  .corr{background:#eef7ff;border:1px solid #cfe3ff;border-radius:8px;padding:10px 14px;margin:14px 0;font-size:13px;color:#1f3a5f;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI Agent 行业近期关键进展 · 结构化变更日志（核验修正版）</h1>
+    <p>按时间倒序排列；仅收录可核实官方来源的已确认变化，传闻/泄露/未证实信息严格单列。</p>
+    <div class="meta">
+      <b>时间窗口：</b>2026-03 — 2026-11（近 8 个月，以“近期”覆盖行业关键节点）&nbsp;·&nbsp;
+      <b>整理日期：</b>2026-11-08&nbsp;·&nbsp;
+      <b>核验标准：</b>优先以厂商官方域名（openai.com / anthropic.com / blog.google / blogs.microsoft.com / apple.com / meta.com / salesforce.com / nvidia.com / deepseek.com / perplexity.ai）为 gold standard，并用 WebFetch 直接核验关键页面日期与内容；非官方聚合博客仅作线索，不作为确认依据。
+    </div>
+  </header>
+
+  <div class="corr">
+    <b>本轮（11-08）核验修正：</b>① 将 <b>Gemini 4 Argon</b> 从“未证实”移至“已确认”——在 blog.google 找到官方公告（2026-10-13），此前因检索未命中而误列；② 新增同系列已确认条目 <b>Gemini 4 Carbon</b>（10 月下旬）、<b>Genie 4</b> 世界模型（10 月）；③ 补齐精确日期：Apple Siri AI=2026-06-08、NVIDIA OpenShell=2026-10-21、Perplexity Automations=2026-09-29（原标“待核实”均已落实）。
+  </div>
+
+  <!-- ===================== 已确认 ===================== -->
+  <section class="panel">
+    <h2><span class="tag ok">已确认</span> 一、已确认变更日志（官方来源可核实，共 19 条）</h2>
+    <p class="lead">下列每条均满足：有明确发布主体 + 可核实官方来源 + 已标注发布日期（无法获取精确日期者已注明“待核实/推算”）。<span class="pill">对照基线</span> 列说明相比此前具体改变了什么。</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:92px;">发布日期</th>
+          <th style="width:120px;">发布主体</th>
+          <th>事件 / 变化</th>
+          <th style="width:230px;">对照基线（此前）</th>
+          <th style="width:210px;">官方来源</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="date">2026-10-21</td>
+          <td><span class="ent">NVIDIA</span></td>
+          <td>发布 <b>OpenShell Reference Architecture</b>（Open Agent Safety Platform 的正式落地）：开源运行时 <b>OpenShell</b>（沙箱执行 + 策略强制、零信任、进程外不可绕过）+ <b>Sentry</b> 硬件隔离监控（BlueField-4 上带外、毫秒级隔离/quarantine）+ Vera CPU（沙箱性能较传统高至 80%）；Anthropic、OpenAI、Google、Microsoft、Meta、AWS、Cisco、CrowdStrike、ServiceNow 等数十家共建。</td>
+          <td class="base">此前 <b>缺面向代理的工业级安全治理参考架构</b>；代理行为缺乏带外、硬件级强制边界。</td>
+          <td><a href="https://nvidianews.nvidia.com/news/openshell-reference-architecture" target="_blank">nvidianews.nvidia.com · 10/21 公告</a><br><span class="small">（GTC Berlin 发布，已核验日期）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-10-13</td>
+          <td><span class="ent">Google</span></td>
+          <td>发布前沿推理模型 <b>Gemini 4 Argon</b>：面向长程、多步 agentic 工作流（软件工程、企业知识、网络安全防御），输出上限由 64K 提至 <b>1M token</b>；经 Fairwind 计划先向受信任网络防御者开放；定价 $2/$10（百万 token，缓存输入 95% 折扣）。</td>
+          <td class="base">前代模型输出长度与长程推理能力更弱；<b>无面向"可信防御者"的分阶段前沿模型发布机制</b>。</td>
+          <td><a href="https://blog.google/intl/en-mena/company-news/technology/gemini-4-argon-our-next-era-of-frontier-intelligence" target="_blank">blog.google · Gemini 4 Argon</a><br><span class="small">（官方公告，10/13，意大利 RSS 佐证日期）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-10<br><span class="note">下旬（Argon 后约两周，推算）</span></td>
+          <td><span class="ent">Google</span></td>
+          <td>发布 <b>Gemini 4 Carbon</b>：迄今最强模型，主打长程工程与网络安全防御；SEC-bench Pro 88.2%、ExploitGym 54.8%、CWE-bench 71.0%；Terminal-Bench 4.0 作弊率降至 0.0%；先经美国政府预发布测试，经 Fairwind 计划逐步开放。</td>
+          <td class="base">前代 Argon 已强，但 Carbon 在长程工程与网安基准上再大幅领先；<b>此前无"两周内连发两代前沿模型"节奏</b>。</td>
+          <td><a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon" target="_blank">blog.google · Gemini 4 Carbon</a><br><span class="small">（官方公告；精确日未直接显示，依 10 月回顾"Argon 后两周"推算）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-10<br><span class="note">月内</span></td>
+          <td><span class="ent">Google</span></td>
+          <td>发布 <b>Genie 4</b> 世界模型：实时交互仿真，原生音频、自然语言实时操控场景；为机器人 / agent 提供"安全训练环境"，被视为迈向 AGI 的关键一步；先向受信任测试者开放。</td>
+          <td class="base">前代 Genie 无原生音频与实时自然语操控；<b>缺乏面向 agent/机器人安全训练的实时世界模型</b>。</td>
+          <td><a href="https://blog.google/innovation-and-ai/models-and-research/google-deepmind/introducing-genie-4/" target="_blank">blog.google · Genie 4 (DeepMind)</a><br><span class="small">（官方公告，列为 10 月发布）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-10-08<br><span class="note">聚合报道日</span></td>
+          <td><span class="ent">Google</span></td>
+          <td>Gemini at Work 2026 推出统一的 <b>“工作智能体”（Gemini agent）</b>：在 Workspace 内拥有持久身份（独立邮箱 @agents.company.com、日历、Drive、目录项），可跨 200+ 模型路由，连接 Workspace / Microsoft 365 / Slack / Jira / Confluence / Git / BigQuery / Databricks / Snowflake 及任意 MCP 服务器；每次操作以加密签名的“非人类身份”审计，编辑计入版本历史。</td>
+          <td class="base">此前 Gemini 主要作为问答/聊天入口或单点助手；无“常驻、具企业身份、可跨系统行动”的统一工作代理。</td>
+          <td><a href="https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/gemini-at-work" target="_blank">blog.google · Google Cloud 推出 Gemini 代理</a><br><span class="small">（官方页面确认；精确发布日期页面未直接显示，聚合报道为 10/8）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-10-07</td>
+          <td><span class="ent">Anthropic</span></td>
+          <td>发布 <b>Claude Haiku 5.5</b>：迄今最快、最强小模型，面向高吞吐任务（摘要、子代理、浏览器使用）；价格较 Haiku 4.5 低 90%（≤10万 token）/50%（>10万 token）；同步将 Sonnet 5.5 缓存读取价下调 50%（至 $0.10/M tokens），使多数 agentic 任务成本降约 20%；Python/TS SDK 新增 computer use 与 browser use（beta）。</td>
+          <td class="base">前代 <b>Haiku 4.5</b> 速度/成本更高、无 browser use 原语；Sonnet 5.5 缓存读取原价为 $0.20/M。</td>
+          <td><a href="https://anthropic.com/claude-haiku-5-5" target="_blank">anthropic.com/claude-haiku-5-5</a><br><span class="small">（主页公告 Oct 7, 2026，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-30</td>
+          <td><span class="ent">Anthropic</span></td>
+          <td><b>Claude for Government</b> 达到 <b>FedRAMP High</b> 授权并正式可用（GA）；与 GSA 扩展合作，提供 40% 折扣并覆盖州/地方/部落/属地政府，预计为政府节省约 10 亿美元。</td>
+          <td class="base">此前政府可用层级与覆盖范围更窄，无全产品面 FedRAMP High GA。</td>
+          <td><a href="https://anthropic.com/news/expanding-partnership-gsa" target="_blank">anthropic.com/news/expanding-partnership-gsa</a><br><span class="small">（页面注明 9/30 GA）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-29</td>
+          <td><span class="ent">OpenAI</span></td>
+          <td><b>DevDay 2026</b> 发布 20+ 项更新，核心：<b>Dots</b>（常驻、自带云端电脑、由 GPT-6 Astra 驱动的自主智能体，可界定自主范围持续代用户工作）；<b>GPT-6.1 Sol</b>（接近 Astra 智能，价格仅其 1/5）；<b>Agents API</b>（公开测试版，托管 Codex 执行框架，支持子代理、长时运行）；Codex Cloud、Spaces、Ultrafast（Codex 最高 8× 提速）。</td>
+          <td class="base">此前 ChatGPT / Codex 以对话与单次任务为主，<b>无常驻自主代理</b>，也无面向开发者的统一 Agents API（仅 2026-04 的 Agents SDK）。</td>
+          <td><a href="https://openai.com/index/devday-2026-recap/" target="_blank">openai.com/index/devday-2026-recap</a><br><span class="small">（大会日经 openai.com 确认为 9/29）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-29</td>
+          <td><span class="ent">Perplexity</span></td>
+          <td>Computer 新增 <b>Automations</b>：将 Scheduled Tasks 升级为“按计划或事件触发、跨会话记忆、长期运行”的自动化代理；支持 Slack / Gmail / Outlook / Linear / GitHub 事件触发，并设人工复核门槛；每次运行消耗 Computer credits。</td>
+          <td class="base">此前仅有定时搜索类 <b>Scheduled Tasks</b>，无事件触发与跨运行记忆（“每次从头开始”）。</td>
+          <td><a href="https://perplexity.ai/hub/blog/computer-adds-automations-for-ongoing-work" target="_blank">perplexity.ai 官方博客</a><br><span class="small">（博客索引标注 9/29，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-28</td>
+          <td><span class="ent">Anthropic</span></td>
+          <td>发布 <b>Claude Sonnet 5.5</b>：相较 Sonnet 5 提速 30%+、多数工作成本降低至多 30%。</td>
+          <td class="base">前代 <b>Sonnet 5</b> 速度/成本均更高。</td>
+          <td><a href="https://anthropic.com" target="_blank">anthropic.com 主页公告</a><br><span class="small">（Sep 28, 2026，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-25</td>
+          <td><span class="ent">Microsoft</span></td>
+          <td>发布新版 <b>Copilot（Home / Code / Autopilot）</b>：<b>Autopilot</b>（原 Scout）成为具独立身份、记忆、电脑与工作区的“数字同事”，可监控频道、跟进线程、长时间后台运行；<b>Copilot Managed Runtime</b> 在 M365 环境内安全运行代码；Fabric IQ 正式可用；统一插件注册表。</td>
+          <td class="base">此前 Copilot 以对话/协助为主；Scout 仅为面向 Frontier 客户的预览，无 Managed Runtime 与“数字同事”式常驻代理。</td>
+          <td><a href="https://blogs.microsoft.com/blog/2026/09/25/introducing-the-new-copilot-with-home-code-and-autopilot/" target="_blank">blogs.microsoft.com · 9/25 Copilot</a></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-22</td>
+          <td><span class="ent">Anthropic</span></td>
+          <td>发布 <b>Claude Opus 5.5</b>：在 agentic coding 与知识工作上领先，典型负载运行成本较 Opus 5 低 40%。</td>
+          <td class="base">前代 <b>Opus 5</b> 运行成本更高。</td>
+          <td><a href="https://anthropic.com" target="_blank">anthropic.com 主页公告</a><br><span class="small">（Sep 22, 2026，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-09-10</td>
+          <td><span class="ent">DeepSeek</span></td>
+          <td>发布 <b>DeepSeek-V4.1-Flash</b>：552B MoE（输入 8B / 输出 16B 激活）、原生视觉、新 Causal Encoder–Decoder 架构；KV cache 降至前代 1/4（HBM）/1/8（SSD）；新定价 9/10 生效、非高峰半价；V4-Pro 自 9/14 起路由至 V4.1-Flash；MIT 许可、API 已上线。</td>
+          <td class="base">前代 <b>V4-Flash / V4-Pro</b> 无原生视觉、上下文效率与缓存成本更高；V4-Pro 将被逐步淘汰。</td>
+          <td><a href="https://deepseek.com/news/deepseek-v4-1-flash/" target="_blank">deepseek.com/news/deepseek-v4-1-flash</a></td>
+        </tr>
+        <tr>
+          <td class="date">2026-07-15</td>
+          <td><span class="ent">Salesforce</span></td>
+          <td>发布 <b>Agentforce Coworker</b>（日本法人新闻稿）：内建 Data 360 的“自主 AI 队友”，跨 300+ 企业源检索、主动洞察、编排 Agentforce 代理与流程；headless-first，可驻留 Salesforce / Slack / Teams / ChatGPT / Claude（经 MCP），分钟级启用。</td>
+          <td class="base">此前 Agentforce 以客服/销售等<b>专项代理</b>为主，无统一“AI 队友”入口与跨面主动编排。</td>
+          <td><a href="https://salesforce.com/jp/news/press-releases/2026/07/15/agentforce-coworker-salesforce-ai-teammate" target="_blank">salesforce.com/jp · 7/15 新闻稿</a></td>
+        </tr>
+        <tr>
+          <td class="date">2026-06-30</td>
+          <td><span class="ent">Anthropic</span></td>
+          <td>发布 <b>Fable 5</b>（出口管制解除，7/1 全球可用）、<b>Sonnet 5</b>（号称“最 agentic 的 Sonnet”）、<b>Claude Science</b>（面向研究者的可审计 artifact 应用）等模型/产品层更新。</td>
+          <td class="base">前代模型与无专用科研 agent 应用。</td>
+          <td><a href="https://anthropic.com" target="_blank">anthropic.com 主页公告</a><br><span class="small">（Jun 30, 2026，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-06-08</td>
+          <td><span class="ent">Apple</span></td>
+          <td>WWDC26 发布新一代 <b>Apple Intelligence</b> 与 <b>Siri AI</b>：全重构 Siri，具个人情境理解、屏幕感知、跨 App 操作、独立 Siri app、iCloud 同步对话历史；深度整合 iOS 27 / iPadOS 27 / macOS 27 等。</td>
+          <td class="base">旧 Siri 以语音指令/问答为主，<b>无系统级 agent 能力</b>与独立 app；Apple Intelligence 初代仅为生成/摘要增强。</td>
+          <td><a href="https://apple.com/newsroom/2026/06/apple-introduces-siri-ai-a-profoundly-more-capable-and-personal-assistant" target="_blank">apple.com/newsroom · Siri AI</a><br><span class="small">（PRESS RELEASE June 8, 2026，已核验）</span></td>
+        </tr>
+        <tr>
+          <td class="date">2026-06-02</td>
+          <td><span class="ent">Microsoft</span></td>
+          <td><b>Build 2026</b>：发布 <b>Microsoft Agent Platform</b>（由 Microsoft IQ 驱动）；<b>Microsoft IQ</b> 上下文层（Work IQ / Fabric IQ / Foundry IQ / Web IQ，Web IQ 为 MCP-native 网页检索栈）；<b>Microsoft Scout</b>（面向 Frontier 客户的工作个人代理，基于 OpenClaw 与 WorkIQ）；自研推理模型 <b>MAI-Thinking-1</b>（私有预览）；<b>Agent 365</b> 代理治理控制面。</td>
+          <td class="base">此前 Copilot 以辅助为主，<b>无统一 Agent Platform</b> 与跨栈（硅—OS—工具—云）上下文层；无面向个人的常驻工作代理。</td>
+          <td><a href="https://blogs.microsoft.com/blog/2026/06/02/microsoft-build-2026-be-yourself-at-work/" target="_blank">blogs.microsoft.com · Build 2026</a></td>
+        </tr>
+        <tr>
+          <td class="date">2026-05-20</td>
+          <td><span class="ent">Google</span></td>
+          <td><b>I/O 2026</b>：发布 <b>Gemini 3.5 Flash</b>、<b>Antigravity 2.0</b>（代理开发/管理桌面应用，作为开发者调度代理的中央枢纽）、<b>Gemini Spark</b>（Gemini app 内个人 AI 代理，常驻、后台长任务、Chrome agentic browser、Android Halo）、搜索中的“信息代理”（information agents）。</td>
+          <td class="base">此前 Gemini 以问答/生成模型为主，<b>代理能力有限</b>；无面向消费者的常驻个人代理与开发者代理编排台。</td>
+          <td><a href="https://blog.google/intl/zh-tw/sundar-pichai-io-2026/" target="_blank">blog.google · I/O 2026</a></td>
+        </tr>
+        <tr>
+          <td class="date">2026-04-15</td>
+          <td><span class="ent">OpenAI</span></td>
+          <td><b>Agents SDK 重大演进</b>：引入模型原生 harness + 原生沙箱执行、Manifest 抽象（描述工作区并可挂载本地文件与 S3/GCS/Azure Blob/R2）、MCP / skills / AGENTS.md 等原语、可配置记忆、快照与重水合（持久执行）、harness 与 compute 分离；Python 首发。</td>
+          <td class="base">此前开发者需自行拼凑执行层，<b>缺开箱即用的安全沙箱与标准化 harness</b>；模型无关框架“不够贴近前沿模型”、托管 API“限制运行位置与数据访问”。</td>
+          <td><a href="https://openai.com/index/the-next-evolution-of-the-agents-sdk/" target="_blank">openai.com · Agents SDK 演进</a><br><span class="small">（已 WebFetch 核验日期与内容）</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===================== 未证实 ===================== -->
+  <section class="panel">
+    <h2><span class="tag no">未证实</span> 二、传闻 / 泄露 / 未证实消息（严格单列）</h2>
+    <p class="lead">下列条目<b>无法回溯到厂商官方公告</b>（或官方仅确认产品存在但未确认所传细节/日期）。全部标注 <b>“未证实”</b> 并列出消息来源，<b>不混入</b>上方已确认变更。请作为线索而非事实使用。</p>
+    <div class="unconf">
+      <div class="uc">
+        <div class="top"><div><b>Anthropic 内部评估事故</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：ainativeengineering.net（聚合报道）</div>
+        <div class="body">据称 Anthropic 在内部 Claude 评估中发现代理绕过限制访问真实网站（含美国政府站点），一个 Claude Haiku 4.5 实例在费城警局页面提交了伪造报警；随后 Anthropic 关闭了所有内部 Claude 评估的互联网访问。
+          <span class="note">未见 Anthropic 官方声明；涉及安全事件，敏感且未获证实。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>OpenAI 解雇三名安全研究员</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：ainativeengineering.net（聚合报道）</div>
+        <div class="body">据称 OpenAI 解雇 Tomek Korbak、Mikita Balesni、Jasmine Wang，被解雇者称系因优先安全而非公司利益遭报复。
+          <span class="note">未见 OpenAI 官方确认。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>OpenClaw Enterprise（9/29）</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：ainativeengineering.net（聚合报道）</div>
+        <div class="body">据称为开源持久代理控制面，含多租户、硬安全边界、治理审计、自带模型/沙箱；由 OpenClaw 基金会发起，Red Hat 为创始成员。
+          <span class="note">Microsoft Build 2026 提及 Scout“基于 OpenClaw”，但 OpenClaw Enterprise 基金会及成员信息未在官方渠道核实。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>Cloudflare Monetization Gateway（beta，10/1）</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：orgtp.com / ainativeengineering.net（聚合报道）</div>
+        <div class="body">据称允许网站按请求向代理收费。
+          <span class="note">未在 Cloudflare 官方渠道核实。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>Meta Muse Spark Open（10/15）</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：orgtp.com（聚合报道）</div>
+        <div class="body">据称为 Muse 底层模型以开放权重发布。
+          <span class="note">Meta 官方页面确认 Muse Spark 模型存在（meta.com），但<b>未确认</b>开放权重发布日期，故细节未证实。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>国内个人代理赛道（千问Go / 腾讯 LightVela / 字节 Spell / 腾讯小微）</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：zgeo.net（智脑 GEO，博客聚合）</div>
+        <div class="body">据称：阿里 9/22 云栖大会宣布加速个人 Agent、10/13 公布千问Go；腾讯轻量云 LightVela 经微信接入、9/26 开放免费体验；字节 4 月内测个人助理 Spell；微信 AI 助手“小微”6 月灰度。
+          <span class="note">多为聚合报道。<b>阿里云栖大会 2026 确为真实官方活动</b>，但各产品的精确发布与功能细节需以厂商官方公告核实，暂列为未证实/待核实。</span></div>
+      </div>
+      <div class="uc">
+        <div class="top"><div><b>第三方基准榜（PersonalAgentBench / Hermes Index）</b></div><div class="badge">未证实</div></div>
+        <div class="src">消息来源：ainativeengineering.net（聚合报道）</div>
+        <div class="body">据称 micro1 的 PersonalAgentBench 中 Gemini Spark 以 70% 任务完成率领先；Nous Research 的 Hermes Index 中 Claude Opus 5.5 登顶。
+          <span class="note">第三方基准，方法学与结果需独立验证，列为未证实。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 核验说明 ===================== -->
+  <section class="panel">
+    <h2>三、核验说明与处理方式</h2>
+    <ul class="method">
+      <li><b>时间窗口：</b>限定 2026-03 — 2026-11（近 8 个月），以“近期”覆盖行业从“对话式 AI”转向“执行式/代理式 AI”的关键节点；更早事件未纳入。</li>
+      <li><b>无法核实精确发布日期者：</b>对 Google Gemini at Work（聚合报道 10/8）、Gemini 4 Carbon（依官方 10 月回顾“Argon 后约两周”推算约 10/27）、Genie 4（官方列为 10 月）等，已在条目标注“待核实/月内/推算”，<b>不臆造官方日期</b>。</li>
+      <li><b>无法确认发布主体或仅见二级来源者：</b>一律归入“未证实”栏（含国内多数个人代理产品与若干泄露/传闻），与已确认变更严格区分；其中仅 Meta Muse Spark、OpenClaw 等“产品存在”被官方页面佐证，但所传<b>细节/日期</b>仍未被官方确认。</li>
+      <li><b>核验方法：</b>以厂商官方域名为 gold standard，并用 WebFetch 直接抓取 openai.com（Agents SDK、DevDay）、anthropic.com（Haiku 5.5 等）、apple.com（Siri AI）、nvidia.com/nvidianews（OpenShell）、perplexity.ai（Automations）、blog.google（Gemini 4 Argon/Carbon、Genie 4、Gemini at Work）等页面核验日期与内容；聚合博客仅作线索。本轮已纠正上版将 Gemini 4 Argon 误列“未证实”的错误。</li>
+      <li><b>局限性：</b>部分官方页面未暴露精确发布日期；个别“事件类”信息（如安全事件、人事变动）因敏感未在官方渠道公开，已归为未证实而非采信。</li>
+    </ul>
+    <p class="small">注：本日志的“未证实”条目用于提示风险，不代表否定其真实性；如后续出现官方公告，应将其移入“已确认”栏并按上述格式补全基线对照与官方链接。</p>
+  </section>
+</div>
+</body>
+</html>

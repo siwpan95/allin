@@ -1,0 +1,34 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>1.1 模型层变更时间线</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>2026-10 → 2026-06 · 8 项</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 16px' }} />
+  <Box style={{ flex: 1 }}>
+    <Table
+      style={{ width: '100%', height: '100%' }}
+      defaultTextStyle={{ fontSize: 13.5, textAlign: 'left', color: '#3B4A5B' }}
+      defaultCellStyle={{ border: { left: { width: 1, color: '#E0E3E6' }, right: { width: 1, color: '#E0E3E6' }, top: { width: 1, color: '#E0E3E6' }, bottom: { width: 1, color: '#E0E3E6' } } }}
+      cells={[
+        [
+          { text: '发布日期', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '主体', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '关键变化', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '对照基线（此前）', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+        ],
+        ['2026-10-13', 'Google', 'Gemini 4 Argon：1M token 输出、长程 agentic', '前代输出 64K，无分阶段前沿发布'],
+        ['2026-10 下旬', 'Google', 'Gemini 4 Carbon：最强模型，长程工程 + 网安', '较 Argon 再大幅跃升'],
+        ['2026-10 月内', 'Google', 'Genie 4 实时世界模型，agent 安全训练', '前代无原生音频实时操控'],
+        ['2026-10-07', 'Anthropic', 'Claude Haiku 5.5：最快小模型，降价 90%', 'Haiku 4.5 更慢更贵，无 browser use'],
+        ['2026-09-28', 'Anthropic', 'Claude Sonnet 5.5：提速 30%+、降本 30%', 'Sonnet 5 更慢更贵'],
+        ['2026-09-22', 'Anthropic', 'Claude Opus 5.5：运行成本较 Opus 5 低 40%', 'Opus 5 运行成本更高'],
+        ['2026-09-10', 'DeepSeek', 'V4.1-Flash：552B MoE、原生视觉、KV 1/4', 'V4 无视觉、缓存成本更高'],
+        ['2026-06-30', 'Anthropic', 'Fable 5 / Sonnet 5：出口解禁、最 agentic', '前代模型、无专用科研 agent'],
+      ]}
+    />
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>05</Text>
+  </Box>
+</Slide>

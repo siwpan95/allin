@@ -1,0 +1,12 @@
+<Slide style={{ padding: 60, background: '#171F2E', fontFamily: '思源黑体' }}>
+  <Box style={{ height: '100%', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 20, color: '#B388D9', fontWeight: 'bold', letterSpacing: 4 }}>CHAPTER 03</Text>
+    <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#FFFFFF', marginTop: 18, lineHeight: 1.15 }}>安全治理与开发者底座</Text>
+    <Text style={{ fontSize: 22, color: '#AEB8C6', marginTop: 18 }}>基础层 · 4 项已确认变更</Text>
+    <Box style={{ height: 3, background: '#8E44AD', margin: '34px 0 0', width: 120 }} />
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#6B7686' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#6B7686' }}>11</Text>
+  </Box>
+</Slide>

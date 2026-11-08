@@ -1,0 +1,25 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#253649' }}>核验说明与处理方式</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>透明度优先</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 20px' }} />
+  <Box style={{ flex: 1 }}>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '14px 20px', marginBottom: 13 }}>
+      <Text style={{ fontSize: 14.5, color: '#3B4A5B', lineHeight: 1.6 }}><b>时间窗口</b>：限定 2026-03 — 2026-11（近 8 个月），覆盖行业从「对话式」转向「执行式 / 代理式」AI 的关键节点。</Text>
+    </Box>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '14px 20px', marginBottom: 13 }}>
+      <Text style={{ fontSize: 14.5, color: '#3B4A5B', lineHeight: 1.6 }}><b>日期缺失</b>：Google Gemini at Work（聚合 10/8）、Gemini 4 Carbon（依「Argon 后约两周」推算）、Genie 4（官方列为 10 月）标注「待核实 / 月内 / 推算」，不臆造官方日期。</Text>
+    </Box>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '14px 20px', marginBottom: 13 }}>
+      <Text style={{ fontSize: 14.5, color: '#3B4A5B', lineHeight: 1.6 }}><b>无法确认主体 / 仅二级来源</b>：一律归入「未证实」栏，与已确认严格区分；其中仅 Meta Muse Spark、OpenClaw 等「产品存在」被官方佐证，但所传细节 / 日期仍未被官方确认。</Text>
+    </Box>
+    <Box style={{ background: '#F5F8FC', border: { left: { width: 4, color: '#2f6df0' } }, padding: '14px 20px' }}>
+      <Text style={{ fontSize: 14.5, color: '#3B4A5B', lineHeight: 1.6 }}><b>局限性</b>：部分官方页未暴露精确日期；个别事件类信息（安全事件、人事变动）因敏感未在官方渠道公开，已归为未证实而非采信。</Text>
+    </Box>
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>16</Text>
+  </Box>
+</Slide>

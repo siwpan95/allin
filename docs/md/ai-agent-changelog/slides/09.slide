@@ -1,0 +1,33 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 30, fontWeight: 'bold', color: '#253649' }}>2.1 平台层变更时间线</Text>
+    <Text style={{ fontSize: 16, color: '#87909B' }}>2026-10 → 2026-06 · 7 项</Text>
+  </Box>
+  <Box style={{ height: 1, background: '#E0E3E6', margin: '14px 0 16px' }} />
+  <Box style={{ flex: 1 }}>
+    <Table
+      style={{ width: '100%', height: '100%' }}
+      defaultTextStyle={{ fontSize: 13.5, textAlign: 'left', color: '#3B4A5B' }}
+      defaultCellStyle={{ border: { left: { width: 1, color: '#E0E3E6' }, right: { width: 1, color: '#E0E3E6' }, top: { width: 1, color: '#E0E3E6' }, bottom: { width: 1, color: '#E0E3E6' } } }}
+      cells={[
+        [
+          { text: '发布日期', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '主体', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '关键变化', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+          { text: '对照基线（此前）', textStyle: { bold: true, color: '#FFFFFF', fontSize: 13.5 }, cellStyle: { background: { color: '#171F2E' } } },
+        ],
+        ['2026-10-08', 'Google', 'Gemini at Work：Workspace 常驻企业身份代理', '此前无跨系统常驻代理'],
+        ['2026-09-29', 'OpenAI', 'DevDay：Dots 常驻代理、GPT-6.1 Sol、Agents API', '无常驻代理、无统一 Agents API'],
+        ['2026-09-29', 'Perplexity', 'Computer Automations：事件触发 + 跨运行记忆', '仅 Scheduled Tasks，每次从头'],
+        ['2026-09-25', 'Microsoft', '新版 Copilot：Autopilot 数字同事 + Runtime', 'Scout 仅预览，无 Runtime'],
+        ['2026-07-15', 'Salesforce', 'Agentforce Coworker：自主 AI 队友', '此前以专项代理为主'],
+        ['2026-06-08', 'Apple', 'WWDC26 Siri AI：全重构、跨 App 操作', '旧 Siri 无系统级 agent 能力'],
+        ['2026-06-02', 'Microsoft', 'Build：Agent Platform / IQ / Scout', '此前 Copilot 以辅助为主'],
+      ]}
+    />
+  </Box>
+  <Box style={{ position: 'absolute', bottom: 24, left: 60, right: 60, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>AI Agent 行业近期关键进展 · 变更日志</Text>
+    <Text style={{ fontSize: 14, color: '#87909B' }}>09</Text>
+  </Box>
+</Slide>

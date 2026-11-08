@@ -1,0 +1,18 @@
+<Slide style={{ padding: 60, background: '#FFFFFF', fontFamily: '思源黑体' }}>
+  <Box style={{ height: '100%', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 18, color: '#237584', fontWeight: 'bold', letterSpacing: 3 }}>
+      AI AGENT INDUSTRY · CHANGELOG
+    </Text>
+    <Text style={{ fontSize: 80, fontWeight: 'bold', color: '#253649', lineHeight: 1.12, marginTop: 22 }}>
+      AI Agent 行业<br />近期关键进展
+    </Text>
+    <Text style={{ fontSize: 26, color: '#425C86', marginTop: 26, fontWeight: '600' }}>
+      结构化变更日志 · 四大维度分章 · 已确认 <span style={{ color: '#5A7CB7', fontWeight: 'bold' }}>19</span> 条 / 未证实 <span style={{ color: '#C0392B', fontWeight: 'bold' }}>7</span> 条
+    </Text>
+    <Box style={{ height: 2, background: '#E0E3E6', margin: '38px 0 22px', width: 560 }} />
+    <Text style={{ fontSize: 18, color: '#87909B', lineHeight: 1.7 }}>
+      时间窗口 2026-03 — 2026-11 · 整理日期 2026-11-08<br />
+      核验标准：厂商官方域名公告为 gold standard，传闻 / 泄露严格单列、逐条标注「未证实」
+    </Text>
+  </Box>
+</Slide>
