@@ -56,11 +56,32 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
 API = "https://gitee.com/api/v5"
 MAX_ATTACH_MB = 100.0        # Gitee 社区版单附件上限（见文件头）
+
+# P5：令牌只经 Authorization 头传递；重定向仅允许回 gitee.com 同主机，跨主机
+# 重定向直接拒绝，避免令牌随 3xx 被带去第三方（B310 虽判非 SSRF，但凭据外带面仍在，须收敛）。
+ALLOWED_REDIRECT_HOSTS = frozenset({"gitee.com"})
+
+
+class _SameHostRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new_host = urllib.parse.urlparse(newurl).netloc.split(":")[0].lower()
+        if new_host not in ALLOWED_REDIRECT_HOSTS:
+            return None  # 跨主机重定向：不跟随，令牌不外带
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None:
+            # 同源重定向也剥离并重建 Authorization（纵深防御）。
+            new.remove_header("Authorization")
+            new.add_header("Authorization", req.get_header("Authorization") or "")
+        return new
+
+
+_GITEE_OPENER = urllib.request.build_opener(_SameHostRedirectHandler())
 
 
 def load_token(arg=None, token_file=None):
@@ -81,18 +102,21 @@ def load_token(arg=None, token_file=None):
 
 
 def api(method, path, token, data=None, timeout=60, retries=2):
-    """JSON 请求。返回 (status, parsed_or_text)。网络抖动重试两次。"""
+    """JSON 请求。返回 (status, parsed_or_text)。网络抖动重试两次。
+
+    P5：令牌经 Authorization 头传递（不再拼进 URL query），重定向仅限同主机，
+    避免令牌出现在 URL（日志/代理/referer）或被 3xx 带去第三方。"""
     url = API + path
-    if "access_token=" not in url:
-        url += ("&" if "?" in url else "?") + "access_token=" + token
     body = json.dumps(data, ensure_ascii=False).encode("utf-8") if data is not None else None
     last = None
     for attempt in range(retries + 1):
         req = urllib.request.Request(url, data=body, method=method)
         if body is not None:
             req.add_header("Content-Type", "application/json;charset=UTF-8")
+        # P5：令牌仅在头内，绝不进 URL。
+        req.add_header("Authorization", "token " + token)
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with _GITEE_OPENER.open(req, timeout=timeout) as r:
                 raw = r.read().decode("utf-8", "replace")
                 try:
                     return r.status, json.loads(raw)
@@ -104,6 +128,9 @@ def api(method, path, token, data=None, timeout=60, retries=2):
                 return e.code, json.loads(raw)
             except ValueError:
                 return e.code, raw
+        except urllib.error.URLError as e:
+            last = e
+            time.sleep(1.5 * (attempt + 1))
         except Exception as e:                        # noqa: BLE001
             last = e
             time.sleep(1.5 * (attempt + 1))

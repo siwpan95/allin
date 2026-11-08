@@ -27,4 +27,11 @@ launch:
   command: bash scripts/run.sh
 verify:
   # 无副作用的语法自检（不需要 DSH_ARCHIVE_ROOT）；硬指标复核要带 tag 参数，见 README
-  command: bash -n scripts/run.sh && bash -n scripts/archive_one.sh && bash -n scripts/check_new.sh && bash -n scripts/verify_tag.sh
+  # B602 方案 A：原 `command: bash -n ... && bash -n ...` 的 `&&` 复合命令已迁移为
+  # 列表字段——每条仍走 shell=False 的 argv（prepare 拆词），由 Python 顺序短路代替
+  # shell 的 `&&`，不再把整串交给 shell 解释元字符。
+  commands:
+    - bash -n scripts/run.sh
+    - bash -n scripts/archive_one.sh
+    - bash -n scripts/check_new.sh
+    - bash -n scripts/verify_tag.sh

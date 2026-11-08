@@ -29,6 +29,7 @@ import concurrent.futures
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -87,6 +88,19 @@ def skip_reason(entry: dict) -> str:
     return ""
 
 
+def verify_commands_list(entry: dict) -> list[str]:
+    """B602 方案 A：支持 `verify.commands` 列表字段（多个显式 headless 检查）。
+
+    与 `verify.command` 单字符串互斥（verify() 中优先用单字符串）。列表里
+    每条仍是 shell=False 的 argv（经 prepare()），`&&` 由 Python 顺序短路代替，
+    不再依赖 shell 解释。空列表 / 非列表 / 缺字段一律返回 []。
+    """
+    verify = entry.get("verify")
+    if isinstance(verify, dict) and isinstance(verify.get("commands"), list):
+        return [str(c).strip() for c in verify["commands"] if str(c).strip()]
+    return []
+
+
 def project_dir(entry: dict) -> Path | None:
     raw = str(entry.get("path") or "").replace("\\", "/").strip("/")
     if raw.startswith("repos/"):
@@ -103,14 +117,22 @@ def interpreter(project: Path) -> Path:
     return SYSTEM_PYTHON if SYSTEM_PYTHON.is_file() else Path(sys.executable)
 
 
-def prepare(command: str, project: Path) -> str:
-    first = command.split()[0].lower() if command.split() else ""
+def prepare(command: str, project: Path) -> list[str]:
+    """B602 方案 A：把命令拆成 argv 以 shell=False 安全执行，不再 shell=True。
+
+    - python/pythonw → [解释器, *参数]；
+    - npm/node/*.bat → 显式 argv 调 cmd.exe（shell=False，保留 Windows 行为；
+      cmd /c 仍解释 && 等元字符，但属显式调用而非 shell=True）；
+    - 其余 → shlex.split（仓内 verify 命令统一用正斜杠，POSIX 分词安全）。
+    """
+    parts = command.split()
+    first = parts[0].lower() if parts else ""
     if first in ("python", "pythonw"):
-        rest = command[len(first):].strip()
-        return f'"{interpreter(project)}" {rest}'.strip()
+        rest = command[len(parts[0]):].strip()
+        return [str(interpreter(project)), *shlex.split(rest)]
     if first in ("npm", "node") or first.endswith(".bat"):
-        return f"cmd /c {command}"
-    return command
+        return ["cmd", "/c", command]
+    return shlex.split(command)
 
 
 def headless_off(entry: dict) -> bool:
@@ -119,14 +141,32 @@ def headless_off(entry: dict) -> bool:
     return isinstance(verify, dict) and verify.get("headless") is False
 
 
-def run(command: str, project: Path, timeout: float,
+def _display_argv(argv: list[str]) -> str:
+    """Report-safe rendering of an argv list (no dependency on shlex.join)."""
+    return " ".join(shlex.quote(p) for p in argv)
+
+
+def run(command: list[str], project: Path, timeout: float,
         env: dict[str, str] | None = None) -> tuple[int | None, str, float]:
+    """B602 方案 A：argv 列表 + shell=False。绝不再 shell=True。
+
+    `command` 恒为 argv 列表（由 prepare() 产出）；`cmd /c` 也走显式 argv，
+    不依赖 shell=True。元字符（; | && 等）不会被解释，注入被中性化。
+
+    注意：shell=False 下，命令的可执行体不存在会由 `Popen` 直接抛 OSError
+    （`shell=True` 时由 shell 吞掉、仅返回非 0）。这里把「启动失败」降级为
+    (1, 错误信息)，让 verify() 走 T4 / import_check 兜底，而不是让整个
+    verifier 崩溃——与旧 shell=True 行为的失败语义保持一致。
+    """
     started = time.time()
-    process = subprocess.Popen(command, cwd=str(project), shell=True,
-                               env=env or {**os.environ, **HEADLESS_ENV},
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               stdin=subprocess.DEVNULL, text=True, encoding="utf-8",
-                               errors="replace")
+    try:
+        process = subprocess.Popen(command, cwd=str(project), shell=False,
+                                   env=env or {**os.environ, **HEADLESS_ENV},
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, text=True, encoding="utf-8",
+                                   errors="replace")
+    except OSError as e:
+        return 1, f"launch failed: {type(e).__name__}: {e}", round(time.time() - started, 2)
     try:
         output, _ = process.communicate(timeout=timeout)
         code = process.returncode
@@ -149,7 +189,7 @@ def import_check(project: Path, timeout: float = 30.0) -> tuple[bool, str]:
     python = interpreter(project)
     name = packages[0]
     script = f"import sys; sys.path.insert(0, '.'); import {name}; print('IMPORT_OK')"
-    code, output, _seconds = run(f'"{python}" -c "{script}"', project, timeout)
+    code, output, _seconds = run([str(python), "-c", script], project, timeout)
     return (code == 0 and "IMPORT_OK" in output), output.strip().splitlines()[-1][:120] if output.strip() else ""
 
 
@@ -169,17 +209,35 @@ def verify(entry: dict, timeout: float) -> dict:
         return record
 
     explicit = verify_text(entry)
+    commands = verify_commands_list(entry)
     if explicit:
-        command = prepare(explicit, project)
+        prepared = [prepare(explicit, project)]
+        kind = "explicit"
+    elif commands:
+        prepared = [prepare(c, project) for c in commands]
+        kind = "explicit"
     else:
         launch = launch_text(entry)
         if not launch:
             record.update(evidence="no launch/verify command")
             return record
-        command = prepare(launch, project) + " --help"
-    record["command"] = command
+        prepared = [[*prepare(launch, project), "--help"]]
+        kind = "launch"
+
+    record["command"] = " && ".join(_display_argv(c) for c in prepared)
     env = {**os.environ, **({} if headless_off(entry) else HEADLESS_ENV)}
-    code, output, seconds = run(command, project, timeout, env)
+    # B602 方案 A：每条命令都是 shell=False 的 argv；顺序执行、任一失败即短路，
+    # 等价旧 `&&` 语义，但不再交予 shell 解释元字符。
+    code = 0
+    output = ""
+    seconds = 0.0
+    for cmd in prepared:
+        c, o, s = run(cmd, project, timeout, env)
+        seconds += s
+        if c is None or c != 0:
+            code, output = c, o
+            break
+        output = o
     record["seconds"] = seconds
     record["detail"] = "\n".join(output.splitlines()[:4])[-400:]
     if code is None:
@@ -188,7 +246,7 @@ def verify(entry: dict, timeout: float) -> dict:
                       detail=(record["detail"] or "still running after timeout"))
         return record
     if code == 0:
-        if explicit:
+        if kind == "explicit":
             record.update(tier="T1", evidence="verify.command exit 0")
         else:
             record.update(tier="T2", evidence="help/launch exit 0" if HELP_HINT.search(output) else "launch exit 0")
@@ -236,12 +294,93 @@ def load_entry(path: Path) -> dict:
             continue
         # P4：回退读取器补 skip/headless（与 YAML 路径语义对齐）。
         # 仅捕获 launch/verify 下的已知键，避免把任意子键都吞进来。
-        if section in ("launch", "verify") and ":" in stripped:
-            sub_key, _, sub_val = stripped.partition(":")
-            sub_key = sub_key.strip()
-            if sub_key in ("command", "skip", "headless"):
-                data.setdefault(section, {})[sub_key] = sub_val.strip()
+        if section in ("launch", "verify"):
+            if ":" in stripped:
+                sub_key, _, sub_val = stripped.partition(":")
+                sub_key = sub_key.strip()
+                if sub_key == "commands":
+                    # B602 方案 A：`verify.commands` 列表字段（多个 headless 检查）。
+                    data.setdefault(section, {})["commands"] = []
+                elif sub_key in ("command", "skip", "headless"):
+                    data.setdefault(section, {})[sub_key] = sub_val.strip()
+            elif stripped.startswith("- ") and isinstance(
+                    data.get(section, {}).get("commands"), list):
+                # 列表项：收集进已开启的 commands 列表（YAML `- item` 形态）。
+                data[section]["commands"].append(stripped[2:].strip())
     return data
+
+
+def selftest() -> int:
+    """B602 方案 A 自检：含非法元字符的命令必须被中性化（shell=False，不交予 shell 解释）。
+
+    不联网、不扫仓库、不改工作区。验证三件事：
+      ① prepare() 返回 list[str]（不再是 shell 字符串）；
+      ② 合法命令在 shell=False 下仍正常执行（exit 0）；
+      ③ 含 `;` 注入的命令字符串，经 prepare()+run() 后绝不创建注入目标文件
+         （证明 shell 注入被中性化，这是 B602 整改的核心可证伪点）。
+    另验证 verify.commands 列表字段在 YAML 路径与回退路径下都能被正确解析。
+    """
+    import tempfile
+    tmp = Path(tempfile.mkdtemp(prefix="allin-vp-selftest-"))
+    fails = 0
+    py = str(SYSTEM_PYTHON)
+    marker = tmp / "ALLIN_B602_PWNED"
+
+    def check(name: str, cond: bool) -> None:
+        nonlocal fails
+        if cond:
+            print(f"  [PASS] {name}")
+        else:
+            print(f"  [FAIL] {name}")
+            fails += 1
+
+    # ① prepare 返回 list[str]
+    check("① prepare 返回 list[str]", isinstance(prepare("python -c \"print(1)\"", tmp), list))
+
+    # ② 合法命令在 shell=False 下正常执行
+    code, output, _ = run([py, "-c", "print('ok')"], tmp, 30)
+    check("② 合法命令 exit 0 且输出含 ok", code == 0 and "ok" in (output or ""))
+
+    # ③ 负向：含 `;` 注入的命令经 prepare+run 不得创建 marker（核心 B602 断言）
+    malicious = "python -c 'print(1)' ; python -c 'open(%r, \"w\").close()'" % str(marker)
+    code, output, _ = run(prepare(malicious, tmp), tmp, 30)
+    check("③ 元字符未被 shell 解释（marker 不存在）", not marker.exists())
+
+    # ⑤ 启动失败（可执行体不存在）必须降级为 code=1，而非让 verifier 崩溃
+    code, output, _ = run(["this_executable_does_not_exist_xyz", "--help"], tmp, 30)
+    check("⑤ 启动失败降级为 code=1（不崩溃）", code == 1 and "launch failed" in (output or ""))
+
+    # ④ verify.commands 列表字段：YAML 路径 + 回退路径都能解析
+    yaml_text = (
+        "id: t\n"
+        "verify:\n"
+        "  commands:\n"
+        "    - python -c \"print(1)\"\n"
+        "    - python -c \"print(2)\"\n"
+    )
+    if yaml is not None:
+        data = yaml.safe_load(yaml_text)
+        cmds = verify_commands_list(data)
+        check("④ yaml 路径解析 commands 列表",
+              cmds == ['python -c "print(1)"', 'python -c "print(2)"'])
+    p = tmp / "t.yaml"
+    p.write_text(yaml_text, encoding="utf-8")
+    cmds2 = verify_commands_list(load_entry(p))
+    check("④ 回退路径解析 commands 列表",
+          len(cmds2) == 2 and all(c.startswith("python") for c in cmds2))
+
+    # 清理（若注入竟成功创建了 marker，也一并清掉，避免污染）
+    try:
+        if marker.exists():
+            marker.unlink()
+    except OSError:
+        pass
+    print()
+    if fails == 0:
+        print("verify_projects --selftest: 全部通过（B602 方案A 中性化验证）")
+    else:
+        print(f"verify_projects --selftest: {fails} 项失败", file=sys.stderr)
+    return fails
 
 
 def main(argv: list[str]) -> int:
@@ -253,7 +392,12 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--json", default=str(DEFAULT_REPORT))
     parser.add_argument("--workers", type=int, default=6, help="parallel projects (GUI timeouts are the cost)")
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--selftest", action="store_true",
+                        help="B602 方案A 自检：非法元字符必须被中性化（不扫仓库）")
     args = parser.parse_args(argv)
+
+    if args.selftest:
+        return selftest()
 
     if not REGISTRY.is_dir():
         print(f"verify_projects: registry missing at {REGISTRY}", file=sys.stderr)
