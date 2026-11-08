@@ -1,5 +1,18 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-08 18:30（**@`DESKTOP-KQABATS` 发布区全量拉齐（用户指令）+ 事实源订正** ——
+>   用户指令「将 `E:\projects\repos` 缺失项目全部拉齐源码，除 allin；拉取完源码之后利用 `E:\projects\allin` 完成管理与治理；记账后提交推送」：
+>   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
+>   拉齐前发布区 **23** 目录 ⇒ 缺失清单 **115** 仓（远端 137 项目仓 − 在位 22）⇒ 批量克隆 **115/115 成功、零失败**
+>   ⇒ 拉齐后发布区 `E:\projects\repos` **137** 个目录（逐目录实测 `.git` **137/137**、origin **137/137**，
+>   与远端 137 项目仓双向差集 = 0）；本仓平台注册表 **146** 条已全覆盖 137 仓名（g17 完备性零新增）。
+>   ⚠ **漂移观察**：`E:\projects\repos\calculator` 已不存在（本会话开始时实测仍在该盘位，agent 全程仅执行读操作与向新目录的克隆、未做任何删除或移动；成因待用户确认。
+>   该仓本就不在 Gitee 远端，registry 条目 `calculator.yaml` 保留，其生命周期状态留待用户裁决）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百四十四（发布区全量拉齐 + 治理收口，@`DESKTOP-KQABATS` 本机自留痕闭合 D17）
 > **时点** 2026-11-06 19:30（**@`DESKTOP-KQABATS` 分区文件夹化** —— 结构治理：本文件由 `机器/DESKTOP-KQABATS.md`
 >   迁入 `机器/DESKTOP-KQABATS/DESKTOP-KQABATS.md`（一机一目录，参照业界「一机一档」惯例；收敛口径见
 >   [`../../事实源/机器分区索引.md`](../../机器分区索引.md) §7 布局沿革）。本文件夹
@@ -89,7 +102,7 @@
 | 落点 | 内容 |
 | --- | --- |
 | `E:\projects\allin` | **本仓**（治理 / 文档枢纽 / preset 载体），远端 `siwpan/allin` |
-| `E:\projects\repos` | **发布区：23 个仓**（见 §4） |
+| `E:\projects\repos` | **发布区：137 个仓**（2026-11-08 全量拉齐，见 §4；原 23 个仓，部分检出） |
 | `E:\projects\reference` | 参考源码区：`blender/`、`blender-legacy-bloom/`、`blender-notes.md`（**非 git 仓**） |
 | `E:\projects\_governance` | 2026-10-26 的体检输出存档（`repocheck_allin_selfA/B.txt`、`check_repos*.txt`、`repocheck_repos.json`） |
 | `E:\projects\foolproof-operation-master` | `foolproof-operation` 的**源码副本（无 `.git`**，含 README/LICENSE/CHANGELOG） |
@@ -115,28 +128,27 @@
 | Python | `python\versions\3.13.12\python.exe`（**目录名是 3.13.12，实际版本 3.13.14**） |
 | PortableGit | `PortableGit\versions\{1.3.0, current}\`（**不在 PATH**） |
 
-## 4. 仓数口径（2026-11-03 复测）
+## 4. 仓数口径（2026-11-08 复测）
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **138** | 跨机共识值，唯一登记处见 [`../../机器分区索引.md`](../../机器分区索引.md) §5；2026-11-03 本机匿名 API 分页复核一致（page1=100 / page2=38 / page3=0） |
-| **本机发布区目录数** | **23** | `Get-ChildItem E:\projects\repos -Directory` |
-| 含 `.git` | **23 / 23** | 逐目录 `Test-Path .git` |
-| 含 `origin` | **23 / 23** | 逐仓读 `.git/config` 判 `[remote "origin"]` |
-| 本机 `.git` 总数 | **25** | 23（发布区）+ `D:\musickit` + `D:\private-radio-stations` |
+| **远端仓总数**（Gitee `siwpan`） | **138** | 跨机共识值，唯一登记处见 [`../../机器分区索引.md`](../../机器分区索引.md) §5；2026-11-08 本机匿名 API 分页复核一致（page1=100 / page2=38 / page3=0） |
+| **本机发布区目录数** | **137**（原 23，2026-11-08 全量拉齐 +115，另 `calculator` 实测已不在，见头部时点块） | `Get-ChildItem E:\projects\repos -Directory` |
+| 含 `.git` | **137 / 137**（原 23 / 23） | 逐目录 `Test-Path .git` |
+| 含 `origin` | **137 / 137**（原 23 / 23） | 逐仓读 `.git/config` 判 `[remote "origin"]` |
+| 本机 `.git` 总数 | **139**（原 25） | 137（发布区）+ `D:\musickit` + `D:\private-radio-stations` |
 
-本机 23 个仓名：`3dworld`、`3dworld-demos`、`3dworld-globe`、`an-engine`、`arcade`、`ashen-beacon`、
+本机发布区口径（2026-11-08 起）：**远端 137 个项目仓的全量检出**（双向差集 = 0）。
+拉齐前的 23 仓名（历史口径，其中 `calculator` 现已不在发布区）：`3dworld`、`3dworld-demos`、`3dworld-globe`、`an-engine`、`arcade`、`ashen-beacon`、
 `bloodmusic`、`calculator`、`cordis-py`、`dict-scene-engine`、`dse-core`、`haha`、`Idle`、`lab`、
 `lonely-desert-road`、`maga`、`niulai`、`peasy-ai`、`pywallpaper`、`running-group-simulator`、
 `weiqi_lab`、
 `worldbuilder`、`zhuangtaiji`。
 
 - **口径**：提「远端仓数」一律查索引 §5；提「本机发布区仓数」一律**现场实测**。
-  本机是**部分检出** —— 远端 138 与本地 23 的差额是**尚未在此机检出**的仓，不是缺失。
-- ⚠ **与 `SIWPAN` 的差异**：那台是**全量检出**（137 = 远端 137），本机只有 23 ⇒
-  「哪仓在哪台」以各机分区文件为准，**勿跨机假设**。
-- ⚠ **与 `DESKTOP-8RSV60V` 的差异**：`calculator` 在本机发布区仍是独立目录，那台已把它收拢进
-  `arcade` 并转 `archived` ⇒ **两机发布区不同步**，以各机实测为准。
+  本机自 2026-11-08 起转为**全量检出** —— 远端 138（含 `allin` 自身）与本机 137 项目仓 + 治理仓自身的口径已一致。
+- ⚠ **与 `DESKTOP-8RSV60V` 的差异**：`calculator` 原在本机发布区是独立目录，那台已把它收拢进
+  `arcade` 并转 `archived`；2026-11-08 本机实测该目录已不在发布区（成因待用户确认，见头部时点块漂移观察）。
 
 ## 5. 运行时与工具链（2026-10-30 实测；PATH 实际解析，非文档声称）
 
@@ -208,7 +220,7 @@
 | CPU / 内存 | i5-13420H / 15.7 GB | i5-12600KF / 16 GB | i7-9750H / 31.9 GB |
 | 系统 | 家庭版 26300 | 专业版 26300 | 专业版 26100 |
 | 工作区盘 | `E:` | `G:` | `D:` |
-| 发布区规模 | **23（部分检出）** | 137 | **137（全量检出）** |
+| 发布区规模 | **137（全量检出）**（原 23（部分检出），2026-11-08 拉齐） | 137 | **137（全量检出）** |
 | git 在 PATH | WorkBuddy vendor PortableGit **与**系统安装版**两份并存** | `G:\Git\cmd\git.exe` | WorkBuddy vendor PortableGit |
 | pwsh | **不在 PATH** | `G:\powershell\7` 在 PATH | `C:\Program Files\PowerShell\7` 在 PATH |
 
