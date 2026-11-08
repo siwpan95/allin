@@ -17,4 +17,4 @@
 #       PyPI 的版本号写进去就删不掉，发布前的验证之所以值得花时间，正因为没有回头路。
 
 build>=1.2          # python -m build：出 sdist 与 wheel
-twine>=5.0          # 上传与元数据校验（twine check）
+twine>=7.0.0          # 上传与元数据校验（twine check）
