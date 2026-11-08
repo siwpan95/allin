@@ -23,9 +23,11 @@
 
 import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolvePython, pythonEnv } from './resolve_python.mjs';
+import isHomeMarkerPresent from './lib/homeMarker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.ALLIN_ROOT ? path.resolve(process.env.ALLIN_ROOT) : path.resolve(__dirname, '..');
@@ -52,12 +54,17 @@ const AUDIT_DIR = process.env.ALLIN_GATE_AUDIT
 const EVIDENCE_FILE = path.join(AUDIT_DIR, 'e2e-runs.jsonl');
 const PORTS_YAML = path.join(ROOT, 'docs', '事实源', 'ports.yaml');
 const OVERALL_BUDGET_MS = 60_000;
+// SC6 / P3 §2.2 判据：至少 5 个检查点**真正通过**才算达标；SKIP 不凑数。
+const MIN_EFFECTIVE_CHECKPOINTS = 5;
 const T0 = Date.now();
 
 const results = [];
 const runId = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '-' + Math.random().toString(16).slice(2, 6);
 const spawnedChildren = [];   // teardown 保证全杀（可逆效应，对齐 harness effect 登记）
 let portalReused = false;
+let portalPort = null;       // CP3 探活得到的真实 portal 端口（复用或临时实例）
+let portalPortFile = null;   // CP7 把该端口写入此文件，供 website 实例的 PORTAL_PORT_FILE 指向
+let cp7DataDir = null;       // CP7 website 实例用的临时数据目录（DB/KEY，零污染真实 data/）
 
 function step(id, name, ok, detail = '', skipped = false, ms = 0) {
   results.push({ id, name, ok, detail, skipped, ms });
@@ -198,6 +205,7 @@ async function portalDiscover() {
         const j = await res.json();
         if (j && j.platform === 'allin-platform') {
           portalReused = true;
+          portalPort = n;
           return { port: n, child: null, log: '' };
         }
       }
@@ -229,7 +237,7 @@ async function portalDiscover() {
     if (m) {
       try {
         const res = await fetchT(`http://127.0.0.1:${m[1]}/api/status`, {}, 1500);
-        if (res.ok) return { port: Number(m[1]), child, log: stdout, exited: null };
+        if (res.ok) { portalPort = Number(m[1]); return { port: Number(m[1]), child, log: stdout, exited: null }; }
       } catch { /* 还没起来 */ }
     }
     await new Promise((r) => setTimeout(r, 250));
@@ -274,7 +282,15 @@ async function checkpointWebsite() {
   const BASE = `http://127.0.0.1:${E2E_PORT}`;
   const child = spawn(process.execPath, ['--experimental-sqlite', path.join('src', 'server.js')], {
     cwd: path.join(ROOT, 'website'),
-    env: { ...process.env, PORT: String(E2E_PORT), SITE_BASE_URL: BASE },
+    env: {
+      ...process.env,
+      PORT: String(E2E_PORT),
+      SITE_BASE_URL: BASE,
+      // CP7 接线：把真实 portal 端口文件指给 website 的 portal 代理；用临时数据目录零污染真实 data/
+      DB_PATH: cp7DataDir ? path.join(cp7DataDir, 'site.db') : process.env.DB_PATH,
+      KEY_DIR: cp7DataDir ? path.join(cp7DataDir, 'keys') : process.env.KEY_DIR,
+      PORTAL_PORT_FILE: portalPortFile || process.env.PORTAL_PORT_FILE,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   spawnedChildren.push({ child, name: 'website-temp' });
@@ -293,8 +309,18 @@ async function checkpointWebsite() {
     return;
   }
   try {
-    const home = await fetchT(`${BASE}/`, {}, 5000);
-    const homeOk = home.status === 200 && (await home.text()).includes('ALLIN LAB');
+    // B5：/healthz 200 不代表首页已渲染完。对 marker 做带退避的有限重试（最多 3 次），
+    // 消除同 commit 间歇性「首页 marker 未命中」flaky（历史 runId 20261104142329-f795）。
+    let homeOk = false;
+    for (let attempt = 0; attempt < 3 && !homeOk; attempt += 1) {
+      try {
+        const home = await fetchT(`${BASE}/`, {}, 5000);
+        // B5：判定收口到纯函数 isHomeMarkerPresent（scripts/lib/homeMarker.js），
+        // 其「marker 缺失 → false」已被单测正面证明，防 false-green（见 homeMarker.test.js）
+        homeOk = isHomeMarkerPresent(home.status, await home.text());
+      } catch { /* 首页尚未就绪 */ }
+      if (!homeOk) await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+    }
     const anon = await fetchT(`${BASE}/member`, { redirect: 'manual' }, 5000);
     const loc = anon.headers.get('location') || '';
     const anonOk = anon.status === 302 && loc.includes('/login');
@@ -305,6 +331,59 @@ async function checkpointWebsite() {
       false, Date.now() - t);
   } catch (e) {
     step('CP4', 'website 临时实例探活', false, `website 面：探活异常 ${String(e).slice(0, 140)}`, false, Date.now() - t);
+  }
+}
+
+/** CP7 · 治理看板在线联动：真实 portal 接通后，website 治理 API 必须 degraded:null
+ *
+ * 设计（柯砚 P1）：CP3 起真实 portal 后把实际端口写入 CP4 website 实例的
+ * PORTAL_PORT_FILE，断言治理看板 API 返回 degraded:null —— 证明 website↔portal
+ * BFF 在"平台真在线"时确实接通、而非永远降级。
+ *
+ * 取会话走 /register（governance overview 仅需 requireAuth，不必 admin），
+ * 零预置账号、零 node:sqlite 依赖；用临时数据目录确保不污染真实 data/。
+ */
+async function checkpointGovernanceWiring() {
+  const t = Date.now();
+  if (!portalPort || !portalPortFile) {
+    step('CP7', '治理看板在线联动（portal→website degraded:null）', true,
+      'portal 面未就绪或端口文件未落（CP3 失败），skip（skip ≠ fail）', true, Date.now() - t);
+    return;
+  }
+  const BASE = `http://127.0.0.1:${E2E_PORT}`;
+  try {
+    // 注册通道建一个临时会员并直接拿到会话 Cookie（overview 仅需 requireAuth）
+    const email = `cp7-smoke-${Date.now()}@allin.local`;
+    const password = 'Cp7Smoke2026';
+    const regRes = await fetchT(`${BASE}/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+      body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+        + `&passwordConfirm=${encodeURIComponent(password)}&displayName=CP7Smoke`,
+      redirect: 'manual',
+    }, 5000);
+    const setCookie = regRes.headers.get('set-cookie');
+    const sid = setCookie && /allin_sid=([^;]+)/.exec(setCookie);
+    if (regRes.status !== 302 || !sid) {
+      const bodyText = await regRes.text().catch(() => '');
+      step('CP7', '治理看板在线联动（portal→website degraded:null）', false,
+        `注册/登录失败：HTTP ${regRes.status} setCookie=${Boolean(setCookie)} body=${bodyText.slice(0, 120)}`,
+        false, Date.now() - t);
+      return;
+    }
+    // 带会话请求治理总览
+    const govRes = await fetchT(`${BASE}/member/api/governance/overview`, {
+      headers: { cookie: `allin_sid=${sid[1]}`, accept: 'application/json' },
+    }, 5000);
+    let j = null;
+    try { j = await govRes.json(); } catch { /* 非 JSON */ }
+    const ok = govRes.status === 200 && j && j.degraded === null && j.ok === true;
+    step('CP7', '治理看板在线联动（portal→website degraded:null）', ok,
+      ok ? `HTTP 200 · degraded:null · portal 端口=${portalPort} 已接通 website`
+         : `治理看板异常：HTTP ${govRes.status} body=${JSON.stringify(j).slice(0, 160)}`,
+      false, Date.now() - t);
+  } catch (e) {
+    step('CP7', '治理看板在线联动（portal→website degraded:null）', false, `异常 ${String(e).slice(0, 140)}`, false, Date.now() - t);
   }
 }
 
@@ -384,28 +463,66 @@ async function main() {
   await checkpointCliFront();
   await checkpointKernelProbe();
   await checkpointPortal();
+
+  // CP7 前置：把探活到的真实 portal 端口写入临时端口文件 + 备好 website 临时数据目录
+  if (portalPort) {
+    portalPortFile = path.join(AUDIT_DIR, 'cp7-portal.port');
+    try {
+      fs.mkdirSync(AUDIT_DIR, { recursive: true });
+      fs.writeFileSync(portalPortFile, String(portalPort));
+      cp7DataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'allin-cp7-data-'));
+    } catch (e) {
+      portalPortFile = null;
+      cp7DataDir = null;
+    }
+  }
+
   await checkpointWebsite();
+  await checkpointGovernanceWiring();
   await checkpointG21();
   await checkpointVerifyMount();
 
   // teardown：全部自拉子进程 SIGKILL（finally 语义：任何路径都执行）
   for (const { child, name } of spawnedChildren) killChild(child);
+  // 清理 CP7 临时数据目录（DB/KEY），避免残留临时文件
+  if (cp7DataDir) {
+    try { fs.rmSync(cp7DataDir, { recursive: true, force: true }); } catch { /* 已退出 */ }
+  }
 
   const fail = results.filter((r) => !r.ok && !r.skipped);
   const skipped = results.filter((r) => r.skipped);
+  const effectivePassed = results.length - fail.length - skipped.length;
+  const budgetExceeded = elapsed() > OVERALL_BUDGET_MS;
   console.log('  ----------------------------------------------------------');
-  console.log(`  ${results.length - fail.length - skipped.length}/${results.length} 通过（skip ${skipped.length}）\n`);
+  console.log(`  ${effectivePassed}/${results.length} 通过（skip ${skipped.length}）`);
+  console.log(`  ALLIN_E2E_SUMMARY effectivePassed=${effectivePassed} skipped=${skipped.length} failed=${fail.length} budgetExceeded=${budgetExceeded}\n`);
 
   writeEvidence({
     budgetMs: elapsed(),
-    budgetExceeded: elapsed() > OVERALL_BUDGET_MS,
+    budgetExceeded,
+    effectivePassed,
+    skipped: skipped.length,
   });
-  process.exit(fail.length > 0 ? 1 : 0);
+  // 判据落地（P3 §2.2 / §5.2 Go 条件 3）：
+  //   ① 有效检查点 ≥5（SKIP 不凑数，CI 上 CP6 必 skip 时恰为 5，无余量也应如实呈现）；
+  //   ② 60s 整体硬预算超时视为失败（此前只写进证据、不读回退出码）；
+  //   ③ 任一检查点失败即红。
+  const insufficient = effectivePassed < MIN_EFFECTIVE_CHECKPOINTS;
+  if (insufficient) {
+    console.error(`  [FAIL] 有效检查点 ${effectivePassed} < ${MIN_EFFECTIVE_CHECKPOINTS}（SKIP 不凑数）`);
+  }
+  if (budgetExceeded) {
+    console.error(`  [FAIL] 超过 ${OVERALL_BUDGET_MS / 1000}s 整体硬预算（elapsed=${elapsed()}ms）`);
+  }
+  process.exit(fail.length > 0 || insufficient || budgetExceeded ? 1 : 0);
 }
 
 main().catch((err) => {
   console.error(err);
   for (const { child } of spawnedChildren) killChild(child);
+  if (cp7DataDir) {
+    try { fs.rmSync(cp7DataDir, { recursive: true, force: true }); } catch { /* 已退出 */ }
+  }
   writeEvidence({});
   process.exit(1);
 });

@@ -94,7 +94,7 @@ ADMIN_SEED_PASSWORD='...' MEMBER_SEED_PASSWORD='...' npm run seed
 | `npm run init` | 建库建表 + 密钥环就绪（幂等） |
 | `npm run seed` | 配图与文案加密入库（幂等，同 key 覆盖） |
 | `npm run verify:crypto` | 加密层自检（10 项，含篡改 / 错密钥 / 摘要不符） |
-| `npm run smoke` | 端到端冒烟（19 项，含落盘明文检查） |
+| `npm run smoke` | 端到端冒烟（当前 28 项；判据以 SMOKE_SUMMARY status=clean 为准） |
 | `npm run rotate-key` | 密钥轮换 + 全量重新封装 |
 | `npm run backup:data` | 数据库一致性快照（只产出密文库，**不带密钥**） |
 | `npm run check:data-hygiene` | 运行时数据卫生体检（只读，检出「密钥与密文同处」） |
@@ -184,7 +184,7 @@ npm run verify:crypto && npm run smoke   # 恢复后必跑
   （scrypt N=2^15 口令派生），备份文件 0600；
 - **拒绝写进仓库目录内**（防 git 意外收走）；**拒绝无口令的明文备份**；
 - `env` 来源（`SITE_MASTER_KEY_BASE64`）的材质不落盘、不进备份——它的灾备责任在注入通道/密钥管理服务本身；
-- **恢复演练月度化**：从备份 restore → verify:crypto 10/10 + smoke 19/19 全绿才算备份有效。
+- **恢复演练月度化**：从备份 restore → verify:crypto 10/10 + smoke 输出 SMOKE_SUMMARY status=clean 才算备份有效。
   （出处：2026-11-04 事故响应演练情景 A，SEV1；收口规范见 `docs/规范/SPEC-106-事故分级与响应约定.md` §6。）
 
 ### 6.6 备份纪律：密钥与密文必须分开（2026-11-07 安全加固）

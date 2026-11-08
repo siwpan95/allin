@@ -89,6 +89,6 @@ bootstrap + gates（CI 配置漂移不在 20 道门禁覆盖内，唯一防线�
 | DSH 排障 runbook | `.workbuddy/skills/dsh-deploy-repair/SKILL.md`（注意其两个硬盲区） | preset 挂载/启动日志判读 |
 | 上游合并门禁 | `preset/allin/verify-upstream-merge.ps1` | DSH 升级前置（退出码 1 = PR 不得合并） |
 | 挂载三层校验 | `preset/allin/verify-mount.ps1` | 0 PASS / 1 WARN / 2 FAIL；`--dump-config` 不证明运行时挂载 |
-| website 加密自检 | `website: npm run verify:crypto`（10 项）/ `npm run smoke`（19 项） | 密钥/数据完整性判定 |
+| website 加密自检 | `website: npm run verify:crypto`（10 项）/ `npm run smoke`（以 SMOKE_SUMMARY status=clean 为准） | 密钥/数据完整性判定 |
 | 密钥灾备 | `website: npm run backup-key` / `restore-key`（见 `website/README.md` 密钥灾备节） | SEV1 情景的唯一恢复路径 |
 | 端口事实源 | `docs/事实源/ports.yaml` | 端口冲突排查 |

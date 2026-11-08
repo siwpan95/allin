@@ -136,6 +136,58 @@ stages:
         strategy:
           retry: "0"
 
+      # 2026-11-08 整改 B8：Gitee 侧补齐与 GitHub 侧对称的测试 / 覆盖率 / 指标 / 冒烟步骤。
+      # gates.yml:3 声称「两侧跑同一套命令」，此前本文件六个 step 全无这些命令。
+      - step: build@nodejs
+        name: platform_unit
+        displayName: 平台单元测试（B3/B8，与 GitHub 双 job 同命令）
+        nodeVersion: "22"
+        commands:
+          - npm ci --prefix platform && npm test --prefix platform
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@python
+        name: python_tests_cov
+        displayName: Python 单测与分支覆盖率（B1/B8）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python -m pytest kernel/tests packages/allin-governance/tests tools/repocheck/test_scanner.py -q --cov=kernel --cov=allin_governance --cov-branch --cov-report=term-missing
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@python
+        name: metrics_and_security
+        displayName: 治理指标与安全扫描（B7/B9/B10）
+        pythonVersion: "3.13"
+        commands:
+          - .venv/bin/python tools/gate/gate_metrics.py --snapshot --strict --json
+          - .venv/bin/python -m pip_audit --progress-spinner off -s osv
+          - .venv/bin/python -m bandit -r kernel packages tools -lll -f json -o bandit-report.json -x packages/allin-governance/build || echo "SAST_REVIEW_REQUIRED：B602 待业务方裁决"
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
+      - step: build@nodejs
+        name: website_smoke
+        displayName: 官网冒烟（B8，与 GitHub website-smoke job 同命令）
+        nodeVersion: "22"
+        commands:
+          - npm ci --prefix website && npm run bootstrap --prefix website && npm run smoke --prefix website && npm test --prefix website
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
 triggers:
   trigger: auto
   push:

@@ -1,0 +1,22 @@
+[run]
+# 分支覆盖必须打开，否则「覆盖率」只能证明代码被执行过、不能证明分支被走过。
+branch = True
+omit =
+    */vendor/*
+    */.venv/*
+    */node_modules/*
+    */tests/*
+    */test_*
+    */__pycache__/*
+
+[report]
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+
+# 注意：fail_under 暂不设置。
+# 按 docs/记录/专题/交付团P3测试与验收方案_2026-11-05.md §4「先实测后验收，两步走」，
+# 阈值须在实测基线产出后由业务方裁决写入，不得凭预算数字直接设门禁（会让 CI 无谓变红）。

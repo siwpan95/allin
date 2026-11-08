@@ -68,6 +68,12 @@ jobs:
       - name: bootstrap（按上手指南的三条命令）
         run: bash scripts/bootstrap.sh
 
+      - name: 平台单元测试（B3：portal / CLI / core 用例接入 CI）
+        run: npm ci --prefix platform && npm test --prefix platform
+
+      # ALLIN_STRICT_SKIP 默认 0：CI runner 无发布区，repo_hygiene 按设计记 SKIP，
+      # 开严格模式会把「环境不适用」误判为失败。准出侧改由 ALLIN_GATE_SUMMARY 的
+      # status=clean 判定（见 .gitee/PULL_REQUEST_TEMPLATE.zh-CN.md），含 SKIP 不再放行。
       - name: 全部门禁（与本地同一条命令）
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
@@ -90,7 +96,8 @@ jobs:
         run: |
           .venv/bin/python -m pip install --quiet pytest-cov
           .venv/bin/python -m pytest packages/allin-governance -q \
-            --cov=allin_governance --cov-report=term-missing
+            --cov=allin_governance --cov-branch \
+            --cov-report=term-missing --cov-report=xml:coverage-allin-governance.xml
 
       # kernel 单测覆盖率（2026-11-04 遗留项 T7 收口）：kernel 此前零行为测试、
       # 唯一冒烟不进 CI —— 现在既进 CI 又亮覆盖率，缺口数字直接看构建日志。
@@ -98,7 +105,8 @@ jobs:
         run: |
           .venv/bin/python -m pip install --quiet pytest-cov
           .venv/bin/python -m pytest kernel/tests -q \
-            --cov=kernel --cov-report=term-missing
+            --cov=kernel --cov-branch \
+            --cov-report=term-missing --cov-report=xml:coverage-kernel.xml
 
       # D1.1 的验收判据就在这里：装 wheel → 在一个**与仓无关**的目录里 init →
       # 那条 `npm run check:governance` 必须 exit 0。
@@ -117,6 +125,34 @@ jobs:
       - name: 可安装包映射对账（wheel ↔ 仓内源码 sha256）
         run: |
           "$RUNNER_TEMP/ag/bin/python" tools/check_pkg_parity.py
+
+      # 2026-11-08 整改：把「已写出的测试资产」接进执行面与覆盖率采集面（B1），
+      # 并让治理指标从日志装饰升级为可阻断的退出码（B9/B10）。
+      - name: repocheck 规则套件覆盖率（B1：62 个 pytest 用例进 CI）
+        run: |
+          .venv/bin/python -m pytest tools/repocheck/test_scanner.py -q \
+            --cov=tools/repocheck --cov-branch \
+            --cov-report=term-missing --cov-report=xml:coverage-repocheck.xml
+
+      - name: 治理指标（B9/B10：落退出码 + SKIP 排除 + 例外双口径）
+        run: .venv/bin/python tools/gate/gate_metrics.py --snapshot --strict --json
+
+      - name: 依赖漏洞扫描（B7：Python SCA 走 OSV，Node SCA 走两棵 lock 树）
+        run: |
+          .venv/bin/python -m pip_audit --progress-spinner off -s osv
+          npm audit --prefix platform --audit-level=high
+          npm audit --prefix website --audit-level=high
+
+      # SAST 报告：bandit 仍会报 1 个既有 high —— tools/verify_projects.py:125 的
+      # shell=True。该 command 来自仓内已评审台账，且依赖 cmd /c / 管道语义，
+      # 不能简单改 shell=False。需业务方裁决「重构」或「登记例外」；
+      # 裁决前显式标 REVIEW_REQUIRED 并上传报告，不静默跳过、不假装通过。
+      - name: 静态应用安全测试报告（B7：已知 B602 待裁决，暂不阻断）
+        continue-on-error: true
+        run: |
+          .venv/bin/python -m bandit -r kernel packages tools -lll \
+            -f json -o bandit-report.json -x packages/allin-governance/build
+          echo "::warning::SAST_REVIEW_REQUIRED：bandit-report.json 含待裁决项（B602），见交付报告"
 
   gates-windows:
     name: 治理门禁（Windows · 完整 20 道，含 g20-facts）
@@ -192,6 +228,8 @@ jobs:
         run: |
           npm ci --prefix website || { echo "::error::npm ci --prefix website 失败（e2e 前置依赖安装）"; exit 1; }
           npm ci --prefix platform || { echo "::error::npm ci --prefix platform 失败（portal 的 @allin/core workspace 链接）"; exit 1; }
+          # B3：Windows 侧同样接入平台单元测试，避免「只有一侧有回归护栏」。
+          npm test --prefix platform
           npm run smoke:e2e
 
   website-smoke:
@@ -208,14 +246,14 @@ jobs:
           node-version: '22'
 
       # website 用 Node 22 内置 SQLite（--experimental-sqlite），无需外部数据库；
-      # 本地 19/19 全绿，此前却从无 CI 覆盖（B2 同源的「无回归护栏」缺口）。
+      # 本地 28/28 全绿，此前却从无 CI 覆盖（B2 同源的「无回归护栏」缺口）。
       #
       # 2026-11-04 复核 CI 首跑时定位到这个 job 长期红的根因：smoke 的「管理员登录
       # 并进入管理台」用例要读 data/seed-accounts.json 里的管理员口令，而该文件是
       # 被 .gitignore 忽略的**运行时产物**，干净检出里根本不存在 —— 原步骤只跑
       # `npm ci && npm run smoke`，于是必然 17/18（少两项），实测本机复现一致。
       # 补 `npm run bootstrap`（= init + seed）按本地同一路径生成运行时数据，
-      # 实测 seed 后 smoke 19/19。运行时文件不入库，不影响仓库卫生。
+      # 实测 seed 后 smoke 28/28。运行时文件不入库，不影响仓库卫生。
       - name: 安装依赖、初始化运行时数据并跑冒烟
         working-directory: website
         run: |

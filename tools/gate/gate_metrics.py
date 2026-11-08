@@ -47,6 +47,10 @@ AGENT_TRAIL = AUDIT / "agent-runs.jsonl"
 SNAPSHOTS = AUDIT / "exceptions-snapshots.jsonl"
 BASELINES = ROOT / "gate" / "governance" / "baseline"
 EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
+EXCEPTIONS_YML = ROOT / "gate" / "governance" / "exceptions.yml"
+# 燃尽快照口径版本。旧快照（值 51）来自另一套计数，跨口径相减会得到假 delta。
+SNAPSHOT_SCHEMA = 2
+SNAPSHOT_SOURCE = "baseline-keys+hygiene-exemptions"
 
 FRESH_HOURS = 24
 AGING_DAYS = 7
@@ -76,6 +80,11 @@ def load_runs(path: Path) -> list[dict]:
         except json.JSONDecodeError:
             continue
         if isinstance(record, dict) and "ts" in record:
+            # SKIP 是「没检查」，不是「执行成功」。旧口径把它写成 exit=0,ms=0，
+            # 会混进逃逸率分母、被算作全绿批次、并以 ms=0 拉低 p95。
+            # 统一在指标入口排除，留痕文件本身不改写（原始 jsonl 永不覆盖）。
+            if ":skip(" in str(record.get("label", "")):
+                continue
             runs.append(record)
     return runs
 
@@ -116,25 +125,53 @@ def count_exceptions() -> dict[str, int]:
     return per_source
 
 
+def count_declared_exceptions() -> int | None:
+    """exceptions.yml 中 status != closed 的登记例外条数（第二套口径）。
+
+    冻结键/豁免行（count_exceptions）与登记表（本函数）是**不同对象**，必须分列展示；
+    旧实现把 51（旧口径快照）与 78（冻结键口径）相减得到的 delta 属跨口径比较，已废弃。
+    """
+    try:
+        import yaml
+        data = yaml.safe_load(EXCEPTIONS_YML.read_text(encoding="utf-8")) or {}
+        items = data.get("exceptions") or []
+        return sum(1 for item in items if isinstance(item, dict)
+                   and str(item.get("status", "open")).lower() != "closed")
+    except Exception:
+        return None
+
+
 def append_snapshot(total: int) -> None:
-    """Append the current exception count so a trend can exist later."""
+    """Append the current exception count, tagged with its counting schema."""
     try:
         AUDIT.mkdir(parents=True, exist_ok=True)
         with open(SNAPSHOTS, "a", encoding="utf-8", newline="\n") as handle:
-            handle.write(json.dumps({"ts": datetime.now(timezone.utc).isoformat(),
-                                     "exceptions": total}, ensure_ascii=False) + "\n")
+            handle.write(json.dumps({
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "exceptions": total,
+                "schema": SNAPSHOT_SCHEMA,
+                "source": SNAPSHOT_SOURCE,
+            }, ensure_ascii=False) + "\n")
     except OSError:
         pass
 
 
 def previous_snapshot() -> int | None:
+    """只与同口径（同 schema）的最近一条快照比较；跨口径不返回数字。
+
+    旧实现取 lines[-2]：main 在 append 之前调用本函数，[-2] 实际跳过了上一条；
+    且旧快照无 schema 字段，与当前计数口径不可比。两者一并修正。
+    """
     lines = [ln for ln in read_lines(SNAPSHOTS) if ln.strip()]
-    if len(lines) < 2:
-        return None
-    try:
-        return int(json.loads(lines[-2]).get("exceptions", 0))
-    except (json.JSONDecodeError, ValueError):
-        return None
+    for line in reversed(lines):
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if int(record.get("schema", 0)) != SNAPSHOT_SCHEMA:
+            return None  # 最近一条是旧口径：宁可不给 delta，也不做跨口径比较
+        return int(record.get("exceptions", 0))
+    return None
 
 
 def percentile(values: list[int], fraction: float) -> int:
@@ -391,7 +428,14 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
         "failed_runs": len(failed),
         "failing_labels": sorted({str(run.get("label", "")) for run in failed})[:10],
         "evidence_freshness": freshness,
-        "exceptions": {"total": total_exceptions, "by_source": exceptions},
+        "exceptions": {
+            "total": total_exceptions,
+            "by_source": exceptions,
+            "schema": SNAPSHOT_SCHEMA,
+            "source": SNAPSHOT_SOURCE,
+            # 第二套口径：exceptions.yml 的登记例外（status != closed），分列展示、不相减。
+            "declared_open": count_declared_exceptions(),
+        },
         "latency": latency(window, budget_ms),
         "agent_ops": agent_ops(agent_window),
     }
@@ -535,6 +579,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--snapshot", action="store_true", help="append the current exception count to the trend file")
     parser.add_argument("--selfcheck", action="store_true", help="inject-and-prove the batch verdict (no trail needed)")
+    parser.add_argument("--strict", action="store_true",
+                        help="把指标升级为退出码：证据不可用/最近一批红/逃逸率超阈即返回 1")
+    parser.add_argument("--max-escape-rate", type=float, default=1.0,
+                        help="--strict 下的逃逸率上限（默认 1.0，即不因历史失败误伤；CI 可收紧）")
+    parser.add_argument("--max-exceptions", type=int, default=None,
+                        help="--strict 下的例外总数上限（不设则不判）")
     args = parser.parse_args(argv)
 
     if args.selfcheck:
@@ -553,6 +603,19 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({**metrics, "exceptions_previous": previous}, ensure_ascii=False, indent=2))
     else:
         print(render(metrics, previous))
+    if args.strict:
+        failures: list[str] = []
+        state = str(metrics["evidence_freshness"].get("state", "no-evidence"))
+        if state in ("no-evidence", "no-green-batch", "last-batch-red"):
+            failures.append(f"证据新鲜度不可用：state={state}")
+        if metrics["escape_rate"] > args.max_escape_rate:
+            failures.append(f"逃逸率 {metrics['escape_rate']:.4f} > 上限 {args.max_escape_rate}")
+        if args.max_exceptions is not None and metrics["exceptions"]["total"] > args.max_exceptions:
+            failures.append(f"例外总数 {metrics['exceptions']['total']} > 上限 {args.max_exceptions}")
+        if failures:
+            for reason in failures:
+                print(f"STRICT FAIL: {reason}", file=sys.stderr)
+            return 1
     return 0
 
 
