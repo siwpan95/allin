@@ -1,11 +1,12 @@
 ﻿<#
 .SYNOPSIS
-  注册 5 个 ALLIN-* 计划任务的配方脚本（P3 部署实施方案 §2 落地物）：
+  注册 6 个 ALLIN-* 计划任务的配方脚本（P3 部署实施方案 §2 落地物）：
   ① ALLIN-website-autostart  登录拉起 website 常驻（9042）
   ② ALLIN-portal-autostart   登录拉起 portal 常驻（PORT=0 临时端口）
   ③ ALLIN-daily-backup       每日 02:00 备份 + 7 天轮转 + 日志 14 天清理
   ④ ALLIN-weekly-e2e         每周日 smoke:e2e 三面贯通防漂移（SC6）
   ⑤ ALLIN-monthly-audit      每周一触发 + 月度幂等守卫 = 月度治理盘点（ERP P2 备用路线）
+  ⑥ ALLIN-monthly-restore-drill 每周一触发 + 包装器幂等守卫 = 月度恢复演练（审查残留 #21）
 
 .DESCRIPTION
   - 全部免管理员：当前用户、登录/定时触发、不提权（不注册「不登录也运行」类任务——拍板口径）。
@@ -15,6 +16,8 @@
   - 本脚本只负责注册；运行行为由各包装器与 backup-allin.ps1 决定。
   - 任务⑤ 是**跨机可复制的仓内调度**：配方随仓 clone，注册动作仍由人在各机执行；
     不依赖 WorkBuddy 会话侧定时自动化（换机即失效，故 ERP P2 改走本备用路线）。
+  - 任务⑥ 同款仓内调度：每周一触发、月度语义由 restore-drill-task.ps1 的幂等守卫保证；
+    只证明「演练脚本逻辑按月回归」，**不替代 P3 §4.1 人工 SEV1 全链演练**。
 
 .NOTES
   兼容 Windows PowerShell 5.1；本文件只写不自动执行注册——由人确认参数后在计划任务机器上运行。
@@ -34,6 +37,9 @@ param(
   [string]$WeeklyAt   = '09:00',
   # 任务⑤ 周触发时刻（月度语义由 monthly_audit.py 的幂等守卫保证）
   [string]$MonthlyAt  = '09:00',
+  # 任务⑥ 周触发日 / 时刻；缺省错开任务⑤ 一小时（见任务⑥ 注释理由）
+  [string]$DrillWeeklyDay = 'Monday',
+  [string]$DrillAt        = '10:00',
   # 回滚开关：注销全部 ALLIN-* 任务
   [switch]$Unregister
 )
@@ -64,8 +70,14 @@ if (-not $LogDir)     { Write-Warning '未设置 ALLIN_LOG_DIR——包装器将
 $deployDir   = Join-Path $RepoRoot 'tools\deploy'
 $websiteDir  = Join-Path $RepoRoot 'website'
 $platformDir = Join-Path $RepoRoot 'platform'
+# 部署物在位校验：backup-allin / restore-allin / test_restore_drill 三方都 dot-source
+# exclusion-policy.ps1（共享排除策略单一真相源），缺它会在**运行期** exit 1。这里把它列入
+# 校验，是让「缺哪个文件」在**注册期**就指名报错（诊断纵深增强）——不是修假绿漏洞：
+# 链路本身已 fail-loud（缺文件时 drill 自己 exit 1，包装器记 status=failed 并透传退出码）。
 foreach ($f in @('backup-allin.ps1', 'start-website-task.ps1', 'start-portal-task.ps1',
-                 'monthly-audit-task.ps1', 'monthly_audit.py')) {
+                 'monthly-audit-task.ps1', 'monthly_audit.py',
+                 'test_restore_drill.ps1', 'restore-drill-task.ps1',
+                 'exclusion-policy.ps1')) {
   if (-not (Test-Path -LiteralPath (Join-Path $deployDir $f))) {
     Fail "缺少 $f —— 请确认 tools/deploy/ 部署物已随仓检出"
   }
@@ -153,9 +165,31 @@ New-AllinTask -Name $t5 `
                StartWhenAvailable = $true } `
   -Description 'allin 月度治理盘点（ERP P2 备用路线）：verify_facts + docs_index + repocheck + 组合分级对账；留痕 tools/gate/audit/monthly-audit-runs.jsonl；每周一触发，同月已 ok 则 skip'
 
+# ---- 任务⑥ 月度恢复演练（审查残留 #21，2026-11-08）----
+# 触发器同样取「每周一」：-Monthly cmdlet 不存在，月度语义由包装器
+# restore-drill-task.ps1 读 tools/gate/audit/restore-drill-runs.jsonl 的
+# 「同月已有 status=ok 则 skip」幂等守卫实现（与任务⑤ 同一套配方）。
+# 触发时刻缺省 10:00，与任务⑤ 的 -MonthlyAt 缺省 09:00 错开一小时：两任务都会
+# 唤醒仓内脚本并写 tools/gate/audit/ 下的 JSONL，且演练含备份+恢复两轮 robocopy；
+# 错开可避免同刻并发的高 IO 与同目录留痕写入，MultipleInstances=IgnoreNew 只防
+# 单任务自身重入、不防跨任务并发。若显式改动两个时刻，请自行保持错开。
+if ($DrillAt -eq $MonthlyAt -and $DrillWeeklyDay -eq 'Monday') {
+  Write-Warning '任务⑤/⑥ 触发时刻相同：建议 -DrillAt 与 -MonthlyAt 错开（缺省 09:00 / 10:00）'
+}
+$t6 = $Prefix + 'monthly-restore-drill'
+New-AllinTask -Name $t6 `
+  -Action @{ Execute           = $psExe
+             Argument          = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -RepoRoot "{1}"' -f (Join-Path $deployDir 'restore-drill-task.ps1'), $RepoRoot)
+             WorkingDirectory  = $RepoRoot } `
+  -Trigger (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $DrillWeeklyDay -At $DrillAt) `
+  -Settings @{ ExecutionTimeLimit = (New-TimeSpan -Hours 2)
+               MultipleInstances  = 'IgnoreNew'
+               StartWhenAvailable = $true } `
+  -Description 'allin 月度恢复演练（审查残留 #21）：把 test_restore_drill.ps1 当子进程按月真跑一次；月度语义由包装器幂等守卫保证（每周一触发 + 同月已 ok 则 skip）；留痕 tools/gate/audit/restore-drill-runs.jsonl；2h 时限含备份+恢复两轮 robocopy。只证明演练脚本逻辑按月回归，不替代 P3 §4.1 人工 SEV1 全链演练（真实灾备切换/密钥唯一通道/异地恢复仍需人工按剧本执行）'
+
 # ---------- 收口提示 ----------
 Write-Output ''
 Write-Output '全部注册完成。验证命令：'
 Write-Output '  Get-ScheduledTask -TaskName "ALLIN-*" | Format-Table TaskName,State'
-Write-Output '  Get-ScheduledTaskInfo -TaskName ALLIN-website-autostart,ALLIN-portal-autostart,ALLIN-daily-backup,ALLIN-weekly-e2e,ALLIN-monthly-audit | Format-Table TaskName,LastRunTime,LastTaskResult'
-Write-Output '试跑：Start-ScheduledTask -TaskName ALLIN-daily-backup；月度盘点首跑建议先手工执行 monthly-audit-task.ps1 -Force 看产物；回滚：pwsh -File register-tasks.ps1 -Unregister'
+Write-Output '  Get-ScheduledTaskInfo -TaskName ALLIN-website-autostart,ALLIN-portal-autostart,ALLIN-daily-backup,ALLIN-weekly-e2e,ALLIN-monthly-audit,ALLIN-monthly-restore-drill | Format-Table TaskName,LastRunTime,LastTaskResult'
+Write-Output '试跑：Start-ScheduledTask -TaskName ALLIN-daily-backup；Start-ScheduledTask -TaskName ALLIN-monthly-restore-drill；月度盘点首跑建议先手工执行 monthly-audit-task.ps1 -Force 看产物，恢复演练首跑建议手工执行 restore-drill-task.ps1 -Force 看产物（tools/gate/audit/restore-drill-runs.jsonl）；回滚：pwsh -File register-tasks.ps1 -Unregister'
