@@ -762,7 +762,22 @@ def selfcheck() -> int:
     return 0 if ok else 3
 
 
+def _configure_stdio() -> None:
+    """强制 UTF-8 输出，对齐 allin_cli.py 的 _configure_stdio()（N-01 整改）。
+
+    Windows CI runner 控制台默认 cp1252，本工具大量中文诊断（含 selfcheck / render）
+    在 cp1252 下会抛 UnicodeEncodeError，直接阻断 Windows 门禁。门禁侧与 CLI 早已
+    统一强制 UTF-8，本工具作为治理度量出口也照此办理（errors='replace' 保证即便遇
+    非法序列也不崩溃，newline='\\n' 避免 JSONL 被写成 CRLF）。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace", newline="\n")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
     parser = argparse.ArgumentParser(description="governance metrics from the gate execution trail")
     parser.add_argument("--trail", default=str(TRAIL), help=f"gate run trail (default: {TRAIL})")
     parser.add_argument("--days", type=int, default=30, help="window for the escape rate (default 30)")

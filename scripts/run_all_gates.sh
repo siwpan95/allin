@@ -363,6 +363,25 @@ if [ "${#skips[@]}" -gt 0 ]; then
 fi
 # 机器可读汇总行：PR 模板 / CI 一律贴这一行，不再以「全部门禁通过。」作准出凭据。
 # status: clean（全检全绿）/ incomplete（含 SKIP，未检查项不算通过）/ failed
+# N-04 整改：区分「环境性 SKIP（无可跑对象，非缺陷）」与「真实性 SKIP（本应跑却未跑，属缺口）」。
+# 仅真实性 SKIP 才把 incomplete 升级为非 0（fail-loud），避免把「CI 无发布区」等环境事实
+# 误判为失败；环境性 SKIP 保持 exit 0，但汇总仍如实报 status=incomplete（PR 准出侧要求 status=clean）。
+BENIGN_SKIP_PATTERNS=(
+  'repo_hygiene:skip('
+  'smoke:e2e:skip(missing-node-deps'
+  'restore-drill:skip(no-powershell'
+  'platform:skip(no-platform-dir'
+)
+real_skip=0
+for s in "${skips[@]}"; do
+  benign=0
+  for p in "${BENIGN_SKIP_PATTERNS[@]}"; do
+    case "$s" in
+      *"$p"*) benign=1; break ;;
+    esac
+  done
+  if [ "$benign" -eq 0 ]; then real_skip=1; break; fi
+done
 SKIP_N="${#skips[@]}"
 FAIL_N="${#failures[@]}"
 if [ "$fail" -ne 0 ]; then
@@ -389,8 +408,13 @@ if [ "$SKIP_N" -gt 0 ]; then
   if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     printf '::warning::%s\n' "$(gh_escape "ALLIN_GATE_SUMMARY status=incomplete fail=0 skips=${SKIP_N}")"
   fi
-  # 严格模式（CI 设 ALLIN_STRICT_SKIP=1）：存在 SKIP 即非 0，与 gates.yml「SKIP ≠ pass」对齐。
-  # 本地默认 0 保持兼容，避免发布区缺席等环境性 SKIP 立刻把已有跑批拖红。
+  # N-04 整改：incomplete 不再静默落 exit 0。存在真实性 SKIP（非环境性）即 fail-loud 退出 2，
+  # 与「SKIP ≠ pass」纪律一致；仅环境性 SKIP（无可跑对象）保持 exit 0，但汇总仍报 status=incomplete。
+  if [ "$real_skip" -eq 1 ]; then
+    echo "存在真实性 SKIP（非环境性），判定 exit 2（SKIP ≠ pass）。"
+    exit 2
+  fi
+  # 严格模式（CI 设 ALLIN_STRICT_SKIP=1）：即便全为环境性 SKIP 也强制非 0（按需开启）。
   if [ "${ALLIN_STRICT_SKIP:-0}" = "1" ]; then
     echo "ALLIN_STRICT_SKIP=1：含 SKIP 即判 exit 2。"
     exit 2

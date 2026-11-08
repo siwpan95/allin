@@ -116,10 +116,29 @@ Write-Log ("robocopy 完成：platform-data 退出码 $rcPlatform ｜ website-da
 # ---------- 3) manifest.json：逐文件 sha256 + 退出码 + 成败标记（失败现场也落 manifest） ----------
 # manifest 自身不进哈希清单（排除上一轮残留，避免 fileCount 虚增）
 $manifestPath = Join-Path $dest 'manifest.json'
+# 相对路径计算：以 $dest 为基准取相对路径。先剥除可能的长路径前缀 \\?\（路径 >260 字符时
+# .NET/PowerShell 会给 FullName 加此前缀，而 $dest 字符串无此前缀，旧式
+# Substring($dest.Length + 1) 会截错长度、产出如 "08\platform-data\a.txt" 的畸形前缀
+# ⇒ 恢复预校验判定缺失 ⇒ N-02 在 CI runner（深临时目录，路径超 260）失败、本地短路径却通过。
+# 剥前缀 + 去一个前导分隔符后，结果恒为 "platform-data\a.txt" / "website-data\a.txt"，
+# 与 restore-allin.ps1 期望一致。）
+function RelativeTo-Dest([string]$abs, [string]$base) {
+  $a = $abs
+  if ($a.StartsWith('\\?\')) { $a = $a.Substring(4) }
+  $b = $base
+  if ($b.StartsWith('\\?\')) { $b = $b.Substring(4) }
+  if ($a.Length -gt $b.Length -and $a.StartsWith($b)) {
+    $rel = $a.Substring($b.Length)
+    if ($rel.StartsWith('\') -or $rel.StartsWith('/')) { $rel = $rel.Substring(1) }
+    return $rel
+  }
+  # 兜底：无法相对化（路径不基于 $dest）⇒ fail-loud，不产畸形清单项
+  throw "backup-allin: 无法将文件归一到备份目录：$abs（不基于 $base）"
+}
 $files = @(Get-ChildItem -LiteralPath $dest -Recurse -File |
   Where-Object { $_.FullName -ne $manifestPath } | ForEach-Object {
   [ordered]@{
-    path   = $_.FullName.Substring($dest.Length + 1)
+    path   = RelativeTo-Dest $_.FullName $dest
     bytes  = $_.Length
     sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
   }

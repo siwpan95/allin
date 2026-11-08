@@ -93,7 +93,12 @@ def dispatch(args) -> object:
         if args.action == 'show':
             return svc.show(args.name)
         if args.action == 'apply':
-            return svc.apply(args.name, dry_run=not args.yes)
+            result = svc.apply(args.name, dry_run=not args.yes)
+            # WJ-01：apply 返回结构化结果；真实落地未实现（dry_run=False）时
+            # ok=False ⇒ 映射非零退出（2），避免「--yes 零动作」假绿；dry-run 成功 ⇒ 0。
+            if isinstance(result, dict):
+                return 0 if result.get('ok') else 2
+            return 0
     if args.domain == 'status':
         return ctx.status.summary(as_json=args.json, strict=args.strict)
     return None

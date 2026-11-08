@@ -63,12 +63,16 @@
 
   function noticeHtml(kind, text) {
     return '<div class="notice notice--' + esc(kind) + '" role="status">' +
-      '<span aria-hidden="true">▍</span><span>' + text + '</span></div>';
+      '<span aria-hidden="true">▍</span><span>' + esc(text) + '</span></div>';
   }
 
   function kvHtml(rows) {
+    // 默认对每格 esc()（防服务端数据 XSS，WJ-02 整改）；仅当某格显式传 {html: '...'}
+    // （构建期常量、无服务端/用户数据）才按受信 HTML 原样输出，杜绝静默假绿。
     return '<dl class="kv">' + rows.map(function (r) {
-      return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>';
+      var k = (r[0] && r[0].html != null) ? r[0].html : esc(r[0]);
+      var v = (r[1] && r[1].html != null) ? r[1].html : esc(r[1]);
+      return '<dt>' + k + '</dt><dd>' + v + '</dd>';
     }).join('') + '</dl>';
   }
 
@@ -138,12 +142,12 @@
     var p = d.portal || {};
     var lib = d.library || {};
     var rows = [
-      ['版本', esc(p.version) || '—'],
-      ['运行时长', esc(fmtUptime(p.uptime))],
-      ['端口', p.port == null ? '—' : esc(p.port)],
-      ['登记项目', lib.total == null ? '不可读' : esc(lib.total) + ' 个'],
-      ['运行中', lib.running == null ? '—' : esc(lib.running) + ' 个'],
-      ['异常登记', lib.invalid == null ? '—' : esc(lib.invalid) + ' 个'],
+      ['版本', p.version || '—'],
+      ['运行时长', fmtUptime(p.uptime)],
+      ['端口', p.port == null ? '—' : p.port],
+      ['登记项目', lib.total == null ? '不可读' : lib.total + ' 个'],
+      ['运行中', lib.running == null ? '—' : lib.running + ' 个'],
+      ['异常登记', lib.invalid == null ? '—' : lib.invalid + ' 个'],
     ];
     setCard('overview', pillHtml('ok', '●', '正常'),
       payload.degraded ? noticeHtml('info', '网络波动，数据截至 ' + fmtClock(payload.snapshotAt) + '（快照）') : '',
@@ -168,9 +172,9 @@
     }
     setCard('gate', pillHtml(state, icon, label), '',
       kvHtml([
-        ['最近运行', esc(fmtClock(g.lastRunAt))],
-        ['最近通过', esc(fmtClock(g.lastOkAt))],
-        ['逃逸率', g.escapeRate == null ? '—' : esc(g.escapeRate)],
+        ['最近运行', fmtClock(g.lastRunAt)],
+        ['最近通过', fmtClock(g.lastOkAt)],
+        ['逃逸率', g.escapeRate == null ? '—' : g.escapeRate],
       ]));
   }
 
@@ -205,24 +209,24 @@
     if (d.lastCheckError) {
       pill = pillHtml('error', '×', '门禁故障');
       banner = noticeHtml('error',
-        '判据门禁未正常运行（' + esc(d.lastCheckError.code || 'UNKNOWN') + '）：' +
-        esc(String(d.lastCheckError.msg || '').slice(0, 500)));
+        '判据门禁未正常运行（' + (d.lastCheckError.code || 'UNKNOWN') + '）：' +
+        String(d.lastCheckError.msg || '').slice(0, 500));
       body = '<p class="muted" style="margin:0">g21 门禁上次运行崩溃，本轮漂移结论不可信，请先修复门禁再核对双形态。</p>';
     } else if (d.healthy) {
       pill = pillHtml('ok', '●', '双形态已同步');
       banner = '';
       body = kvHtml([
         ['漂移计数', errorCount + ' 条（error）'],
-        ['warn 级差异', warnCount ? '<span class="tag tag--warn">▲ ' + warnCount + ' 条</span>' : '0 条'],
-        ['最近校验', esc(fmtClock(d.lastCheckAt))],
+        ['warn 级差异', warnCount ? { html: '<span class="tag tag--warn">▲ ' + warnCount + ' 条</span>' } : '0 条'],
+        ['最近校验', fmtClock(d.lastCheckAt)],
       ]) + driftRowsHtml(d.drift, 'error');
     } else {
       pill = pillHtml('error', '×', '存在漂移');
       banner = noticeHtml('error', 'g21 判据发现 error 级漂移，请对账 routes.yaml ⇄ SKILL.md ⇄ allin.patch.yml 三方。');
       body = kvHtml([
         ['漂移计数', errorCount + ' 条（error）'],
-        ['warn 级差异', warnCount ? '<span class="tag tag--warn">▲ ' + warnCount + ' 条</span>' : '0 条'],
-        ['最近校验', esc(fmtClock(d.lastCheckAt))],
+        ['warn 级差异', warnCount ? { html: '<span class="tag tag--warn">▲ ' + warnCount + ' 条</span>' } : '0 条'],
+        ['最近校验', fmtClock(d.lastCheckAt)],
       ]) + driftRowsHtml(d.drift, 'error');
     }
     setCard('orchestration', pill, banner, body);
@@ -418,12 +422,12 @@
       }
       var payload = await res.json().catch(function () { return null; });
       if (res.ok && payload && payload.ok) {
-        showInline('ok', '操作已执行：' + esc(payload.id) + '（结果已记入审计流水）。');
+        showInline('ok', '操作已执行：' + payload.id + '（结果已记入审计流水）。');
         repollNow();
       } else {
         var code = payload && payload.code ? '（' + payload.code + '）' : '';
         var msg = payload && payload.message ? payload.message : '平台未返回原因。';
-        showInline('error', '操作未成功' + code + '：' + esc(msg));
+        showInline('error', '操作未成功' + code + '：' + msg);
       }
     } catch (e) {
       showInline('error', '请求未能完成（网络异常），该次尝试已在服务端留痕或可重试。');
