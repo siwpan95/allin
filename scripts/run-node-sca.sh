@@ -173,8 +173,16 @@ finish() {
       echo "NODE_SCA_INFRA_ERROR 写 JSONL 失败：$path" >&2; return 3; }
 
   if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
-    printf '::warning::NODE_SCA status=%s ok=%s findings=%s unreachable=%s（shadow：不阻断；unreachable 不代表无漏洞）\n' \
-      "$status" "$ok_n" "$find_n" "$unreach_n"
+    # Q-03 修复：unreachable/partial 与 ok/findings 虽然同为 exit 0（shadow 不阻断），
+    # 但 CI 绿灯必须能分辨「未取得结论」与「确有完整结论」，否则 green≠无漏洞不可见。
+    if [ "$status" = "unreachable" ] || [ "$status" = "partial" ]; then
+      printf '::notice::NODE_SCA status=%s ok=%s findings=%s unreachable=%s —— 本轮**未取得**完整 SCA 结论（%s 棵树端点不可达），CI 绿≠无漏洞，仅代表脚本跑完。\n' \
+        "$status" "$ok_n" "$find_n" "$unreach_n" "$unreach_n"
+    else
+      printf '::notice::NODE_SCA status=%s ok=%s findings=%s unreachable=%s（shadow 不阻断；%s）\n' \
+        "$status" "$ok_n" "$find_n" "$unreach_n" \
+        "$([ "$unreach_n" -gt 0 ] && echo '部分树不可达，结论不完整' || echo '本轮确有完整结论')"
+    fi
   fi
   return 0
 }
@@ -240,10 +248,12 @@ JSON
   check "④ npm 退出码异常(rc=2) ⇒ exit 3" 3 "$r"
 
   # ⑤ finish() 的 caveat 口径：全不可达时必须落到 status=unreachable 且不退出非 0
-  r=0; finish 0 0 2 2 "platform:unreachable:0" "website:unreachable:0" >"$t/f1" 2>&1 || r=$?
+  # ⑤ finish() 的 ::notice:: 只在 GITHUB_ACTIONS=true 时发，故自测也置于该子环境验证。
+  r=0; GITHUB_ACTIONS=true finish 0 0 2 2 "platform:unreachable:0" "website:unreachable:0" >"$t/f1" 2>&1 || r=$?
   check "⑤ 全树不可达 ⇒ exit 0 且 status=unreachable" 0 "$r"
   grep -q 'status=unreachable' "$t/f1" || { echo "  [FAIL] ⑤ status 不是 unreachable"; fail_n=$((fail_n+1)); }
   grep -q '不能\*\*声称「无漏洞」' "$t/f1" || { echo "  [FAIL] ⑤ 未声明「不能声称无漏洞」"; fail_n=$((fail_n+1)); }
+  grep -q '未取得\*\*完整 SCA 结论' "$t/f1" || { echo "  [FAIL] ⑤ 未发 unreachable 专属 notice（Q-03 语义不可分辨）"; fail_n=$((fail_n+1)); }
 
   echo
   if [ "$fail_n" -eq 0 ]; then

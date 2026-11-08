@@ -234,8 +234,13 @@ def load_entry(path: Path) -> dict:
             if value.strip():
                 data[section] = value.strip()
             continue
-        if section in ("launch", "verify") and stripped.startswith("command:"):
-            data.setdefault(section, {})["command"] = stripped.split(":", 1)[1].strip()
+        # P4：回退读取器补 skip/headless（与 YAML 路径语义对齐）。
+        # 仅捕获 launch/verify 下的已知键，避免把任意子键都吞进来。
+        if section in ("launch", "verify") and ":" in stripped:
+            sub_key, _, sub_val = stripped.partition(":")
+            sub_key = sub_key.strip()
+            if sub_key in ("command", "skip", "headless"):
+                data.setdefault(section, {})[sub_key] = sub_val.strip()
     return data
 
 

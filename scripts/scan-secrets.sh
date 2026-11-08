@@ -148,12 +148,34 @@ DIFF
   grep -qF '+++ b/' "$added" \
     && { echo 'SELFT FAIL: diff 文件头混进了扫描面'; fail=1; }
 
+  # Q-05：无扫描面跳过必须发机器可读 skip 标记（区别于 pass），且 GitHub Actions
+  # 下必须发 ::notice::。在子 shell 里调用 handle_no_surface（其内 exit 0 仅退出子 shell）。
+  ( GITHUB_ACTIONS=true; BASE=selftest; handle_no_surface "selftest" ) >"$t/s1" 2>&1; rc=$?
+  [ "$rc" -eq 0 ] || { echo "SELFT FAIL: Q-05 handle_no_surface 返回值=$rc"; fail=1; }
+  grep -q 'SCAN_SECRETS_SUMMARY status=skipped' "$t/s1" \
+    || { echo 'SELFT FAIL: Q-05 未发 SCAN_SECRETS_SUMMARY'; fail=1; }
+  grep -q '::notice::SCAN_SECRETS status=skipped' "$t/s1" \
+    || { echo 'SELFT FAIL: Q-05 未发 ::notice::（CI 静默绿风险）'; fail=1; }
+
   rm -f "$raw" "$added" "$abuse"
   rmdir "$t" 2>/dev/null || true
   if [ "$fail" -eq 0 ]; then
-    echo 'scan-secrets --selftest: 5/5 通过（越权注解 / 删除行 / 夹具豁免 / 文件头）'
+    echo 'scan-secrets --selftest: 全部通过（越权注解 / 删除行 / 夹具豁免 / 文件头 / Q-05 skip 标记）'
   fi
   return "$fail"
+}
+
+# Q-05：无密钥扫描面（无新增行）时，必须发机器可读的 skip 标记，避免 CI 静默绿把
+# 「没扫」误读成「扫了且干净」。注意：这不是「通过」，exit 0 仅表示「本轮脚本跑完」，
+# CI 必须配合 SCAN_SECRETS_SUMMARY + ::notice:: 区分 skip 与 pass。
+handle_no_surface() {
+  local base="$1"
+  echo "gitleaks: 本次变更无新增行（基线 $base）—— 无扫描面，跳过（不声称通过）"
+  echo "SCAN_SECRETS_SUMMARY status=skipped reason=no-added-lines（不声称通过，区别于 pass）"
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    printf '::notice::SCAN_SECRETS status=skipped —— 本次变更无新增行，无密钥扫描面，已跳过（不声称通过，区别于 pass）。\n'
+  fi
+  exit 0
 }
 
 if [ "${1:-}" = "--selftest" ]; then
@@ -225,8 +247,8 @@ if [ ! -s "$ADDED" ]; then
     sort -u "$ABUSE" | sed 's/^/    - /' >&2
     exit 2
   fi
-  echo "gitleaks: 本次变更无新增行（基线 $BASE）—— 无扫描面，跳过（不声称通过）"
-  exit 0
+  # Q-05 修复：无扫描面不是「通过」，发机器可读 skip 标记（见 handle_no_surface）。
+  handle_no_surface "$BASE"
 fi
 
 echo "gitleaks: 扫描 $(wc -l < "$ADDED" | tr -d ' ') 行新增内容（基线 ${BASE:0:12}）"

@@ -124,7 +124,7 @@ let engineCache = { at: 0, payload: null }
 const workshopCache = new Map()
 async function runEngine(python, args) {
   try {
-    const { stdout, stderr } = await execFileP(python, args, { cwd: ENGINE_CWD, encoding: 'utf8', timeout: 60000, shell: true })
+    const { stdout, stderr } = await execFileP(python, args, { cwd: ENGINE_CWD, encoding: 'utf8', timeout: 60000 })
     return { status: 0, stdout, stderr }
   } catch (e) {
     return { status: e.code ?? 1, stdout: e.stdout || '', stderr: e.stderr || String(e.message) }

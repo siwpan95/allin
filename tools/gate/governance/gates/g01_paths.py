@@ -94,7 +94,7 @@ POSIX_PATH = re.compile(r'(?<![A-Za-z0-9_./-])/(Users|home|Volumes|mnt|media)/[A
 
 #: Directory prefixes that are legitimately system-owned on each platform.
 SYSTEM_PREFIXES_POSIX = ("/Applications", "/Library", "/System", "/bin", "/dev", "/etc", "/lib", "/nix",
-                         "/opt", "/proc", "/run", "/sbin", "/snap", "/sys", "/tmp", "/usr", "/var")
+                         "/opt", "/proc", "/run", "/sbin", "/snap", "/sys", "/tmp", "/usr", "/var")  # nosec B108  # LES-005 型："/tmp" 是系统前缀分类常量，非临时目录操作
 SYSTEM_PREFIXES_NT = ("c:\\program files", "c:\\program files (x86)", "c:\\programdata", "c:\\users\\public",  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
                       "c:\\windows")  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
 
