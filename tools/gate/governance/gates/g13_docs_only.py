@@ -34,8 +34,18 @@ SCOPE_PREFIX = "docs/"
 #: Extensions allowed under docs/: prose, generated catalogs, screenshots, and
 #: archived reports (2026-11-06: .html added for machine-folder attached artifacts,
 #: e.g. docs/事实源/机器/<机器名>/附属/ holds one-off HTML reports as raw evidence).
+#:
+#: 2026-11-09 增补（论证见下）：演示/研究交付物亦属「文档形态」制品，应可随文档枢纽归档：
+#:   - .pptx  可编辑演示文稿（分章 PPT 正本）
+#:   - .pdf   由 PPT 导出的只读分发件（沙箱禁运 LibreOffice，改用 Pillow 逐页合成，<1MB）
+#:   - .xlsx  结构化清单（Excel）
+#:   - .slide slidep DSL 源，用于日后在 WorkBuddy 内再编辑/复现该 PPT
+#: 上述均为导出/分发型文档制品，非可执行程序、非归档压缩包，故列入允许列表。
+#: 注意：.py 仍保留在 BLOCKED_SUFFIXES——脚本不属于文档枢纽，且 g13 自检断言 docs/ 下
+#: .py 必被拦；相关构建脚本另置于 scripts/，不破坏门禁自检完整性。
 ALLOWED_SUFFIXES = (".md", ".mdx", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg",
-                    ".gif", ".webp", ".svg", ".csv", ".mmd", ".css", ".html")
+                    ".gif", ".webp", ".svg", ".csv", ".mmd", ".css", ".html",
+                    ".pptx", ".pdf", ".xlsx", ".slide")
 
 #: Extensions that must never appear under docs/ even though they are text.
 BLOCKED_SUFFIXES = (".py", ".sh", ".bash", ".ps1", ".cmd", ".bat", ".js", ".mjs", ".ts", ".tsx",
