@@ -37,6 +37,28 @@ export const REPOS_ROOT = process.env.PLATFORM_REPOS_ROOT || path.join(WORKSPACE
 
 const RX_DRIVE = /^[A-Za-z]:[\\/]/
 
+// ── 命令形状校验（2026-11-08 深度审核 P1）────────────────────────────────
+// launch/stop/verify 的 command 会被 launch.js 以 spawn(..., {shell:true}) 执行。
+// 此前 validateEntry 只判字段存在 —— 能写一份 yaml 就等同拿到任意命令执行入口。
+// 这里把命令钉成「单个程序调用 + 参数」的形状：禁止 shell 控制符、路径穿越、
+// 首词不在受控集合。白名单已对本仓 145 份清单 / 90 条命令做过零误伤核验。
+const COMMAND_FORBIDDEN = /[;&|<>`$]|\r|\n/
+const COMMAND_TRAVERSAL = /(^|[\\/])\.\.([\\/]|$)/
+const COMMAND_HEAD = /^(?:python|python3|pythonw|py|node|npm|npx|dse|ls|dir|echo|git|cmd|powershell|pwsh|bash|sh|robocopy|make|explorer|start)(?:\.exe)?(?:\s|$)/i
+const COMMAND_FILE_HEAD = /^[A-Za-z0-9_.-]+\.(?:bat|cmd|html|exe)(?:\s|$)/i
+const COMMAND_REL_EXE = /^(?:[A-Za-z0-9_.-]+[\\/])+[A-Za-z0-9_.-]+\.exe(?:\s|$)/i
+
+export function commandProblems(cmd) {
+  if (typeof cmd !== 'string' || !cmd.trim()) return ['命令为空']
+  const s = cmd.trim()
+  if (COMMAND_FORBIDDEN.test(s)) return ['含 shell 控制符（; & | < > ` $ 或换行）']
+  if (COMMAND_TRAVERSAL.test(s)) return ['路径含 ..（禁止越出项目目录）']
+  if (!(COMMAND_HEAD.test(s) || COMMAND_FILE_HEAD.test(s) || COMMAND_REL_EXE.test(s))) {
+    return [`首词不在受控命令集合：${s.split(/\s/)[0]}`]
+  }
+  return []
+}
+
 /**
  * 把清单里的 path 解析成绝对路径 —— **唯一入口**，所有消费点（启动 cwd / 门户读写 / 存在性校验）
  * 都必须走这里，避免各模块各自拼接后各自漂移。
@@ -109,6 +131,14 @@ export function validateEntry(entry, ports) {
     errors.push(`path 不存在: ${entry.path} → 解析为 ${resolvePath(entry.path)}`)
   }
   if (!entry.launch || !entry.launch.command) errors.push('missing launch.command')
+  // 命令形状：不能只判「字段存在」，否则一份 yaml 就是任意命令执行入口。
+  for (const section of ['launch', 'stop', 'verify']) {
+    const node = entry[section]
+    const cmd = node && node.command
+    if (typeof cmd === 'string' && cmd.trim()) {
+      for (const problem of commandProblems(cmd)) errors.push(`${section}.command ${problem}`)
+    }
+  }
   if (entry.gameplay !== undefined) {
     if (!Array.isArray(entry.gameplay)) {
       errors.push('gameplay 必须为数组')

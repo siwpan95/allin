@@ -25,8 +25,11 @@ import {
   resolvePath,
 } from '@allin/core'
 import { overviewPayload, orchestrationPayload } from './bridge.js'
+import { createTokenGate } from './auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// 令牌在服务启动期确定；index.html 注入与 CLI/website 读文件都取同一份。
+const gate = createTokenGate(DATA_DIR)
 const PUBLIC = path.join(__dirname, '..', 'public')
 const PLATFORM = path.join(__dirname, '..', '..', '..')
 const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(PLATFORM, 'registry', 'projects')
@@ -68,21 +71,18 @@ function hostAllowed(req) {
   return LOOPBACK_HOST.test(String(req.headers.host || ''))
 }
 
-// 状态变更来源围栏（2026-11-04 工程审查 P0）：
-// Host 围栏挡的是 DNS rebinding，挡不住 CSRF —— 恶意页面跨站 POST 到回环地址时
-// socket 仍是 127.0.0.1（loopbackOnly 放行）、Host 也是合法回环头，simple request
-// 还不触发 CORS 预检，副作用会真实发生（实测 POST /api/shutdown 能让进程退出）。
-// 因此所有非 GET/HEAD 请求统一在这里过一道来源校验，而不是逐个端点挂，避免以后
-// 新增端点漏挂。三选一放行：
-//   1) 本地可信调用方显式带 X-Allin-Local: 1（CLI / 门户前端 / 本地脚本）。
-//      跨站网页无法设置自定义头：会触发 CORS 预检，本服务不返回任何 CORS 响应头，
-//      预检必然失败 ⇒ 该标记不会被伪造。
-//   2) 浏览器同源请求：Sec-Fetch-Site ∈ {same-origin, none} 且 Origin == http://<Host>。
-//   3) 二者皆不具备的裸请求一律拒绝（无来源信号 = 不可判定，按 g10 大声拒绝口径）。
-// 跨站请求会带 Origin: <攻击者域> 或 Sec-Fetch-Site: cross-site，两者任一不合即 403。
+// 状态变更围栏（2026-11-04 工程审查 P0 + 2026-11-08 深度审核 P1）：
+// Host 围栏挡的是 DNS rebinding，挡不住 CSRF，更挡不住「本机任意进程直接发包」。
+// 因此所有非 GET/HEAD 请求统一在这里过**两道闸**，而不是逐个端点挂：
+//   A) 令牌闸：必须带 X-Allin-Token，值与启动期生成的 portal.token 相等。
+//      此前只靠 `X-Allin-Local: 1` 这个无凭证标记 ⇒ 同机即管理员（可 shutdown）。
+//      令牌由服务写入 data/portal.token（0600）并经 index.html 注入前端，
+//      CLI / website 代理读同一文件；跨站页面既读不到文件也无法伪造该头
+//      （自定义头触发 CORS 预检，本服务不返回任何 CORS 响应头）。
+//   B) 来源闸：CLI/脚本显式带 X-Allin-Local: 1；或浏览器同源请求满足
+//      Sec-Fetch-Site ∈ {same-origin, none} 且 Origin == http://<Host>。
+//      二者皆不具备的裸请求一律拒绝（无来源信号 = 不可判定，按 g10 大声拒绝）。
 function stateChangeAllowed(req, res) {
-  if (req.headers['x-allin-local'] === '1') return true
-  const site = String(req.headers['sec-fetch-site'] || '').toLowerCase()
   // 拒绝前先消费掉请求体，否则 socket 上残留未读数据会让客户端收到 ECONNRESET，
   // 掩盖了「403」这个真实结论（也避免连接异常被误读成服务故障）。
   const deny = (reason) => {
@@ -91,6 +91,9 @@ function stateChangeAllowed(req, res) {
     res.end(`forbidden (${reason})`)
     return false
   }
+  if (!gate.valid(req)) return deny('missing or invalid portal token')
+  if (req.headers['x-allin-local'] === '1') return true
+  const site = String(req.headers['sec-fetch-site'] || '').toLowerCase()
   if (site && site !== 'same-origin' && site !== 'none') return deny('cross-site')
   const origin = String(req.headers.origin || '')
   if (origin && origin !== `http://${String(req.headers.host || '')}`) return deny('origin')
@@ -374,6 +377,13 @@ const server = http.createServer(async (req, res) => {
   if (!real.startsWith(publicReal + path.sep) && real !== publicReal) {
     res.writeHead(404)
     return res.end('not found')
+  }
+  // 令牌只注入服务自身渲染的首页；禁止缓存，避免带令牌的 HTML 落进共享缓存。
+  if (path.basename(abs) === 'index.html') {
+    const html = fs.readFileSync(abs, 'utf8').replace('__ALLIN_PORTAL_TOKEN__', gate.token)
+    res.setHeader('Content-Type', MIME['.html'])
+    res.setHeader('Cache-Control', 'no-store')
+    return res.end(html)
   }
   res.setHeader('Content-Type', MIME[path.extname(abs)] || 'application/octet-stream')
   fs.createReadStream(abs).pipe(res)

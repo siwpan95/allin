@@ -23,6 +23,9 @@ import { execFileSync } from 'node:child_process'
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-ws-api-'))
 process.env.PLATFORM_ROOT = tmp
 process.env.PORT = '0'
+// 2026-11-08：状态变更要令牌。测试用固定值，避免依赖临时文件读取时序。
+process.env.ALLIN_PORTAL_TOKEN = 'portal-test-token'
+const PORTAL_TOKEN = process.env.ALLIN_PORTAL_TOKEN
 // 异机结构校验：registry 登记的 path 指向作者机器项目目录（本机不存在）；
 // 测试只校验清单结构与订阅行为，不绑定具体机器。
 process.env.PLATFORM_PATH_CHECK = 'absolute'
@@ -81,9 +84,10 @@ const { server } = await import('../src/index.js')
 await new Promise((resolve) => server.once('listening', resolve))
 const base = 'http://127.0.0.1:' + server.address().port
 
-function rawPost(pathname, headers = {}) {
+function rawPost(pathname, headers = {}, withToken = true) {
+  const allHeaders = withToken ? { 'X-Allin-Token': PORTAL_TOKEN, ...headers } : headers
   return new Promise((resolve, reject) => {
-    const req = http.request(base + pathname, { method: 'POST', headers }, (res) => {
+    const req = http.request(base + pathname, { method: 'POST', headers: allHeaders }, (res) => {
       let body = ''
       res.on('data', (c) => { body += c })
       res.on('end', () => { try { resolve({ status: res.statusCode, json: body ? JSON.parse(body) : null }) } catch { resolve({ status: res.statusCode, json: null }) } })
@@ -117,7 +121,12 @@ test('POST subscribe → 200 且订阅态入册（真实 git clone 本地 bare �
 
 test('POST subscribe 缺本地标记头 → 403（CSRF 围栏对状态变更端点生效）', async () => {
   const r = await rawPost('/api/workshop/ws-demo/subscribe', {})
-  assert.equal(r.status, 403, '无 X-Allin-Local 的 POST 必须 403')
+  assert.equal(r.status, 403, '无来源信号的 POST 必须 403')
+})
+
+test('令牌闸：只带 X-Allin-Local 不带令牌 → 403（同机不再即管理员）', async () => {
+  const r = await rawPost('/api/workshop/ws-demo/subscribe', { 'X-Allin-Local': '1' }, false)
+  assert.equal(r.status, 403, '无令牌的 POST 必须 403')
 })
 
 test('POST subscribe 未知 id → 404', async () => {

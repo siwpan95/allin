@@ -46,3 +46,25 @@ function Get-AllinExcludeArgs {
   # backup / restore 用 /MIR @excludeArgs /NFL ... 调用；drill 用清单驱动断言。
   return (@('/XD') + $AllinExcludedDirs + @('/XF') + $AllinExcludedFiles)
 }
+
+# ---------------------------------------------------------------------------
+# SHA-256（三方共用，2026-11-08 深度审核）
+# 此前 backup / restore / drill 各自调用 Get-FileHash（Microsoft.PowerShell.Utility）。
+# 由 cygwin/bash 以 -NoProfile 启动的 Windows PowerShell 5.1 不保证自动加载该模块，
+# 实测 run_all_gates.sh 中报 CommandNotFoundException，整批恢复演练随之判失败。
+# 改为 .NET BCL 流式计算：输出格式与 Get-FileHash -Algorithm SHA256 一致
+# （大写十六进制、无分隔符），不依赖模块自动加载，PS 5.1 原生可用。
+function Get-AllinSha256 {
+  param([Parameter(Mandatory = $true)][string]$LiteralPath)
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    try {
+      return ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '')
+    } finally {
+      $stream.Dispose()
+    }
+  } finally {
+    $sha.Dispose()
+  }
+}

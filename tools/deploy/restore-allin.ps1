@@ -79,7 +79,7 @@ $bad = 0
 foreach ($f in $manifest.files) {
   $fp = Join-Path $src $f.path
   if (-not (Test-Path -LiteralPath $fp)) { Write-Log "  缺失：$($f.path)"; $bad++; continue }
-  $h = (Get-FileHash -LiteralPath $fp -Algorithm SHA256).Hash
+  $h = (Get-AllinSha256 -LiteralPath $fp)
   if ($h -ne $f.sha256) { Write-Log "  校验失败：$($f.path) 期望 $($f.sha256) 实得 $h"; $bad++ }
 }
 if ($bad -gt 0) { Fail "$bad 个文件 sha256 不一致，拒绝恢复（备份可能损坏）" }
@@ -131,7 +131,7 @@ foreach ($f in $manifest.files) {
     $verifyBad++
     continue
   }
-  $h = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+  $h = (Get-AllinSha256 -LiteralPath $target)
   if ($h -ne $f.sha256) {
     Write-Log "  目标侧校验失败：$($f.path) 期望 $($f.sha256) 实得 $h"
     $verifyBad++

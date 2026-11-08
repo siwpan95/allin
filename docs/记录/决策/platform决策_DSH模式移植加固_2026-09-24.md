@@ -32,7 +32,7 @@
 
 - ** Cordis 真依赖化**（apps 挂到 cordis 内核）：改动面过大，且本仓 harness 已自实现对齐语义的 effect 栈；暂不引入运行时依赖，仅保持语义对齐。
 - ** ports.yaml 随仓唯一化**（废弃外部表）：违反「端口分配表.md 是唯一事实源」的既有纪律；采用 env 优先 + 仓内重建默认的折中。
-- ** 鉴权 token 加固门户**：本机单用户场景 + 只绑 127.0.0.1，写操作已有 loopbackOnly；收益低于体验成本，暂缓（已知边界，见 README）。
+- ** 鉴权 token 加固门户**：2026-09-24 因「本机单用户、收益低于体验成本」暂缓；**2026-11-08 深度审核推翻该暂缓**——实测 `X-Allin-Local: 1` 是无凭证通行证（同机任意进程可 shutdown），且 `launch.command` 只判字段存在即可任意命令执行。现已落地状态变更令牌闸 + 命令形状校验，见 `platform/apps/portal/src/auth.js`、`platform/packages/core/src/registry.js` 与 `platform/README.md` 安全边界；原「无鉴权」表述已同步删除。
 
 ## Consequences
 

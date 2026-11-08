@@ -3,7 +3,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolvePath } from './registry.js'
+import { resolvePath, commandProblems } from './registry.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
@@ -189,6 +189,13 @@ export function startEntry(entry, options = {}) {
   if (isRunning(entry.id)) {
     return { ok: false, reason: 'already-running', id: entry.id }
   }
+  // fail-closed：即便调用方绕过 loadRegistry 直接构造 entry，也不执行不安全的命令。
+  const startProblems = commandProblems(entry.launch && entry.launch.command)
+  if (startProblems.length) {
+    const err = new Error(`启动命令未通过形状校验（${entry._file || entry.id}）：${startProblems.join('; ')}`)
+    err.code = 'UNSAFE_COMMAND'
+    throw err
+  }
   const startedAt = Date.now()
   const child = spawn(prepareCommand(entry.launch.command), {
     shell: true,
@@ -251,7 +258,7 @@ export async function stopEntry(id, entry = null, options = {}) {
   }
   const stopCmd = entry && entry.stop && typeof entry.stop.command === 'string' ? entry.stop.command : null
   let usedGraceful = false
-  if (stopCmd) {
+  if (stopCmd && commandProblems(stopCmd).length === 0) {
     usedGraceful = true
     // 优雅停止：等待 stop 命令退出（graceMs 封顶杀之），不阻塞事件循环
     await new Promise((resolve) => {
@@ -263,6 +270,9 @@ export async function stopEntry(id, entry = null, options = {}) {
     // 给 exit 事件留出异步回弹窗口（settleMs，50ms 步进），再决定是否升级强杀
     const deadline = Date.now() + settleMs
     while (Date.now() < deadline && isRunning(id)) await sleep(50)
+  } else if (stopCmd) {
+    // 不安全的停止命令绝不执行；留痕后直接走下面的强杀路径，不静默吞掉。
+    logTask({ project: id, action: 'stop-command-rejected', reason: 'unsafe command shape' })
   }
   const forced = usedGraceful && isRunning(id)
   if (!stopCmd || forced) {

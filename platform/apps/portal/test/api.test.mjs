@@ -13,6 +13,9 @@ import yaml from 'js-yaml'
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-api-'))
 process.env.PLATFORM_ROOT = tmp
 process.env.PORT = '0'
+// 2026-11-08：状态变更要令牌。测试用固定值，避免依赖临时文件读取时序。
+process.env.ALLIN_PORTAL_TOKEN = 'portal-test-token'
+const PORTAL_TOKEN = process.env.ALLIN_PORTAL_TOKEN
 // 异机结构校验：登记的 path 指向作者机器的项目目录（本机不存在），
 // 测试只校验清单结构与端口查表（PLATFORM_PATH_CHECK=absolute），不绑定具体机器。
 process.env.PLATFORM_PATH_CHECK = 'absolute'
@@ -146,16 +149,17 @@ test('GET /api/alerts E5 订阅视图（聚合分歧事件，无事件时为空�
 test('POST 启动未知项目 → 404（本地调用方带标记头）', async () => {
   const res = await fetch(base + '/api/library/nope/start', {
     method: 'POST',
-    headers: { 'X-Allin-Local': '1' },
+    headers: { 'X-Allin-Local': '1', 'X-Allin-Token': PORTAL_TOKEN },
   })
   assert.equal(res.status, 404)
 })
 
 // 2026-11-04 工程审查 P0：状态变更来源围栏（CSRF）。
 // 用原生 http.request 以便自由设置 Origin / Sec-Fetch-Site（undici fetch 对部分头有限制）。
-function rawPost(pathname, headers = {}) {
+function rawPost(pathname, headers = {}, withToken = true) {
+  const allHeaders = withToken ? { 'X-Allin-Token': PORTAL_TOKEN, ...headers } : headers
   return new Promise((resolve, reject) => {
-    const req = http.request(base + pathname, { method: 'POST', headers }, (res) => {
+    const req = http.request(base + pathname, { method: 'POST', headers: allHeaders }, (res) => {
       res.resume()
       res.on('end', () => resolve(res.statusCode))
     })
@@ -178,6 +182,15 @@ test('CSRF 围栏：本地标记头 / 同源浏览器信号 → 放行到业务�
   assert.equal(await rawPost('/api/library/nope/start', { 'X-Allin-Local': '1' }), 404)
   const sameOrigin = { Origin: base, 'Sec-Fetch-Site': 'same-origin' }
   assert.equal(await rawPost('/api/library/nope/start', sameOrigin), 404)
+})
+
+// 2026-11-08 深度审核 P1：`X-Allin-Local: 1` 不再是免凭证通行证。
+test('令牌闸：无令牌 / 错令牌的写请求一律 403，shutdown 不执行', async () => {
+  assert.equal(await rawPost('/api/shutdown', { 'X-Allin-Local': '1' }, false), 403, '只带本地标记必须拒绝')
+  assert.equal(await rawPost('/api/library/nope/start', {
+    'X-Allin-Local': '1', 'X-Allin-Token': 'wrong-token',
+  }, false), 403, '错误令牌必须拒绝')
+  assert.equal((await fetch(base + '/api/status')).status, 200, '门户进程仍在，shutdown 未被执行')
 })
 
 test('GET /api/gate-history：SKIP 单列，不污染 failed/escapeRate/lastOkAt', async () => {

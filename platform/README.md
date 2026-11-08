@@ -40,6 +40,24 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 
 **推荐入口（2026-08-27 起）**：双击 **`start-platform.bat`** —— 门户以 **DSH 同款形态的独立网页应用**按需启动：`PORT=0` 临时端口 + 自动打开浏览器，关闭窗口即释放端口，**不常驻任何固定端口**。手动调试可 `npm run portal`（`PORT` 自选，缺省 9000 仅供临时用，未登记常驻）。9000 已从 ports.yaml 移除常驻登记。
 
+## 用法示例
+
+```bash
+# 列全部登记项目 / 按关键词过滤（只读命令不依赖门户在线）
+node apps/cli/src/index.js list
+node apps/cli/src/index.js search game
+
+# 启停（CLI 自动读取门户启动时生成的 data/portal.token）
+node apps/cli/src/index.js start bloodmusic
+node apps/cli/src/index.js stop bloodmusic
+```
+
+门户页面上直接点卡片即可启停：写操作所需的令牌由服务端渲染首页时注入。
+自动化调用方（website BFF、脚本）发非 GET 请求时需带 `X-Allin-Local: 1` 与
+`X-Allin-Token`，令牌读 `data/portal.token` 或由 `ALLIN_PORTAL_TOKEN` 注入；
+只读 GET 不需要令牌。示例见 `apps/cli/src/index.js` 与
+`../website/src/services/portalProxy.js`。
+
 ## 清单规范
 
 每个接入项目一个 `platform.yaml`（字段：id/name/category/version/path/port/launch/stop/health/publish/manual），
@@ -82,11 +100,19 @@ npm run portal     # 手动模式（PORT 自选，缺省 9000 仅供临时调试
 - 门户只绑 `127.0.0.1`，写操作限回环（`loopbackOnly`），**全部请求校验 Host 头**——
   仅接受 `127.0.0.1 / localhost / [::1]`（任意端口），防 DNS rebinding 读取/写穿
   （2026-09-24 Phase 1，详见 ADR [`../docs/记录/决策/platform决策_Host围栏与持久JSONL_2026-09-24.md`](../docs/记录/决策/platform决策_Host围栏与持久JSONL_2026-09-24.md)）。
-- **无鉴权**：本机其他用户/进程仍可访问门户并启停项目——单机单用户形态的已知边界，
-  接受此边界是使用前提；多用户场景请勿部署。
-- 状态文件（running.json / workshop.json）temp+fsync+rename 原子写 + .bak 回退；
-  启动命令来自 registry yaml（`shell:true` 执行）——**registry 即信任边界**，
-  只登记自己写的 platform.yaml。
+- **状态变更双闸**（2026-11-08 深度审核）：所有非 GET/HEAD 请求必须同时通过
+  ① 令牌闸 `X-Allin-Token`——门户启动时随机生成并写入 `data/portal.token`（0600、不入库），
+  经首页注入前端，CLI / website 代理读同一文件，也可用 `ALLIN_PORTAL_TOKEN` 显式注入；
+  ② 来源闸——`X-Allin-Local: 1` 或同源 Fetch Metadata/Origin。
+  此前 `X-Allin-Local: 1` 是无凭证通行证 ⇒ 同机任意进程即可 shutdown；现已收紧为
+  「能读到令牌或拿到注入令牌才能写」。跨站页面既读不到该文件，伪造自定义头也会触发
+  CORS 预检失败。**剩余边界**：同用户且能读 `data/portal.token` 的本地进程仍可写；
+  多用户 / 存在不可信同机进程时请勿部署。
+- **命令形状校验**：`registry.js` 的 `validateEntry` 与 `launch.js` 启停前均调用
+  `commandProblems()`，拒绝 shell 控制符、`..` 路径穿越、首词不在受控集合的命令；
+  `npm run check` 对 145 份清单零误伤。启动命令仍来自 registry yaml（`shell:true` 执行），
+  **registry 依然是信任边界**，只登记自己写的清单。
+- 状态文件（running.json / workshop.json）temp+fsync+rename 原子写 + .bak 回退。
 
 ## 许可
 

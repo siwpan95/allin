@@ -11,7 +11,8 @@ process.env.PLATFORM_ROOT = tmp
 
 const { startEntry, stopEntry, isRunning, runningIds } = await import('../src/index.js')
 const RUNNING = path.join(tmp, 'data', 'running.json')
-const SLEEPER = 'node -e "setTimeout(()=>{},60000)"'
+// 2026-11-08：命令形状校验禁止 `>`（防重定向），夹具避免箭头函数写法。
+const SLEEPER = 'node -e "setTimeout(function(){},60000)"'
 
 function readRunning() {
   try { return JSON.parse(fs.readFileSync(RUNNING, 'utf8')) } catch { return {} }

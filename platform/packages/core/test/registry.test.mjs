@@ -67,7 +67,8 @@ function withMode(mode, fn) {
 
 test('validateEntry: gameplay 受控枚举 fail-loud（非法标签/非 game 误标）', () => {
   const ports = loadPorts()
-  const base = { id: 'x', name: 'x', category: 'game', version: '1', path: EXISTING_DIR, launch: { command: 'x' } }
+  // 2026-11-08：命令形状也纳入 validateEntry，夹具必须用受控集合内的真实命令。
+  const base = { id: 'x', name: 'x', category: 'game', version: '1', path: EXISTING_DIR, launch: { command: 'python main.py' } }
   const bad = validateEntry({ ...base, gameplay: ['survivor-割草'] }, ports)
   assert.ok(bad.some(e => e.includes('未登记')), '非法标签应报错')
   const notGame = validateEntry({ ...base, category: 'tool', gameplay: ['idle'] }, ports)

@@ -1,10 +1,16 @@
 // allin-platform 前台逻辑：库/工坊/引擎三页签。
 const $ = (sel) => document.querySelector(sel)
+// 令牌由门户服务端渲染首页时注入；静态文件直接打开时为空 ⇒ 写请求一律 403（fail-closed）。
+const PORTAL_TOKEN = (document.querySelector('meta[name="allin-token"]') || {}).content || ''
 
 async function api(path, options = {}) {
-  // 门户是本地回环服务；状态变更端点要求来源信号（见 src/index.js 的 stateChangeAllowed）。
+  // 状态变更端点要求「令牌 + 来源信号」两道闸（见 src/index.js 的 stateChangeAllowed）。
   // 显式标记本地调用方，跨站网页无法伪造自定义头（会触发预检，本服务不返回 CORS 头）。
-  const headers = { 'X-Allin-Local': '1', ...(options.headers || {}) }
+  const headers = {
+    'X-Allin-Local': '1',
+    'X-Allin-Token': PORTAL_TOKEN,
+    ...(options.headers || {}),
+  }
   const res = await fetch(path, { ...options, headers })
   return res.json()
 }

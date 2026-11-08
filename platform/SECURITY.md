@@ -17,5 +17,8 @@ platform 是 Steam 式全项目集成平台（库 Library + 创意工坊 Worksho
 ## 安全相关设计约束
 
 - **Host 头围栏**（防 DNS rebinding）、持久 JSONL 的 fsync durable 语义（见 `docs/记录/决策/` 的 platform ADR）。
+- **状态变更令牌闸**（2026-11-08）：`data/portal.token`（0600、不入库）+ Host 围栏 + 来源围栏
+  三重叠加，见 `apps/portal/src/auth.js` 与 `README.md` 安全边界；`launch/stop/verify.command`
+  另有形状校验（拒绝 shell 控制符与路径穿越）。
 - **入口白名单 + 子进程隔离聚合**（见 `docs/规范/SPEC-203-allin-platform契约.md`）。
 - **凭据不进仓**（见 `docs/规范/SPEC-101-推送流程.md` 的令牌红线）。

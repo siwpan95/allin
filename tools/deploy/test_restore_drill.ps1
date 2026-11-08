@@ -45,7 +45,7 @@ $sensitiveAssertionCount = 0
 $sensitiveConclusion     = '敏感材质通道未通过'
 
 function Fail([string]$Message) { Write-Output ("[FAIL] " + $Message); exit 1 }
-function Sha256([string]$p) { return (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash }
+function Sha256([string]$p) { return (Get-AllinSha256 -LiteralPath $p) }
 
 # 敏感材质排除清单（单一真相源）：三方共同 dot-source，缺文件即 fail-loud
 $policy = Join-Path $PSScriptRoot 'exclusion-policy.ps1'

@@ -140,7 +140,7 @@ $files = @(Get-ChildItem -LiteralPath $dest -Recurse -File |
   [ordered]@{
     path   = RelativeTo-Dest $_.FullName $dest
     bytes  = $_.Length
-    sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+    sha256 = (Get-AllinSha256 -LiteralPath $_.FullName)
   }
 })
 $manifest = [ordered]@{

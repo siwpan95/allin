@@ -268,7 +268,9 @@ run "$PY" preset/allin/refresh-gov-block.py --check
 # monorepo 扫描口径已收编进 repocheck 本身（--profile，2026-11-07）：规则豁免
 # 语义由工具统一定义，不再在本脚本手写 --skip-rules（曾散落三处，属第二套口径的温床）。
 # 中间目录名单是本仓布局事实，仍由 --exclude 提供。
-run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error
+# 2026-11-08：tests/ 是 monorepo 的内部测试目录，不是独立项目，裸跑会产生
+# 「无 README / 无 LICENSE / 无依赖声明」等必然假阳性（README 已写明此口径）。
+run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests --fail-on error
 # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
 # packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
 # 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。

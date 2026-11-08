@@ -15,6 +15,7 @@
  */
 
 const fs = require('node:fs');
+const path = require('node:path');
 const config = require('../config');
 
 const CODE_MESSAGES = Object.freeze({
@@ -43,6 +44,17 @@ function readPortalBase() {
   }
 }
 
+/** 门户状态变更令牌：环境变量优先，其次读 portFile 同目录下的 portal.token。 */
+function readPortalToken() {
+  const fromEnv = (process.env.ALLIN_PORTAL_TOKEN || '').trim();
+  if (fromEnv) return fromEnv;
+  try {
+    return fs.readFileSync(path.join(path.dirname(config.portal.portFile), 'portal.token'), 'utf8').trim();
+  } catch {
+    return ''; // 读不到令牌仍发请求，由门户 403 拒绝（fail-closed，不静默放行）
+  }
+}
+
 /**
  * 统一上游 GET/POST：3s AbortController 超时，按三分类返回。
  * 返回 { kind:'OK', status, body } 或 { kind: CODE }。
@@ -53,10 +65,16 @@ async function fetchJson(pathname, { method = 'GET' } = {}) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), config.portal.timeoutMs);
   try {
+    const headers = { accept: 'application/json' };
+    // 状态变更要多带令牌 + 本地调用标记（门户两道闸），GET 读取面不受影响。
+    if (method !== 'GET' && method !== 'HEAD') {
+      headers['X-Allin-Local'] = '1';
+      headers['X-Allin-Token'] = readPortalToken();
+    }
     const res = await fetch(base + pathname, {
       method,
       signal: ac.signal,
-      headers: { accept: 'application/json' },
+      headers,
     });
     if (res.status === 403) return { kind: 'PORTAL_FORBIDDEN' };
     const text = await res.text();

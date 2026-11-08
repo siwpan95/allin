@@ -17,6 +17,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.join(__dirname, '..', '..', '..')
 const PLATFORM_ROOT = process.env.PLATFORM_ROOT || REPO_ROOT
 const PORT_FILE = path.join(PLATFORM_ROOT, 'data', 'portal.port')
+const TOKEN_FILE = path.join(PLATFORM_ROOT, 'data', 'portal.token')
+
+/** 门户状态变更令牌：环境变量优先，其次读门户启动时落盘的同一份文件。 */
+function portalToken() {
+  const fromEnv = (process.env.ALLIN_PORTAL_TOKEN || '').trim()
+  if (fromEnv) return fromEnv
+  try { return fs.readFileSync(TOKEN_FILE, 'utf8').trim() } catch { return '' }
+}
 const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(REPO_ROOT, 'registry', 'projects')
 
 // ---------- 纯函数（导出供测试） ----------
@@ -98,11 +106,12 @@ async function api(pathname, method = 'GET') {
   }
   let res
   try {
-    // CLI 是本地可信调用方：状态变更端点要求来源信号（见门户 src/index.js 的
-    // stateChangeAllowed）。显式带标记头，避免依赖浏览器才有的 Origin/Sec-Fetch-Site。
+    // CLI 是本地可信调用方：状态变更端点要求「令牌 + 来源信号」两道闸
+    // （见门户 src/index.js 的 stateChangeAllowed）。显式带标记头，避免依赖
+    // 浏览器才有的 Origin/Sec-Fetch-Site；令牌与门户共用同一份 portal.token。
     res = await fetch(base + pathname, {
       method,
-      headers: { 'X-Allin-Local': '1' },
+      headers: { 'X-Allin-Local': '1', 'X-Allin-Token': portalToken() },
       signal: AbortSignal.timeout(120000),
     })
   } catch (e) {
