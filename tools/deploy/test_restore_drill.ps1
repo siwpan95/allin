@@ -11,6 +11,8 @@
   篡改（删一个普通文件 + 改一个普通文件 + 把三个密钥夹具独立更新为新值）；
   调 restore-allin.ps1 恢复；断言普通文件 sha256 与基线一致，且三个密钥夹具
   仍存在、内容等于篡改后的值（证明 restore 的排除让 /MIR 既不删也不覆盖目标侧密钥）。
+  收口以密钥断言执行计数为门禁：断言未完整执行（含整段被移除）即拒绝判定通过，
+  PASS 文案由实际断言结果生成，杜绝「写了不跑」的静默假绿。
 
   纪律（对齐 backup/restore-allin.ps1）：零密钥、零盘符字面量、PS 5.1 兼容、UTF-8 BOM。
   退出码：0 = 演练通过；1 = 失败（供 run_all_gates.sh / 计划任务判定）。
@@ -96,6 +98,13 @@ Write-Output '[ok] 恢复完成'
 
 # ---------- 5) 断言一致（普通文件 sha256 基线，语义不变） ----------
 $ok = $true
+# 密钥通道独立断言的执行计数、期望项数与结论：全部初始化在第 6 段之外，
+# 使「整段被误删/跳过」时计数仍为 0、结论仍为「未通过」，收口守卫据此显式拒绝判定通过。
+# 不依赖 PS 未开 StrictMode 下 $null 的隐式行为：均为显式整数/字符串初值。
+$keyAssertionCount    = 0
+$keyAssertionExpected = 3
+$keyChecksCount       = 0
+$keyConclusion        = '密钥通道未通过'
 foreach ($f in @($pa, $pb, $wa)) {
   if (-not (Test-Path -LiteralPath $f)) { Write-Output ("[FAIL] 恢复后缺失：$f"); $ok = $false; continue }
   $h = (Sha256 $f)
@@ -114,7 +123,9 @@ $keyChecks = @(
   @{ path = $wk;   label = 'website/data/keys/secret.key';    expected = $tamperWebsite },
   @{ path = $seed; label = 'website/data/seed-accounts.json'; expected = $tamperSeed }
 )
+$keyChecksCount = @($keyChecks).Count
 foreach ($k in $keyChecks) {
+  $keyAssertionCount++   # 循环体最前面递增：成功/失败/continue 都算「这一项断言确实跑过」
   if (-not (Test-Path -LiteralPath $k.path)) {
     Write-Output ("[FAIL] 密钥通道被破坏：$($k.label) 恢复后消失（/MIR 不应删除独立通道材质）")
     $ok = $false
@@ -128,10 +139,20 @@ foreach ($k in $keyChecks) {
   }
   else { Write-Output ("[ok] 密钥通道独立：$($k.label) 保持篡改值，restore 未删未覆盖") }
 }
+if ($ok -and $keyAssertionCount -eq $keyAssertionExpected) {
+  $keyConclusion = '密钥通道独立'
+}
 
 # 清理临时目录
 Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
 
+# 守卫：断言「执行本身」是门禁条件——整段被移除/跳过时计数不足，显式拒绝判定通过。
+# 主判据 $keyAssertionExpected 是段外常量（第 6 段被切除后仍为 3），不依赖 $keyChecks.Count
+# （N7 注入会把 $keyChecks 定义一起删掉，届时 Count=0 会与计数 0 相等而漏报）。
+if ($keyAssertionCount -ne $keyAssertionExpected -or $keyAssertionCount -ne $keyChecksCount) {
+  Fail ("密钥断言未完整执行（疑似被移除/跳过），拒绝判定通过（已执行 " + $keyAssertionCount + "/" + $keyAssertionExpected + " 项）")
+}
+
 if (-not $ok) { Fail '恢复演练未通过：存在不一致文件或密钥通道被破坏' }
-Write-Output '[PASS] 备份恢复演练通过：数据还原至备份基线，且密钥通道独立（备份排除 + 恢复不删不覆盖）'
+Write-Output ("[PASS] 备份恢复演练通过：数据还原至备份基线，且" + $keyConclusion + "（断言 " + $keyAssertionCount + "/" + $keyAssertionExpected + " 项通过；备份排除 + 恢复不删不覆盖）")
 exit 0
