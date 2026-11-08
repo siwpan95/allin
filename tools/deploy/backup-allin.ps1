@@ -8,8 +8,9 @@
 
   纪律：
   - 本脚本入仓（无密钥、MIT-0）；备份根 / 仓库根一律 env 或参数注入，禁止盘符字面量（g01 门禁）。
-  - 密钥绝不进本脚本：website/data/keys 由 robocopy /XD keys 排除，密钥灾备唯一通道 =
-    website 的 npm run backup-key（0600 + 口令包 + 月度恢复演练）。
+  - 密钥绝不进本脚本：platform/data/keys 与 website/data/keys 均由 robocopy /XD keys 排除，
+    website/data/seed-accounts.json 由 /XF seed-accounts.json 排除；密钥走独立灾备通道 =
+    website 的 npm run backup-key（0600 + 口令包 + 月度恢复演练），与 robocopy 主备份物理隔离。
   - robocopy 退出码 0-7 = 成功（含复制），>=8 = 失败——不能按传统退出码判成败。
 
 .NOTES
@@ -94,9 +95,10 @@ $dest  = Join-Path $BackupRoot $stamp
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 $ErrorActionPreference = 'Continue'
-& robocopy $platformData (Join-Path $dest 'platform-data') /MIR /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
+& robocopy $platformData (Join-Path $dest 'platform-data') /MIR /XD keys /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
 $rcPlatform = $LASTEXITCODE
-# /XD keys + /XF seed-accounts.json：密钥与种子口令材质绝不走 robocopy（与 backup-key 两通道物理隔离）
+# /XD keys + /XF seed-accounts.json：密钥与种子口令材质绝不走 robocopy（与 backup-key 两通道物理隔离）；
+# platform 分支同样以 /XD keys 排除 platform/data/keys，与 restore 的排除口径对称，避免明文密钥进备份包。
 & robocopy $websiteData (Join-Path $dest 'website-data') /MIR /XD keys /XF seed-accounts.json /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
 $rcWebsite = $LASTEXITCODE
 $ErrorActionPreference = 'Stop'
