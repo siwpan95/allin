@@ -1,5 +1,15 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-08 19:15（**@`DESKTOP-KQABATS` `calculator` 漂移闭环（用户确认）+ registry 条目删除** ——
+>   用户确认：`E:\projects\repos\calculator` 已移除（由用户自行删除，非异常漂移），上块「成因待用户确认」就此闭环；
+>   registry 条目 `calculator.yaml` 按用户指令删除（注册表 **146 → 145**；该仓本就不在 Gitee 远端，
+>   发布区无该目录 ⇒ 无未登记工作树，g17 完备性不受影响）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **137** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百四十五（calculator 漂移闭环 + registry 条目删除，@`DESKTOP-KQABATS` 本机自留痕）
 > **时点** 2026-11-08 18:30（**@`DESKTOP-KQABATS` 发布区全量拉齐（用户指令）+ 事实源订正** ——
 >   用户指令「将 `E:\projects\repos` 缺失项目全部拉齐源码，除 allin；拉取完源码之后利用 `E:\projects\allin` 完成管理与治理；记账后提交推送」：
 >   远端 Gitee 匿名 API 分页实测 **138** 仓（page1=100 / page2=38 / page3=0，含本仓 `allin` 自身）；
