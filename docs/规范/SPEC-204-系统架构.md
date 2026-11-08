@@ -1,7 +1,7 @@
 # SPEC-204 · allin 系统架构
 
 > **编号** SPEC-204 ｜ **效力** 准则 ｜ **状态** 生效
-> **生效** 2026-11-04 ｜ **最后修订** 2026-11-07 ｜ **适用面** allin 仓全部子系统的结构与边界
+> **生效** 2026-11-04 ｜ **最后修订** 2026-11-09 ｜ **适用面** allin 仓全部子系统的结构与边界（含 `facts/` 数据面与 NetBox / Dolt / GraphRAG 派生层）
 > **承载体** `architecture/system-architecture.svg` · `architecture/data-flow.svg`（图源）+ `architecture/adr/`（现行决策）
 > **引用格式** SPEC-204 §1（总览）· §2（分层模块）· §4（安全边界）
 
@@ -14,7 +14,7 @@
 
 ## 1. 总览
 
-`allin` 是 138 个 Gitee 仓（2026-11-03 实测口径）的 **「制度 + 文档枢纽 + 执行器」三位一体** 治理仓：
+`allin` 是 138 个 Gitee 仓（2026-11-03 实测口径）的 **「制度 + 文档枢纽 + 执行器 + 数据面」四位一体** 治理仓：
 
 - **制度**在 `docs/规范/`（铁律、协作流程、治理准则、文档契约、本机边界、platform 契约、事故响应）。
 - **文档枢纽**在 `docs/`（`INDEX.md` 总目录 + 规范/事实源/记录/历史 四分类）。
@@ -69,6 +69,8 @@
   治理准则（SPEC-003）、文档索引契约（SPEC-005）、本机边界（SPEC-006）、
   platform 契约（SPEC-203）、治理模式建设指南（SPEC-105）、事故分级与响应（SPEC-106）。
 - `docs/事实源/`：机器类现值（盘位 / 运行时 / 工具链），如 `机器分区索引.md`。
+- 仓根 `facts/`（2026-11-09 起）：**结构化事实唯一真身** `facts.json` + 契约 `facts.schema.json`；
+  与 `docs/` 并列为数据面，契约见 `SPEC-005 §3.11`。Markdown 生成物是其派生物，不是第二份事实。
 - `docs/记录/`：审计 / 决策 / 交接 / 专题（只增不改）。
 - `docs/INDEX.md`：总目录，全部文档一张表；是文档索引契约门禁的登记面。
 
@@ -137,6 +139,9 @@
 ### 2.4 治理门禁（监工）—— `tools/gate/`
 - **20 道治理门禁** `g00-meta` … `g20-facts`：`tools/gate/governance/run.ts` 聚合，
   `npm run check:governance` 驱动，全绿 `exit 0`；`check:governance:selfcheck` 自证。
+  ⚠ **20 道聚合口径不变**：2026-11-09 起新增的 `facts`/`docs_index` 之外的独立对账门禁
+  （`g21` 三方对账、`cli.py validate` / `facts_parity.py` / `relative_refs_gate.py` / `offline-check`）
+  一律照 `g21` 模式以**独立脚本**接 `scripts/run_all_gates.sh`，不占 g00–g20 编号，也不改八处「20 道」自述。
 - **文档索引契约** `docs_index.py`：D1–D17（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数/计划闭环/事实源留痕…）。
 - **仓库体检** `repocheck/main.py`：30 规则，0–10 健康分，text/json/csv/html 导出。
 - **仓库卫生** `repo_hygiene.py`：H1–H8 基线棘轮（`--all` 跑全量）。
@@ -160,6 +165,25 @@
 - 与治理子系统零代码耦合，定位「对外交付物」；治理挂钩 = CI `website-smoke` job +
   repocheck 排除清单。加密层单测 `npm test`（2026-11-04 起）；密钥灾备见
   `website/README.md` 的「6.5 密钥灾备」节。
+
+### 2.8 数据面 —— `facts/` 与三栈派生层（2026-11-09 新增）
+
+**唯一写入权威** = 仓根 `facts/facts.json`（纯文本入 Git、可 diff/review/merge）。
+其余全部是**可重建派生物**，任何时刻删掉重 build 都应得到同一结果（离线北极星）：
+
+| 派生物 | 职责 | 谁写 | 不入库原因 |
+|---|---|---|---|
+| NetBox（资产 / 关系视图） | Device / Service / Port / Changelog / 只读 MCP | Git → NetBox 单向同步（`--apply` 才写） | 服务态数据，随 clone 不可复现 |
+| Dolt（版本历史） | 事实行 commit DAG / `AS OF` / `dolt_diff_*`（transaction time） | CI 单向导入，须显式 `DOLT_COMMIT()` | `.dolt/` 是二进制 chunk，破坏文本 diff |
+| `facts/build/facts.sqlite` | 本机离线查询缓存 / FTS5 trigram | `cli.py build` | 派生物，`.gitignore` 忽略 |
+| `facts/generated/*.facts.md` | 人类可读生成物（marker + `--check`） | `cli.py render` | 派生物，P2 真身反转后启用阻断 |
+| GraphRAG 索引 | **仅叙述层**的实体图 / 社区摘要 / 四模式检索 | 按月卷增量 | 需 LLM、概率性，不可作事实来源 |
+
+**三栈并列下游、互不替代**：NetBox 不承担版本化，Dolt 不承担文件存储与关系 UI，
+GraphRAG 不承担精确取值，Git 不承担运行态采集。统一溯源键 `source_git_sha` 贯穿四系统；
+citation 带 `source_type` 与 `state_kind`（**声明态 / 意图态 / 运行态三态分离**，禁止混答）。
+NetBox 非 Apache 的 `branching` / `Custom Objects` 插件按用户决策**不引入**，
+分支能力全部由 Dolt 承担（离线可 `dolt clone`）。
 
 ## 3. 数据流
 
@@ -206,6 +230,19 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
             漂移判据：verify-mount.ps1 漂移层 + npm run check:governance
 ```
 
+### 3.4 数据面单向流（2026-11-09 新增）
+
+```text
+facts/facts.json   ← 唯一写入权威（Git 文本，SPEC-005 §3.11）
+   │  cli.py validate（JSON Schema；判据只有一份）
+   ├── cli.py build    → facts/build/facts.sqlite（可重建，不入库）
+   ├── cli.py render   → facts/generated/*.facts.md（marker + --check）
+   ├── facts sync      → NetBox REST（默认 dry-run，changelog_message 带 source_git_sha）
+   ├── facts import    → Dolt（须显式 DOLT_COMMIT，commit message 带 source_git_sha）
+   └── build_input.py  → GraphRAG input/（仅叙述层，排除结构化取值）
+写入路径唯一：任何下游都不得反向写回 Git。
+```
+
 ## 4. 安全边界汇总
 
 | 边界 | 落点 | 防护 |
@@ -217,6 +254,8 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 | 凭据红线 | 公开仓 + `.gitignore` | 令牌 env / `git credential fill`，绝不进仓、绝不回显 |
 | 公开仓铁律 | `SPEC-001` 铁律 0 | 默认公开+MIT；真实凭据一律不得落入 |
 | website 加密面 | `website/src/crypto/*` | HKDF 派生 + AAD 绑定 + 认证标签 + 明文哈希三重校验；密钥灾备见其 README §6.5 |
+| 结构化真身 / 派生层 | 仓根 `facts/` + `.gitignore` | `visibility` 字段分级；Dolt / NetBox 公开远端只推 `public`；派生 SQLite 一律不入库；`g03-credentials` 扫描面扩到 `.json` |
+| 服务缺席 | `scripts/run_all_gates.sh` | 三栈全停仍须全绿；SKIP 如实计数，不冒充通过 |
 
 ## 5. 依赖与可移植性
 
@@ -233,6 +272,12 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 - **CI/异机模式**：`PLATFORM_PATH_CHECK=absolute` 仅校验路径形状（登记 path 指向外部目录，
   天然不存在，跳过存在性检查），`check:governance` 同理只校验形状，不 fail-loud 误杀。
 
+- **服务缺席降级（2026-11-09 新增）**：三栈均**不是**门禁前置依赖。`cli.py --source auto`
+  在派生库缺失时自动回落纯 JSON 真身并标注 `source=json(readonly)`；JSON 档下 `query`
+  明确拒答。`offline-check` 把「拔网 + 停三栈 + 删派生库」做成 6 项可复跑断言。
+  验收：删掉 `facts/build/`、停掉所有服务后跑 `scripts/run_all_gates.sh` 仍须 `status=clean`。
+  三栈配置骨架当前**仍在工作区、未落仓、未在真机执行**，见 `记录/交接/2026-11.md` §一百四十六。
+
 ## 6. 三面贯通增量（2026-11-05，ADR-0010）
 
 在 §1 分层之上**加边不加层**，四个贯通点全部只读、写路径唯一：
@@ -243,6 +288,8 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 | G2 门禁留痕上板 | `tools/gate/audit/gate-runs.jsonl` → portal `/api/gate-history` → website 管理台 | kernel→platform→website，只读 |
 | G3 跨面 CLI 汇总 | `allin status` 纯文件只读 running.json / gate-runs.jsonl / g21-runs.jsonl，platform 离线可降级（退出码 0 缺失 / 1 损坏 / 2 `--strict`） | 文件事实源 ← kernel，只读 |
 | G4 编排健康可视化 | `tools/orchestration/routes.yaml` + g21 产物 `tools/gate/audit/g21-runs.jsonl`（JSONL 尾行，行内自含 routes 数组）→ portal `/api/orchestration` → website 编排健康卡 | 台账→portal→website，只读 |
+| G5 事实查询面（2026-11-09） | `facts/facts.json` → `tools/facts/cli.py` → MCP `facts.get` / `facts.asof` 与同源 CLI 子命令 | 数据面→查询面，只读；`--source auto` 可离线回落纯 JSON |
+| G6 溯源对账（2026-11-09） | `source_git_sha` ⇄ Git HEAD / Dolt `dolt_log` / NetBox `changelog_message` / GraphRAG citation | 四系统对齐，只读；`request_id` 与 commit hash 语义不对等，不得 naive join |
 
 - **编排事实源**：`tools/orchestration/routes.yaml`（15 条专项 skill 路由，受控 YAML 子集）；
   **g21 门禁**（`tools/gate/agent_parity.py`，Python 标准库）做三方对账

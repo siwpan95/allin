@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at": "2026-11-09T05:30:00+08:00",
+  "machines": [
+    {
+      "machine_id": "SIWPAN",
+      "hostname": "SIWPAN",
+      "aliases": ["siwpan"],
+      "os_caption": "Windows 11 专业版",
+      "os_build": "26100",
+      "cpu": "Intel Core i7-9750H",
+      "ram_gb": 31.9,
+      "status": "active",
+      "is_primary": true,
+      "observed_at": "2026-10-30",
+      "observed_by": "tools/facts/measure.py",
+      "evidence_ref": "docs/记录/交接/2026-10.md",
+      "visibility": "public",
+      "valid_from": "2026-10-29",
+      "valid_to": null
+    },
+    {
+      "machine_id": "DESKTOP-KQABATS",
+      "hostname": "DESKTOP-KQABATS",
+      "os_caption": "Windows 11 家庭版",
+      "os_build": "26300",
+      "status": "active",
+      "observed_at": "2026-11-08",
+      "observed_by": "tools/facts/measure.py",
+      "evidence_ref": "docs/记录/交接/2026-11.md §一百四十四",
+      "visibility": "public",
+      "valid_from": "2026-10-30",
+      "valid_to": null
+    },
+    {
+      "machine_id": "DESKTOP-8RSV60V",
+      "hostname": "DESKTOP-8RSV60V",
+      "status": "active",
+      "observed_at": "2026-11-06",
+      "observed_by": "tools/facts/measure.py",
+      "evidence_ref": "docs/记录/交接/2026-11.md §一百三十五",
+      "visibility": "public",
+      "valid_from": "2026-10-30",
+      "valid_to": null
+    }
+  ],
+  "volumes": [
+    { "machine_id": "SIWPAN", "letter": "C", "label": "system", "fs": "NTFS", "size_gb": 118, "free_gb": 41, "role": "system", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" },
+    { "machine_id": "SIWPAN", "letter": "D", "label": "dalang", "fs": "NTFS", "size_gb": 405, "free_gb": 326, "role": "workspace", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" },
+    { "machine_id": "SIWPAN", "letter": "E", "label": "erlang", "fs": "NTFS", "size_gb": 407, "free_gb": 389, "role": "data", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" }
+  ],
+  "runtimes": [],
+  "ports": [
+    { "port": 9042, "service": "allin-website", "owner": "/website", "segment": "9000-9099", "status": "active", "observed_at": "2026-11-02", "evidence_ref": "docs/事实源/ports.yaml", "machine_id": "SIWPAN" },
+    { "port": 9000, "service": "portal", "owner": "/platform/apps/portal", "segment": "9000-9099", "status": "retired", "observed_at": "2026-08-27", "evidence_ref": "docs/事实源/ports.yaml" }
+  ],
+  "facts": [
+    {
+      "fact_id": "FCT-000001", "subject": "global", "attribute": "gitee_remote_repo_count",
+      "value": 138, "unit": "count", "scope": "global", "status": "current",
+      "valid_from": "2026-11-03", "valid_to": null, "observed_at": "2026-11-03",
+      "observed_by": "Gitee API 匿名分页 100+38+0",
+      "evidence_ref": "docs/事实源/机器分区索引.md §5",
+      "source_file": "docs/事实源/机器分区索引.md", "source_line": 131,
+      "supersedes": "FCT-000004", "visibility": "public"
+    },
+    {
+      "fact_id": "FCT-000002", "subject": "machine:DESKTOP-8RSV60V", "attribute": "publish_area_dir_count",
+      "value": 137, "unit": "count", "scope": "machine", "machine_id": "DESKTOP-8RSV60V", "status": "current",
+      "valid_from": "2026-11-03", "valid_to": null, "observed_at": "2026-11-03",
+      "observed_by": "逐目录实测",
+      "evidence_ref": "docs/记录/交接/2026-11.md",
+      "source_file": "docs/事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md", "source_line": 132,
+      "visibility": "public"
+    },
+    {
+      "fact_id": "FCT-000003", "subject": "global", "attribute": "portfolio_tiering_registered_count",
+      "value": 140, "unit": "count", "scope": "global", "status": "current",
+      "valid_from": "2026-11-02", "valid_to": null, "observed_at": "2026-11-02",
+      "observed_by": "组合分级决策索引 #1-#140",
+      "evidence_ref": "docs/事实源/组合分级决策索引.md §分级统计",
+      "source_file": "docs/事实源/组合分级决策索引.md", "source_line": 39,
+      "visibility": "public"
+    },
+    {
+      "fact_id": "FCT-000004", "subject": "global", "attribute": "gitee_remote_repo_count",
+      "value": 137, "unit": "count", "scope": "global", "status": "superseded",
+      "valid_from": "2026-10-30", "valid_to": "2026-11-03", "observed_at": "2026-10-30",
+      "observed_by": "Gitee API 匿名分页 100+37+0",
+      "evidence_ref": "docs/事实源/机器分区索引.md §5",
+      "source_file": "docs/事实源/机器分区索引.md", "source_line": 131,
+      "visibility": "public"
+    }
+  ],
+  "doc_refs": [
+    { "doc_id": "FACT-01", "path": "docs/事实源/机器分区索引.md", "kind": "fact", "generated": false, "visibility": "public" },
+    { "doc_id": "FACT-11", "path": "docs/事实源/机器/SIWPAN/SIWPAN.md", "kind": "fact", "generated": true, "visibility": "public" },
+    { "doc_id": "SPEC-005", "path": "docs/规范/SPEC-005-文档枢纽契约.md", "kind": "spec", "generated": false, "visibility": "public" },
+    { "doc_id": "SPEC-204", "path": "docs/规范/SPEC-204-系统架构.md", "kind": "spec", "generated": false, "visibility": "public" }
+  ],
+  "observation_runs": [
+    { "run_id": "OBS-20261109-001", "machine_id": "SIWPAN", "ts": "2026-11-09T05:24:45+08:00", "command": "python tools/facts/measure.py --json", "raw_hash": "sha256:PLACEHOLDER", "adjudicated_by": null, "evidence_ref": null }
+  ]
+}

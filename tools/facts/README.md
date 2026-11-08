@@ -125,6 +125,29 @@ python tools/facts/verify_facts.py
 
 ⚠ 本工具是 **Windows 专属**（判据基于盘符绝对路径，`platforms: ["nt"]`），非 Windows 直接 `ENV ERROR` 退出 3。
 
+## 结构化事实源 CLI（2026-11-09 起，离线地基）
+
+[`cli.py`](cli.py) 是**跨平台只读查询面**，与上面两个 Windows 专属脚本职责分离：
+
+| 子命令 | 作用 |
+|---|---|
+| `validate` | 结构化真身过 JSON Schema（闭集 / 必填 / 未声明字段拦截） |
+| `build` | 从真身生成 `facts/build/facts.sqlite`（派生物、不入库、可重建） |
+| `get` / `asof` / `query` / `diff` | 查现值、历史值、受限只读 SQL、两份真身差异 |
+| `render` / `render --check` | 生成/校验 Markdown 生成区的 marker 哈希 |
+| `offline-check` | **离线北极星**：拔网 + 停三栈 + 删派生库后仍可读事实、跑判据 |
+| `selftest` | 16 个夹具用例（含 SCD-2 as-of、FTS5 trigram、漂移拦截、JSON 回落） |
+
+- **真身在仓根 [`facts/facts.json`](../../facts/facts.json) + [`facts/facts.schema.json`](../../facts/facts.schema.json)**，
+  与 `docs/` 枢纽并列的**数据面**；不放进 `docs/事实源/` 是为了避免生成物与真身混成「两份事实」，
+  也不让文档索引契约 D1/D8/D11 把数据文件当文档计数。
+- `--source auto|sqlite|json`：`auto` 在派生库缺失时自动回落纯 JSON 真身，响应显式标注
+  `source=json(readonly)` 与 `state_kind=declared`；JSON 档下 `query` **明确拒答**而非伪装查过库。
+- `measure.py` / `verify_facts.py` 的采集与判定口径**不变**（仍只判当前机器那份分区文件）；
+  `cli.py` 不写事实，只读取与校验。
+- 门禁接线见 `scripts/run_all_gates.sh`：`cli.py validate`（g22）、`tools/gate/facts_parity.py`（g23）、
+  `tools/gate/relative_refs_gate.py`（g24），全部照 `g21` 的独立脚本模式接入，**g00–g20 的 20 道聚合口径不变**。
+
 ## 许可
 
 本目录是 allin 仓的子件（非独立仓），许可随**仓根 LICENSE**（MIT-0）覆盖。

@@ -261,6 +261,19 @@ run "$PY" tools/gate/agent_regression.py
 # 判据产物落 tools/gate/audit/g21-runs.jsonl（JSONL 逐行，audit/ 已被 .gitignore 覆盖）。
 # 放在 refresh-gov-block --check 之前：失败定位从「台账↔正文」到「正文↔副本」单向推进。
 run "$PY" tools/gate/agent_parity.py
+# --- 结构化事实源离线地基（2026-11-09，用户按「离线可用优先」拍板 O1=B / O2=A / O3=A）---
+# 四条独立脚本，照 g21 模式接跑批；g00–g20 的 **20 道聚合口径不变**，
+# 且全部零第三方依赖、零服务依赖 —— 拔网 + 停三栈 + 删派生库时仍须全绿（离线北极星）。
+# ① g22：结构化真身过 JSON Schema（纯文本，facts/facts.json ⇄ facts/facts.schema.json）
+run "$PY" tools/facts/cli.py validate
+# ② g23：doc_refs 引用完整性 + 生成区 marker 漂移。生成物未启用时**显式 SKIPPED 并计数**，
+#    不冒充通过（待 P2 真身反转后启用阻断）；未做项已登记交接卷 §一百四十六。
+run "$PY" tools/gate/facts_parity.py
+# ③ g24：文档内相对路径。棘轮基线 tools/gate/baseline/relative-refs.txt 挂存量 10 条，
+#    只阻断**新增**断链；docs/记录/ 历史卷按只增不改永久豁免（SPEC-005 §3.12）。
+run "$PY" tools/gate/relative_refs_gate.py --json
+# ④ 离线北极星端到端验收：无派生库时 get/asof 回落纯 JSON、判据可离线自检、派生层可重建。
+run "$PY" tools/facts/cli.py offline-check
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。

@@ -134,3 +134,10 @@ siwpan旧机电脑硬件信息 - 腾讯电脑管家检测结果.txt
 # dist/ 只随 release tag 产出，不入版本库（wheel/tar.gz 是构建时点快照，
 # 入库会与仓内演进分叉；对账由 tools/check_pkg_parity.py + CI 兜住映射一致性）。
 packages/*/dist/
+
+# ===== 结构化事实源派生层（2026-11-09）=====
+# 仓根 facts/facts.json 是唯一真身（纯文本、入 Git）；下面三项全是**可重建派生物**，
+# 入库会与真身分叉，且二进制文件破坏 diff/review（SPEC-005 §3.11 / SPEC-204 §2.8）。
+*.sqlite
+facts/build/
+facts/generated/

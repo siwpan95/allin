@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitee.com/siwpan/allin/schema/facts.schema.json",
+  "title": "allin 全域事实源（结构化真身契约）",
+  "description": "Git 内唯一写入点。Markdown、SQLite 视图、NetBox 资产、Dolt 事实库、GraphRAG 索引均为本契约的派生物。变更须立 ADR 并升 schema_version。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "machines", "facts"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "generated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "machines": { "type": "array", "items": { "$ref": "#/$defs/machine" } },
+    "volumes": { "type": "array", "items": { "$ref": "#/$defs/volume" } },
+    "runtimes": { "type": "array", "items": { "$ref": "#/$defs/runtime" } },
+    "repos": { "type": "array", "items": { "$ref": "#/$defs/repo_checkout" } },
+    "ports": { "type": "array", "items": { "$ref": "#/$defs/port" } },
+    "services": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+    "facts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/fact" } },
+    "doc_refs": { "type": "array", "items": { "$ref": "#/$defs/doc_ref" } },
+    "observation_runs": { "type": "array", "items": { "$ref": "#/$defs/observation_run" } }
+  },
+  "$defs": {
+    "common": {
+      "observed_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+      "valid_from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+      "valid_to": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+      "visibility": { "enum": ["public", "internal", "private"] },
+      "evidence_ref": { "type": "string", "minLength": 1, "description": "指向 docs/记录/ 的指针；落实 D17 留痕" },
+      "machine_id": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9-]{0,62}$" }
+    },
+    "machine": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine_id", "hostname", "status", "observed_at", "evidence_ref"],
+      "properties": {
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "hostname": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "os_caption": { "type": "string" },
+        "os_build": { "type": "string" },
+        "cpu": { "type": "string" },
+        "ram_gb": { "type": "number" },
+        "status": { "enum": ["active", "retired", "planned", "unknown"] },
+        "is_primary": { "type": "boolean" },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "observed_by": { "type": "string" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "visibility": { "$ref": "#/$defs/common/visibility" },
+        "valid_from": { "$ref": "#/$defs/common/valid_from" },
+        "valid_to": { "$ref": "#/$defs/common/valid_to" }
+      }
+    },
+    "volume": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine_id", "letter", "observed_at", "evidence_ref"],
+      "properties": {
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "letter": { "type": "string", "pattern": "^[A-Z]$" },
+        "label": { "type": "string" },
+        "fs": { "type": "string" },
+        "size_gb": { "type": "integer" },
+        "free_gb": { "type": "integer" },
+        "role": { "enum": ["system", "workspace", "data", "removable", "archive", "unknown"] },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "runtime": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine_id", "tool", "path", "observed_at", "evidence_ref"],
+      "properties": {
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "tool": { "enum": ["python", "node", "npm", "git", "pwsh", "docker", "dolt", "other"] },
+        "path": { "type": "string" },
+        "version": { "type": "string" },
+        "flags": { "type": "array", "items": { "type": "string" } },
+        "is_primary": { "type": "boolean" },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "repo_checkout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine_id", "repo_id", "observed_at", "evidence_ref"],
+      "properties": {
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "repo_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+        "local_path": { "type": "string", "description": "观测值，不作仓内引用；铁律 5 禁止写死盘符" },
+        "has_git": { "type": "boolean" },
+        "has_origin": { "type": "boolean" },
+        "checkout_state": { "enum": ["full", "partial", "remote-only", "archived"] },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" }
+      }
+    },
+    "port": {
+      "type": "object", "additionalProperties": false,
+      "required": ["port", "service", "status", "observed_at", "evidence_ref"],
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "service": { "type": "string" },
+        "owner": { "type": "string" },
+        "segment": { "type": "string" },
+        "status": { "enum": ["active", "retired", "transient", "reserved"] },
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" }
+      }
+    },
+    "service": {
+      "type": "object", "additionalProperties": false,
+      "required": ["service_id", "name", "lifecycle", "observed_at", "evidence_ref"],
+      "properties": {
+        "service_id": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["portal", "api", "worker", "site", "engine", "mcp", "database", "knowledge", "other"] },
+        "lifecycle": { "enum": ["experimental", "production", "deprecated", "retired"] },
+        "owner": { "type": "string" },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "port": { "type": ["integer", "null"] },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "fact": {
+      "type": "object", "additionalProperties": false,
+      "description": "SCD-2 事实行：改值 = 关闭旧行 valid_to + 追加新行，绝不 UPDATE。",
+      "required": ["fact_id", "subject", "attribute", "value", "scope", "status", "valid_from", "observed_at", "evidence_ref"],
+      "properties": {
+        "fact_id": { "type": "string", "pattern": "^FCT-[0-9]{6}$" },
+        "subject": { "type": "string", "description": "实体键，如 machine:SIWPAN / repo:allin / global" },
+        "attribute": { "type": "string" },
+        "value": { "type": ["string", "number", "boolean", "null"] },
+        "unit": { "enum": ["count", "gb", "version", "path", "bool", "text", "enum", "none"] },
+        "scope": { "enum": ["global", "machine", "repo", "service", "doc"] },
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "status": { "enum": ["current", "superseded", "disputed", "retracted"] },
+        "valid_from": { "$ref": "#/$defs/common/valid_from" },
+        "valid_to": { "$ref": "#/$defs/common/valid_to" },
+        "observed_at": { "$ref": "#/$defs/common/observed_at" },
+        "observed_by": { "type": "string" },
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "source_file": { "type": "string" },
+        "source_line": { "type": "integer" },
+        "supersedes": { "type": ["string", "null"] },
+        "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "doc_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["doc_id", "path", "kind"],
+      "properties": {
+        "doc_id": { "type": "string", "pattern": "^(FACT|SPEC|REC|ADR)-[A-Z0-9-]+$" },
+        "path": { "type": "string" },
+        "section": { "type": "string" },
+        "kind": { "enum": ["spec", "fact", "record", "adr", "index", "history"] },
+        "generated": { "type": "boolean", "description": "true = facts render 生成物，人工不可直接编辑" },
+        "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "observation_run": {
+      "type": "object", "additionalProperties": false,
+      "description": "采集值是原始值，不是事实；未经裁决不得覆盖旧值（tools/facts/README.md）。",
+      "required": ["run_id", "machine_id", "ts", "command", "raw_hash"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "machine_id": { "$ref": "#/$defs/common/machine_id" },
+        "ts": { "type": "string" },
+        "command": { "type": "string" },
+        "raw_hash": { "type": "string" },
+        "adjudicated_by": { "type": ["string", "null"] },
+        "evidence_ref": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

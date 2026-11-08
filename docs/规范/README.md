@@ -84,6 +84,14 @@
 | `check_gate_drift.py` | 调试铁律 12 / 64、SPEC-101 | 门禁**双落点漂移**（`/allin/tools/gate` ↔ `/tools/gate`）：归一化 EOL 后逐个比对，不一致即报红；对端缺失记 `SKIPPED (not a pass)`；两侧解析成同一目录则**响亮失败**（防"自己跟自己比"的假绿）。2026-10-06 新增 |
 | `watchdog.py`（W1–W3） | 调试铁律 51 / 58 | 盘健康与 IO 重试、`.git/objects` 可读性、`ls-remote` 同步漂移。**2026-10-06 随仓入库**（默认仓根改为按约定工作区根推导，不写死盘符） |
 
+> **2026-11-09 增补 · 结构化事实源独立门禁**（照 `g21` 模式接 `scripts/run_all_gates.sh`，
+> **不占 g00–g20 的 20 道聚合口径**）：`tools/facts/cli.py validate`（Schema 强制）、
+> `tools/gate/facts_parity.py`（doc_refs 引用完整性 + 生成物 marker 漂移）、
+> `tools/gate/relative_refs_gate.py`（文档内相对路径，基线棘轮只阻断新增）、
+> `tools/facts/cli.py offline-check`（离线北极星：拔网 / 停三栈 / 删派生库）。
+> 契约见 `SPEC-005 §3.11` 与 `SPEC-005 §3.12`；架构见 `SPEC-204 §2.8`。
+> 生成物尚未启用时 g23 **显式 SKIPPED 并计数**，不冒充通过（未做项见交接卷 §一百四十六）。
+
 ### 4.2 DSH 分发版门禁（`governance/`，18 条，随 `siwpan/deepseek-harness` 分发）
 
 > **口径提示（2026-10-28 对账补）**：本表是 **DSH 分发侧**的 18 条；**本仓侧** `tools/gate/governance/`

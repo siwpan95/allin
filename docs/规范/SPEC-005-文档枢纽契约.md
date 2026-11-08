@@ -1,8 +1,8 @@
 # SPEC-005 · 文档枢纽契约
 
 > **编号** SPEC-005 ｜ **效力** 铁律级（目录与命名契约）｜ **状态** 生效
-> **生效** 2026-09-28 ｜ **最后修订** 2026-11-06 ｜ **适用面** `docs/` 全部内容 + 任何引用本枢纽的外部落点
-> **承载体** `tools/gate/docs_index.py`（D1–D17，D9–D17 的**唯一实现**在 `tools/gate/governance/runtime/docs_contract.py`，两个入口 import 同一份）；DSH 分发版同源门禁 `governance/gates/g15_docs_contract.py`
+> **生效** 2026-09-28 ｜ **最后修订** 2026-11-09 ｜ **适用面** `docs/` 全部内容 + 仓根 `facts/` 结构化真身 + 任何引用本枢纽的外部落点
+> **承载体** `tools/gate/docs_index.py`（D1–D17，D9–D17 的**唯一实现**在 `tools/gate/governance/runtime/docs_contract.py`，两个入口 import 同一份）；DSH 分发版同源门禁 `governance/gates/g15_docs_contract.py`；结构化事实源的独立脚本门禁 `tools/facts/cli.py validate` / `tools/gate/facts_parity.py` / `tools/gate/relative_refs_gate.py`（照 `g21` 模式接 `scripts/run_all_gates.sh`，**不占 g00–g20 的 20 道聚合口径**）
 > **引用格式** `SPEC-005 §3.2`
 
 ---
@@ -254,6 +254,45 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 **门禁数不变（仍 20 道）**。跨机缺口按铁律 6 处理：提出方登记统辖索引待修项 +
 双入口基线棘轮挂账，待该机自补后自然消解。
 
+### 3.11 **结构化事实源契约**（2026-11-09 新增）
+
+> **起因**：同一条事实（如远端仓数 138 / 发布区 137 / 分级表 140）散落在多份 Markdown 里，
+> 靠人肉对账 + D8/D11 计数判据兜底；`g20` 只认三类断言、只判最新时点块与本机那一份，
+> 版本号 / 语义判断 / 章节引用一律不判。规范要管的是**事实本身**，不是它的排版。
+
+**规范六条**
+
+1. **真身唯一**：结构化事实的唯一写入点是仓根 [`facts/facts.json`](../../facts/facts.json)，
+   契约是同目录 `facts.schema.json`。它与 `docs/` 枢纽**并列为数据面**，不进 `事实源/` 目录
+   —— 避免生成物与真身混成「两份事实」，也不让 D1/D8/D11 把数据文件当文档计数。
+2. **Schema 强制**：`additionalProperties:false`、状态与可见性用闭集枚举、日期 `format: date`；
+   每条事实必带 `machine_id` / `observed_at` / `evidence_ref` / `visibility` /
+   `source_file:line` / `source_git_sha`。`machine_id` 是显式主键，根治「本机」归属歧义（铁律 6）。
+3. **改值 append-only**：走 SCD-2 —— 关闭旧行 `valid_to` + 追加新行，**禁止 UPDATE**。
+   表内 `valid_from/valid_to` 是 valid time；版本化提交历史是 transaction time，两轴不得混用。
+4. **采集不是事实**：采集流水的原始值未经人工裁决不得覆盖现值（同 `tools/facts/README.md` 口径）。
+5. **生成物有 marker**：Markdown 生成区用 `<!-- FACTS-GENERATED:START sha256:… -->` 包裹，
+   `facts render --check` 漂移即红；人工叙述留在 marker 外，不被覆盖。生成物未启用时
+   门禁须**显式 SKIPPED 并计数**，不得冒充通过（未做项见 `记录/交接/2026-11.md` §一百四十六）。
+6. **判据只有一份**：解析 / 校验 / 哈希只在 `tools/facts/cli.py` 实现，门禁与下游适配器一律 import 复用。
+
+**承载体**：`scripts/run_all_gates.sh` 中的 `cli.py validate` / `facts_parity.py` / `offline-check`
+三条独立脚本门禁 + `cli.py --selftest`。**门禁数仍 20 道**（g00–g20 聚合口径不变）。
+
+### 3.12 **文档内相对路径基准**（2026-11-09 新增）
+
+1. 文档内相对路径**统一以 `docs/` 为基准**（与 §3.7 现文一致）；过渡期兼容「相对当前文档目录」，
+   但新写引用一律按 `docs/` 基准书写，歧义须在评审中消解而不是留给判据猜。
+2. **豁免**：示例占位 / 代码块 / 行内代码 / 外链 / 锚点 / 绝对盘符路径；`记录/` 历史卷按
+   「只增不改」永久豁免（与 D9 / D14 排除记录区同一精神）。豁免量必须打印，不得静默丢弃。
+3. **存量挂账**：`tools/gate/baseline/relative-refs.txt` 作棘轮，只阻断**新增**断链；
+   修一条从基线删一条，禁止靠放大豁免或放宽判据消红。
+4. **承载体**：`tools/gate/relative_refs_gate.py`（独立脚本门禁，照 `g21` 模式接跑批）。
+
+> 实测基线（2026-11-09）：343 份 tracked md / 422 个内部链接目标，`cwd+docs` 双基准歧义 193、
+> 三基准都不存在 36（混杂示例与历史卷旧路径）；限定范围 + 分层豁免后收敛到 **10 条**可处置 finding，
+> 全部挂入棘轮。以 `docs/` 等仓根前缀开头的 markdown 链接为 **0** —— 这正是判据要补的缺口。
+
 ## 4. 命名规则
 
 | 类别 | 规则 | 反例（门禁报红） |
@@ -262,6 +301,10 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 | 事实源 | 中文名或沿用既有公认名（如 `ports.yaml`）；不含日期 | `新机配置汇总_2026-09-24.md`（带日期 → 应归记录） |
 | 记录 | `<主题>_<YYYY-MM-DD>.md`；按月卷为 `<YYYY-MM>.md` | `gitee项目记录.md`（无日期 → 门禁报红） |
 | 历史 | 保持原样 | 改历史树文件名 |
+
+> **结构化真身不适用本表的 `.md` 命名规则**：仓根 `facts/facts.json` / `facts/facts.schema.json`
+> 是数据面文件（见 §3.11），仍**禁止带日期**，且必须自带 `schema_version`；
+> 它们的登记面是 `INDEX.md` 之外的门禁，不占 `docs/` 的四分类计数。
 
 **为什么规范不许带日期**：日期在文件名里等于宣称"这是某天的产物"。规范的时效写在头部字段（生效日期 / 最后修订 / 状态），不写在文件名。
 
@@ -287,6 +330,8 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 | 引用格式 | 一行示例 | 让别人知道该怎么引用它 |
 
 每份**事实源**开头必须有：`> **时点** YYYY-MM-DD ｜ **观测工具/命令** … ｜ **失效条件** …`（承 `g07-doc-freshness`）。
+结构化事实源以**字段**承载同一组契约：`observed_at` / `observed_by` / `evidence_ref` / `valid_from` / `valid_to`，
+由 Schema 强制（见 §3.11）；其 Markdown 生成物的头部由 `facts render` 产生，**禁止手改**。
 每份**记录**开头必须有一行：`> **本文是 <时点> 的一次性记录，不作为约束。**`
 
 ## 6. 编号区间与预留
@@ -310,6 +355,11 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 4. **登记 `INDEX.md`**：加一行（类别 / 编号 / 标题 / 路径 / 状态 / 时点 / 一句话）并跑 `docs_index.py`。
 
 > 门禁 D1 会拦"文件存在但没登记"，D2 会拦"登记了但文件不存在"——**索引不可能悄悄过期**。
+
+**新增/修改结构化事实**（与上面 4 步并列的另一条 SOP）：改 `facts/facts.json` → 跑
+`tools/facts/cli.py validate` → 跑 `tools/facts/cli.py render --check`（生成物启用后）→
+跑 `tools/facts/cli.py offline-check` → schema 变更须升 `schema_version`、立 ADR 并留本文件 §11 修订记录。
+采集值未经裁决不得直接写进 `facts`（同 §3.11 第 4 条）。
 
 ## 8. 引用与链接规则
 
@@ -335,6 +385,7 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 
 | 日期 | 版本 | 改动 | 依据 |
 | --- | --- | --- | --- |
+| 2026-11-09 | v1.9 | 新增 **§3.11 结构化事实源契约** 与 **§3.12 文档内相对路径基准**：仓根 `facts/` 数据面与 `docs/` 枢纽并列，真身唯一 / Schema 强制 / SCD-2 append-only / 生成物 marker / 判据一份；相对路径统一以 `docs/` 为基准 + 分层豁免 + 棘轮基线。配套同步 §4 命名、§5 头部、§7 SOP、头部「适用面 / 承载体 / 最后修订」；`scripts/run_all_gates.sh` 接入 `cli.py validate` / `facts_parity.py` / `relative_refs_gate.py --json` / `cli.py offline-check` 四条独立脚本门禁，**g00–g20 的 20 道聚合口径不变**；`tools/gate/baseline/relative-refs.txt` 挂存量 10 条；`tools/facts/README.md` 补 CLI 分工 | 用户 2026-11-09 指令「按对离线最友好的那档推进；改 SPEC-005/204 生效正文、把门禁接进 run_all_gates.sh；未做内容记账，与其他改动一起提交推送」。实测：`cli.py selftest 16/16`、`offline-check 6/6 PASS`、两次 build 字节相同、`g23 doc_refs=4 missing=0`、`g24 total=10 baselined=10 new=0`；相对路径摸底 343 份 md / 422 链接目标 / 双基准歧义 193 / 收敛后 10 条 finding |
 | 2026-11-07 | v1.8 | 新增 **§3.9 计划闭环（D16）** 与 **§3.10 事实源留痕（D17）**：D16 判 `事实源/组合分级决策索引.md` 执行顺序状态机表的状态列闭集（五态）+ ✅/⚠/⏸ 行证据列必须指向 `记录/`；D17 判事实源 md（README 除外）**日期最新时点块**必须含 `记录/` 指针（无时点块豁免，历史块不判）。承载体扩到 D1–D17，判据唯一实现仍在 `governance/runtime/docs_contract.py`（`check_d16` / `check_d17`），双入口 import 同一份，**门禁数仍 20 道**。配套：执行顺序表由 5 条叙述行改状态机表、事实源存量补留痕指针 6 份、`DESKTOP-KQABATS.md` 留痕缺口按铁律 6 登记统辖索引待修项 + 双入口基线棘轮挂账；自检新增 3 个逐维隔离用例（`plan-status-invalid` / `plan-evidence-missing` / `fact-no-record-ref`），并断言「拦下它的必须是 D16/D17 自己」 | 用户 2026-11-07 指令「先将 P0、P1 落实」（ERP 调研后的计划闭环与变更留痕缺口；P2 月度自动盘点因 WorkBuddy 换机障碍明确暂缓）。P1 实测抓出真缺口：`b964f18`（SIWPAN 文件夹化）发起方当日未在记录区留痕，已按新判据补记 `交接 2026-11.md` §一百三十八 |
 | 2026-09-28 | v1.0 | 首版：四分类、目录契约、ASCII 别名并置、命名与头部契约、编号区间、新增 SOP | 用户拍板「大修 + 方案一/二并置执行」 |
 | 2026-10-26 | v1.1 | §3.1 目录树新增 `记录/决策/` 子类（安放冻结 ADR）；同步 §11 修订记录 | 三仓整合：原 `allin-platform` 的 2 份 ADR 需要一个不被误读为现行权威的落点，按 §2 判据它们属「记录」且需与「专题/调研报告」区分 |
