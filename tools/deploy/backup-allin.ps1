@@ -8,9 +8,11 @@
 
   纪律：
   - 本脚本入仓（无密钥、MIT-0）；备份根 / 仓库根一律 env 或参数注入，禁止盘符字面量（g01 门禁）。
-  - 密钥绝不进本脚本：platform/data/keys 与 website/data/keys 均由 robocopy /XD keys 排除，
-    website/data/seed-accounts.json 由 /XF seed-accounts.json 排除；密钥走独立灾备通道 =
-    website 的 npm run backup-key（0600 + 口令包 + 月度恢复演练），与 robocopy 主备份物理隔离。
+  - 敏感材质排除清单来自同目录 exclusion-policy.ps1（单一真相源）：backup / restore / drill
+    三方共同 dot-source；platform 与 website 两条 robocopy 共用同一 $excludeArgs，彻底对称。
+  - keys/ 由 /XD 排除，seed-accounts.json / credentials.json / *.pem / *.key / .env 等由 /XF 排除；
+    密钥与种子口令绝不进 robocopy 主备份，走独立灾备通道 = website 的 npm run backup-key
+    （0600 + 口令包 + 月度恢复演练），与 robocopy 主备份物理隔离。新增敏感材质只改策略文件一处。
   - robocopy 退出码 0-7 = 成功（含复制），>=8 = 失败——不能按传统退出码判成败。
 
 .NOTES
@@ -47,6 +49,12 @@ $websiteData  = Join-Path $RepoRoot 'website\data'
 foreach ($p in @($platformData, $websiteData)) {
   if (-not (Test-Path -LiteralPath $p)) { Fail "源目录不存在: $p（检查 ALLIN_ROOT 是否指到仓库根）" }
 }
+
+# 敏感材质排除清单（单一真相源）：三方共同 dot-source，缺文件即 fail-loud
+$policy = Join-Path $PSScriptRoot 'exclusion-policy.ps1'
+if (-not (Test-Path -LiteralPath $policy)) { Fail '排除策略文件缺失：exclusion-policy.ps1' }
+. $policy
+$excludeArgs = Get-AllinExcludeArgs
 
 # 运行日志目录：ALLIN_LOG_DIR 优先，缺省回退到本机应用数据目录（不写盘符）
 $logDir = $env:ALLIN_LOG_DIR
@@ -95,11 +103,11 @@ $dest  = Join-Path $BackupRoot $stamp
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 $ErrorActionPreference = 'Continue'
-& robocopy $platformData (Join-Path $dest 'platform-data') /MIR /XD keys /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
+# 两条 robocopy 共用同一 $excludeArgs（来自 exclusion-policy.ps1）：platform 与 website 同口径，
+# 与 restore 完全对称；platform 分支因此也获得 /XF，杜绝 platform/data 下敏感材质进备份包与 manifest。
+& robocopy $platformData (Join-Path $dest 'platform-data') /MIR @excludeArgs /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
 $rcPlatform = $LASTEXITCODE
-# /XD keys + /XF seed-accounts.json：密钥与种子口令材质绝不走 robocopy（与 backup-key 两通道物理隔离）；
-# platform 分支同样以 /XD keys 排除 platform/data/keys，与 restore 的排除口径对称，避免明文密钥进备份包。
-& robocopy $websiteData (Join-Path $dest 'website-data') /MIR /XD keys /XF seed-accounts.json /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
+& robocopy $websiteData (Join-Path $dest 'website-data') /MIR @excludeArgs /NFL /NDL /NJH /R:2 /W:5 /NP | Out-Null
 $rcWebsite = $LASTEXITCODE
 $ErrorActionPreference = 'Stop'
 $copyOk = ($rcPlatform -lt 8) -and ($rcWebsite -lt 8)

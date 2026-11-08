@@ -1,19 +1,30 @@
 ﻿<#
 .SYNOPSIS
-  备份恢复演练（B3 闭环 · 2026-11-08 审查，安全域复评补充）：
-  造假 → 备份 → 断言备份排除 → 篡改 → 恢复 → 断言数据一致 + 密钥通道独立。
+  备份恢复演练（B3 闭环 · 2026-11-08 审查，安全域复评 + 敏感材质清单单一真相源）：
+  造假 → 断言源侧夹具已种下 → 备份 → 断言备份排除 → 篡改 → 恢复 →
+  断言数据一致 + 密钥通道独立 + 敏感材质通道独立。
 
 .DESCRIPTION
-  在临时目录造一份 platform/data + website/data（含三个假密钥夹具：两个 keys/secret.key
-  与 seed-accounts.json，均为演练专用假值、零真实凭据），记录普通文件逐字节 sha256 基线；
-  调 backup-allin.ps1 备份；先断言备份包内不含任何 keys 与 seed-accounts.json（证明
-  /XD keys + /XF seed-accounts.json 排除生效，与 restore 排除口径对称）；
-  篡改（删一个普通文件 + 改一个普通文件 + 把三个密钥夹具独立更新为新值）；
-  调 restore-allin.ps1 恢复；断言普通文件 sha256 与基线一致，且三个密钥夹具
-  仍存在、内容等于篡改后的值（证明 restore 的排除让 /MIR 既不删也不覆盖目标侧密钥）。
+  在临时目录造一份 platform/data + website/data（含假密钥夹具与假敏感材质夹具，
+  均为演练专用假值、零真实凭据），记录普通文件逐字节 sha256 基线；
+  敏感材质排除清单来自同目录 exclusion-policy.ps1（单一真相源，backup / restore / drill
+  三方共同 dot-source）：drill 用 $AllinExcludedDirs / $AllinExcludedFiles 驱动备份侧排除断言，
+  不在本脚本再抄一份清单。
+
+  造假段先断言「源侧 4 个敏感材质夹具已种下」（字面量 -eq 4），防止夹具没造出来时
+  备份侧 $forbidden / 动态 -Filter 恒 0 命中、排除断言恒绿的静默假绿；
+  调 backup-allin.ps1 备份；2b 段保留原有 5 项静态 $forbidden，并从策略动态生成
+  （目录两侧路径 + 文件模式全包 -Filter 命中），另以 4 个已种下夹具的备份侧路径作
+  独立锚点，任一命中即 Fail；篡改（删一个普通文件 + 改一个普通文件 + 把假密钥与
+  假敏感材质夹具独立更新为新值）；调 restore-allin.ps1 恢复；断言普通文件 sha256
+  与基线一致，3 个假密钥夹具仍存在且等于篡改值（密钥通道独立），4 个假敏感材质
+  夹具仍存在且等于篡改值（敏感材质通道独立）——证明 restore 的排除让 /MIR
+  既不删也不覆盖独立通道材质。
+
   收口为 fail-closed：单一 $drillPass 默认 $false，仅当 2b 排除断言已执行、普通文件
-  sha256 一致、密钥通道 3 项断言全部执行且全过、结论为「密钥通道独立」时才置 $true；
-  判据写 -not $drillPass，故变量缺失（$null）仍判失败，无需「守卫的守卫」。
+  sha256 一致、密钥通道 3 项断言全部执行且全过、结论为「密钥通道独立」、
+  源侧夹具种下 4 项、敏感材质通道 4 项断言全部执行且结论为「敏感材质通道独立」
+  时才置 $true；判据写 -not $drillPass，故变量缺失（$null）仍判失败，无需「守卫的守卫」。
   PASS 文案由实际计数与结论生成，杜绝「写了不跑」的静默假绿。
 
   纪律（对齐 backup/restore-allin.ps1）：零密钥、零盘符字面量、PS 5.1 兼容、UTF-8 BOM。
@@ -29,9 +40,17 @@ $backupExclusionChecked = $false
 $keyAssertionCount      = 0
 $keyAssertionExpected   = 3
 $keyConclusion          = '密钥通道未通过'
+$sensitivePlantedCount   = 0
+$sensitiveAssertionCount = 0
+$sensitiveConclusion     = '敏感材质通道未通过'
 
 function Fail([string]$Message) { Write-Output ("[FAIL] " + $Message); exit 1 }
 function Sha256([string]$p) { return (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash }
+
+# 敏感材质排除清单（单一真相源）：三方共同 dot-source，缺文件即 fail-loud
+$policy = Join-Path $PSScriptRoot 'exclusion-policy.ps1'
+if (-not (Test-Path -LiteralPath $policy)) { Fail '排除策略文件缺失：exclusion-policy.ps1' }
+. $policy
 
 $stamp = (Get-Date -Format 'yyyyMMddHHmmss') + '-' + $PID
 $root   = Join-Path $env:TEMP ("allin-restore-drill-$stamp")
@@ -56,6 +75,20 @@ $tamperPlatform = 'PLATFORM-KEY-V2'
 $tamperWebsite  = 'WEBSITE-KEY-V2'
 $tamperSeed     = '{"seed":"TAMPERED"}'
 
+# 4 个假值敏感材质夹具（演练专用，零真实凭据、零盘符）：覆盖策略清单新增的四类；
+# 其中 platform\data\seed-accounts.json 正是 platform 分支原本没有 /XF 时会泄漏进备份包的那一项。
+# 单一清单复用：源侧路径 / 备份包相对路径 / 原值 / 篡改值，造假、2b 锚点、篡改、6b 断言共用。
+$ppem  = Join-Path $repo 'platform\data\server.pem'
+$penv  = Join-Path $repo 'platform\data\.env'
+$wcred = Join-Path $repo 'website\data\credentials.json'
+$pseed = Join-Path $repo 'platform\data\seed-accounts.json'
+$sensitiveFixtures = @(
+  @{ path = $ppem;  label = 'platform/data/server.pem';         bak = 'platform-data\server.pem';           orig = 'PLATFORM-PEM-V1';             tamper = 'PLATFORM-PEM-V2' },
+  @{ path = $penv;  label = 'platform/data/.env';                bak = 'platform-data\.env';                 orig = 'PLATFORM-ENV-V1';             tamper = 'PLATFORM-ENV-V2' },
+  @{ path = $wcred; label = 'website/data/credentials.json';     bak = 'website-data\credentials.json';      orig = '{"cred":"ORIGINAL"}';         tamper = '{"cred":"TAMPERED"}' },
+  @{ path = $pseed; label = 'platform/data/seed-accounts.json';  bak = 'platform-data\seed-accounts.json';   orig = '{"seed":"PLATFORM-ORIGINAL"}'; tamper = '{"seed":"PLATFORM-TAMPERED"}' }
+)
+
 New-Item -ItemType Directory -Force -Path (Join-Path $repo 'platform\data\keys') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $repo 'website\data\keys')  | Out-Null
 Set-Content -LiteralPath $pa -Value 'alpha' -Encoding utf8
@@ -64,9 +97,26 @@ Set-Content -LiteralPath $wa -Value 'omega' -Encoding utf8
 Set-Content -LiteralPath $pk   -Value $origPlatform -Encoding utf8
 Set-Content -LiteralPath $wk   -Value $origWebsite  -Encoding utf8
 Set-Content -LiteralPath $seed -Value $origSeed     -Encoding utf8
+foreach ($s in $sensitiveFixtures) {
+  Set-Content -LiteralPath $s.path -Value $s.orig -Encoding utf8
+}
 
 $baseline = @{}
 foreach ($f in @($pa, $pb, $wa)) { $baseline[$f] = (Sha256 $f) }
+
+# ---------- 1b) 断言：源侧敏感材质夹具已种下（防「夹具没造出来 ⇒ 排除断言恒绿」假绿） ----------
+# 若夹具根本没被创建，2b 段 $forbidden 的 Test-Path 恒 $false、动态 -Filter 也恒 0 命中，
+# 排除断言会恒绿。故先证明 4 个夹具确实存在于源侧，排除断言才有意义。
+foreach ($s in $sensitiveFixtures) {
+  $sensitivePlantedCount++   # 循环体最前面递增：成功/失败都算「这一项确实验过」
+  if (-not (Test-Path -LiteralPath $s.path)) {
+    Fail ("源侧敏感材质夹具未种下：" + $s.label + "（排除断言将恒绿，拒绝判定通过）")
+  }
+}
+if ($sensitivePlantedCount -ne 4) {
+  Fail ("源侧夹具种下计数异常：" + $sensitivePlantedCount + "/4（排除断言前提不成立，拒绝判定通过）")
+}
+Write-Output '[ok] 源侧敏感材质夹具已种下：4/4 项（备份排除断言前提成立）'
 
 # ---------- 2) 备份（跳过 wal_checkpoint，避免依赖 node:sqlite） ----------
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'backup-allin.ps1') `
@@ -74,13 +124,12 @@ foreach ($f in @($pa, $pb, $wa)) { $baseline[$f] = (Sha256 $f) }
 if ($LASTEXITCODE -ne 0) { Fail "backup-allin.ps1 失败（exit=$LASTEXITCODE）" }
 Write-Output '[ok] 备份完成'
 
-# ---------- 2b) 断言：备份侧排除（/XD keys + /XF seed-accounts.json 生效，密钥不进备份包） ----------
-# /XD keys 生效时 robocopy 不会创建 keys 目录、/XF 生效时不会复制 seed-accounts.json；
-# 目录或文件任一出现即证明排除口径失效（未修复的 backup 会漏拷 platform/data/keys 明文）。
+# ---------- 2b) 断言：备份侧排除（单一真相源驱动，密钥/敏感材质不进备份包） ----------
 $latestBak = Get-ChildItem -LiteralPath $backup -Directory |
   Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' } |
   Sort-Object Name -Descending | Select-Object -First 1
 if (-not $latestBak) { Fail "备份根下无 yyyy-MM-dd 备份目录：$backup" }
+# 保留原有 5 项静态 $forbidden（keys 目录 + website seed）
 $forbidden = @(
   (Join-Path $latestBak.FullName 'platform-data\keys'),
   (Join-Path $latestBak.FullName 'platform-data\keys\secret.key'),
@@ -89,18 +138,39 @@ $forbidden = @(
   (Join-Path $latestBak.FullName 'website-data\seed-accounts.json')
 )
 $leaked = @($forbidden | Where-Object { Test-Path -LiteralPath $_ })
-if ($leaked.Count -gt 0) {
-  Fail ("备份包含密钥/种子口令材质：排除口径失效（泄漏项：" + ($leaked -join '、') + "）")
+# 从策略动态生成：目录（$AllinExcludedDirs）→ 两侧 platform-data / website-data 路径
+foreach ($d in $AllinExcludedDirs) {
+  foreach ($side in @('platform-data', 'website-data')) {
+    $dp = Join-Path $latestBak.FullName (Join-Path $side $d)
+    if (Test-Path -LiteralPath $dp) { $leaked += $dp }
+  }
 }
-Write-Output '[ok] 备份侧排除：platform-data / website-data 的 keys 与 seed-accounts.json 均未进备份包'
+# 从策略动态生成：文件模式（$AllinExcludedFiles）→ 全备份包 -Filter 命中（含无通配符名）
+foreach ($pattern in $AllinExcludedFiles) {
+  $hits = @(Get-ChildItem -LiteralPath $latestBak.FullName -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue)
+  foreach ($h in $hits) { $leaked += $h.FullName }
+}
+# 独立锚点：4 个已种下夹具的备份侧路径（不读策略清单，防「清单被削弱 ⇒ 断言恒绿」）
+foreach ($s in $sensitiveFixtures) {
+  $bp = Join-Path $latestBak.FullName $s.bak
+  if (Test-Path -LiteralPath $bp) { $leaked += $bp }
+}
+$leaked = @($leaked | Select-Object -Unique)
+if ($leaked.Count -gt 0) {
+  Fail ("备份包含密钥/敏感材质：排除口径失效（泄漏项：" + ($leaked -join '、') + "）")
+}
+Write-Output '[ok] 备份侧排除：keys / seed-accounts.json / *.pem / .env / credentials.json 等均未进备份包'
 $backupExclusionChecked = $true
 
-# ---------- 3) 篡改：删一个、改一个 + 模拟密钥通道独立更新（备份后） ----------
+# ---------- 3) 篡改：删一个、改一个 + 模拟独立通道更新（备份后） ----------
 Remove-Item -LiteralPath $pb -Force
 Set-Content -LiteralPath $wa -Value 'TAMPERED' -Encoding utf8
 Set-Content -LiteralPath $pk   -Value $tamperPlatform -Encoding utf8
 Set-Content -LiteralPath $wk   -Value $tamperWebsite  -Encoding utf8
 Set-Content -LiteralPath $seed -Value $tamperSeed     -Encoding utf8
+foreach ($s in $sensitiveFixtures) {
+  Set-Content -LiteralPath $s.path -Value $s.tamper -Encoding utf8
+}
 
 # ---------- 4) 恢复（取最新备份） ----------
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'restore-allin.ps1') `
@@ -120,7 +190,7 @@ foreach ($f in @($pa, $pb, $wa)) {
   else { Write-Output ("[ok] 一致：$f") }
 }
 
-# ---------- 6) 断言：密钥通道独立性 ----------
+# ---------- 6) 断言：密钥通道独立性（3 项，既有结构保持不变） ----------
 # restore 的 /XD keys + /XF seed-accounts.json 应让 /MIR 既不删除也不覆盖目标侧密钥：
 # 篡改后的密钥值必须原样保留；若被还原成 ORIGINAL 或文件消失 → 排除口径失效 → Fail。
 $keyChecks = @(
@@ -147,24 +217,53 @@ if ($ok -and $keyAssertionCount -eq 3) {
   $keyConclusion = '密钥通道独立'
 }
 
+# ---------- 6b) 断言：敏感材质通道独立性（4 个假值敏感材质夹具） ----------
+# restore 的 /XF 敏感材质清单应让 /MIR 既不删除也不覆盖目标侧材质：篡改值必须原样保留；
+# 若被还原成 ORIGINAL 或文件消失 → 排除口径失效 → Fail。
+foreach ($s in $sensitiveFixtures) {
+  $sensitiveAssertionCount++   # 循环体最前面递增：成功/失败/continue 都算「这一项断言确实跑过」
+  if (-not (Test-Path -LiteralPath $s.path)) {
+    Write-Output ("[FAIL] 敏感材质通道被破坏：" + $s.label + " 恢复后消失（/MIR 不应删除独立通道材质）")
+    $ok = $false
+    continue
+  }
+  $actual = (Get-Content -LiteralPath $s.path -Raw -Encoding UTF8).TrimStart([char]0xFEFF).Trim()
+  if ($actual -ne $s.tamper) {
+    Write-Output ("[FAIL] 敏感材质通道被覆盖：" + $s.label + " 期望 " + $s.tamper + " 实得 " + $actual + "（被还原/覆写即证明排除口径失效）")
+    $ok = $false
+  }
+  else { Write-Output ("[ok] 敏感材质通道独立：" + $s.label + " 保持篡改值，restore 未删未覆盖") }
+}
+if ($sensitiveAssertionCount -ne 4) {
+  Write-Output ("[FAIL] 敏感材质通道断言未完整执行：" + $sensitiveAssertionCount + "/4")
+  $ok = $false
+}
+if ($ok -and $sensitivePlantedCount -eq 4 -and $sensitiveAssertionCount -eq 4) {
+  $sensitiveConclusion = '敏感材质通道独立'
+}
+
 # 清理临时目录
 Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
 
 # ---------- 收口（fail-closed：默认拒绝，显式授权） ----------
-# 仅当 2b 已执行、5 段 $ok、6 段 3 项全跑（字面量 3）且结论为「密钥通道独立」时置 $true。
+# 仅当 2b 已执行、5 段 $ok、6 段 3 项全跑（字面量 3）、结论为「密钥通道独立」、
+# 源侧夹具种下 4 项（字面量 4）、6b 4 项全跑（字面量 4）、结论为「敏感材质通道独立」时置 $true。
 # 比较一律用字面量/显式布尔值；变量缺失（$null）或取值漂移都不会让条件成立。
 if ($backupExclusionChecked -eq $true -and
     $ok -eq $true -and
     $keyAssertionCount -eq 3 -and
-    $keyConclusion -eq '密钥通道独立') {
+    $keyConclusion -eq '密钥通道独立' -and
+    $sensitivePlantedCount -eq 4 -and
+    $sensitiveAssertionCount -eq 4 -and
+    $sensitiveConclusion -eq '敏感材质通道独立') {
   $drillPass = $true
 }
 if (-not $drillPass) {
   Fail '演练门禁未通过：断言未完整执行或存在失败，拒绝判定通过'
 }
-# PASS 只在显式授权且结论正确时打印，项数由实际计数生成，绝不出现「未通过」却 PASS。
-if ($drillPass -eq $true -and $keyConclusion -eq '密钥通道独立') {
-  Write-Output ("[PASS] 备份恢复演练通过：数据还原至备份基线，且" + $keyConclusion + "（断言 " + $keyAssertionCount + "/" + $keyAssertionExpected + " 项通过；备份排除 + 恢复不删不覆盖）")
+# PASS 只在显式授权且两段结论都正确时打印，项数由实际计数生成，绝不出现「未通过」却 PASS。
+if ($drillPass -eq $true -and $keyConclusion -eq '密钥通道独立' -and $sensitiveConclusion -eq '敏感材质通道独立') {
+  Write-Output ("[PASS] 备份恢复演练通过：数据还原至备份基线，且" + $keyConclusion + "、" + $sensitiveConclusion + "（密钥断言 " + $keyAssertionCount + "/" + $keyAssertionExpected + " 项、敏感材质断言 " + $sensitiveAssertionCount + "/4 项通过；备份排除 + 恢复不删不覆盖）")
 }
 else {
   Fail '演练门禁与结论不一致，拒绝判定通过'
