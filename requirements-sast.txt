@@ -1,0 +1,31 @@
+# allin Python SAST / 依赖审计专用依赖（钉版）
+#
+# 为什么单列一个文件、不进 requirements-dev.txt：
+#   1) 生命周期不同。requirements-dev.txt 是「每台机器跑门禁」的最小集，由
+#      scripts/bootstrap.sh 装进每个开发者的 .venv；bandit / pip-audit 只在 CI 的
+#      SAST 步骤里经 scripts/run-python-sast.sh 使用。把它们塞进 dev，会让每个新人
+#      为两个「本地一次都不跑」的重工具付启动税 —— pip-audit 会拉进 pip / requests /
+#      rich / CycloneDX 一整套传递依赖，拖慢的却是最常走的那条上手路径。
+#   2) 严格程度不同。dev 里四包都是「宽松下限」，因为门禁只关心能不能解析 YAML、
+#      能不能热重载；而 SAST 工具的**版本本身就是扫描判据**：bandit 的测试集与
+#      JSON 结构、pip-audit 的漏洞库与输出字段都随版本变，run-python-sast.sh 里的
+#      报告解析器正是按钉版版本的输出契约写死的（字段缺失即 exit 3）。不钉版等于
+#      把「今天到底扫了什么」交给 runner 当天拉到的最新版，结论既不可复现也不可证伪。
+#   3) 与 requirements-release.txt 同理：发版、SAST 都不是常规开发路径，各走各的文件，
+#      requirements-dev.txt 保持最小。
+#
+# 版本号来源（2026-11-08 实查索引，不凭记忆）：
+#   python -m pip index versions bandit     → bandit (1.9.4) ...
+#   python -m pip index versions pip-audit  → pip-audit (2.10.1) ...
+#   并已在 Python 3.13 上实测可安装、python -m bandit / -m pip_audit 可用。
+#
+# 只由 scripts/run-python-sast.sh 通过
+#   python -m pip install --quiet -r requirements-sast.txt
+# 安装。脚本不写死镜像；境内 runner 需要换源时经 PIP_INDEX_URL 环境变量指定即可。
+#
+# 升级须知：升版必须同时核对 scripts/run-python-sast.sh 里的报告解析契约
+# （bandit: results / metrics._totals.loc；pip-audit: dependencies[].vulns），
+# 且先跑 `bash scripts/run-python-sast.sh --selfcheck`，再完整实跑一次。
+
+bandit==1.9.4
+pip-audit==2.10.1

@@ -87,6 +87,23 @@ stages:
         strategy:
           retry: "0"
 
+      # 2026-11-08 审查闭环 S7：Python SAST / 依赖审计实跑。
+      # 与 GitHub 侧 gates.yml 的 python-sast job 调**同一脚本、同一先自检后实跑**口径，
+      # 两侧不允许漂移。shadow mode：发现不阻断，基础设施失败 exit 3 阻断。
+      # Gitee Go 的多个 command 不共享 shell 会话，故自检与实跑用**一条**命令串起（&&），
+      # 不依赖跨 command 的 export / cwd；build@python 提供 python3（与 install_deps 一致）。
+      - step: build@python
+        name: python_sast
+        displayName: Python SAST + 依赖审计（shadow mode · 实跑）
+        pythonVersion: "3.13"
+        commands:
+          - bash scripts/run-python-sast.sh --selfcheck && bash scripts/run-python-sast.sh
+        settings: []
+        caches: []
+        notify: []
+        strategy:
+          retry: "0"
+
       - step: build@python
         name: check_docs_index
         displayName: 文档别名 + 文档索引契约（D6 完整判）

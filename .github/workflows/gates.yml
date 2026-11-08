@@ -250,6 +250,34 @@ jobs:
       - name: platform 集成/接口测试（node --test）
         run: npm --prefix platform test
 
+  # 2026-11-08 审查闭环 S7：Python SAST / 依赖审计从「只有配置」变成「CI 真跑 + 结果可消费」。
+  # 规则 28（tools/repocheck/rules_ci.py）只查配置存在，恒 ok，与是否真跑无关；
+  # 这里补跑与消费，不改规则 28、不动 run_all_gates.sh 与既有 20 道门禁口径。
+  # shadow mode：发现本身不阻断（尊重 docs/记录/审计 里「不 day-1 block SAST」
+  # 「新门禁先 shadow mode」的既有决策），但基础设施失败一律 exit 3 阻断。
+  # 与 Gitee Go 侧 .workflow/pipeline.yml 的 python_sast step 调同一脚本，两侧不允许漂移。
+  python-sast:
+    name: Python SAST + 依赖审计（shadow mode · 实跑）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: '3.13'
+
+      # 先跑逻辑自检（不联网 / 不装工具 / 不跑真扫描），自检红了就不必等联网。
+      - name: SAST 脚本自检（--selfcheck）
+        run: bash scripts/run-python-sast.sh --selfcheck
+
+      # 实跑：装钉版工具 → bandit / pip-audit 真扫 → 摘要 + ::warning:: + JSONL。
+      # GITHUB_ACTIONS=true 由 Actions 自动注入，annotation 因此匿名可读。
+      - name: SAST 实跑（bandit + pip-audit）
+        run: bash scripts/run-python-sast.sh
+
   # 2026-11-04 工程审查 P1-4：外部 PR 不会装仓根的 pre-commit，此前 gitleaks
   # 只在本机拦，CI 侧的唯一凭据门禁是规则较窄的自研 g03 ⇒ 存在绕过面。
   # 这里补一道**独立**的密钥扫描，push / pull_request 都触发。
