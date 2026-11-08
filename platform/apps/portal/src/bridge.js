@@ -51,7 +51,7 @@ function readLastJsonLine(file) {
 function gateSummary(tail = 200) {
   let text
   try { text = fs.readFileSync(GATE_RUNS, 'utf8') } catch {
-    return { readable: false, lastRunAt: null, lastOkAt: null, escapeRate: 0 }
+    return { readable: false, lastRunAt: null, lastOkAt: null, escapeRate: 0, skipped: 0 }
   }
   const runs = []
   for (const line of text.split('\n')) {
@@ -60,13 +60,17 @@ function gateSummary(tail = 200) {
     try { runs.push(JSON.parse(t)) } catch { /* 坏行跳过 */ }
   }
   const t2 = runs.slice(-tail)
-  const failed = t2.filter(r => Number(r.exit) !== 0).length
-  const okRuns = t2.filter(r => Number(r.exit) === 0)
+  // SKIP 单列：仅 `skipped === true` 才算 SKIP；旧留痕无该字段按真跑兼容回放。
+  // SKIP 不计入 failed / escapeRate / lastOkAt；lastRunAt 仍按全量 tail。
+  const real = t2.filter(r => r.skipped !== true)
+  const failed = real.filter(r => Number(r.exit) !== 0).length
+  const okRuns = real.filter(r => Number(r.exit) === 0)
   return {
     readable: true,
+    skipped: t2.length - real.length,
     lastRunAt: t2.length ? (t2[t2.length - 1].ts ?? null) : null,
     lastOkAt: okRuns.length ? (okRuns[okRuns.length - 1].ts ?? null) : null,
-    escapeRate: t2.length ? Number((failed / t2.length).toFixed(4)) : 0,
+    escapeRate: real.length ? Number((failed / real.length).toFixed(4)) : 0,
   }
 }
 

@@ -87,6 +87,52 @@ class StatusServiceSmokeTest(unittest.TestCase):
             self.assertEqual(exit_code_of(report['corrupt'], strict=True), 2)    # strict=2
             self.assertEqual(exit_code_of([], strict=True), 0)                   # 缺失/健康=0
 
+    def test_gate_summary_separates_skips(self):
+        # SKIP 单列：较新的 SKIP(exit=0, skipped=true) 不得污染 lastOkAt / 逃逸率分母。
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'gate-runs.jsonl')
+            lines = [
+                json.dumps({'ts': '2026-11-04T10:00:00Z', 'commit': 'c1',
+                            'label': 'real-ok', 'exit': 0, 'ms': 10}),
+                json.dumps({'ts': '2026-11-04T11:00:00Z', 'commit': 'c1',
+                            'label': 'real-red', 'exit': 1, 'ms': 10}),
+                json.dumps({'ts': '2026-11-04T12:00:00Z', 'commit': 'c1',
+                            'label': 'skip', 'exit': 0, 'ms': 0, 'skipped': True}),
+            ]
+            with open(path, 'w', encoding='utf-8') as fh:
+                fh.write('\n'.join(lines) + '\n')
+            g = collect_status(gate_runs=path,
+                               running_json=os.path.join(tmp, 'nope.json'),
+                               g21_runs=os.path.join(tmp, 'nope.jsonl'))['gates']
+        self.assertEqual(g['skipped'], 1)
+        self.assertEqual(g['failed'], 1)
+        self.assertAlmostEqual(g['escapeRate'], 0.5, places=4)  # 分母 2（真跑），非 1/3
+        self.assertEqual(g['inTail'], 3)
+        self.assertEqual(g['lastRunAt'], '2026-11-04T12:00:00Z')  # 全量 tail 末行时间不受影响
+        # 关键：lastOkAt 停在较旧的真跑绿，不被较新的 SKIP(exit=0) 行污染
+        self.assertEqual(g['lastOkAt'], '2026-11-04T10:00:00Z')
+
+    def test_gate_summary_legacy_compat_without_skipped_field(self):
+        # 兼容回放：所有行都无 `skipped` 字段时，行为与改动前一致（仅多出 skipped=0）。
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'gate-runs.jsonl')
+            lines = [
+                json.dumps({'ts': '2026-11-04T10:00:00Z', 'exit': 0, 'label': 'a', 'ms': 10}),
+                json.dumps({'ts': '2026-11-04T11:00:00Z', 'exit': 1, 'label': 'b', 'ms': 10}),
+                json.dumps({'ts': '2026-11-04T12:00:00Z', 'exit': 0, 'label': 'c', 'ms': 10}),
+            ]
+            with open(path, 'w', encoding='utf-8') as fh:
+                fh.write('\n'.join(lines) + '\n')
+            g = collect_status(gate_runs=path,
+                               running_json=os.path.join(tmp, 'nope.json'),
+                               g21_runs=os.path.join(tmp, 'nope.jsonl'))['gates']
+        self.assertEqual(g['skipped'], 0)
+        self.assertEqual(g['failed'], 1)
+        self.assertAlmostEqual(g['escapeRate'], round(1 / 3, 4), places=4)
+        self.assertEqual(g['inTail'], 3)
+        self.assertEqual(g['lastRunAt'], '2026-11-04T12:00:00Z')
+        self.assertEqual(g['lastOkAt'], '2026-11-04T12:00:00Z')
+
 
 if __name__ == '__main__':
     unittest.main()

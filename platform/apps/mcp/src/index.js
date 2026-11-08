@@ -542,13 +542,17 @@ function callTool(name, args) {
         .map((l) => { try { return JSON.parse(l) } catch { return null } })
         .filter(Boolean)
       if (!rows.length) return reject('留痕为空：先跑一次 bash scripts/run_all_gates.sh 再来')
+      // SKIP 单列：仅 `skipped === true` 才算 SKIP；旧留痕无该字段按真跑兼容回放。
+      const real = rows.filter(r => r.skipped !== true)
+      // byLabel 只由真跑行填充：SKIP 行 exit=0 会把「最新状态」伪装成通过（SKIP ≠ pass）。
       const byLabel = {}
-      for (const r of rows) byLabel[r.label] = r.exit
+      for (const r of real) byLabel[r.label] = r.exit
       const limit = Math.min(a.limit || 20, 200)
       return {
         text: JSON.stringify({
           total: rows.length,
-          failed: rows.filter((r) => r.exit !== 0).length,
+          failed: real.filter((r) => r.exit !== 0).length,
+          skipped: rows.length - real.length,
           byLabelLatest: byLabel,
           recent: rows.slice(-limit),
         }, null, 2),

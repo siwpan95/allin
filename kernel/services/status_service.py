@@ -119,13 +119,17 @@ def _gate_summary(gate_runs: str):
         except ValueError:
             corrupt = True      # 坏行计数，但不阻塞（与 portal 侧跳过口径一致）
     tail = runs[-GATE_TAIL:]
-    failed = sum(1 for r in tail if r.get('exit') != 0)
-    ok_runs = [r for r in tail if r.get('exit') == 0]
+    # SKIP 单列：仅 `skipped is True` 才算 SKIP；旧留痕无该字段按真跑兼容回放。
+    # SKIP 不计入 failed / escapeRate / lastOkAt；inTail 与 lastRunAt 仍按全量 tail。
+    tail_real = [r for r in tail if r.get('skipped') is not True]
+    failed = sum(1 for r in tail_real if r.get('exit') != 0)
+    ok_runs = [r for r in tail_real if r.get('exit') == 0]
     summary = {
         'readable': True,
         'inTail': len(tail),
         'failed': failed,
-        'escapeRate': round(failed / len(tail), 4) if tail else 0,
+        'skipped': len(tail) - len(tail_real),
+        'escapeRate': round(failed / len(tail_real), 4) if tail_real else 0,
         'lastRunAt': tail[-1].get('ts') if tail else None,
         'lastOkAt': ok_runs[-1].get('ts') if ok_runs else None,
     }

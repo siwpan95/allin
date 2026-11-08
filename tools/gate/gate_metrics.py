@@ -323,18 +323,51 @@ def batch_stamp(items: list[dict]) -> datetime | None:
     return max(stamps) if stamps else None
 
 
+# --------------------------------------------------------------- SKIP 单列口径
+# SKIP ≠ 通过。落盘 `skipped` 字段把「真跑」与「SKIP」分开：后者不计入
+# failed / escapeRate / lastOkAt，整批全 SKIP 的跑批也不得伪装成全绿。
+# 旧留痕（无 `skipped` 字段）一律按真跑兼容回放，历史全绿仍算全绿。
+def is_skipped(run: dict) -> bool:
+    """仅当显式 `skipped is True` 才算 SKIP；旧行无字段 ⇒ 按真跑处理（兼容回放）。"""
+    return run.get("skipped") is True
+
+
+def real_runs(runs: list[dict]) -> list[dict]:
+    """过滤掉 SKIP 行，只留真跑记录（旧行无字段 ⇒ 按真跑处理）。"""
+    return [r for r in runs if not is_skipped(r)]
+
+
+def escape_rate_of(window: list[dict]) -> float:
+    """逃逸率：分母只算真跑；空真跑集合返回 0.0。"""
+    real = real_runs(window)
+    if not real:
+        return 0.0
+    failed = sum(1 for r in real if int(r.get("exit", 0)) != 0)
+    return failed / len(real)
+
+
 def batch_verdict(runs: list[dict], now: datetime) -> dict:
-    """证据新鲜度：按整批判定全绿（纯函数，不读磁盘，供 --selfcheck 注入验证）。"""
+    """证据新鲜度：按整批判定全绿（纯函数，不读磁盘，供 --selfcheck 注入验证）。
+
+    整组全是 SKIP 的批次不算全绿（`real` 为空 ⇒ ok=False）；SKIP 单列计数
+    通过 `skipped_runs` / `batches_with_skips` 一并返回。
+    """
     stamps = [_aware(parse_ts(str(r.get("ts", "")))) for r in runs]
     stamps = [s for s in stamps if s is not None]
     newest = max(stamps) if stamps else None
 
     groups = group_batches(runs)
+    skipped_runs = sum(1 for r in runs if is_skipped(r))
+    batches_with_skips = sum(
+        1 for _key, items, _inferred in groups if any(is_skipped(r) for r in items)
+    )
     greens: list[tuple[datetime, bool, int]] = []
     last_stamp: datetime | None = None
     last_ok: bool | None = None
     for _key, items, inferred in groups:
-        ok = all(int(r.get("exit", 0)) == 0 for r in items)
+        real = real_runs(items)
+        # 整组全是 SKIP ⇒ real 为空 ⇒ ok=False，不得伪装成全绿。
+        ok = bool(real) and all(int(r.get("exit", 0)) == 0 for r in real)
         stamp = batch_stamp(items)
         if ok and stamp is not None:
             greens.append((stamp, inferred, len(items)))
@@ -346,7 +379,8 @@ def batch_verdict(runs: list[dict], now: datetime) -> dict:
     if newest is None:
         return {"state": "no-evidence", "age_hours": None, "last_run": None,
                 "last_green": None, "last_green_inferred": None,
-                "green_batches": 0, "batches": len(groups), "last_batch_ok": None}
+                "green_batches": 0, "batches": len(groups), "last_batch_ok": None,
+                "skipped_runs": skipped_runs, "batches_with_skips": batches_with_skips}
 
     anchor = green_at or newest
     age = (now - anchor).total_seconds() / 3600.0
@@ -365,6 +399,8 @@ def batch_verdict(runs: list[dict], now: datetime) -> dict:
         "green_batches": len(greens),
         "batches": len(groups),
         "last_batch_ok": last_ok,
+        "skipped_runs": skipped_runs,
+        "batches_with_skips": batches_with_skips,
     }
 
 
@@ -373,8 +409,10 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
     since = now - timedelta(days=days)
     window = [run for run in runs if in_window(run, since)]
 
-    failed = [run for run in window if int(run.get("exit", 0)) != 0]
-    escape_rate = (len(failed) / len(window)) if window else 0.0
+    window_real = real_runs(window)
+    failed = [run for run in window_real if int(run.get("exit", 0)) != 0]
+    # 逃逸率分母只算真跑；SKIP 单列计数，不进 failed / escapeRate。
+    escape_rate = escape_rate_of(window)
 
     # 证据新鲜度改为按「一次跑批」判定，旧秒级分组会把红批洗成 fresh（见 group_batches）。
     freshness = batch_verdict(runs, now)
@@ -387,6 +425,8 @@ def build_metrics(runs: list[dict], days: int, budget_ms: int = BUDGET_MS) -> di
         "window_days": days,
         "runs_total": len(runs),
         "runs_in_window": len(window),
+        "runs_in_window_real": len(window_real),
+        "skipped_runs": len(window) - len(window_real),
         "escape_rate": round(escape_rate, 4),
         "failed_runs": len(failed),
         "failing_labels": sorted({str(run.get("label", "")) for run in failed})[:10],
@@ -401,7 +441,8 @@ def render(metrics: dict, previous: int | None) -> str:
     lines = [f"治理指标 @ {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
              f"  样本：{metrics['runs_total']} 次执行（近 {metrics['window_days']} 天 {metrics['runs_in_window']} 次）"]
     lines.append(f"  ① 门禁逃逸率：{metrics['escape_rate'] * 100:.1f}%"
-                 f"（{metrics['failed_runs']}/{metrics['runs_in_window']}）")
+                 f"（{metrics['failed_runs']}/{metrics['runs_in_window_real']} 真跑；"
+                 f"SKIP {metrics['skipped_runs']} 单列）")
     for label in metrics["failing_labels"]:
         lines.append(f"       - 曾失败：{label}")
     fresh = metrics["evidence_freshness"]
@@ -476,12 +517,16 @@ def render(metrics: dict, previous: int | None) -> str:
 def selfcheck() -> int:
     """注入式自证：秒级假绿必须被挡住，真全绿必须被认出（不读磁盘留痕）。
 
-    四个方向：
+    五个方向：
       ① legacy 跨秒批次含一条失败、且最晚那一秒单独成功 ⇒ 不得判全绿
          （这正是旧 ts[:19] 口径的假绿复现：那一秒会被当成「最近一次全绿」）；
       ② 显式 batch 的一批含失败 ⇒ 不得判全绿，last_batch_ok=False；
       ③ 显式 batch 的一批全成功 ⇒ 能算出 last_green；
-      ④ 先绿后红两批 ⇒ 最近批次红，但仍有更早的全绿批次可报。
+      ④ 先绿后红两批 ⇒ 最近批次红，但仍有更早的全绿批次可报；
+      ⑤ SKIP 单列口径（可证伪 + legacy 兼容回放）：整批只有 SKIP 绿不得算全绿、
+         真跑红 + SKIP 绿不判全绿、无 skipped 字段的 legacy 全绿仍算全绿、
+         3 行含 1 SKIP + 1 真跑红 ⇒ 分母 2 / failed 1 / escape_rate 0.5。
+         把 is_skipped 改成恒 False 时本方向必红（SELFCHECK_FAILED / exit 3）。
     """
     print("== 治理度量 自测（跑批口径反假绿） ==")
     now = datetime(2026, 11, 4, 12, 0, tzinfo=timezone.utc)
@@ -521,6 +566,54 @@ def selfcheck() -> int:
     print("  ④ 先绿后红：最近批次红仍保留更早全绿: %s"
           % ("✔" if v4["last_batch_ok"] is False and bool(v4["last_green"]) else "✘"))
     ok &= v4["last_batch_ok"] is False and bool(v4["last_green"])
+
+    # ⑤ SKIP 单列口径：整批 SKIP 不得伪装全绿（核心可证伪点）、真跑红 + SKIP 绿不判全绿、
+    #    legacy 无 skipped 字段仍判全绿（兼容回放）、真跑分母/逃逸率断言。
+    all_skip = [
+        {"ts": "2026-11-04T11:59:58Z", "batch": "run-s", "commit": "c1",
+         "label": "a", "exit": 0, "ms": 0, "skipped": True},
+        {"ts": "2026-11-04T11:59:59Z", "batch": "run-s", "commit": "c1",
+         "label": "b", "exit": 0, "ms": 0, "skipped": True},
+    ]
+    v5a = batch_verdict(all_skip, now)
+    a5 = v5a["last_green"] is None and v5a["last_batch_ok"] is False
+
+    red_plus_skip = [
+        {"ts": "2026-11-04T11:59:58Z", "batch": "run-m", "commit": "c1",
+         "label": "real-red", "exit": 1, "ms": 10},
+        {"ts": "2026-11-04T11:59:59Z", "batch": "run-m", "commit": "c1",
+         "label": "skip-a", "exit": 0, "ms": 0, "skipped": True},
+        {"ts": "2026-11-04T12:00:00Z", "batch": "run-m", "commit": "c1",
+         "label": "skip-b", "exit": 0, "ms": 0, "skipped": True},
+    ]
+    v5b = batch_verdict(red_plus_skip, now)
+    b5 = v5b["last_green"] is None and v5b["last_batch_ok"] is False
+
+    legacy_green = [
+        {"ts": "2026-11-04T11:59:58Z", "batch": "run-l", "commit": "c1",
+         "label": "a", "exit": 0, "ms": 10},
+        {"ts": "2026-11-04T11:59:59Z", "batch": "run-l", "commit": "c1",
+         "label": "b", "exit": 0, "ms": 10},
+    ]
+    v5c = batch_verdict(legacy_green, now)
+    c5 = bool(v5c["last_green"]) and v5c["last_batch_ok"] is True
+
+    mixed3 = [
+        {"ts": "2026-11-04T11:59:58Z", "label": "skip", "exit": 0, "ms": 0, "skipped": True},
+        {"ts": "2026-11-04T11:59:59Z", "label": "real-red", "exit": 1, "ms": 10},
+        {"ts": "2026-11-04T12:00:00Z", "label": "real-ok", "exit": 0, "ms": 10},
+    ]
+    real3 = real_runs(mixed3)
+    failed3 = [r for r in real3 if int(r.get("exit", 0)) != 0]
+    d5 = (len(real3) == 2 and len(failed3) == 1
+          and abs(escape_rate_of(mixed3) - 0.5) < 1e-9)
+
+    v5 = a5 and b5 and c5 and d5
+    print("  ⑤ SKIP 单列 + legacy 兼容回放:    %s  [整批SKIP不绿=%s, 真跑红+SKIP不绿=%s, "
+          "legacy全绿=%s, 分母=%s/failed=%s/rate=%s]"
+          % ("✔" if v5 else "✘", a5, b5, c5, len(real3), len(failed3),
+             escape_rate_of(mixed3)))
+    ok &= v5
 
     print("SELFCHECK_%s" % ("PASSED" if ok else "FAILED"))
     return 0 if ok else 3

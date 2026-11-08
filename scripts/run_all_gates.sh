@@ -83,7 +83,7 @@ skips=()
 note_skip() {
   # $1=log 标签（沿用既有 <工具>:skip(<原因>) 口径） $2=人读原因
   echo "    [SKIP] $2"
-  log_run "$1" 0 0
+  log_run "$1" 0 0 true
   skips+=("$1")
 }
 
@@ -118,15 +118,19 @@ rotate_if_large() {
 }
 
 log_run() {
-  # $1=label $2=exit code $3=耗时(ms)
+  # $1=label $2=exit code $3=耗时(ms) $4=是否 SKIP（true/false，缺省按真跑 false）
+  # 恒定写 `skipped` 字段保持结构稳定：真跑 false / SKIP true。旧行无此字段 ⇒
+  # 消费方按真跑兼容回放（gate_metrics.py / status_service / portal / mcp 同口径）。
+  # SKIP 不计入 failed / escapeRate / lastOkAt，整批全 SKIP 也不得算全绿。
+  local skipped="${4:-false}"
   mkdir -p "$(dirname "$GATE_RUNS")" 2>/dev/null || true
   rotate_if_large "$GATE_RUNS"
   # 标签里的反斜杠（Windows 解释器路径）会写成像 \P 这样的非法 JSON 转义，
   # 让整行解析失败、指标少算一条 —— 统一折成正斜杠再落盘。
   local label
   label="$(printf '%s' "$1" | tr '\\' '/')"
-  printf '{"ts":"%s","batch":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s}\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" >> "$GATE_RUNS" 2>/dev/null || true
+  printf '{"ts":"%s","batch":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s,"skipped":%s}\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" "$skipped" >> "$GATE_RUNS" 2>/dev/null || true
 }
 
 # GitHub Actions 的 ::error:: workflow command 会把失败项写进 check-run annotations，
@@ -149,7 +153,7 @@ run() {
   out="$(mktemp "${TMPDIR:-/tmp}/allin-gate-XXXXXX")"
   if "$@" > "$out" 2>&1; then rc=0; else rc=$?; fi
   cat "$out"
-  log_run "$*" "$rc" "$(( $(now_ms) - t0 ))"
+  log_run "$*" "$rc" "$(( $(now_ms) - t0 ))" false
   if [ "$rc" -eq 0 ]; then
     echo "    [ok]"
   else
@@ -210,6 +214,10 @@ run "$PY" tools/gate/docs_index.py
 # docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。
 run "$PY" tools/gate/docs_index.py --selfcheck
+# S9（2026-11-08 审查闭环）：度量口径本身也是门禁 —— gate_metrics.py --selfcheck
+# 接入跑批，随每次跑批回归「SKIP 单列 / 反假绿 / legacy 兼容回放」，
+# 防止指标口径被改坏却 CI 常绿（门禁写了不跑 = 没有门禁）。
+run "$PY" tools/gate/gate_metrics.py --selfcheck
 # agent 行为回归：门禁判得了仓库，判不了「agent 行为」（仓根自发现、工具面、人格自述与
 # registry 是否一致）。这组固定样例补的就是这一层 —— 改配置/提示词/工具面前后各跑一次。
 run "$PY" tools/gate/agent_regression.py

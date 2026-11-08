@@ -254,8 +254,11 @@ const server = http.createServer(async (req, res) => {
       }
     } catch { readable = false }
     const tail = runs.slice(-200)
-    const failed = tail.filter(r => Number(r.exit) !== 0).length
-    const okRuns = tail.filter(r => Number(r.exit) === 0)
+    // SKIP 单列：仅 `skipped === true` 才算 SKIP；旧留痕无该字段按真跑兼容回放。
+    // SKIP 不计入 failed / escapeRate / lastOkAt；runs 仍返回全部行（含 SKIP）供界面查看。
+    const real = tail.filter(r => r.skipped !== true)
+    const failed = real.filter(r => Number(r.exit) !== 0).length
+    const okRuns = real.filter(r => Number(r.exit) === 0)
     return json(res, 200, {
       trail,
       readable,
@@ -264,7 +267,8 @@ const server = http.createServer(async (req, res) => {
         total: runs.length,
         inTail: tail.length,
         failed,
-        escapeRate: tail.length ? Number((failed / tail.length).toFixed(4)) : 0,
+        skipped: tail.length - real.length,
+        escapeRate: real.length ? Number((failed / real.length).toFixed(4)) : 0,
         lastRunAt: tail.length ? tail[tail.length - 1].ts : null,
         lastOkAt: okRuns.length ? okRuns[okRuns.length - 1].ts : null
       }

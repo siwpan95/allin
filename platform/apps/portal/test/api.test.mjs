@@ -180,4 +180,33 @@ test('CSRF 围栏：本地标记头 / 同源浏览器信号 → 放行到业务�
   assert.equal(await rawPost('/api/library/nope/start', sameOrigin), 404)
 })
 
+test('GET /api/gate-history：SKIP 单列，不污染 failed/escapeRate/lastOkAt', async () => {
+  const trailFile = path.join(tmp, 'gate-history-runs.jsonl')
+  const lines = [
+    JSON.stringify({ ts: '2026-11-04T10:00:00Z', commit: 'c1', label: 'real-ok', exit: 0, ms: 10 }),
+    JSON.stringify({ ts: '2026-11-04T11:00:00Z', commit: 'c1', label: 'real-red', exit: 1, ms: 10 }),
+    JSON.stringify({ ts: '2026-11-04T12:00:00Z', commit: 'c1', label: 'skip', exit: 0, ms: 0, skipped: true }),
+  ]
+  fs.writeFileSync(trailFile, lines.join('\n') + '\n', 'utf8')
+  // handler 运行时读 process.env.ALLIN_GATE_RUNS；try/finally 恢复，避免污染其他用例。
+  const prev = process.env.ALLIN_GATE_RUNS
+  process.env.ALLIN_GATE_RUNS = trailFile
+  try {
+    const res = await fetch(base + '/api/gate-history')
+    const body = await res.json()
+    assert.equal(body.readable, true)
+    assert.equal(body.summary.skipped, 1)
+    assert.equal(body.summary.failed, 1)
+    assert.equal(body.summary.escapeRate, 0.5)                     // 分母 2（真跑），非 1/3
+    assert.equal(body.summary.lastOkAt, '2026-11-04T10:00:00Z')   // 不被较新 SKIP 行污染
+    assert.equal(body.summary.inTail, 3)
+    assert.equal(body.summary.lastRunAt, '2026-11-04T12:00:00Z')  // 全量 tail 末行时间
+    assert.equal(body.runs.length, 3)                              // 仍返回全部行
+    assert.equal(body.runs.some(r => r.skipped === true), true)    // 且含 SKIP 行
+  } finally {
+    if (prev === undefined) delete process.env.ALLIN_GATE_RUNS
+    else process.env.ALLIN_GATE_RUNS = prev
+  }
+})
+
 after(() => server.close())
