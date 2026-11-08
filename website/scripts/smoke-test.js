@@ -86,6 +86,10 @@ async function main() {
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  // 2026-11-08 复评增量：异常路径（main().catch / 未就绪 / 意外退出）同样回收
+  // 临时实例。process.exit 会触发 'exit' 事件，闭包内 child 此时仍可访问，
+  // 避免 9155 端口/进程残留导致后续冒烟 flaky。正常路径的显式 kill 保留。
+  process.on('exit', () => { try { child.kill('SIGKILL'); } catch { /* 已退出 */ } });
 
   const ready = await waitReady(child);
   if (!ready) {
