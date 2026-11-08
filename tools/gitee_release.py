@@ -116,7 +116,7 @@ def api(method, path, token, data=None, timeout=60, retries=2):
         # P5：令牌仅在头内，绝不进 URL。
         req.add_header("Authorization", "token " + token)
         try:
-            with _GITEE_OPENER.open(req, timeout=timeout) as r:
+            with _GITEE_OPENER.open(req, timeout=timeout) as r:  # gov-python: allow — urllib opener 不收 encoding（返回字节流），下方已显式 decode("utf-8")
                 raw = r.read().decode("utf-8", "replace")
                 try:
                     return r.status, json.loads(raw)
