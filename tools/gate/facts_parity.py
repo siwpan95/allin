@@ -2,11 +2,14 @@
 """facts-parity gate -- 结构化真身引用完整性 + 生成物漂移（独立门禁，g21 模式）。
 
 判据分两层，都要如实报态，不把「没检查」冒充「通过」：
-  * 主判据（本期启用）：facts.json 的 doc_refs[].path 必须解析到真实文件；
-    generated=true 的条目登记为「待启用生成物」并计数（A 全域迁移真身反转后启用）。
-  * 次判据（生成物目录在位即阻断，无开关）：生成区 marker 哈希 ⇄ facts.json 一致性；
-    目录缺席时显式 SKIPPED 并标注「待 A 真身反转后启用」，登记在交接卷台账，不把跑批拖红。
-    —— 即解除 P2 延迟：生成物一旦出现在仓库，本门禁即刻进入阻断态，无需任何额外配置。
+  * 主判据（启用）：facts.json 的 doc_refs[].path 必须解析到真实文件；
+    generated=true 的条目登记为「生成物引用」并计数，其对应 {machine_id}.facts.md
+    在生成物在场时须齐备（见次判据完备性检查）。
+  * 次判据（生成物目录在位即阻断，无开关）：生成区 marker 哈希 ⇄ facts.json 一致性，
+    且每个 generated=true doc_ref 须有对应生成物（完备性）。
+    「A 全域迁移真身反转」（派生索引投影，P0-A 三 Phase 已收口）前置条件已满足，
+    故本判据为**全量启用**态：生成物一旦出现在仓库即刻进入阻断态，无需任何额外配置；
+    目录缺席时显式 SKIPPED（离线北极星允许派生物缺失，render 后即被即时阻断），不把跑批拖红。
 
 判据只有一份：哈希与解析全部复用 tools/facts/cli.py，禁止在这里写第二套。
 零第三方依赖。退出码：0 干净 / 1 有 finding / 2 用法错 / 3 环境错。
@@ -42,6 +45,9 @@ def run(data: Path, generated_dir: Path, root: Path = ROOT) -> int:
 
     generated_files = sorted(generated_dir.glob("*.facts.md")) if generated_dir.is_dir() else []
     if generated_files:
+        # 真身反转（P0-A 派生索引投影）已收口 ⇒ g23 进入全量阻断态：
+        # 既查在场生成物的 marker 漂移，也查 generated=true 引用是否齐备对应生成物（完备性）。
+        names = {f.name for f in generated_files}
         for f in generated_files:
             mid = f.name[: -len(".facts.md")]
             expected = F.expected_hash(doc, mid)
@@ -50,9 +56,17 @@ def run(data: Path, generated_dir: Path, root: Path = ROOT) -> int:
                 findings.append(f"{f.name}: 缺 FACTS-GENERATED marker")
             elif found.group(1) != expected:
                 findings.append(f"{f.name}: 漂移 marker={found.group(1)} expected={expected}")
-        parity_mode = f"active({len(generated_files)} 份)"
+        # 完备性：每个 generated=true 的 doc_ref 必须存在对应 {machine_id}.facts.md
+        for r in pending:
+            mid = Path(r["path"]).parent.name
+            expect = f"{mid}.facts.md"
+            if expect not in names:
+                findings.append(f"generated doc_ref {r.get('doc_id')} 缺对应生成物 {expect}（render 后需重建）")
+        parity_mode = f"active({len(generated_files)} 份, 完备性已查)"
     else:
-        parity_mode = "SKIPPED(生成物未启用，待 A 全域迁移真身反转后启用；生成物在场即刻阻断)"
+        # 派生物缺位：离线北极星允许缺失（render 后即被 g23 即时阻断）；
+        # 「A 全域迁移真身反转」前置条件已于 P0-A 收口满足，此处仅因派生物未生成而 SKIP，不冒充通过。
+        parity_mode = "SKIPPED(派生物未生成；真身反转已完成，render 后即时启用阻断)"
 
     print(f"{GATE}: doc_refs={len(refs)} missing={len([x for x in findings if x.startswith('doc_ref')])} "
           f"| generated_pending={len(pending)} | marker_parity={parity_mode}")
@@ -82,11 +96,17 @@ def selftest() -> int:
     target.write_text(F.MARKER.sub("<!-- FACTS-GENERATED:START sha256:0000000000000000 -->",
                                   target.read_text(encoding="utf-8")), encoding="utf-8")
     drift = run(data, outdir, ROOT)
+    # 完备性：删掉 generated=true 引用(SIWPAN)对应的生成物 → 应 BLOCK
+    target.unlink()
+    missing_artifact = run(data, outdir, ROOT)
+    F.cmd_render(data, outdir, check=False)  # 还原，便于临时目录回收
 
     ok = (clean == EXIT_OK and caught_bad_ref == EXIT_BLOCKING
-          and with_generated == EXIT_OK and drift == EXIT_BLOCKING)
+          and with_generated == EXIT_OK and drift == EXIT_BLOCKING
+          and missing_artifact == EXIT_BLOCKING)
     print(json.dumps({"gate": GATE, "clean": clean, "bad_doc_ref": caught_bad_ref,
                       "marker_active": with_generated, "marker_drift": drift,
+                      "completeness_missing": missing_artifact,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 

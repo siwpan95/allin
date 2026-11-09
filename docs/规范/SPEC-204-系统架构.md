@@ -176,7 +176,7 @@
 | NetBox（资产 / 关系视图） | Device / Service / Port / Changelog / 只读 MCP | Git → NetBox 单向同步（`--apply` 才写） | 服务态数据，随 clone 不可复现 |
 | Dolt（版本历史） | 事实行 commit DAG / `AS OF` / `dolt_diff_*`（transaction time） | CI 单向导入，须显式 `DOLT_COMMIT()` | `.dolt/` 是二进制 chunk，破坏文本 diff |
 | `facts/build/facts.sqlite` | 本机离线查询缓存 / FTS5 trigram | `cli.py build` | 派生物，`.gitignore` 忽略 |
-| `facts/generated/*.facts.md` | 人类可读生成物（marker + `--check`） | `cli.py render` | 派生物，P2 真身反转后启用阻断 |
+| `facts/generated/*.facts.md` | 人类可读生成物（marker + `--check`） | `cli.py render` | 派生物，g23 已全量启用阻断（真身反转 P0-A 收口后，在场即查 marker 漂移 + generated=true 引用完备性） |
 | GraphRAG 索引 | **仅叙述层**的实体图 / 社区摘要 / 四模式检索 | 按月卷增量 | 需 LLM、概率性，不可作事实来源 |
 
 **三栈并列下游、互不替代**：NetBox 不承担版本化，Dolt 不承担文件存储与关系 UI，

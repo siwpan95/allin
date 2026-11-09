@@ -266,8 +266,9 @@ run "$PY" tools/gate/agent_parity.py
 # 且全部零第三方依赖、零服务依赖 —— 拔网 + 停三栈 + 删派生库时仍须全绿（离线北极星）。
 # ① g22：结构化真身过 JSON Schema（纯文本，facts/facts.json ⇄ facts/facts.schema.json）
 run "$PY" tools/facts/cli.py validate
-# ② g23：doc_refs 引用完整性 + 生成区 marker 漂移。生成物未启用时**显式 SKIPPED 并计数**，
-#    不冒充通过（待 P2 真身反转后启用阻断）；未做项已登记交接卷 §一百四十六。
+# ② g23：doc_refs 引用完整性 + 生成区 marker 漂移 + generated=true 引用完备性。
+#    真身反转（P0-A 派生索引投影）已收口 ⇒ 生成物在场即**全量阻断**（marker 漂移 + 缺对应生成物），
+#    缺席时显式 SKIPPED 并计数（离线北极星允许派生物缺失，render 后即被即时阻断），不冒充通过。
 run "$PY" tools/gate/facts_parity.py
 # ③ g24：文档内相对路径。棘轮基线 tools/gate/baseline/relative-refs.txt 挂存量 10 条，
 #    只阻断**新增**断链；docs/记录/ 历史卷按只增不改永久豁免（SPEC-005 §3.12）。
