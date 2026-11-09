@@ -19,6 +19,12 @@
     "doc_refs": { "type": "array", "items": { "$ref": "#/$defs/doc_ref" } },
     "projects": { "type": "array", "items": { "$ref": "#/$defs/project" },
       "description": "registry 索引投影（派生物，可重建）：145 个项目的权威内容在 platform/registry/projects/*.yaml，本处仅做索引 + source_file 溯源指针。删了重建即得，删了不破门禁。" },
+    "tiering": { "type": "array", "items": { "$ref": "#/$defs/tiering_index" },
+      "description": "组合分级决策索引 派生索引投影（派生物，可重建）：权威内容在 docs/事实源/tiering.yaml，本处仅索引 + source_file 溯源指针。删了重建即得。" },
+    "tools": { "type": "array", "items": { "$ref": "#/$defs/tool_index" },
+      "description": "工具分类索引 派生索引投影（派生物，可重建）：权威内容在 docs/事实源/tools.yaml。删了重建即得。" },
+    "licenses": { "type": "array", "items": { "$ref": "#/$defs/license_index" },
+      "description": "来源与许可表 派生索引投影（派生物，可重建）：权威内容在 docs/事实源/licenses.yaml。删了重建即得。" },
     "observation_runs": { "type": "array", "items": { "$ref": "#/$defs/observation_run" } }
   },
   "$defs": {
@@ -175,6 +181,39 @@
         "path": { "type": ["string", "null"] },
         "publish_repo": { "type": ["string", "null"] },
         "source_file": { "type": "string", "description": "回指 platform/registry/projects/<id>.yaml 的溯源指针" }
+      }
+    },
+    "tiering_index": {
+      "type": "object", "additionalProperties": false,
+      "description": "tiering 派生索引投影：仅 id/tier/domain/source_file，动作/归档目标/备注等详情留在 docs/事实源/tiering.yaml。删了重建即得。",
+      "required": ["repo", "tier", "domain", "source_file"],
+      "properties": {
+        "repo": { "type": "string" },
+        "tier": { "type": "string" },
+        "domain": { "type": "string" },
+        "source_file": { "type": "string", "description": "回指 docs/事实源/tiering.yaml 的溯源指针" }
+      }
+    },
+    "tool_index": {
+      "type": "object", "additionalProperties": false,
+      "description": "tools 派生索引投影：仅 id/category/registry_id/source_file，用途/远端仓/状态等详情留在 docs/事实源/tools.yaml。删了重建即得。",
+      "required": ["tool", "category", "source_file"],
+      "properties": {
+        "tool": { "type": "string" },
+        "category": { "type": ["string", "null"] },
+        "registry_id": { "type": ["string", "null"] },
+        "source_file": { "type": "string", "description": "回指 docs/事实源/tools.yaml 的溯源指针" }
+      }
+    },
+    "license_index": {
+      "type": "object", "additionalProperties": false,
+      "description": "licenses 派生索引投影：仅 id/license/status/source_file，来源/许可细则/归档标记等详情留在 docs/事实源/licenses.yaml。删了重建即得。",
+      "required": ["dir", "license", "status", "source_file"],
+      "properties": {
+        "dir": { "type": "string" },
+        "license": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "source_file": { "type": "string", "description": "回指 docs/事实源/licenses.yaml 的溯源指针" }
       }
     },
     "observation_run": {

@@ -1623,5 +1623,1313 @@
       "publish_repo": null,
       "source_file": "platform/registry/projects/zhuangtaiji.yaml"
     }
+  ],
+  "tiering": [
+    {
+      "repo": "ollama_generator",
+      "tier": "①核心推进",
+      "domain": "AI/大模型",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "peasy-ai",
+      "tier": "①核心推进",
+      "domain": "AI/大模型",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "weor",
+      "tier": "①核心推进",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "3dworld",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "3dworld-demos",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "3dworld-globe",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "an-engine",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "cordis-py",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "cordis-snake",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "cordis-table-app",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "cordis-text-game",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dict-scene-engine",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dse-core",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "superengine",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "worldbuilder",
+      "tier": "①核心推进",
+      "domain": "游戏引擎/框架",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "d20-table-link",
+      "tier": "①核心推进",
+      "domain": "跑团/TRPG",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "roleplayer",
+      "tier": "①核心推进",
+      "domain": "跑团/TRPG",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "running-group-simulator",
+      "tier": "①核心推进",
+      "domain": "跑团/TRPG",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "audio-pipeline",
+      "tier": "①核心推进",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "audio-separator",
+      "tier": "①核心推进",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "bloodmusic",
+      "tier": "①核心推进",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "musickit",
+      "tier": "①核心推进",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "remix",
+      "tier": "①核心推进",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "sin-virtue-cordis-host",
+      "tier": "②保留",
+      "domain": "原型/学习/杂项",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "lab",
+      "tier": "②保留",
+      "domain": "多语言引擎移植验证",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "weiqi_lab",
+      "tier": "②保留",
+      "domain": "多语言引擎移植验证",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "novel",
+      "tier": "②精选旗舰",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "novel-generator",
+      "tier": "②保留",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "novel-reader",
+      "tier": "②保留",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "novel-run",
+      "tier": "②精选旗舰",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "write",
+      "tier": "②精选旗舰",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "write-agent",
+      "tier": "②精选旗舰",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "board-replay",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "foolproof-operation",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "markdown",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "py_test_runner",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pyinstaller",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "zhuangtaiji",
+      "tier": "②保留",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "players-unified",
+      "tier": "②精选旗舰",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pluginplayer",
+      "tier": "②精选旗舰",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "backroom",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dungeon",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dwarf-scrolls",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "magic-tower",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mirsolo",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "moba_battle_platform",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "niulai",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "tavern-rogue",
+      "tier": "②精选旗舰",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "hushi_twrj",
+      "tier": "②保留",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "webcopier",
+      "tier": "②保留",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "art_video_gen",
+      "tier": "②精选旗舰",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "particlefx",
+      "tier": "②精选旗舰",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pywallpaper",
+      "tier": "②精选旗舰",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "video-generator",
+      "tier": "②精选旗舰",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "private-radio-stations",
+      "tier": "②保留",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "haha",
+      "tier": "③收敛合并",
+      "domain": "原型/学习/杂项",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "test",
+      "tier": "③收敛合并",
+      "domain": "原型/学习/杂项",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "auto_clicker",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "calculator",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "captcha-demo",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "fonts",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pdf",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pomodmer",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "print",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "renamer",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "santi-teleprompter",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "subtitle",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "yasuo",
+      "tier": "③收敛合并",
+      "domain": "开发者/系统工具",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "daily_player",
+      "tier": "③收敛合并",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "localplayer",
+      "tier": "③收敛合并",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "music-player",
+      "tier": "③收敛合并",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "player",
+      "tier": "③收敛合并",
+      "domain": "播放器",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "Idle",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "adventurelog",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "arcade",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "ashen-beacon",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "bee",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "darksouls",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "diablo",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "fish",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "god-hand-",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "happy-childrens-day",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "hell-below",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "jotunnslayer",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "kard",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "legend",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "life-reset-simulator",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "loly",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "lonely-desert-road",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "maga",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mahjong",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mc-clone",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mcclone3d",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "pq-multiverse",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "project-root",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "random-dungeon-",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "russia",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "sandbox",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "sign-in-simulator",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "smile",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "stay",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "table-hanging-machine",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "text-adventure",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "text-fps",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "under-withered-limbs",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "yuanbao",
+      "tier": "③收敛合并",
+      "domain": "游戏作品",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "cellular_automaton",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "ddd2",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "drawpic",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "gan",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "imgproc",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "ling-train",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "math",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mathematical-formula-renderer",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "media-tools",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "photovideo",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "procedural-video",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "shikonghuaban",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "wave4",
+      "tier": "③收敛合并",
+      "domain": "视频/图像/特效",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "audiotool",
+      "tier": "③收敛合并",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "midi",
+      "tier": "③收敛合并",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "ncmturnmp3",
+      "tier": "③收敛合并",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "sin-virtue-game",
+      "tier": "③收敛合并",
+      "domain": "原型/学习/杂项",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "music-prompt-generator",
+      "tier": "④止损",
+      "domain": "AI/大模型",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "novel-down",
+      "tier": "④止损",
+      "domain": "小说/网文",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "bilibili-helper-py",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "crawl-hub",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "image-scraper",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "midjourney_video",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "photo",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "sfx-download",
+      "tier": "④止损",
+      "domain": "爬虫/采集",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "csmusic",
+      "tier": "④止损",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "mp",
+      "tier": "④止损",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "radio_special_instruments",
+      "tier": "④止损",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "wav_music_gen",
+      "tier": "④止损",
+      "domain": "音乐/音频",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dev-toolkit",
+      "tier": "**③b 容器**",
+      "domain": "归档聚合仓",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "game-prototypes",
+      "tier": "**③b 容器**",
+      "domain": "归档聚合仓",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "media-prototypes",
+      "tier": "**③b 容器**",
+      "domain": "归档聚合仓",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "music-prototypes",
+      "tier": "**③b 容器**",
+      "domain": "归档聚合仓",
+      "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "dsh-release-archiver",
+      "tier": "②精选旗舰",
+      "domain": "工具链/自动化",
+      "source_file": "docs/事实源/tiering.yaml"
+    }
+  ],
+  "tools": [
+    {
+      "tool": "easy-ai",
+      "category": "ai",
+      "registry_id": "peasy-ai",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "ollama_generator",
+      "category": "ai",
+      "registry_id": "ollama-generator",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "bloodmusic",
+      "category": "audio",
+      "registry_id": "bloodmusic",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "audio_pipeline",
+      "category": "audio",
+      "registry_id": "audio-pipeline",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "audio_separator",
+      "category": "audio",
+      "registry_id": "audio-separator",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "remix",
+      "category": "audio",
+      "registry_id": "remix",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "audiotool",
+      "category": "audio",
+      "registry_id": "audiotool",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "wav_music_gen",
+      "category": "audio",
+      "registry_id": "wav-music-gen",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "ncmturnmp3",
+      "category": "audio",
+      "registry_id": "ncmturnmp3",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "sfx",
+      "category": "audio",
+      "registry_id": "sfx",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "webcopier",
+      "category": "crawler",
+      "registry_id": "webcopier",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "bilibili-helper-py",
+      "category": "crawler",
+      "registry_id": "bilibili-helper",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "image-scraper",
+      "category": "crawler",
+      "registry_id": "image-scraper",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "midjourney_video",
+      "category": "crawler",
+      "registry_id": "midjourney-video",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "auto_clicker",
+      "category": "desktop",
+      "registry_id": "auto-clicker",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "daily_player",
+      "category": "desktop",
+      "registry_id": "daily-player",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "subtitle",
+      "category": "desktop",
+      "registry_id": "subtitle",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "pdf",
+      "category": "desktop",
+      "registry_id": "pdf",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "fonts",
+      "category": "desktop",
+      "registry_id": "fonts",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "print",
+      "category": "desktop",
+      "registry_id": "print",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "py_test_runner",
+      "category": "dev",
+      "registry_id": "py-test-runner",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "pyinstaller",
+      "category": "dev",
+      "registry_id": "pyinstaller",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "repocheck",
+      "category": "dev",
+      "registry_id": null,
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "renamer",
+      "category": "dev",
+      "registry_id": "renamer",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "requirements",
+      "category": "dev",
+      "registry_id": "foolproof-operation",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "yasuo",
+      "category": "dev",
+      "registry_id": "yasuo",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "allin_engine",
+      "category": "game",
+      "registry_id": "allin-engine",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "procgen",
+      "category": "game",
+      "registry_id": "worldbuilder",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "zhuangtaiji",
+      "category": "game",
+      "registry_id": "zhuangtaiji",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "drawpic",
+      "category": "visual",
+      "registry_id": "drawpic",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "art_video_gen",
+      "category": "visual",
+      "registry_id": "art-video-gen",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "photovideo",
+      "category": "visual",
+      "registry_id": "photovideo",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "imgproc",
+      "category": "visual",
+      "registry_id": "imgproc",
+      "source_file": "docs/事实源/tools.yaml"
+    },
+    {
+      "tool": "particle",
+      "category": "visual",
+      "registry_id": "particle",
+      "source_file": "docs/事实源/tools.yaml"
+    }
+  ],
+  "licenses": [
+    {
+      "dir": "AI-NovelsGenerator-main",
+      "license": "AGPL-3.0",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "AzuraCast-main",
+      "license": "AGPL-3.0-or-later",
+      "status": "需补许可",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "bilibili-helper",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "cheatcard",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ChineseAiDungeon-main",
+      "license": "GPL-2.0",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "cocostudio-mahjong-master",
+      "license": "无",
+      "status": "需补许可",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ComfyUI-master",
+      "license": "GPL-3.0",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "cordis-snake-example",
+      "license": "MIT",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "darksouls_cli",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "deepseek-harness-master",
+      "license": "MIT",
+      "status": "可发布，含用户部署补丁",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "diabloworld-master",
+      "license": "无",
+      "status": "需补许可",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "DouZero-main",
+      "license": "Apache-2.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "DrissionPage-master",
+      "license": "自定义",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ECommerceCrawlers-master",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "Fictionist-master",
+      "license": "无",
+      "status": "需补许可",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "firefly-master",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "html",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "kard_CN",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "KKRIEGER",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "kontakt_transcode",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "krieger-clone",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "manual_dota-master",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "merged_gui",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "mindspore-master",
+      "license": "Apache-2.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "MusicStudioPro",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "NKGMobaBasedOnET-master",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "obEspoir-master",
+      "license": "AFL-3.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "PlantsVsZombies-master",
+      "license": "Apache-2.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "pq6-4-4",
+      "license": "混合(GPL-3.0+MIT)",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "pro2",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "pyaudio-simpleaudio",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "Python-master",
+      "license": "GPL-3.0",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ratel-master",
+      "license": "Apache-2.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "search_word",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "SerpentAI-dev",
+      "license": "MIT",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ShicimingjuCrawleAndDisplay",
+      "license": "Apache-2.0",
+      "status": "可发布",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "SohuNewCrawler",
+      "license": "无",
+      "status": "已归档",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "TaobaoCrawler",
+      "license": "无",
+      "status": "已归档",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "TownGeneratorOS-master",
+      "license": "GPL-3.0",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "unityRpg-unity54",
+      "license": "无",
+      "status": "需补许可",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "XianyuCrawler",
+      "license": "无",
+      "status": "已归档",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "youjian",
+      "license": "无",
+      "status": "仅本地参考",
+      "source_file": "docs/事实源/licenses.yaml"
+    },
+    {
+      "dir": "ZhaopinCrawler",
+      "license": "无",
+      "status": "已归档",
+      "source_file": "docs/事实源/licenses.yaml"
+    }
   ]
 }

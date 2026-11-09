@@ -209,6 +209,42 @@ def check_projects(data: Path, root: Path, findings: list[str]) -> dict:
     return {"registry": len(registry_stems), "facts_projects": len(projects)}
 
 
+def _load_yaml_list(path: Path, key: str):
+    if not path.is_file():
+        return None
+    if yaml is None:
+        return "NO_YAML"
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return None
+    return doc.get(key) or []
+
+
+def check_index_sync(data: Path, root: Path, findings: list[str], *,
+                     name: str, auth_rel: str, key: str, id_field: str) -> dict:
+    """facts.json.<key> 索引投影 ⇄ docs/事实源/<auth_rel> 同步（双向：权威缺失/投影多出均 BLOCK）。
+
+    与 check_projects 同纪律：权威源（YAML）是 Git 内唯一被手改的机器可读源；facts.json.<key>
+    是派生索引投影（删了重建即得）。投影滞后（权威有、facts 缺）→ BLOCK；投影凭空多（facts 有、权威缺）→ BLOCK。
+    """
+    auth = root / auth_rel
+    rows = _load_yaml_list(auth, key)
+    if rows is None:
+        return {"mode": f"SKIPPED(no {name} auth)"}
+    if rows == "NO_YAML":
+        return {"mode": "SKIPPED(yaml 不可用)"}
+    a_ids = {r.get(id_field) for r in rows if isinstance(r, dict) and r.get(id_field)}
+    doc = F.load_json(data)
+    j_index = doc.get(key) or []
+    j_ids = {r.get(id_field) for r in j_index if isinstance(r, dict) and r.get(id_field)}
+    for k in sorted(a_ids - j_ids):
+        findings.append(f"{name} 权威源有 {k} 但 facts.json.{key} 缺（投影滞后，未重新生成）")
+    for k in sorted(j_ids - a_ids):
+        findings.append(f"facts.json.{key} 有 {k} 但权威源缺（投影凭空多，真漂移）")
+    return {"auth": len(a_ids), "facts": len(j_ids)}
+
+
 def check_ports_mirror(root: Path, findings: list[str]) -> dict:
     """platform/registry/ports.yaml 镜像 ⇄ docs/事实源/ports.yaml 权威：镜像必须是子集 + service 匹配。
 
@@ -251,8 +287,12 @@ def run(data: Path, ports_yaml: Path, state: Path, root: Path = ROOT) -> int:
     m = check_machines(data, root, findings)
     pr = check_projects(data, root, findings)
     pm = check_ports_mirror(root, findings)
+    ti = check_index_sync(data, root, findings, name="tiering", auth_rel="docs/事实源/tiering.yaml", key="tiering", id_field="repo")
+    to = check_index_sync(data, root, findings, name="tools", auth_rel="docs/事实源/tools.yaml", key="tools", id_field="tool")
+    li = check_index_sync(data, root, findings, name="licenses", auth_rel="docs/事实源/licenses.yaml", key="licenses", id_field="dir")
     print(f"{GATE}: ports={p.get('mode', p)} | source_line={s} | dolt_state={d.get('mode', d)} "
-          f"| machines={m} | projects={pr.get('mode', pr)} | ports_mirror={pm.get('mode', pm)}")
+          f"| machines={m} | projects={pr.get('mode', pr)} | ports_mirror={pm.get('mode', pm)} "
+          f"| tiering={ti.get('mode', ti)} | tools={to.get('mode', to)} | licenses={li.get('mode', li)}")
     for x in infos:
         print(f"  INFO {x}")
     for x in warnings:

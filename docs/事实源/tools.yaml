@@ -1,0 +1,205 @@
+tools:
+- tool: easy-ai
+  category: ai
+  purpose: 通用 AI 对话框架（配置驱动 AI 核心 + 叙事引擎 + TRPG 训练场）
+  registry_id: peasy-ai
+  remote_url: https://gitee.com/siwpan/peasy-ai
+  status: 已更名
+- tool: ollama_generator
+  category: ai
+  purpose: AI 文本生成库（Ollama 本地模型 / DeepSeek API，多轮对话 + 中英清洗）
+  registry_id: ollama-generator
+  remote_url: https://gitee.com/siwpan/ollama_generator
+  status: 已更名
+- tool: bloodmusic
+  category: audio
+  purpose: 程序化游戏音频合成引擎（FM/粒子/波表/物理建模 + 效果链，BGM/SFX 实时生成）
+  registry_id: bloodmusic
+  remote_url: https://gitee.com/siwpan/bloodmusic
+  status: null
+- tool: audio_pipeline
+  category: audio
+  purpose: 纯音乐制作流水线编排：拆歌→单音源导出→混音→后期重分离（调用 bloodmusic/remix/audio_separator）
+  registry_id: audio-pipeline
+  remote_url: https://gitee.com/siwpan/audio-pipeline
+  status: 已更名
+- tool: audio_separator
+  category: audio
+  purpose: 人声/伴奏分离（Demucs / BS-RoFormer，自带 venv，GUI + 批量 + Web 服务）
+  registry_id: audio-separator
+  remote_url: https://gitee.com/siwpan/audio-separator
+  status: 已更名
+- tool: remix
+  category: audio
+  purpose: 音频混音 & 视频合成（pydub，内置 ffmpeg/ffprobe 于 bin/）
+  registry_id: remix
+  remote_url: https://gitee.com/siwpan/musickit
+  status: null
+- tool: audiotool
+  category: audio
+  purpose: 批量音频/视频加工 GUI（提取音频、转换、响度归一化等）
+  registry_id: audiotool
+  remote_url: https://gitee.com/siwpan/audiotool
+  status: null
+- tool: wav_music_gen
+  category: audio
+  purpose: AutoWav 随机 WAV 音乐生成器（12 调式、13 和弦进行、6 音色，零依赖）
+  registry_id: wav-music-gen
+  remote_url: https://gitee.com/siwpan/wav_music_gen
+  status: 已更名
+- tool: ncmturnmp3
+  category: audio
+  purpose: 加密音乐解密转换（网易云 ncm / 酷狗 kgm / 酷我 kwm 等 → mp3/flac，GUI + CLI）
+  registry_id: ncmturnmp3
+  remote_url: https://gitee.com/siwpan/ncmturnmp3
+  status: null
+- tool: sfx
+  category: audio
+  purpose: 免费音效爬取（18 个免注册音效站 + 公版 CC0 音源，Playwright）
+  registry_id: sfx
+  remote_url: https://gitee.com/siwpan/sfx-download
+  status: null
+- tool: webcopier
+  category: crawler
+  purpose: 网页正文抓取（单页/批量/整站，6 种提取方式，反爬体系 + 验证码识别）
+  registry_id: webcopier
+  remote_url: https://gitee.com/siwpan/webcopier
+  status: null
+- tool: bilibili-helper-py
+  category: crawler
+  purpose: B 站视频下载助手（Playwright，合集批量、清晰度选择）
+  registry_id: bilibili-helper
+  remote_url: https://gitee.com/siwpan/bilibili-helper-py
+  status: 已更名
+- tool: image-scraper
+  category: crawler
+  purpose: 多源图片爬虫（16 个源，断点续传、代理适配）
+  registry_id: image-scraper
+  remote_url: https://gitee.com/siwpan/image-scraper
+  status: null
+- tool: midjourney_video
+  category: crawler
+  purpose: Midjourney 视频下载（Playwright，CLI + GUI）
+  registry_id: midjourney-video
+  remote_url: https://gitee.com/siwpan/midjourney_video
+  status: 已更名
+- tool: auto_clicker
+  category: desktop
+  purpose: 鼠标连点器（频率 + 随机抖动，热键）
+  registry_id: auto-clicker
+  remote_url: https://gitee.com/siwpan/auto_clicker
+  status: 已更名
+- tool: daily_player
+  category: desktop
+  purpose: 日常视频播放器（VLC，SRT 字幕、播放列表、系统托盘）
+  registry_id: daily-player
+  remote_url: https://gitee.com/siwpan/daily_player
+  status: 已更名
+- tool: subtitle
+  category: desktop
+  purpose: 字幕工具（提取/编辑/烧录 SRT，ffmpeg）
+  registry_id: subtitle
+  remote_url: https://gitee.com/siwpan/subtitle
+  status: null
+- tool: pdf
+  category: desktop
+  purpose: 简易 PDF 阅读器（PyMuPDF）
+  registry_id: pdf
+  remote_url: https://gitee.com/siwpan/pdf
+  status: null
+- tool: fonts
+  category: desktop
+  purpose: 中文字体资源库（数百 TTF/TTC/OTF）+ 字体浏览复制工具
+  registry_id: fonts
+  remote_url: https://gitee.com/siwpan/fonts
+  status: null
+- tool: print
+  category: desktop
+  purpose: 中文拼音输入法（本地字典 + 全局键盘钩子）
+  registry_id: print
+  remote_url: https://gitee.com/siwpan/print
+  status: null
+- tool: py_test_runner
+  category: dev
+  purpose: Python 项目全覆盖测试框架（静态扫描/架构检测/动态运行）
+  registry_id: py-test-runner
+  remote_url: https://gitee.com/siwpan/py_test_runner
+  status: 已更名
+- tool: pyinstaller
+  category: dev
+  purpose: PyInstaller 批量打包工具集（GUI 打包、PNG→ICO、数字签名）
+  registry_id: pyinstaller
+  remote_url: https://gitee.com/siwpan/pyinstaller
+  status: null
+- tool: repocheck
+  category: dev
+  purpose: 仓库体检（版本控制/文档/测试/依赖/License 卫生检查，CSV/HTML 报告）
+  registry_id: null
+  remote_url: null
+  status: 已并入 allin
+- tool: renamer
+  category: dev
+  purpose: 正则批量重命名 GUI
+  registry_id: renamer
+  remote_url: https://gitee.com/siwpan/renamer
+  status: null
+- tool: requirements
+  category: dev
+  purpose: Python 依赖库安装器（11 分类 100+ 常用库，批量安装/卸载）
+  registry_id: foolproof-operation
+  remote_url: https://gitee.com/siwpan/foolproof-operation
+  status: 已更名
+- tool: yasuo
+  category: dev
+  purpose: 文件加密/压缩工具（zlib/lzma/bz2 + AES-256，算法对比）
+  registry_id: yasuo
+  remote_url: https://gitee.com/siwpan/yasuo
+  status: null
+- tool: allin_engine
+  category: game
+  purpose: 统一游戏引擎（ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成）
+  registry_id: allin-engine
+  remote_url: https://gitee.com/siwpan/an-engine
+  status: 已更名
+- tool: procgen
+  category: game
+  purpose: 程序化生成库（地形/地牢/名字/战利品/噪声）
+  registry_id: worldbuilder
+  remote_url: https://gitee.com/siwpan/worldbuilder
+  status: 已更名
+- tool: zhuangtaiji
+  category: game
+  purpose: 多范式决策引擎工作台（状态机/行为树/Petri 网/马尔可夫链，Tkinter + React Web）
+  registry_id: zhuangtaiji
+  remote_url: null
+  status: null
+- tool: drawpic
+  category: visual
+  purpose: 故障艺术生成器（21 个故障/网络美学生成器，PNG/MP4，MVVM）
+  registry_id: drawpic
+  remote_url: https://gitee.com/siwpan/drawpic
+  status: null
+- tool: art_video_gen
+  category: visual
+  purpose: ATT 集成音视频生成器（元胞自动机 + 粒子 + 程序化音频，ffmpeg 合成）
+  registry_id: art-video-gen
+  remote_url: https://gitee.com/siwpan/art_video_gen
+  status: 已更名
+- tool: photovideo
+  category: visual
+  purpose: 图片转视频（6 种动效模式，ffmpeg）
+  registry_id: photovideo
+  remote_url: https://gitee.com/siwpan/photovideo
+  status: null
+- tool: imgproc
+  category: visual
+  purpose: 批量图像加工 GUI（缩放/格式转换/水印，不覆盖原图）
+  registry_id: imgproc
+  remote_url: https://gitee.com/siwpan/imgproc
+  status: null
+- tool: particle
+  category: visual
+  purpose: 独立粒子系统库（烟花/天气/战斗特效，PIL/Pygame/ModernGL 渲染）
+  registry_id: particle
+  remote_url: https://gitee.com/siwpan/particlefx
+  status: null

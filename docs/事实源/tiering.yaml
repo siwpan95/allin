@@ -1,0 +1,990 @@
+tiering:
+- repo: ollama_generator
+  seq: 1
+  domain: AI/大模型
+  tier: ①核心推进
+  action: 基于 Ollama 的通用 AI 文本生成库，随本地AI栈维护
+  archive_target: ''
+  note: 本地AI叙事
+- repo: peasy-ai
+  seq: 2
+  domain: AI/大模型
+  tier: ①核心推进
+  action: 零硬编码配置驱动通用 AI 对话框架+叙事引擎，持续投入
+  archive_target: ''
+  note: 本地AI叙事
+- repo: weor
+  seq: 3
+  domain: 小说/网文
+  tier: ①核心推进
+  action: 持续投入：整合多开源范式的 AI 小说生成系统，并入本地AI叙事栈
+  archive_target: ''
+  note: 本地AI叙事（枢纽）
+- repo: 3dworld
+  seq: 4
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 持续投入：Python Bevy 式 3D+procgen 底座，补测试/文档
+  archive_target: ''
+  note: 引擎平台层
+- repo: 3dworld-demos
+  seq: 5
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 引擎演示集，随 3dworld 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: 3dworld-globe
+  seq: 6
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 引擎应用样例，随 3dworld 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: an-engine
+  seq: 7
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 持续投入：统一 ECS+事件总线+TRPG 内核，不允许冻结
+  archive_target: ''
+  note: 引擎平台层（枢纽）
+- repo: cordis-py
+  seq: 8
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: dse-core 的 Python 版场景引擎内核，随 dse-core 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: cordis-snake
+  seq: 9
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: Cordis『一切皆插件』架构样例，随 cordis 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: cordis-table-app
+  seq: 10
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: Cordis+OpenPyXL 表格应用内核，随 cordis 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: cordis-text-game
+  seq: 11
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: Cordis 文字冒险引擎样例，随 cordis 维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: dict-scene-engine
+  seq: 12
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 持续投入：字典场景引擎（Cordis 4.0 文字冒险），衔接 TRPG/叙事
+  archive_target: ''
+  note: 引擎平台层（枢纽）
+- repo: dse-core
+  seq: 13
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: 持续投入：场景引擎内核（Node），TRPG/叙事枢纽
+  archive_target: ''
+  note: 引擎平台层（枢纽）
+- repo: superengine
+  seq: 14
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: cordis 三仓组合流水线，随引擎层维护
+  archive_target: ''
+  note: 引擎平台层
+- repo: worldbuilder
+  seq: 15
+  domain: 游戏引擎/框架
+  tier: ①核心推进
+  action: procgen 程序化生成库，供游戏 import 复用，持续投入
+  archive_target: ''
+  note: 引擎平台层
+- repo: d20-table-link
+  seq: 16
+  domain: 跑团/TRPG
+  tier: ①核心推进
+  action: allin_engine TRPG × cordis-table-app 适配器，随 TRPG 栈维护
+  archive_target: ''
+  note: TRPG+本地AI收敛点
+- repo: roleplayer
+  seq: 17
+  domain: 跑团/TRPG
+  tier: ①核心推进
+  action: 持续投入：D&D/GURPS/CoC 融合跑团模拟器 v3，AI-GM 旗舰样板
+  archive_target: ''
+  note: TRPG+本地AI收敛点（枢纽）
+- repo: running-group-simulator
+  seq: 18
+  domain: 跑团/TRPG
+  tier: ①核心推进
+  action: TRPG 中间件引擎，随 TRPG 栈维护
+  archive_target: ''
+  note: TRPG+本地AI收敛点
+- repo: audio-pipeline
+  seq: 19
+  domain: 音乐/音频
+  tier: ①核心推进
+  action: 拆歌→分轨→混音→重分离 制作流水线，持续投入
+  archive_target: ''
+  note: 本地音乐流水线
+- repo: audio-separator
+  seq: 20
+  domain: 音乐/音频
+  tier: ①核心推进
+  action: Demucs/BS-RoFormer 人声分离桌面应用，持续投入
+  archive_target: ''
+  note: 本地音乐流水线
+- repo: bloodmusic
+  seq: 21
+  domain: 音乐/音频
+  tier: ①核心推进
+  action: 持续投入：程序化游戏音频合成引擎，差异化定位
+  archive_target: ''
+  note: 本地音乐流水线（枢纽）
+- repo: musickit
+  seq: 22
+  domain: 音乐/音频
+  tier: ①核心推进
+  action: phonk 混音项目（真实采样+本地混音），持续投入
+  archive_target: ''
+  note: 本地音乐流水线
+- repo: remix
+  seq: 23
+  domain: 音乐/音频
+  tier: ①核心推进
+  action: pydub 混音&视频音频合成，随流水线维护
+  archive_target: ''
+  note: 本地音乐流水线
+- repo: sin-virtue-cordis-host
+  seq: 24
+  domain: 原型/学习/杂项
+  tier: ②保留
+  action: 七宗罪×七美德 Cordis 宿主验证原型，架构样板价值
+  archive_target: ''
+  note: 架构原型
+- repo: lab
+  seq: 25
+  domain: 多语言引擎移植验证
+  tier: ②保留
+  action: 10 语言国际象棋 perft 功能对等验证（12.5k 文件），工程展示，不主动投资
+  archive_target: ''
+  note: 多语言验证展示
+- repo: weiqi_lab
+  seq: 26
+  domain: 多语言引擎移植验证
+  tier: ②保留
+  action: 6 语言围棋 MCTS 验证，工程展示，不主动投资
+  archive_target: ''
+  note: 多语言验证展示
+- repo: novel
+  seq: 27
+  domain: 小说/网文
+  tier: ②精选旗舰
+  action: 《万界归墟》双引擎程序化中文小说生成（98MB），保留打磨
+  archive_target: ''
+  note: 小说生成旗舰
+- repo: novel-generator
+  seq: 28
+  domain: 小说/网文
+  tier: ②保留
+  action: 通用小说生成库，低优先维持
+  archive_target: ''
+  note: 小说库
+- repo: novel-reader
+  seq: 29
+  domain: 小说/网文
+  tier: ②保留
+  action: 3.2 万页视觉小说游戏，体量大但小众，低优先维持
+  archive_target: ''
+  note: 视觉小说
+- repo: novel-run
+  seq: 30
+  domain: 小说/网文
+  tier: ②精选旗舰
+  action: novel 结构化输出 + DSE 运行时独立验证，保留
+  archive_target: ''
+  note: 叙事验证
+- repo: write
+  seq: 31
+  domain: 小说/网文
+  tier: ②精选旗舰
+  action: 网文正文/设定/素材创作工作区（31MB/801 文件），保留
+  archive_target: ''
+  note: 创作工作区
+- repo: write-agent
+  seq: 32
+  domain: 小说/网文
+  tier: ②精选旗舰
+  action: 网文创作智能 Agent（大纲/章节生成、多轮润色、续写改写与风格切换、带严格引用的知识库问答）；**与 `write` 绑定为同一创作工作区**（`write`
+    管素材与正文、agent 管生成与检索）；生成能力与 `weor` / `peasy-ai` / `ollama_generator` **有重叠但互不复用**，故不占
+    ① 的持续投入承诺，维持不扩张
+  archive_target: ''
+  note: 创作工作区(配套 `write`)；2026-10-29 **由 ① 改判 ②**（用户定：与 `write` 绑定）
+- repo: board-replay
+  seq: 33
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: Cordis 围棋SGF+国象UCI 本地复盘器，复用棋类领域
+  archive_target: ''
+  note: 内部工具
+- repo: foolproof-operation
+  seq: 34
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: 图形化 Python 依赖库管理（761 库），内部有用
+  archive_target: ''
+  note: 内部工具
+- repo: markdown
+  seq: 35
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: Cordis 驱动本地 Markdown 查看器，保留
+  archive_target: ''
+  note: 内部工具
+- repo: py_test_runner
+  seq: 36
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: Python 项目全覆盖测试框架，内部有用
+  archive_target: ''
+  note: 内部工具
+- repo: pyinstaller
+  seq: 37
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: PyInstaller 批量打包工具箱，内部有用
+  archive_target: ''
+  note: 内部工具
+- repo: zhuangtaiji
+  seq: 38
+  domain: 开发者/系统工具
+  tier: ②保留
+  action: 多范式决策引擎（Cordis），可并入本地AI叙事/TRPG 决策
+  archive_target: ''
+  note: AI决策/内部工具
+- repo: players-unified
+  seq: 39
+  domain: 播放器
+  tier: ②精选旗舰
+  action: 三端本地播放器整合（Python+VLC/MV3/Cordis Web），归口
+  archive_target: ''
+  note: 播放器归口
+- repo: pluginplayer
+  seq: 40
+  domain: 播放器
+  tier: ②精选旗舰
+  action: FFmpeg9+SDL3 + C ABI + Cordis JS 现代媒体内核，保留
+  archive_target: ''
+  note: 播放器内核
+- repo: backroom
+  seq: 41
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: Backrooms 3D 漫游（3dworld PBR 展示），打磨
+  archive_target: ''
+  note: 游戏旗舰/3D展示
+- repo: dungeon
+  seq: 42
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: pygame-ce 地牢 Roguelike（Savage Worlds 骰系），打磨
+  archive_target: ''
+  note: 游戏旗舰
+- repo: dwarf-scrolls
+  seq: 43
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: 矮人要塞画风×上古卷轴世界，打磨
+  archive_target: ''
+  note: 游戏旗舰
+- repo: magic-tower
+  seq: 44
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: Tkinter 魔塔（1.4GB 内容最厚），打磨
+  archive_target: ''
+  note: 游戏旗舰
+- repo: mirsolo
+  seq: 45
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: 传奇单机复刻（投入最多 14k 文件/668MB），打磨为引擎展厅
+  archive_target: ''
+  note: 游戏旗舰
+- repo: moba_battle_platform
+  seq: 46
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: MOBA 1v1 对战平台（27k 文件/420MB），打磨
+  archive_target: ''
+  note: 游戏旗舰
+- repo: niulai
+  seq: 47
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: 《牛来》双引擎复刻工程（9.4GB，投入极重），保留打磨
+  archive_target: ''
+  note: 游戏旗舰（重资产）
+- repo: tavern-rogue
+  seq: 48
+  domain: 游戏作品
+  tier: ②精选旗舰
+  action: D&D SRD 酒馆异闻录自走棋，打磨
+  archive_target: ''
+  note: 游戏旗舰
+- repo: hushi_twrj
+  seq: 49
+  domain: 爬虫/采集
+  tier: ②保留
+  action: 胡适日记本地存档（公有领域虚阁网），法律风险最低、有文化价值，低优先
+  archive_target: ''
+  note: 爬虫（归档级）
+- repo: webcopier
+  seq: 50
+  domain: 爬虫/采集
+  tier: ②保留
+  action: 网页抓取 v5.3 反爬系统（1.6GB/33k 文件），留作个人工具/作品集，不产品化
+  archive_target: ''
+  note: 爬虫（个人工具）
+- repo: art_video_gen
+  seq: 51
+  domain: 视频/图像/特效
+  tier: ②精选旗舰
+  action: 元胞自动机+粒子 艺术视频管线，保留
+  archive_target: ''
+  note: 创意管线
+- repo: particlefx
+  seq: 52
+  domain: 视频/图像/特效
+  tier: ②精选旗舰
+  action: 独立粒子系统库（NumPy/pygame），可复用，保留
+  archive_target: ''
+  note: 创意库
+- repo: pywallpaper
+  seq: 53
+  domain: 视频/图像/特效
+  tier: ②精选旗舰
+  action: 数学公式+CA 动态壁纸引擎（ECS），保留
+  archive_target: ''
+  note: 创意库
+- repo: video-generator
+  seq: 54
+  domain: 视频/图像/特效
+  tier: ②精选旗舰
+  action: 9685 预设的随机视频生成器→本地生成艺术工作室，打磨
+  archive_target: ''
+  note: 创意旗舰
+- repo: private-radio-stations
+  seq: 55
+  domain: 音乐/音频
+  tier: ②保留
+  action: 视频转播+音频电台 monorepo（498MB），低优先维持
+  archive_target: ''
+  note: 电台
+- repo: haha
+  seq: 56
+  domain: 原型/学习/杂项
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 原型/学习/杂项
+- repo: test
+  seq: 57
+  domain: 原型/学习/杂项
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 原型/学习/杂项
+- repo: auto_clicker
+  seq: 58
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: calculator
+  seq: 59
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: captcha-demo
+  seq: 60
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: fonts
+  seq: 61
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: pdf
+  seq: 62
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: pomodmer
+  seq: 63
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: print
+  seq: 64
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: renamer
+  seq: 65
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: santi-teleprompter
+  seq: 66
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: subtitle
+  seq: 67
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: yasuo
+  seq: 68
+  domain: 开发者/系统工具
+  tier: ③收敛合并
+  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  archive_target: dev-toolkit
+  note: 开发者/系统工具
+- repo: daily_player
+  seq: 69
+  domain: 播放器
+  tier: ③收敛合并
+  action: 收敛合并：迁入 players-unified（保留 git 历史），原仓冻结
+  archive_target: players-unified
+  note: 播放器
+- repo: localplayer
+  seq: 70
+  domain: 播放器
+  tier: ③收敛合并
+  action: 收敛合并：迁入 players-unified（保留 git 历史），原仓冻结
+  archive_target: players-unified
+  note: 播放器
+- repo: music-player
+  seq: 71
+  domain: 播放器
+  tier: ③收敛合并
+  action: 收敛合并：迁入 players-unified（保留 git 历史），原仓冻结
+  archive_target: players-unified
+  note: 播放器
+- repo: player
+  seq: 72
+  domain: 播放器
+  tier: ③收敛合并
+  action: 收敛合并：迁入 players-unified（保留 git 历史），原仓冻结
+  archive_target: players-unified
+  note: 播放器
+- repo: Idle
+  seq: 73
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: adventurelog
+  seq: 74
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: arcade
+  seq: 75
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: ashen-beacon
+  seq: 76
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: bee
+  seq: 77
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: darksouls
+  seq: 78
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: diablo
+  seq: 79
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: fish
+  seq: 80
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: god-hand-
+  seq: 81
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: happy-childrens-day
+  seq: 82
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: hell-below
+  seq: 83
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: jotunnslayer
+  seq: 84
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: kard
+  seq: 85
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: legend
+  seq: 86
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: life-reset-simulator
+  seq: 87
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: loly
+  seq: 88
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: lonely-desert-road
+  seq: 89
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: maga
+  seq: 90
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: mahjong
+  seq: 91
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: mc-clone
+  seq: 92
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: mcclone3d
+  seq: 93
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: pq-multiverse
+  seq: 94
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: project-root
+  seq: 95
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: random-dungeon-
+  seq: 96
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: russia
+  seq: 97
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: sandbox
+  seq: 98
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: sign-in-simulator
+  seq: 99
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: smile
+  seq: 100
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: stay
+  seq: 101
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: table-hanging-machine
+  seq: 102
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: text-adventure
+  seq: 103
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: text-fps
+  seq: 104
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: under-withered-limbs
+  seq: 105
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: yuanbao
+  seq: 106
+  domain: 游戏作品
+  tier: ③收敛合并
+  action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  archive_target: game-prototypes
+  note: 游戏作品
+- repo: cellular_automaton
+  seq: 107
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: ddd2
+  seq: 108
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: drawpic
+  seq: 109
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: gan
+  seq: 110
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: imgproc
+  seq: 111
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: ling-train
+  seq: 112
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: math
+  seq: 113
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: mathematical-formula-renderer
+  seq: 114
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: media-tools
+  seq: 115
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: photovideo
+  seq: 116
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: procedural-video
+  seq: 117
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: shikonghuaban
+  seq: 118
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: wave4
+  seq: 119
+  domain: 视频/图像/特效
+  tier: ③收敛合并
+  action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  archive_target: media-prototypes
+  note: 视频/图像/特效
+- repo: audiotool
+  seq: 120
+  domain: 音乐/音频
+  tier: ③收敛合并
+  action: 收敛合并：迁入 music-prototypes（保留 git 历史），原仓冻结
+  archive_target: music-prototypes
+  note: 音乐/音频
+- repo: midi
+  seq: 121
+  domain: 音乐/音频
+  tier: ③收敛合并
+  action: 收敛合并：迁入 music-prototypes（保留 git 历史），原仓冻结
+  archive_target: music-prototypes
+  note: 音乐/音频
+- repo: ncmturnmp3
+  seq: 122
+  domain: 音乐/音频
+  tier: ③收敛合并
+  action: 收敛合并：迁入 music-prototypes（保留 git 历史），原仓冻结
+  archive_target: music-prototypes
+  note: 音乐/音频
+- repo: sin-virtue-game
+  seq: 123
+  domain: 原型/学习/杂项
+  tier: ③收敛合并
+  action: 收敛合并：已退役（2026-10-28 README 退役横幅），0–100 轴规则被主仓 counter 模型取代；内容已并入 `sin-virtue-cordis-host`（cards→`plugins/cards.js`、前端→`public/runner.html`）
+  archive_target: sin-virtue-cordis-host
+  note: 已退役；**2026-10-29 目录已实际移入归档区 `G:\archive\sin-virtue-game-retired-20261029`**（30
+    文件 / HEAD `4d5d132` / `fsck` 通过；归档区唯一落点见 `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md`
+    §2.2），历史保全
+- repo: music-prompt-generator
+  seq: 124
+  domain: AI/大模型
+  tier: ④止损
+  action: 纯 Suno/Udio 提示词生成，无模型、无护城河，停止投入
+  archive_target: 删除(确认后)
+  note: 薄音乐件
+- repo: novel-down
+  seq: 125
+  domain: 小说/网文
+  tier: ④止损
+  action: 网络小说离线阅读（免费章节），爬版权内容，法律灰，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+版权
+- repo: bilibili-helper-py
+  seq: 126
+  domain: 爬虫/采集
+  tier: ④止损
+  action: B站视频下载（Playwright），源站强反爬+ToS 灰，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: crawl-hub
+  seq: 127
+  domain: 爬虫/采集
+  tier: ④止损
+  action: 爬虫统一启动器，依赖脆弱源，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: image-scraper
+  seq: 128
+  domain: 爬虫/采集
+  tier: ④止损
+  action: 多源图片爬虫，源站反爬+ToS 灰，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: midjourney_video
+  seq: 129
+  domain: 爬虫/采集
+  tier: ④止损
+  action: Midjourney 视频下载，源站强反爬+ToS 灰，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: photo
+  seq: 130
+  domain: 爬虫/采集
+  tier: ④止损
+  action: 网页图片解析下载，脆弱+同质，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: sfx-download
+  seq: 131
+  domain: 爬虫/采集
+  tier: ④止损
+  action: 免费公版音频爬取，同质+维护重，停止投入
+  archive_target: 删除(确认后)
+  note: 爬虫灰+脆
+- repo: csmusic
+  seq: 132
+  domain: 音乐/音频
+  tier: ④止损
+  action: CS 音乐盒 MP3 成品库+下载脚本，薄，停止投入
+  archive_target: 删除(确认后)
+  note: 薄音乐件
+- repo: mp
+  seq: 133
+  domain: 音乐/音频
+  tier: ④止损
+  action: 随机音乐生成+可视化，薄，停止投入
+  archive_target: 删除(确认后)
+  note: 薄音乐件
+- repo: radio_special_instruments
+  seq: 134
+  domain: 音乐/音频
+  tier: ④止损
+  action: 特殊乐器采样包库+下载脚本，薄，停止投入
+  archive_target: 删除(确认后)
+  note: 薄音乐件
+- repo: wav_music_gen
+  seq: 135
+  domain: 音乐/音频
+  tier: ④止损
+  action: 零依赖随机 WAV 生成器，薄、无差异，停止投入
+  archive_target: 删除(确认后)
+  note: 薄音乐件
+- repo: dev-toolkit
+  seq: 136
+  domain: 归档聚合仓
+  tier: '**③b 容器**'
+  action: 接收 13 个薄开发者工具 + 2 原型（`haha`/`test`）；实收 **13 子项 / 13 条 `archive/<仓>` 分支**；master
+    `bb4afe8`
+  archive_target: ''
+  note: '2026-10-30 补录。**非被收敛对象**，是 ③ 的落点；远端 public，registry `status: archived`；`launch.command`
+    仅 `ls`（无单一运行入口）'
+- repo: game-prototypes
+  seq: 137
+  domain: 归档聚合仓
+  tier: '**③b 容器**'
+  action: 接收 34 个薄游戏；实收 **34 / 34**；master `d9c5857`
+  archive_target: ''
+  note: 同上。含 `arcade`（2026-10-29 收拢 `calculator` / `happy-childrens-day` 后刷新到 `a9784f2`）
+- repo: media-prototypes
+  seq: 138
+  domain: 归档聚合仓
+  tier: '**③b 容器**'
+  action: 接收 13 个薄创意/视频件；实收 **13 / 13**；master `1d5053e`
+  archive_target: ''
+  note: 同上
+- repo: music-prototypes
+  seq: 139
+  domain: 归档聚合仓
+  tier: '**③b 容器**'
+  action: 接收 3 个薄音乐件（`audiotool` / `midi` / `ncmturnmp3`）；实收 **3 / 3**；master `5132fe4`
+  archive_target: ''
+  note: 同上
+- repo: dsh-release-archiver
+  seq: 140
+  domain: 工具链/自动化
+  tier: ②精选旗舰
+  action: 把「检测上游 release → 双格式源码归档 → 完整性校验 → 解压复核」固化为**单一入口**流水线（`run.sh` / `run.cmd`，五步
+    + 汇总 + 日志；平台定时任务 2026-11-02 恢复但**只调该脚本**，判断不回到提示词）（判据单一实现 `verify_tag.sh`；归档本体不入库，落点由环境变量给出）；**2026-11-02
+    建项**，首提交 `3755c4c`；同日 **tag `v1.0.0` 首发 → `v1.1.0` 触发方式改人工按需 → `v1.1.1` 修临时目录**；master
+    `68d1900` 为提示词改「只调 run.sh」的纯文档提交；远端 `gitee.com/siwpan/dsh-release-archiver`（已推送、公开）
+  archive_target: ''
+  note: 自动化基础设施；服务对象是 `deepseek-ai/deepseek-harness` 的发布归档，脚本已参数化，可复用到同形态仓库
