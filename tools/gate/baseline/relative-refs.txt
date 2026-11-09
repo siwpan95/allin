@@ -1,11 +1,2 @@
 # facts relative-refs baseline（棘轮：只阻断新增）
-docs/事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md:92:../../../siwpan新机电脑硬件信息%20-%20腾讯电脑管家检测结果.txt
-docs/事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md:92:../../../siwpan旧机电脑硬件信息%20-%20腾讯电脑管家检测结果.txt
-docs/事实源/机器/DESKTOP-KQABATS/DESKTOP-KQABATS.md:246:../../记录/审计/组合做大做强战略研究_2026-10-31.md
-docs/事实源/机器/DESKTOP-KQABATS/DESKTOP-KQABATS.md:77:../../规范/SPEC-006-机器与路径约定.md
-docs/事实源/机器分区索引.md:151:../../../记录/交接/2026-11.md
-docs/事实源/机器分区索引.md:16:../../规范/SPEC-006-机器与路径约定.md
-docs/事实源/机器分区索引.md:24:../../规范/SPEC-001-铁律.md
-docs/事实源/组合分级决策索引.md:24:SPEC-001-铁律.md
-docs/事实源/组合分级后续路线.md:9:SPEC-001-铁律.md
-docs/事实源/组合分级后续路线.md:9:SPEC-002-协作工作流程.md
+
