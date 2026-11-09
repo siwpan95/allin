@@ -1,4 +1,4 @@
-# allin × Dolt 部署与分工说明（待落仓骨架）
+# allin × Dolt 部署与分工说明（已落仓于 `deploy/dolt/`）
 
 > 定位：**事实的版本历史与审计层**。Git 内的结构化真身仍是唯一写入权威；
 > Dolt 的 commit DAG 提供「谁在什么时候知道什么」的 transaction time，补齐 Git 做不到的行级 diff / as-of。
@@ -108,3 +108,32 @@ SELECT * FROM dolt_log;
 3. `AS OF 'HEAD~1'` 能查到改前的值；
 4. 删掉整个 Dolt 目录重建，两次导入的 `dolt hash` 一致（可重建性）；
 5. Dolt 服务停掉，`scripts/run_all_gates.sh` 仍 20/20 全绿。
+
+## 7. P1-2 / P1-3 运行手册（脚本已落仓，执行待授权）
+
+> 以下动作要么改本机 `.dolt` 配置、要么需网络/拉起本地服务，属需授权的系统级变更；
+> 脚本默认 **dry-run** 打印计划，加 `--apply` 才真正执行。沙箱/agent 不代跑重安装与服务启动。
+
+### P1-2 配置 remote + DOLT_BACKUP 灾备
+
+```bash
+bash deploy/dolt/remote_backup.sh            # dry-run：打印 remote / backup 计划
+bash deploy/dolt/remote_backup.sh --apply    # 真正 dolt remote add + backup add
+# 之后每次同步：
+dolt backup sync local-backup                 # 本地灾备（E:/allin-dolt-backup，离线可跑）
+dolt push allin-git                          # 推到 GitHub refs/dolt/data（需网络）
+```
+
+- 远端 `allin-git` = `git@github.com:siwpan95/allin.git`，借用 allin 仓的 `refs/dolt/data` 命名空间（GitHub Dolt 集成，官方支持），与 Gitee + GitHub 双核推送纪律同源；
+- 本地灾备 `local-backup` = `file://E:/allin-dolt-backup`，**离线可跑**，只放可重建派生物；
+- 两个远端**只推 `visibility=public` 的行**，私有字段不得出本机（见 §2 分工裁决）。
+
+### P1-3 启动 dolt sql-server（本地服务，绑回环）
+
+```bash
+bash deploy/dolt/sql_server.sh               # dry-run
+bash deploy/dolt/sql_server.sh --apply --background   # 后台拉起 127.0.0.1:3306
+```
+
+- 服务模式（localhost:3306，MySQL 线协议）；多机同步靠 `dolt push/pull`，非实时多写（见 §5 限制）；
+- 启动后可用任何 MySQL 8.4 客户端连 `127.0.0.1:3306` 查 `allin_facts`；停掉服务不影响门禁（派生物，门禁不依赖）。
