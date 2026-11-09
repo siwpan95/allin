@@ -861,9 +861,8 @@ tiering:
   tier: ③收敛合并
   action: 收敛合并：已退役（2026-10-28 README 退役横幅），0–100 轴规则被主仓 counter 模型取代；内容已并入 `sin-virtue-cordis-host`（cards→`plugins/cards.js`、前端→`public/runner.html`）
   archive_target: sin-virtue-cordis-host
-  note: 已退役；**2026-10-29 目录已实际移入归档区 `G:\archive\sin-virtue-game-retired-20261029`**（30
-    文件 / HEAD `4d5d132` / `fsck` 通过；归档区唯一落点见 `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md`
-    §2.2），历史保全
+  note: 已退役；2026-10-29 目录已实际移入归档区（目录名 `sin-virtue-game-retired-20261029`，盘符随机器），30
+    文件 / HEAD `4d5d132` / `fsck` 通过；归档区唯一落点见 `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md` §2.2，历史保全
 - repo: music-prompt-generator
   seq: 124
   domain: AI/大模型

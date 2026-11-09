@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ports 权威源 -> facts.json.ports 索引投影 + platform/registry/ports.yaml 镜像（A 期 Phase 2）。
 
-权威源裁定（实测，见 docs/记录/交接/A-全域迁移执行方案.md Q2）：
+权威源裁定（实测，见 docs/记录/交接/A-全域迁移执行方案_2026-11-09.md Q2）：
   * docs/事实源/ports.yaml 是端口的**唯一事实源**（机器可读版；人类可读孪生为 端口分配表.md）。
   * platform/registry/ports.yaml 经实测仅为「回退默认 / 重建自 projects 的 4 端口 stub」，非权威；
     本脚本将其**重建为 docs/事实源/ports.yaml 的可重建镜像**（消灭双源：只有 docs 一份被手改）。
