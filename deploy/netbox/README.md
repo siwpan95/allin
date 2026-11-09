@@ -1,6 +1,7 @@
-# allin × NetBox 部署说明（待落仓骨架）
+# allin × NetBox 部署说明（骨架已落仓于 `deploy/netbox/`）
 
 > 定位：**资产与关系的派生视图**。Git 内的结构化真身是唯一写入权威，NetBox 只读消费、绝不反向写回。
+> **P0-1 推进状态（2026-11-09）**：数据侧与逻辑侧已就绪——`facts/facts.json` 含 3 台 public 机器，`sync_from_git.py --selftest` PASS、dry-run 精确产出 3 设备 + 13 服务；`docker-compose.override.yml` 与 `.env.example` 已配齐。**唯一阻断项是 NetBox 服务本身未安装**（Docker Desktop / WSL2 未装），待管理员授权安装后 `--apply` 即达成「3 机可见」。
 > 依据：NetBox v4.7.4（2026-10-27）/ Apache-2.0 核心；`netbox-community/netbox-docker` release 分支。
 > 官方 wiki 明确 Windows 原生不在支持范围，需 Docker Desktop（WSL2 Linux backend）或 WSL2 内运行：
 > <https://github.com/netbox-community/netbox-docker/wiki/Getting-Started>
@@ -38,13 +39,42 @@ profile（懒加载）。镜像 tag 形如 `docker.io/netboxcommunity/netbox:v4.
 `VERSION` 与 `NETBOX_DOCKER_PROJECT_VERSION` 由 `.env` 决定，**不能用 `latest`**。
 官方 `netbox` 服务默认不发布端口，必须靠 `docker-compose.override.yml` 补 `ports`。
 
+## 3.5 安装前置（需管理员授权，当前本机未装）
+
+> 以下动作涉及系统级安装、可能重启、大体积下载（Docker Desktop ~1GB+，默认落 C 盘而 C 盘快满），
+> 属 **需放行的重环境变更**，不在沙箱非交互会话内执行；由全哥在**管理员 PowerShell / 终端**里逐项跑。
+> 本骨架已把这些动作隔离成清单，跑完再回 §4 即可。
+
+```powershell
+# ① 装 WSL2 + Ubuntu 24.04（若 wsl --list 为空）
+#   需管理员；可能要求重启一次
+wsl --install -d Ubuntu-24.04
+wsl --list --verbose          # 确认 VERSION=2、STATE=Running
+
+# ② 装 Docker Desktop（Windows，WSL2 backend）
+#   需管理员；装完进 Settings → Resources → WSL Integration 勾选 Ubuntu-24.04
+winget install -e --id Docker.DockerDesktop
+# 装完后把镜像/数据盘位置改到 E:（不要占 C）：
+#   Settings → Resources → Advanced → Disk image location = E:\Docker
+#   再把默认 WSL distro 里 /opt 放到 E: 或挂 E: 卷
+
+# ③ 验证 Docker 守护进程在线（在 Git Bash / PowerShell 均可）
+docker version
+docker compose version       # 需 v2（随 Docker Desktop 自带）
+```
+
+> ⚠ C 盘告警：本机 C 剩约 37G（70% 用）。Docker Desktop 默认镜像盘在 C，必须改到 **E:**，
+> 否则首次 `docker compose pull` 拉 NetBox 镜像会撑爆 C 盘（§1 实测）。
+> ⚠ F 盘介质可移动性未现场确认（§1 备注），**数据库 / 镜像不要放 F:**。
+
 ## 4. 最小部署步骤
 
 ```bash
 # 在 WSL2 的 Ubuntu 里（不是 Git Bash）
 git clone -b release https://github.com/netbox-community/netbox-docker.git /opt/netbox-docker
 cd /opt/netbox-docker
-cp ../../allin/blueprint/deploy/netbox/docker-compose.override.yml ./docker-compose.override.yml
+# 覆盖文件来自本仓 deploy/netbox/（已落仓，不再走 blueprint/deploy）
+cp /mnt/e/projects/allin/deploy/netbox/docker-compose.override.yml ./docker-compose.override.yml
 
 # 密钥一律从仓外注入（公开仓铁律 0 / g03-credentials），例如：
 export NETBOX_SECRET_KEY="$(openssl rand -base64 50 | tr -d '\n')"
