@@ -17,6 +17,8 @@
     "services": { "type": "array", "items": { "$ref": "#/$defs/service" } },
     "facts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/fact" } },
     "doc_refs": { "type": "array", "items": { "$ref": "#/$defs/doc_ref" } },
+    "projects": { "type": "array", "items": { "$ref": "#/$defs/project" },
+      "description": "registry 索引投影（派生物，可重建）：145 个项目的权威内容在 platform/registry/projects/*.yaml，本处仅做索引 + source_file 溯源指针。删了重建即得，删了不破门禁。" },
     "observation_runs": { "type": "array", "items": { "$ref": "#/$defs/observation_run" } }
   },
   "$defs": {
@@ -158,6 +160,20 @@
         "kind": { "enum": ["spec", "fact", "record", "adr", "index", "history"] },
         "generated": { "type": "boolean", "description": "true = facts render 生成物，人工不可直接编辑" },
         "visibility": { "$ref": "#/$defs/common/visibility" }
+      }
+    },
+    "project": {
+      "type": "object", "additionalProperties": false,
+      "description": "registry 索引投影（派生物）：权威内容在 platform/registry/projects/*.yaml，本处仅索引 + source_file 溯源指针。删了重建即得。",
+      "required": ["project_id", "name", "source_file"],
+      "properties": {
+        "project_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "version": { "type": ["string", "null"] },
+        "path": { "type": ["string", "null"] },
+        "publish_repo": { "type": ["string", "null"] },
+        "source_file": { "type": "string", "description": "回指 platform/registry/projects/<id>.yaml 的溯源指针" }
       }
     },
     "observation_run": {

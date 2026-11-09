@@ -3,9 +3,10 @@
 
 判据分两层，都要如实报态，不把「没检查」冒充「通过」：
   * 主判据（本期启用）：facts.json 的 doc_refs[].path 必须解析到真实文件；
-    generated=true 的条目登记为「待启用生成物」并计数（P2 真身反转后启用）。
-  * 次判据（生成物目录在位时启用）：生成区 marker 哈希 ⇄ facts.json 一致性；
-    目录缺席时显式 SKIPPED 并打印计数，登记在交接卷台账，不把跑批拖红。
+    generated=true 的条目登记为「待启用生成物」并计数（A 全域迁移真身反转后启用）。
+  * 次判据（生成物目录在位即阻断，无开关）：生成区 marker 哈希 ⇄ facts.json 一致性；
+    目录缺席时显式 SKIPPED 并标注「待 A 真身反转后启用」，登记在交接卷台账，不把跑批拖红。
+    —— 即解除 P2 延迟：生成物一旦出现在仓库，本门禁即刻进入阻断态，无需任何额外配置。
 
 判据只有一份：哈希与解析全部复用 tools/facts/cli.py，禁止在这里写第二套。
 零第三方依赖。退出码：0 干净 / 1 有 finding / 2 用法错 / 3 环境错。
@@ -51,7 +52,7 @@ def run(data: Path, generated_dir: Path, root: Path = ROOT) -> int:
                 findings.append(f"{f.name}: 漂移 marker={found.group(1)} expected={expected}")
         parity_mode = f"active({len(generated_files)} 份)"
     else:
-        parity_mode = "SKIPPED(生成物未启用，见交接卷 §一百四十六)"
+        parity_mode = "SKIPPED(生成物未启用，待 A 全域迁移真身反转后启用；生成物在场即刻阻断)"
 
     print(f"{GATE}: doc_refs={len(refs)} missing={len([x for x in findings if x.startswith('doc_ref')])} "
           f"| generated_pending={len(pending)} | marker_parity={parity_mode}")

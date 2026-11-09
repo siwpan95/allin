@@ -280,6 +280,14 @@ run "$PY" tools/facts/cli.py offline-check
 run "$PY" tools/gate/facts_provenance.py
 # ⑥ Dolt 导入器判据自证：幂等 SQL / 显式 CALL DOLT_COMMIT / sha 入 SQL；不写下游、不需要 dolt 二进制。
 run "$PY" deploy/dolt/import_from_git.py --selftest
+# ⑥ g26：意图态内部一致性漂移（独立门禁，g21 模式；蓝图 g26）。
+#    ports.yaml⇄facts.json.ports 方向性对账（facts 必须是子集，多出即真漂移；ports.yaml 多出记 INFO 不阻断，
+#    待 P0-A 迁移完成后自动归零）/ facts[].source_line 真实性 / Dolt state 的 source_git_sha⇄HEAD
+#    （派生物可删可重建，滞后记 WARN 不阻断，仅「分歧（无祖先关系）」属真漂移阻断）/
+#    机器 md 目录数 ⇄ facts.json.machines 计数一致。
+#    零第三方依赖（ports 判据需 yaml，缺则 SKIP 该判据不拖红）；拔网 + 停三栈时仍须可跑（离线北极星）。
+run "$PY" tools/gate/facts_drift.py --selftest
+run "$PY" tools/gate/facts_drift.py --json
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。

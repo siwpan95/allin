@@ -5,7 +5,9 @@
     {
       "machine_id": "SIWPAN",
       "hostname": "SIWPAN",
-      "aliases": ["siwpan"],
+      "aliases": [
+        "siwpan"
+      ],
       "os_caption": "Windows 11 专业版",
       "os_build": "26100",
       "cpu": "Intel Core i7-9750H",
@@ -45,60 +47,1483 @@
     }
   ],
   "volumes": [
-    { "machine_id": "SIWPAN", "letter": "C", "label": "system", "fs": "NTFS", "size_gb": 118, "free_gb": 41, "role": "system", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" },
-    { "machine_id": "SIWPAN", "letter": "D", "label": "dalang", "fs": "NTFS", "size_gb": 405, "free_gb": 326, "role": "workspace", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" },
-    { "machine_id": "SIWPAN", "letter": "E", "label": "erlang", "fs": "NTFS", "size_gb": 407, "free_gb": 389, "role": "data", "observed_at": "2026-10-30", "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2", "visibility": "public" }
+    {
+      "machine_id": "SIWPAN",
+      "letter": "C",
+      "label": "system",
+      "fs": "NTFS",
+      "size_gb": 118,
+      "free_gb": 41,
+      "role": "system",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    },
+    {
+      "machine_id": "SIWPAN",
+      "letter": "D",
+      "label": "dalang",
+      "fs": "NTFS",
+      "size_gb": 405,
+      "free_gb": 326,
+      "role": "workspace",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    },
+    {
+      "machine_id": "SIWPAN",
+      "letter": "E",
+      "label": "erlang",
+      "fs": "NTFS",
+      "size_gb": 407,
+      "free_gb": 389,
+      "role": "data",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    }
   ],
   "runtimes": [],
   "ports": [
-    { "port": 9042, "service": "allin-website", "owner": "/website", "segment": "9000-9099", "status": "active", "observed_at": "2026-11-02", "evidence_ref": "docs/事实源/ports.yaml", "machine_id": "SIWPAN" },
-    { "port": 9000, "service": "portal", "owner": "/platform/apps/portal", "segment": "9000-9099", "status": "retired", "observed_at": "2026-08-27", "evidence_ref": "docs/事实源/ports.yaml" }
+    {
+      "port": 9042,
+      "service": "allin-website",
+      "owner": "/website",
+      "segment": "9000-9099",
+      "status": "active",
+      "observed_at": "2026-11-02",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "machine_id": "SIWPAN"
+    },
+    {
+      "port": 9000,
+      "service": "portal",
+      "owner": "/platform/apps/portal",
+      "segment": "9000-9099",
+      "status": "retired",
+      "observed_at": "2026-08-27",
+      "evidence_ref": "docs/事实源/ports.yaml"
+    }
   ],
   "facts": [
     {
-      "fact_id": "FCT-000001", "subject": "global", "attribute": "gitee_remote_repo_count",
-      "value": 138, "unit": "count", "scope": "global", "status": "current",
-      "valid_from": "2026-11-03", "valid_to": null, "observed_at": "2026-11-03",
+      "fact_id": "FCT-000001",
+      "subject": "global",
+      "attribute": "gitee_remote_repo_count",
+      "value": 138,
+      "unit": "count",
+      "scope": "global",
+      "status": "current",
+      "valid_from": "2026-11-03",
+      "valid_to": null,
+      "observed_at": "2026-11-03",
       "observed_by": "Gitee API 匿名分页 100+38+0",
       "evidence_ref": "docs/事实源/机器分区索引.md §5",
-      "source_file": "docs/事实源/机器分区索引.md", "source_line": 131,
-      "supersedes": "FCT-000004", "visibility": "public"
+      "source_file": "docs/事实源/机器分区索引.md",
+      "source_line": 131,
+      "supersedes": "FCT-000004",
+      "visibility": "public"
     },
     {
-      "fact_id": "FCT-000002", "subject": "machine:DESKTOP-8RSV60V", "attribute": "publish_area_dir_count",
-      "value": 137, "unit": "count", "scope": "machine", "machine_id": "DESKTOP-8RSV60V", "status": "current",
-      "valid_from": "2026-11-03", "valid_to": null, "observed_at": "2026-11-03",
+      "fact_id": "FCT-000002",
+      "subject": "machine:DESKTOP-8RSV60V",
+      "attribute": "publish_area_dir_count",
+      "value": 137,
+      "unit": "count",
+      "scope": "machine",
+      "machine_id": "DESKTOP-8RSV60V",
+      "status": "current",
+      "valid_from": "2026-11-03",
+      "valid_to": null,
+      "observed_at": "2026-11-03",
       "observed_by": "逐目录实测",
       "evidence_ref": "docs/记录/交接/2026-11.md",
-      "source_file": "docs/事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md", "source_line": 132,
+      "source_file": "docs/事实源/机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md",
+      "source_line": 132,
       "visibility": "public"
     },
     {
-      "fact_id": "FCT-000003", "subject": "global", "attribute": "portfolio_tiering_registered_count",
-      "value": 140, "unit": "count", "scope": "global", "status": "current",
-      "valid_from": "2026-11-02", "valid_to": null, "observed_at": "2026-11-02",
+      "fact_id": "FCT-000003",
+      "subject": "global",
+      "attribute": "portfolio_tiering_registered_count",
+      "value": 140,
+      "unit": "count",
+      "scope": "global",
+      "status": "current",
+      "valid_from": "2026-11-02",
+      "valid_to": null,
+      "observed_at": "2026-11-02",
       "observed_by": "组合分级决策索引 #1-#140",
       "evidence_ref": "docs/事实源/组合分级决策索引.md §分级统计",
-      "source_file": "docs/事实源/组合分级决策索引.md", "source_line": 39,
+      "source_file": "docs/事实源/组合分级决策索引.md",
+      "source_line": 39,
       "visibility": "public"
     },
     {
-      "fact_id": "FCT-000004", "subject": "global", "attribute": "gitee_remote_repo_count",
-      "value": 137, "unit": "count", "scope": "global", "status": "superseded",
-      "valid_from": "2026-10-30", "valid_to": "2026-11-03", "observed_at": "2026-10-30",
+      "fact_id": "FCT-000004",
+      "subject": "global",
+      "attribute": "gitee_remote_repo_count",
+      "value": 137,
+      "unit": "count",
+      "scope": "global",
+      "status": "superseded",
+      "valid_from": "2026-10-30",
+      "valid_to": "2026-11-03",
+      "observed_at": "2026-10-30",
       "observed_by": "Gitee API 匿名分页 100+37+0",
       "evidence_ref": "docs/事实源/机器分区索引.md §5",
-      "source_file": "docs/事实源/机器分区索引.md", "source_line": 131,
+      "source_file": "docs/事实源/机器分区索引.md",
+      "source_line": 131,
       "visibility": "public"
     }
   ],
   "doc_refs": [
-    { "doc_id": "FACT-01", "path": "docs/事实源/机器分区索引.md", "kind": "fact", "generated": false, "visibility": "public" },
-    { "doc_id": "FACT-11", "path": "docs/事实源/机器/SIWPAN/SIWPAN.md", "kind": "fact", "generated": true, "visibility": "public" },
-    { "doc_id": "SPEC-005", "path": "docs/规范/SPEC-005-文档枢纽契约.md", "kind": "spec", "generated": false, "visibility": "public" },
-    { "doc_id": "SPEC-204", "path": "docs/规范/SPEC-204-系统架构.md", "kind": "spec", "generated": false, "visibility": "public" }
+    {
+      "doc_id": "FACT-01",
+      "path": "docs/事实源/机器分区索引.md",
+      "kind": "fact",
+      "generated": false,
+      "visibility": "public"
+    },
+    {
+      "doc_id": "FACT-11",
+      "path": "docs/事实源/机器/SIWPAN/SIWPAN.md",
+      "kind": "fact",
+      "generated": true,
+      "visibility": "public"
+    },
+    {
+      "doc_id": "SPEC-005",
+      "path": "docs/规范/SPEC-005-文档枢纽契约.md",
+      "kind": "spec",
+      "generated": false,
+      "visibility": "public"
+    },
+    {
+      "doc_id": "SPEC-204",
+      "path": "docs/规范/SPEC-204-系统架构.md",
+      "kind": "spec",
+      "generated": false,
+      "visibility": "public"
+    }
   ],
   "observation_runs": [
-    { "run_id": "OBS-20261109-001", "machine_id": "SIWPAN", "ts": "2026-11-09T05:24:45+08:00", "command": "python tools/facts/measure.py --json", "raw_hash": "sha256:PLACEHOLDER", "adjudicated_by": null, "evidence_ref": null }
+    {
+      "run_id": "OBS-20261109-001",
+      "machine_id": "SIWPAN",
+      "ts": "2026-11-09T05:24:45+08:00",
+      "command": "python tools/facts/measure.py --json",
+      "raw_hash": "sha256:PLACEHOLDER",
+      "adjudicated_by": null,
+      "evidence_ref": null
+    }
+  ],
+  "projects": [
+    {
+      "project_id": "3dworld-demos",
+      "name": "3dworld 演示程序集",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/3dworld-demos",
+      "publish_repo": "siwpan/3dworld-demos",
+      "source_file": "platform/registry/projects/3dworld-demos.yaml"
+    },
+    {
+      "project_id": "3dworld-globe",
+      "name": "3dworld 交互地球仪",
+      "category": "media",
+      "version": "0.1.0",
+      "path": "repos/3dworld-globe",
+      "publish_repo": "siwpan/3dworld-globe",
+      "source_file": "platform/registry/projects/3dworld-globe.yaml"
+    },
+    {
+      "project_id": "3dworld",
+      "name": "3dworld · pyglet 三维世界引擎",
+      "category": "engine",
+      "version": "2026.10.13",
+      "path": "repos/3dworld",
+      "publish_repo": "siwpan/3dworld",
+      "source_file": "platform/registry/projects/3dworld.yaml"
+    },
+    {
+      "project_id": "adventurelog",
+      "name": "探险日志（挂机 RPG）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/adventurelog",
+      "publish_repo": "siwpan/adventurelog",
+      "source_file": "platform/registry/projects/adventurelog.yaml"
+    },
+    {
+      "project_id": "allin-engine",
+      "name": "综合引擎（装配视图）",
+      "category": "engine",
+      "version": "1.0.0",
+      "path": "repos/an-engine",
+      "publish_repo": "siwpan/an-engine",
+      "source_file": "platform/registry/projects/allin-engine.yaml"
+    },
+    {
+      "project_id": "arcade",
+      "name": "街机合集（6 小游戏选单）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/arcade",
+      "publish_repo": "siwpan/arcade",
+      "source_file": "platform/registry/projects/arcade.yaml"
+    },
+    {
+      "project_id": "art-video-gen",
+      "name": "艺术视频生成器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/art_video_gen",
+      "publish_repo": "siwpan/art_video_gen",
+      "source_file": "platform/registry/projects/art-video-gen.yaml"
+    },
+    {
+      "project_id": "ashen-beacon",
+      "name": "灰烬信标",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/ashen-beacon",
+      "publish_repo": "siwpan/ashen-beacon",
+      "source_file": "platform/registry/projects/ashen-beacon.yaml"
+    },
+    {
+      "project_id": "audio-pipeline",
+      "name": "音乐制作流水线",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/audio-pipeline",
+      "publish_repo": "siwpan/audio-pipeline",
+      "source_file": "platform/registry/projects/audio-pipeline.yaml"
+    },
+    {
+      "project_id": "audio-separator",
+      "name": "音频分离服务",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/audio-separator",
+      "publish_repo": "siwpan/audio-separator",
+      "source_file": "platform/registry/projects/audio-separator.yaml"
+    },
+    {
+      "project_id": "audiotool",
+      "name": "音频工具箱",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/audiotool",
+      "publish_repo": "siwpan/audiotool",
+      "source_file": "platform/registry/projects/audiotool.yaml"
+    },
+    {
+      "project_id": "auto-clicker",
+      "name": "自动点击器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/auto_clicker",
+      "publish_repo": "siwpan/auto_clicker",
+      "source_file": "platform/registry/projects/auto-clicker.yaml"
+    },
+    {
+      "project_id": "backroom",
+      "name": "无尽阈室 v2.0（3dworld 引擎重构版）",
+      "category": "game",
+      "version": "2.0.0",
+      "path": "repos/backroom",
+      "publish_repo": "siwpan/backroom",
+      "source_file": "platform/registry/projects/backroom.yaml"
+    },
+    {
+      "project_id": "bee",
+      "name": "蜜蜂挂机 RPG",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/bee",
+      "publish_repo": "siwpan/bee",
+      "source_file": "platform/registry/projects/bee.yaml"
+    },
+    {
+      "project_id": "bilibili-helper",
+      "name": "B 站下载助手",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/bilibili-helper-py",
+      "publish_repo": "siwpan/bilibili-helper-py",
+      "source_file": "platform/registry/projects/bilibili-helper.yaml"
+    },
+    {
+      "project_id": "bloodmusic",
+      "name": "BloodMusic 音频合成",
+      "category": "tool",
+      "version": "2.0.0",
+      "path": "repos/bloodmusic",
+      "publish_repo": "siwpan/bloodmusic",
+      "source_file": "platform/registry/projects/bloodmusic.yaml"
+    },
+    {
+      "project_id": "board-replay",
+      "name": "棋谱回放",
+      "category": "tool",
+      "version": "0.1.0",
+      "path": "repos/board-replay",
+      "publish_repo": "siwpan/board-replay",
+      "source_file": "platform/registry/projects/board-replay.yaml"
+    },
+    {
+      "project_id": "captcha-demo",
+      "name": "验证码演示",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/captcha-demo",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/captcha-demo.yaml"
+    },
+    {
+      "project_id": "carimara",
+      "name": "枯肢之下（Carimara）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/under-withered-limbs",
+      "publish_repo": "siwpan/under-withered-limbs",
+      "source_file": "platform/registry/projects/carimara.yaml"
+    },
+    {
+      "project_id": "cellular",
+      "name": "细胞自动机壁纸",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/cellular_automaton",
+      "publish_repo": "siwpan/cellular_automaton",
+      "source_file": "platform/registry/projects/cellular.yaml"
+    },
+    {
+      "project_id": "cordis-py",
+      "name": "dse-core（Python 版）· 字典场景引擎",
+      "category": "engine",
+      "version": "0.6.0",
+      "path": "repos/cordis-py",
+      "publish_repo": "siwpan/cordis-py",
+      "source_file": "platform/registry/projects/cordis-py.yaml"
+    },
+    {
+      "project_id": "cordis-snake",
+      "name": "Cordis 贪吃蛇（一切皆插件）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/cordis-snake",
+      "publish_repo": "siwpan/cordis-snake",
+      "source_file": "platform/registry/projects/cordis-snake.yaml"
+    },
+    {
+      "project_id": "cordis-table-app",
+      "name": "Cordis 表格小应用",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/cordis-table-app",
+      "publish_repo": "siwpan/cordis-table-app",
+      "source_file": "platform/registry/projects/cordis-table-app.yaml"
+    },
+    {
+      "project_id": "cordis-text-game",
+      "name": "Cordis 文字冒险（迷雾地窖）",
+      "category": "game",
+      "version": "0.1.0",
+      "path": "repos/cordis-text-game",
+      "publish_repo": "siwpan/cordis-text-game",
+      "source_file": "platform/registry/projects/cordis-text-game.yaml"
+    },
+    {
+      "project_id": "crawl-hub",
+      "name": "爬虫聚合启动器",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/crawl-hub",
+      "publish_repo": "siwpan/crawl-hub",
+      "source_file": "platform/registry/projects/crawl-hub.yaml"
+    },
+    {
+      "project_id": "csmusic",
+      "name": "CS 音乐盒成品库",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/csmusic",
+      "publish_repo": "siwpan/csmusic",
+      "source_file": "platform/registry/projects/csmusic.yaml"
+    },
+    {
+      "project_id": "d20-table-link",
+      "name": "d20 表格联动（TRPG 规则 × Cordis 表格）",
+      "category": "tool",
+      "version": "0.1.0",
+      "path": "repos/d20-table-link",
+      "publish_repo": "siwpan/d20-table-link",
+      "source_file": "platform/registry/projects/d20-table-link.yaml"
+    },
+    {
+      "project_id": "daily-player",
+      "name": "每日播放器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/daily_player",
+      "publish_repo": "siwpan/daily_player",
+      "source_file": "platform/registry/projects/daily-player.yaml"
+    },
+    {
+      "project_id": "darksouls",
+      "name": "黑暗之魂·卡牌编年史",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/darksouls",
+      "publish_repo": "siwpan/darksouls",
+      "source_file": "platform/registry/projects/darksouls.yaml"
+    },
+    {
+      "project_id": "ddd2",
+      "name": "元胞自动机视频生成器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/ddd2",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/ddd2.yaml"
+    },
+    {
+      "project_id": "dev-toolkit",
+      "name": "开发工具归档仓 · ③收敛合并落点",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/dev-toolkit",
+      "publish_repo": "siwpan/dev-toolkit",
+      "source_file": "platform/registry/projects/dev-toolkit.yaml"
+    },
+    {
+      "project_id": "diablo",
+      "name": "Diablo：Cataclysm Era",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/diablo",
+      "publish_repo": "siwpan/diablo",
+      "source_file": "platform/registry/projects/diablo.yaml"
+    },
+    {
+      "project_id": "dict-scene-engine",
+      "name": "字典场景引擎（文字冒险）",
+      "category": "game",
+      "version": "0.2.0",
+      "path": "repos/dict-scene-engine",
+      "publish_repo": "siwpan/dict-scene-engine",
+      "source_file": "platform/registry/projects/dict-scene-engine.yaml"
+    },
+    {
+      "project_id": "drawpic",
+      "name": "画图",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/drawpic",
+      "publish_repo": "siwpan/drawpic",
+      "source_file": "platform/registry/projects/drawpic.yaml"
+    },
+    {
+      "project_id": "dse-core",
+      "name": "dse-core · 字典场景引擎内核（Node/Cordis 版）",
+      "category": "engine",
+      "version": "0.1.0",
+      "path": "repos/dse-core",
+      "publish_repo": "siwpan/dse-core",
+      "source_file": "platform/registry/projects/dse-core.yaml"
+    },
+    {
+      "project_id": "dsh-release-archiver",
+      "name": "DSH 发布源码归档流水线",
+      "category": "tool",
+      "version": "1.1.1",
+      "path": "repos/dsh-release-archiver",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/dsh-release-archiver.yaml"
+    },
+    {
+      "project_id": "dungeon",
+      "name": "Savage Dungeon 地下城",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/dungeon",
+      "publish_repo": "siwpan/dungeon",
+      "source_file": "platform/registry/projects/dungeon.yaml"
+    },
+    {
+      "project_id": "dwarf-scrolls",
+      "name": "矮人卷轴",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/dwarf-scrolls",
+      "publish_repo": "siwpan/dwarf-scrolls",
+      "source_file": "platform/registry/projects/dwarf-scrolls.yaml"
+    },
+    {
+      "project_id": "endless-highway",
+      "name": "无尽高速公路",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/lonely-desert-road",
+      "publish_repo": "siwpan/lonely-desert-road",
+      "source_file": "platform/registry/projects/endless-highway.yaml"
+    },
+    {
+      "project_id": "fish",
+      "name": "捕鱼",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/fish",
+      "publish_repo": "siwpan/fish",
+      "source_file": "platform/registry/projects/fish.yaml"
+    },
+    {
+      "project_id": "fonts",
+      "name": "字体下载工具",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/fonts",
+      "publish_repo": "siwpan/fonts",
+      "source_file": "platform/registry/projects/fonts.yaml"
+    },
+    {
+      "project_id": "foolproof-operation-cli",
+      "name": "傻瓜式操作（CLI）",
+      "category": "tool",
+      "version": "1.1.2",
+      "path": "repos/foolproof-operation",
+      "publish_repo": "siwpan/foolproof-operation",
+      "source_file": "platform/registry/projects/foolproof-operation-cli.yaml"
+    },
+    {
+      "project_id": "foolproof-operation",
+      "name": "傻瓜式操作（依赖安装器）",
+      "category": "tool",
+      "version": "1.1.2",
+      "path": "repos/foolproof-operation",
+      "publish_repo": "siwpan/foolproof-operation",
+      "source_file": "platform/registry/projects/foolproof-operation.yaml"
+    },
+    {
+      "project_id": "game-prototypes",
+      "name": "游戏原型归档仓 · ③收敛合并落点",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/game-prototypes",
+      "publish_repo": "siwpan/game-prototypes",
+      "source_file": "platform/registry/projects/game-prototypes.yaml"
+    },
+    {
+      "project_id": "gan",
+      "name": "GAN 生成",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/gan",
+      "publish_repo": "siwpan/gan",
+      "source_file": "platform/registry/projects/gan.yaml"
+    },
+    {
+      "project_id": "haha",
+      "name": "消息应用（MVC）",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/haha",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/haha.yaml"
+    },
+    {
+      "project_id": "happy-childrens-day",
+      "name": "六一快乐 · 六一零食大闯关（无尽模式）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/happy-childrens-day",
+      "publish_repo": "siwpan/happy-childrens-day",
+      "source_file": "platform/registry/projects/happy-childrens-day.yaml"
+    },
+    {
+      "project_id": "hell-below",
+      "name": "地狱之下（多线平台）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/hell-below",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/hell-below.yaml"
+    },
+    {
+      "project_id": "hushi-twrj",
+      "name": "胡适日记本地存档",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/hushi_twrj",
+      "publish_repo": "siwpan/hushi_twrj",
+      "source_file": "platform/registry/projects/hushi-twrj.yaml"
+    },
+    {
+      "project_id": "idle",
+      "name": "Idle Clicker 放置挂机",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/Idle",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/idle.yaml"
+    },
+    {
+      "project_id": "image-scraper",
+      "name": "图片爬取",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/image-scraper",
+      "publish_repo": "siwpan/image-scraper",
+      "source_file": "platform/registry/projects/image-scraper.yaml"
+    },
+    {
+      "project_id": "imgproc",
+      "name": "图像处理",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/imgproc",
+      "publish_repo": "siwpan/imgproc",
+      "source_file": "platform/registry/projects/imgproc.yaml"
+    },
+    {
+      "project_id": "jotunnslayer",
+      "name": "JOTUNNSLAYER 复刻",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/jotunnslayer",
+      "publish_repo": "siwpan/jotunnslayer",
+      "source_file": "platform/registry/projects/jotunnslayer.yaml"
+    },
+    {
+      "project_id": "kard",
+      "name": "打牌",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/kard",
+      "publish_repo": "siwpan/kard",
+      "source_file": "platform/registry/projects/kard.yaml"
+    },
+    {
+      "project_id": "lab",
+      "name": "国际象棋多语言移植实验场",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/lab",
+      "publish_repo": "siwpan/lab",
+      "source_file": "platform/registry/projects/lab.yaml"
+    },
+    {
+      "project_id": "life-reset",
+      "name": "Life Reset Simulator",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/life-reset-simulator",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/life-reset.yaml"
+    },
+    {
+      "project_id": "ling-train",
+      "name": "灵讯训练流水线",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/ling-train",
+      "publish_repo": "siwpan/ling-train",
+      "source_file": "platform/registry/projects/ling-train.yaml"
+    },
+    {
+      "project_id": "localplayer",
+      "name": "轻量播放器·本地媒体（浏览器扩展）",
+      "category": "tool",
+      "version": "1.3.4",
+      "path": "repos/localplayer",
+      "publish_repo": "siwpan/localplayer",
+      "source_file": "platform/registry/projects/localplayer.yaml"
+    },
+    {
+      "project_id": "loly",
+      "name": "DOOM 风格伪 3D",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/loly",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/loly.yaml"
+    },
+    {
+      "project_id": "maga",
+      "name": "重装机兵同人",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/maga",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/maga.yaml"
+    },
+    {
+      "project_id": "magic-tower",
+      "name": "魔塔 · Python ECS 版",
+      "category": "game",
+      "version": "0.1.0",
+      "path": "repos/magic-tower",
+      "publish_repo": "siwpan/magic-tower",
+      "source_file": "platform/registry/projects/magic-tower.yaml"
+    },
+    {
+      "project_id": "magictowel",
+      "name": "魔塔",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/magic-tower",
+      "publish_repo": "siwpan/magic-tower",
+      "source_file": "platform/registry/projects/magictowel.yaml"
+    },
+    {
+      "project_id": "mahjong",
+      "name": "麻将",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/mahjong",
+      "publish_repo": "siwpan/mahjong",
+      "source_file": "platform/registry/projects/mahjong.yaml"
+    },
+    {
+      "project_id": "markdown",
+      "name": "Markdown 查看器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/markdown",
+      "publish_repo": "siwpan/markdown",
+      "source_file": "platform/registry/projects/markdown.yaml"
+    },
+    {
+      "project_id": "math",
+      "name": "CA Formula Lab",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/math",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/math.yaml"
+    },
+    {
+      "project_id": "mathematical-formula-renderer",
+      "name": "CA Render Engine · 数学公式渲染",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/mathematical-formula-renderer",
+      "publish_repo": "siwpan/mathematical-formula-renderer",
+      "source_file": "platform/registry/projects/mathematical-formula-renderer.yaml"
+    },
+    {
+      "project_id": "mcclone",
+      "name": "MC 克隆",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/mc-clone",
+      "publish_repo": "siwpan/mc-clone",
+      "source_file": "platform/registry/projects/mcclone.yaml"
+    },
+    {
+      "project_id": "mcclone3d",
+      "name": "《我的世界》风格 3D 体素沙盒（基于 3dworld）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/mcclone3d",
+      "publish_repo": "siwpan/mcclone3d",
+      "source_file": "platform/registry/projects/mcclone3d.yaml"
+    },
+    {
+      "project_id": "media-prototypes",
+      "name": "媒体原型归档仓 · ③收敛合并落点",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/media-prototypes",
+      "publish_repo": "siwpan/media-prototypes",
+      "source_file": "platform/registry/projects/media-prototypes.yaml"
+    },
+    {
+      "project_id": "media-tools",
+      "name": "媒体视觉小工具集",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/media-tools",
+      "publish_repo": "siwpan/media-tools",
+      "source_file": "platform/registry/projects/media-tools.yaml"
+    },
+    {
+      "project_id": "midi",
+      "name": "MusicStudio（midi）",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/midi",
+      "publish_repo": "siwpan/midi",
+      "source_file": "platform/registry/projects/midi.yaml"
+    },
+    {
+      "project_id": "midjourney-video",
+      "name": "MJ 视频助手",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/midjourney_video",
+      "publish_repo": "siwpan/midjourney_video",
+      "source_file": "platform/registry/projects/midjourney-video.yaml"
+    },
+    {
+      "project_id": "mirsolo",
+      "name": "热血传奇单机复刻（致敬，非官方）",
+      "category": "game",
+      "version": "0.1.0",
+      "path": "repos/mirsolo",
+      "publish_repo": "siwpan/mirsolo",
+      "source_file": "platform/registry/projects/mirsolo.yaml"
+    },
+    {
+      "project_id": "mixer",
+      "name": "Mixer 流服务",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/musickit/remix",
+      "publish_repo": "siwpan/musickit",
+      "source_file": "platform/registry/projects/mixer.yaml"
+    },
+    {
+      "project_id": "moba-battle",
+      "name": "MOBA 英雄大乱斗",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/moba_battle_platform",
+      "publish_repo": "siwpan/moba_battle_platform",
+      "source_file": "platform/registry/projects/moba-battle.yaml"
+    },
+    {
+      "project_id": "mp",
+      "name": "随机音乐生成器+可视化",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/mp",
+      "publish_repo": "siwpan/mp",
+      "source_file": "platform/registry/projects/mp.yaml"
+    },
+    {
+      "project_id": "music-player",
+      "name": "Music Player · Python + VLC",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/music-player",
+      "publish_repo": "siwpan/music-player",
+      "source_file": "platform/registry/projects/music-player.yaml"
+    },
+    {
+      "project_id": "music-prompt",
+      "name": "纯音乐提示词生成器",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/music-prompt-generator",
+      "publish_repo": "siwpan/music-prompt-generator",
+      "source_file": "platform/registry/projects/music-prompt.yaml"
+    },
+    {
+      "project_id": "music-prototypes",
+      "name": "音乐原型归档仓 · ③收敛合并落点",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/music-prototypes",
+      "publish_repo": "siwpan/music-prototypes",
+      "source_file": "platform/registry/projects/music-prototypes.yaml"
+    },
+    {
+      "project_id": "musickit",
+      "name": "音色工程（采样整理 + remix 混音）",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/musickit",
+      "publish_repo": "siwpan/musickit",
+      "source_file": "platform/registry/projects/musickit.yaml"
+    },
+    {
+      "project_id": "ncmturnmp3",
+      "name": "NCM 转 MP3",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/ncmturnmp3",
+      "publish_repo": "siwpan/ncmturnmp3",
+      "source_file": "platform/registry/projects/ncmturnmp3.yaml"
+    },
+    {
+      "project_id": "niulai",
+      "name": "《牛来》双引擎复刻工程",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/niulai",
+      "publish_repo": "siwpan/niulai",
+      "source_file": "platform/registry/projects/niulai.yaml"
+    },
+    {
+      "project_id": "novel-down",
+      "name": "读书爬虫（仅免费章节）",
+      "category": "crawler",
+      "version": "0.8.40",
+      "path": "repos/novel-down",
+      "publish_repo": "siwpan/novel-down",
+      "source_file": "platform/registry/projects/novel-down.yaml"
+    },
+    {
+      "project_id": "novel-generator",
+      "name": "小说生成器",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/novel-generator",
+      "publish_repo": "siwpan/novel-generator",
+      "source_file": "platform/registry/projects/novel-generator.yaml"
+    },
+    {
+      "project_id": "novel-reader",
+      "name": "综网终端 · 地狱之下平台（视觉小说版）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/novel-reader",
+      "publish_repo": "siwpan/novel-reader",
+      "source_file": "platform/registry/projects/novel-reader.yaml"
+    },
+    {
+      "project_id": "novel-run",
+      "name": "novel-run · 集成路线独立验证项目",
+      "category": "tool",
+      "version": "0.1.0",
+      "path": "repos/novel-run",
+      "publish_repo": "siwpan/novel-run",
+      "source_file": "platform/registry/projects/novel-run.yaml"
+    },
+    {
+      "project_id": "novel",
+      "name": "万界归墟生成器",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/novel",
+      "publish_repo": "siwpan/novel",
+      "source_file": "platform/registry/projects/novel.yaml"
+    },
+    {
+      "project_id": "ollama-generator",
+      "name": "Ollama 文本生成库",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/ollama_generator",
+      "publish_repo": "siwpan/ollama_generator",
+      "source_file": "platform/registry/projects/ollama-generator.yaml"
+    },
+    {
+      "project_id": "paotuan",
+      "name": "跑团模拟器（镜中之失）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/running-group-simulator",
+      "publish_repo": "siwpan/running-group-simulator",
+      "source_file": "platform/registry/projects/paotuan.yaml"
+    },
+    {
+      "project_id": "particle",
+      "name": "粒子系统库（示例）",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/particlefx",
+      "publish_repo": "siwpan/particlefx",
+      "source_file": "platform/registry/projects/particle.yaml"
+    },
+    {
+      "project_id": "pdf",
+      "name": "PDF 工具",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/pdf",
+      "publish_repo": "siwpan/pdf",
+      "source_file": "platform/registry/projects/pdf.yaml"
+    },
+    {
+      "project_id": "peasy-ai",
+      "name": "Peasy AI（原 easy-ai）",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/peasy-ai",
+      "publish_repo": "siwpan/peasy-ai",
+      "source_file": "platform/registry/projects/peasy-ai.yaml"
+    },
+    {
+      "project_id": "photo",
+      "name": "照片工具",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/photo",
+      "publish_repo": "siwpan/photo",
+      "source_file": "platform/registry/projects/photo.yaml"
+    },
+    {
+      "project_id": "photovideo",
+      "name": "照片视频",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/photovideo",
+      "publish_repo": "siwpan/photovideo",
+      "source_file": "platform/registry/projects/photovideo.yaml"
+    },
+    {
+      "project_id": "player",
+      "name": "WMP 可视化模拟器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/player",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/player.yaml"
+    },
+    {
+      "project_id": "players-unified",
+      "name": "播放器统一宿主（三端合并）",
+      "category": "media",
+      "version": "0.8.0",
+      "path": "repos/players-unified",
+      "publish_repo": "siwpan/players-unified",
+      "source_file": "platform/registry/projects/players-unified.yaml"
+    },
+    {
+      "project_id": "pluginplayer",
+      "name": "PluginPlayer（插件版播放器）",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/pluginplayer",
+      "publish_repo": "siwpan/pluginplayer",
+      "source_file": "platform/registry/projects/pluginplayer.yaml"
+    },
+    {
+      "project_id": "pomodmer",
+      "name": "Pomodmer · Cordis 内核 + 本地 Web UI 的番茄钟",
+      "category": "tool",
+      "version": "2.2.0",
+      "path": "repos/Pomodmer",
+      "publish_repo": "siwpan/pomodmer",
+      "source_file": "platform/registry/projects/pomodmer.yaml"
+    },
+    {
+      "project_id": "portal",
+      "name": "平台门户（按需启动 · DSH 同款独立网页应用）",
+      "category": "platform",
+      "version": "0.1.0",
+      "path": "platform",
+      "publish_repo": "siwpan/allin",
+      "source_file": "platform/registry/projects/portal.yaml"
+    },
+    {
+      "project_id": "pq-multiverse",
+      "name": "Progress Quest Multiverse",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/pq-multiverse",
+      "publish_repo": "siwpan/pq-multiverse",
+      "source_file": "platform/registry/projects/pq-multiverse.yaml"
+    },
+    {
+      "project_id": "print",
+      "name": "打印工具",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/print",
+      "publish_repo": "siwpan/print",
+      "source_file": "platform/registry/projects/print.yaml"
+    },
+    {
+      "project_id": "procedural-video",
+      "name": "程序化视频",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/procedural-video",
+      "publish_repo": "siwpan/procedural-video",
+      "source_file": "platform/registry/projects/procedural-video.yaml"
+    },
+    {
+      "project_id": "project-root",
+      "name": "诡秘之主·序列途径模拟",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/project-root",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/project-root.yaml"
+    },
+    {
+      "project_id": "py-test-runner",
+      "name": "测试运行器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/py_test_runner",
+      "publish_repo": "siwpan/py_test_runner",
+      "source_file": "platform/registry/projects/py-test-runner.yaml"
+    },
+    {
+      "project_id": "pyinstaller",
+      "name": "打包器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/pyinstaller",
+      "publish_repo": "siwpan/pyinstaller",
+      "source_file": "platform/registry/projects/pyinstaller.yaml"
+    },
+    {
+      "project_id": "pywallpaper",
+      "name": "效果器壁纸",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/pywallpaper",
+      "publish_repo": "siwpan/pywallpaper",
+      "source_file": "platform/registry/projects/pywallpaper.yaml"
+    },
+    {
+      "project_id": "qiandao",
+      "name": "签到工具",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/sign-in-simulator",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/qiandao.yaml"
+    },
+    {
+      "project_id": "radio-special-instruments",
+      "name": "特殊乐器采样包库",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/radio_special_instruments",
+      "publish_repo": "siwpan/radio_special_instruments",
+      "source_file": "platform/registry/projects/radio-special-instruments.yaml"
+    },
+    {
+      "project_id": "radio",
+      "name": "电台",
+      "category": "media",
+      "version": "4.0.0",
+      "path": "repos/private-radio-stations",
+      "publish_repo": "siwpan/private-radio-stations",
+      "source_file": "platform/registry/projects/radio.yaml"
+    },
+    {
+      "project_id": "random-dungeon",
+      "name": "随机地牢 · 终端文字地牢探险",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/random-dungeon-",
+      "publish_repo": "siwpan/random-dungeon-",
+      "source_file": "platform/registry/projects/random-dungeon.yaml"
+    },
+    {
+      "project_id": "remix",
+      "name": "Remix 混音 CLI",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/musickit/remix",
+      "publish_repo": "siwpan/musickit",
+      "source_file": "platform/registry/projects/remix.yaml"
+    },
+    {
+      "project_id": "remixaudio",
+      "name": "Remix · 音频混音 & 视频合成（独立仓）",
+      "category": "music",
+      "version": "1.0.0",
+      "path": "repos/remix",
+      "publish_repo": "siwpan/remix",
+      "source_file": "platform/registry/projects/remixaudio.yaml"
+    },
+    {
+      "project_id": "renamer",
+      "name": "批量改名",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/renamer",
+      "publish_repo": "siwpan/renamer",
+      "source_file": "platform/registry/projects/renamer.yaml"
+    },
+    {
+      "project_id": "roleplayer",
+      "name": "Role Player 跑团模拟器（原 D20）",
+      "category": "game",
+      "version": "3.0.0",
+      "path": "repos/RolePlayer",
+      "publish_repo": "siwpan/roleplayer",
+      "source_file": "platform/registry/projects/roleplayer.yaml"
+    },
+    {
+      "project_id": "russia",
+      "name": "俄罗斯轮盘（ECS 版）",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/russia",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/russia.yaml"
+    },
+    {
+      "project_id": "sandbox",
+      "name": "沙盒游戏",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/sandbox",
+      "publish_repo": "siwpan/sandbox",
+      "source_file": "platform/registry/projects/sandbox.yaml"
+    },
+    {
+      "project_id": "santi-teleprompter",
+      "name": "三题故事提词器",
+      "category": "tool",
+      "version": "1.1.0",
+      "path": "repos/santi-teleprompter",
+      "publish_repo": "siwpan/santi-teleprompter",
+      "source_file": "platform/registry/projects/santi-teleprompter.yaml"
+    },
+    {
+      "project_id": "sfx",
+      "name": "音效下载器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/sfx-download",
+      "publish_repo": "siwpan/sfx-download",
+      "source_file": "platform/registry/projects/sfx.yaml"
+    },
+    {
+      "project_id": "shikonghuaban",
+      "name": "时空画板",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/shikonghuaban",
+      "publish_repo": "siwpan/shikonghuaban",
+      "source_file": "platform/registry/projects/shikonghuaban.yaml"
+    },
+    {
+      "project_id": "sin-virtue-cordis-host",
+      "name": "七宗罪VS七美德·Cordis 宿主原型",
+      "category": "game",
+      "version": "0.1.0",
+      "path": "repos/sin-virtue-cordis-host",
+      "publish_repo": "siwpan/sin-virtue-cordis-host",
+      "source_file": "platform/registry/projects/sin-virtue-cordis-host.yaml"
+    },
+    {
+      "project_id": "sin-virtue-game",
+      "name": "七宗罪VS七美德·互动叙事测试原型",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/sin-virtue-game",
+      "publish_repo": "siwpan/sin-virtue-game",
+      "source_file": "platform/registry/projects/sin-virtue-game.yaml"
+    },
+    {
+      "project_id": "smile",
+      "name": "签到+表情包生成器",
+      "category": "tool",
+      "version": "2.0.0",
+      "path": "repos/smile",
+      "publish_repo": "siwpan/smile",
+      "source_file": "platform/registry/projects/smile.yaml"
+    },
+    {
+      "project_id": "stay",
+      "name": "Progress Quest 2",
+      "category": "game",
+      "version": "2.0.0",
+      "path": "repos/stay",
+      "publish_repo": "siwpan/stay",
+      "source_file": "platform/registry/projects/stay.yaml"
+    },
+    {
+      "project_id": "subtitle",
+      "name": "字幕工具",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/subtitle",
+      "publish_repo": "siwpan/subtitle",
+      "source_file": "platform/registry/projects/subtitle.yaml"
+    },
+    {
+      "project_id": "superengine",
+      "name": "superengine · 基于 cordis 的三仓「超级引擎」组合仓",
+      "category": "engine",
+      "version": "0.1.0",
+      "path": "repos/superengine",
+      "publish_repo": "siwpan/superengine",
+      "source_file": "platform/registry/projects/superengine.yaml"
+    },
+    {
+      "project_id": "table-hanging-machine",
+      "name": "表格挂机 · Progress Quest v2 风格挂机桌游",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/table-hanging-machine",
+      "publish_repo": "siwpan/table-hanging-machine",
+      "source_file": "platform/registry/projects/table-hanging-machine.yaml"
+    },
+    {
+      "project_id": "tavern-rogue",
+      "name": "酒馆异闻录",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/tavern-rogue",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/tavern-rogue.yaml"
+    },
+    {
+      "project_id": "test",
+      "name": "test · 原型人格洞察 · 每日一测",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/test",
+      "publish_repo": "siwpan/test",
+      "source_file": "platform/registry/projects/test.yaml"
+    },
+    {
+      "project_id": "text-adventure",
+      "name": "文字冒险引擎",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/text-adventure",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/text-adventure.yaml"
+    },
+    {
+      "project_id": "text-fps",
+      "name": "文字 FPS",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/text-fps",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/text-fps.yaml"
+    },
+    {
+      "project_id": "twelve-labors",
+      "name": "十二试炼",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/god-hand-",
+      "publish_repo": "siwpan/god-hand-",
+      "source_file": "platform/registry/projects/twelve-labors.yaml"
+    },
+    {
+      "project_id": "txtlegend",
+      "name": "文字传奇·点怪就打",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/legend",
+      "publish_repo": "siwpan/legend",
+      "source_file": "platform/registry/projects/txtlegend.yaml"
+    },
+    {
+      "project_id": "video-generator",
+      "name": "随机视频生成器",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/video-generator",
+      "publish_repo": "siwpan/video-generator",
+      "source_file": "platform/registry/projects/video-generator.yaml"
+    },
+    {
+      "project_id": "video",
+      "name": "视频转播站",
+      "category": "media",
+      "version": "4.0.0",
+      "path": "repos/private-radio-stations",
+      "publish_repo": "siwpan/private-radio-stations",
+      "source_file": "platform/registry/projects/video.yaml"
+    },
+    {
+      "project_id": "wav-music-gen",
+      "name": "波形音乐生成",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/wav_music_gen",
+      "publish_repo": "siwpan/wav_music_gen",
+      "source_file": "platform/registry/projects/wav-music-gen.yaml"
+    },
+    {
+      "project_id": "wave4",
+      "name": "布朗噪声工具包",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/wave4",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/wave4.yaml"
+    },
+    {
+      "project_id": "webcopier",
+      "name": "网站复制器",
+      "category": "crawler",
+      "version": "1.0.0",
+      "path": "repos/webcopier",
+      "publish_repo": "siwpan/webcopier",
+      "source_file": "platform/registry/projects/webcopier.yaml"
+    },
+    {
+      "project_id": "weiqi-lab",
+      "name": "围棋多语言引擎实验场",
+      "category": "game",
+      "version": "1.0.0",
+      "path": "repos/weiqi_lab",
+      "publish_repo": "siwpan/weiqi_lab",
+      "source_file": "platform/registry/projects/weiqi-lab.yaml"
+    },
+    {
+      "project_id": "weor",
+      "name": "Weor",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/weor",
+      "publish_repo": "siwpan/weor",
+      "source_file": "platform/registry/projects/weor.yaml"
+    },
+    {
+      "project_id": "worldbuilder",
+      "name": "程序化生成器",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/worldbuilder",
+      "publish_repo": "siwpan/worldbuilder",
+      "source_file": "platform/registry/projects/worldbuilder.yaml"
+    },
+    {
+      "project_id": "write-agent",
+      "name": "write-agent · 小说创作智能 Agent",
+      "category": "ai",
+      "version": "1.0.0",
+      "path": "repos/write-agent",
+      "publish_repo": "siwpan/write-agent",
+      "source_file": "platform/registry/projects/write-agent.yaml"
+    },
+    {
+      "project_id": "write",
+      "name": "网文创作与素材工作区",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/write",
+      "publish_repo": "siwpan/write",
+      "source_file": "platform/registry/projects/write.yaml"
+    },
+    {
+      "project_id": "yasuo",
+      "name": "压缩工具",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/yasuo",
+      "publish_repo": "siwpan/yasuo",
+      "source_file": "platform/registry/projects/yasuo.yaml"
+    },
+    {
+      "project_id": "yuanbao",
+      "name": "元宝",
+      "category": "media",
+      "version": "1.0.0",
+      "path": "repos/yuanbao",
+      "publish_repo": "siwpan/yuanbao",
+      "source_file": "platform/registry/projects/yuanbao.yaml"
+    },
+    {
+      "project_id": "zhuangtaiji",
+      "name": "庄太极·多范式决策工作台",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/zhuangtaiji",
+      "publish_repo": null,
+      "source_file": "platform/registry/projects/zhuangtaiji.yaml"
+    }
   ]
 }
