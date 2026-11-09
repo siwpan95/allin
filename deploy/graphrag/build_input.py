@@ -69,7 +69,7 @@ def selftest() -> int:
         ("docs/事实源/机器分区索引.md", "# 事实源 138 仓\n"),
         ("docs/事实源/_structured/facts.json", '{"x":1}\n'),
         ("docs/md/历史/旧.md", "# 冻结\n"),
-        ("docs/规范/有密钥.md", "api_key = sk-abcdefghijklmnop123456\n"),
+        ("docs/规范/有密钥.md", "api_key = EXAMPLE_ONLY_NO_TOKEN\n"),
     ]:
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
