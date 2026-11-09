@@ -1,9 +1,55 @@
+# ports 镜像（可重建派生物）：由 tools/facts/build_ports.py 从 docs/事实源/ports.yaml 重建。
+# 唯一被手改的端口源是 docs/事实源/ports.yaml；本文件删了重建即得，勿手改。
 ports:
-  - port: 8000
-    service: radio
-  - port: 8010
-    service: mixer
-  - port: 8080
-    service: audio-separator
-  - port: 8100
-    service: video
+- port: 8000
+  service: radio-panel
+  owner: /repos/private-radio-stations/apps/audio
+  status: active
+- port: 8010
+  service: mixer-stream
+  owner: /repos/musickit/remix/tools
+  status: active
+- port: 8011
+  service: zhuangtaiji-webui
+  owner: /repos/zhuangtaiji/web/server.py
+  status: active
+- port: 8080
+  service: audio-separator-web
+  owner: /repos/audio-separator/web_server
+  status: active
+- port: 8100
+  service: video-panel
+  owner: /repos/private-radio-stations/apps/video
+  status: active
+- port: 8554
+  service: mediamtx-rtsp
+  owner: MediaMTX
+  status: active
+- port: 8787
+  service: localplayer-bridge
+  owner: /repos/private-radio-stations/scripts/localplayer-bridge.mjs
+  status: active
+- port: 8888
+  service: mediamtx-hls
+  owner: MediaMTX
+  status: active
+- port: 8889
+  service: mediamtx-webrtc
+  owner: MediaMTX
+  status: active
+- port: 8899
+  service: npm-mirror-proxy
+  owner: start-*.bat PROXY_PORT
+  status: transient
+- port: 9000
+  service: portal
+  owner: /platform/apps/portal（按需启动：start-platform.bat，默认 PORT=0 临时端口）
+  status: retired
+- port: 9042
+  service: allin-website
+  owner: /website（src/server.js，npm start；PORT 可覆盖）
+  status: active
+- port: 9997
+  service: mediamtx-api
+  owner: mediamtx
+  status: active

@@ -209,6 +209,34 @@ def check_projects(data: Path, root: Path, findings: list[str]) -> dict:
     return {"registry": len(registry_stems), "facts_projects": len(projects)}
 
 
+def check_ports_mirror(root: Path, findings: list[str]) -> dict:
+    """platform/registry/ports.yaml 镜像 ⇄ docs/事实源/ports.yaml 权威：镜像必须是子集 + service 匹配。
+
+    防双源漂移（A 期 Phase 2）：镜像若凭空多端口或与权威 service 不符，即双源复活。
+    无 yaml / 镜像缺失 / 权威缺失 → SKIP（派生物纪律：镜像可删可重建，不强制）。
+    """
+    mirror = root / "platform" / "registry" / "ports.yaml"
+    auth = root / "docs" / "事实源" / "ports.yaml"
+    if not mirror.is_file():
+        return {"mode": "SKIPPED(no mirror)"}
+    if yaml is None:
+        return {"mode": "SKIPPED(yaml 不可用)"}
+    if not auth.is_file():
+        return {"mode": "SKIPPED(no auth ports)"}
+    mdoc = yaml.safe_load(mirror.read_text(encoding="utf-8")) or {}
+    adoc = yaml.safe_load(auth.read_text(encoding="utf-8")) or {}
+    m_ports = {p["port"]: p for p in (mdoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
+    a_ports = {p["port"]: p for p in (adoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
+    for k in sorted(set(m_ports) - set(a_ports)):
+        findings.append(f"镜像 port {k} 但权威源缺（双源漂移：镜像凭空多端口）")
+    for k in sorted(set(m_ports) & set(a_ports)):
+        if m_ports[k].get("service") != a_ports[k].get("service"):
+            findings.append(f"镜像 port {k} service 不一致：镜像={m_ports[k].get('service')!r} "
+                            f"权威={a_ports[k].get('service')!r}（双源漂移）")
+    return {"mirror_ports": len(m_ports), "auth_ports": len(a_ports),
+            "divergent": len(set(m_ports) - set(a_ports))}
+
+
 def run(data: Path, ports_yaml: Path, state: Path, root: Path = ROOT) -> int:
     if not data.is_file():
         print(f"ENV ERROR: 结构化真身不存在：{data}")
@@ -222,8 +250,9 @@ def run(data: Path, ports_yaml: Path, state: Path, root: Path = ROOT) -> int:
     d = check_dolt_state(state, head, findings, warnings)
     m = check_machines(data, root, findings)
     pr = check_projects(data, root, findings)
+    pm = check_ports_mirror(root, findings)
     print(f"{GATE}: ports={p.get('mode', p)} | source_line={s} | dolt_state={d.get('mode', d)} "
-          f"| machines={m} | projects={pr.get('mode', pr)}")
+          f"| machines={m} | projects={pr.get('mode', pr)} | ports_mirror={pm.get('mode', pm)}")
     for x in infos:
         print(f"  INFO {x}")
     for x in warnings:

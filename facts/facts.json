@@ -87,23 +87,121 @@
   "runtimes": [],
   "ports": [
     {
-      "port": 9042,
-      "service": "allin-website",
-      "owner": "/website",
-      "segment": "9000-9099",
+      "port": 8000,
+      "service": "radio-panel",
+      "owner": "/repos/private-radio-stations/apps/audio",
       "status": "active",
-      "observed_at": "2026-11-02",
+      "observed_at": "2026-11-09",
       "evidence_ref": "docs/事实源/ports.yaml",
-      "machine_id": "SIWPAN"
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8010,
+      "service": "mixer-stream",
+      "owner": "/repos/musickit/remix/tools",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8011,
+      "service": "zhuangtaiji-webui",
+      "owner": "/repos/zhuangtaiji/web/server.py",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8080,
+      "service": "audio-separator-web",
+      "owner": "/repos/audio-separator/web_server",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8100,
+      "service": "video-panel",
+      "owner": "/repos/private-radio-stations/apps/video",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8554,
+      "service": "mediamtx-rtsp",
+      "owner": "MediaMTX",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8787,
+      "service": "localplayer-bridge",
+      "owner": "/repos/private-radio-stations/scripts/localplayer-bridge.mjs",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8888,
+      "service": "mediamtx-hls",
+      "owner": "MediaMTX",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8889,
+      "service": "mediamtx-webrtc",
+      "owner": "MediaMTX",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 8899,
+      "service": "npm-mirror-proxy",
+      "owner": "start-*.bat PROXY_PORT",
+      "status": "transient",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
     },
     {
       "port": 9000,
       "service": "portal",
-      "owner": "/platform/apps/portal",
-      "segment": "9000-9099",
+      "owner": "/platform/apps/portal（按需启动：start-platform.bat，默认 PORT=0 临时端口）",
       "status": "retired",
-      "observed_at": "2026-08-27",
-      "evidence_ref": "docs/事实源/ports.yaml"
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 9042,
+      "service": "allin-website",
+      "owner": "/website（src/server.js，npm start；PORT 可覆盖）",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
+    },
+    {
+      "port": 9997,
+      "service": "mediamtx-api",
+      "owner": "mediamtx",
+      "status": "active",
+      "observed_at": "2026-11-09",
+      "evidence_ref": "docs/事实源/ports.yaml",
+      "source_file": "docs/事实源/ports.yaml"
     }
   ],
   "facts": [

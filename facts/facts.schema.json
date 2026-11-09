@@ -107,7 +107,8 @@
         "status": { "enum": ["active", "retired", "transient", "reserved"] },
         "machine_id": { "$ref": "#/$defs/common/machine_id" },
         "observed_at": { "$ref": "#/$defs/common/observed_at" },
-        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" }
+        "evidence_ref": { "$ref": "#/$defs/common/evidence_ref" },
+        "source_file": { "type": "string", "description": "回指权威端口源 docs/事实源/ports.yaml 的溯源指针（派生投影）" }
       }
     },
     "service": {

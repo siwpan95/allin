@@ -288,6 +288,13 @@ run "$PY" deploy/dolt/import_from_git.py --selftest
 #    零第三方依赖（ports 判据需 yaml，缺则 SKIP 该判据不拖红）；拔网 + 停三栈时仍须可跑（离线北极星）。
 run "$PY" tools/gate/facts_drift.py --selftest
 run "$PY" tools/gate/facts_drift.py --json
+# 生成器自身视角的同步自检（belt-and-suspenders，A 期 Phase 1/2）：
+# g26 已对 ports / projects / ports_mirror 做意图态对账；下列两行是**生成器**维度的同一类漂移判定，
+# 二者各自独立，任一被改坏都跑得出红（门禁写了不跑 = 没有门禁）。
+# 覆盖：Phase 1 的 projects 索引投影（145 项 ⇄ registry）、Phase 2 的 ports 索引投影 + 镜像（⇄ docs/事实源/ports.yaml）。
+# 均无 yaml 时退化为 SKIP（与 g26 的 ports 判据一致，SKIP ≠ pass）。
+run "$PY" tools/facts/build_projects.py --check
+run "$PY" tools/facts/build_ports.py --check
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。

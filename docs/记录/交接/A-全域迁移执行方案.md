@@ -34,7 +34,7 @@
 | 类别 | 当前权威源 | 目标形态 | 进度 |
 |---|---|---|---|
 | 145 registry | `platform/registry/projects/*.yaml`（已结构化） | facts.json.projects 索引投影（project_id/name/category/path/publish_repo/source_file） | ✅ Phase 1 完成 |
-| 13 路由 | `docs/事实源/端口分配表.md` + 与 `platform/registry/ports.yaml` **重复** | 先消双源（见 §4 红线），再 facts.json.routes 索引 | ⬜ Phase 2 |
+| 13 路由 | `docs/事实源/端口分配表.md`（人类可读孪生）+ `docs/事实源/ports.yaml`（机器可读权威）+ `platform/registry/ports.yaml`（旧双源之一） | **实测裁定**：端口分配表与 ports.yaml 是同一份「端口/路由分配」事实的孪生（13 行一一对应），故**不另建 facts.json.routes**——路由即端口分配；以 `docs/事实源/ports.yaml` 为唯一权威，facts.json.ports 为其派生索引投影，`platform/registry/ports.yaml` 重建为可重建镜像（双源消灭） | ✅ Phase 2 完成 |
 | 140 分级 | `docs/事实源/组合分级决策索引.md` 表 | 抽成结构化源 → facts.json.tiering 索引 | ⬜ Phase 3 |
 | 34 工具 | `docs/事实源/工具分类索引.md` 表 | 抽成结构化源 → facts.json.tools 索引 | ⬜ Phase 3 |
 | 46 许可 | `docs/事实源/来源与许可表.md` 表 | 抽成结构化源 → facts.json.licenses 索引 | ⬜ Phase 3 |
@@ -56,23 +56,47 @@
 
 ---
 
-## 4. 必须先消的两条红线（阻碍 Phase 2/3 真落地）
+## 4. ports 双源红线（Phase 2 已消）
 
-1. **ports 双源**：`docs/事实源/ports.yaml`（13 条）与 `platform/registry/ports.yaml` 并存，且 `facts.json.ports` 又是第三份。这是**真实的双源漂移**，必须在路由迁移前先统一为单一权威（推荐：`platform/registry/ports.yaml` 为权威，docs 那份转为生成视图或删除，facts.json.ports 改为索引投影）。
-2. **ports 形态差异**：`docs/事实源/ports.yaml` 的 `owner` 带括号描述（`/website（src/server.js…）`），`facts.json.ports.owner` 是干净路径（`/website`）。g26 的端口判据因此**只比 `port/service/status`，不比 `owner`**（已在 g26 注明）。统一后此豁免可移除。
+> 原红线 1/2 在 Phase 2 实测后裁定如下，均已关闭。
+
+1. **ports 双源（已消）**：`docs/事实源/ports.yaml`（13 条，机器可读）与 `platform/registry/ports.yaml`（旧 4 端口 stub，仅「回退默认/重建自 projects」）并存，且旧 `facts.json.ports` 是第三份手改源。
+   **实测裁定（Q2）**：`docs/事实源/ports.yaml` 是唯一权威（被 SPEC-106/204、README、新人指南、INDEX、ADR-0009 引用，且是唯一含 13 端口 + change_log + segments 的机器可读源）；`platform/registry/ports.yaml` 经实测仅为回退默认/重建 stub，非权威。
+   **处理**：docs 那份 = 唯一被手改源；`platform/registry/ports.yaml` 重建为它的**可重建镜像**（删了重建即得）；`facts.json.ports` 改为 docs 的**派生索引投影**（带 `source_file`，删了重建即得）。三份中仅 docs 一份被手改 —— 双源漂移消灭。
+2. **ports 形态差异（已澄清）**：原担心的 `owner` 括号描述实际只存在于人类可读孪生 `端口分配表.md`；机器可读 `docs/事实源/ports.yaml` 的 `owner` 本就是干净路径（如 `/website`），与 `facts.json.ports.owner`（同样从 docs 取）、`platform/registry/ports.yaml` 镜像的 `owner`（从 docs 重建的同值）一致。三源 owner 现已一致；g26 端口判据仍保留「不比 owner」的豁免（无害 legacy，日后可收紧为比对 owner）。
 
 ---
 
 ## 5. 分阶段推进建议（待用户拍板）
 
 - **Phase 1（已完成）**：145 registry 索引投影 + 同步门禁。
-- **Phase 2（建议下一步）**：消 ports 双源（§4 红线 1/2）→ facts.json.routes/ports 索引投影 + 端口判据放开 owner 比对。
+- **Phase 2（已完成）**：消 ports 双源（§4）→ 以 `docs/事实源/ports.yaml` 为唯一权威，`facts.json.ports` 改为其派生索引投影（13 条，带 `source_file`），`platform/registry/ports.yaml` 重建为可重建镜像（4 核心端口，删了重建即得）；g26 增 `check_ports_mirror` 防镜像漂移；`build_ports.py` 生成器接入 `run_all_gates.sh`（--check）。「13 路由」缺口由 facts.json.ports 一并关闭（路由=端口分配，无需独立 routes 实体）。
 - **Phase 3**：140 分级 / 34 工具 / 46 许可 抽结构化源 → 各自索引投影 + g26 扩展判据。每加一类升一次 `schema_version` 并立 ADR。
 
-## 6. 待用户裁决的点
+## 6. 用户已裁决的点（✅ = 已拍板）
 
-- Q1：140/34/46 三类是否同意「先抽成 `docs/事实源/*.yaml` 再投影」（推荐），还是保留 MD 表 + 解析器？
-- Q2：ports 双源统一以哪份为权威？（推荐 `platform/registry/ports.yaml`）
-- Q3：索引投影的颗粒度是否同意仅 `id/name/category/path/source_file`（不搬详情），详情仍只在权威源？
+- Q1（✅ 同意）：140 分级 / 34 工具 / 46 许可 三类**先抽成 `docs/事实源/*.yaml` 再投影**（与 registry 同构）。Phase 3 执行。
+- Q2（✅ 实测裁定）：ports 双源以 **`docs/事实源/ports.yaml`** 为唯一权威（非原推荐 platform/registry）。依据见 §4。
+- Q3（✅ 同意）：索引投影颗粒度仅 `id/name/category/path/source_file`（不搬详情），详情只留权威源。145 registry 投影已落地此口径；Phase 3 同口径。
 
 > 以上裁决不影响 Phase 1 已落地内容；Phase 1 采用的「派生索引投影」形态即本方案 §1 的裁决结论，可直接作为后续 Phase 的模板。
+
+---
+
+## 7. Phase 2 落地清单（2026-11-09）
+
+新增 / 修改：
+- `tools/facts/build_ports.py`（新增）：docs/事实源/ports.yaml → facts.json.ports 投影 + platform/registry/ports.yaml 镜像生成器（`--write/--check/--selftest`，零依赖仅可选 yaml）。
+- `tools/gate/facts_drift.py`（g26，修改）：增 `check_ports_mirror`（镜像⇄权威子集 + service 匹配，防双源复活）；`check_ports` 方向性判据保留（facts 子集，多出即真漂移）。
+- `facts/facts.json`（修改）：`ports` 重写为 13 条派生索引投影（source_file→docs/事实源/ports.yaml，owner 取 docs 全值）。
+- `facts/facts.schema.json`（修改）：`$defs/port` 增 `source_file`（派生可重建）。
+- `platform/registry/ports.yaml`（重建）：改为 docs 的可重建镜像（4 核心端口 + 头部声明「删了重建即得，勿手改」）。
+- `scripts/run_all_gates.sh`（修改）：接入 `build_projects.py --check` 与 `build_ports.py --check`（belt-and-suspenders，覆盖 Phase 1/2 派生投影同步）。
+
+验证（全绿）：
+- `build_ports --selftest` PASS（collect=2，sync_clean，drift_caught）
+- `build_ports --check` clean（facts=0 mirror=0）
+- `facts_drift --selftest` PASS（注入 phantom 99999 能拦，clean 能过）
+- `facts_drift --json` clean（ports 13==13，mirror 13==13，projects 145==145，仅 Dolt state 滞后 WARN=派生物可重建）
+- `cli validate` OK
+- `bash -n run_all_gates.sh` 语法 OK
