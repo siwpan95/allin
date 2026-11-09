@@ -5,8 +5,15 @@
 // `@deepseek-ai/dsh-mcp-client` and every other MCP client can spawn directly.
 //
 // Design rules, none of them optional:
-//   * read-only by default -- ten of the twelve tools only read;
-//   * the two write tools need an explicit `confirm: true`: record.append drafts
+//   * read-only by default -- twenty-one of the twenty-five tools only read;
+//   * the four write tools need an explicit `confirm: true`: record.append / memory.append
+//     draft inside `docs/` (a file dropped into `docs/` without an INDEX.md registration
+//     would trip the D1 contract on the very next gate run); memory.append only
+//     appends to the *already INDEX-registered* current-month memory volume
+//     (`docs/记录/记忆/<YYYY-MM>.md`, the agent's long-term self-learning ledger);
+//     registry.add / exceptions.add draft to audit/ dirs (never touch registry/ or
+//     exceptions.yml, which would trip D1 / g18); every accepted write is appended
+//     to `tools/gate/audit/mcp-actions.jsonl`;
 //     outside `docs/` (a file dropped into `docs/` without an INDEX.md registration
 //     would trip the D1 contract on the very next gate run); memory.append only
 //     appends to the *already INDEX-registered* current-month memory volume
@@ -28,6 +35,20 @@ const GOVERNANCE = path.join(REPO, 'tools', 'gate', 'governance')
 const REGISTRY_DIR = path.join(REPO, 'platform', 'registry', 'projects')
 const AUDIT_DIR = path.join(REPO, 'tools', 'gate', 'audit')
 const MEMORY_DIR = path.join(REPO, 'docs', '记录', '记忆')
+const FACTS_JSON = path.join(REPO, 'facts', 'facts.json')
+const DOLT_WORKSPACE = path.join(REPO, 'facts', 'dolt-workspace')
+const DOLT_IMPORTER = path.join(REPO, 'deploy', 'dolt', 'import_from_git.py')
+const NETBOX_SYNCER = path.join(REPO, 'deploy', 'netbox', 'sync_from_git.py')
+const METRICS_TREND = path.join(AUDIT_DIR, 'exceptions-snapshots.jsonl')
+const REGISTRY_DRAFTS = path.join(AUDIT_DIR, 'registry-drafts')
+const EXCEPTION_DRAFTS = path.join(AUDIT_DIR, 'exception-drafts')
+// dolt 二进制不在全局 PATH 时的本地兜底候选（Windows 安装器默认落这里，不写 PATH）。
+const DOLT_BIN_CANDIDATES = [
+  'C:\\Program Files\\Dolt\\bin',
+  'C:\\Program Files (x86)\\Dolt\\bin',
+  '/opt/dolt/bin',
+  '/usr/local/bin',
+]
 
 const PROTOCOL = '2025-06-18'
 const SERVER_INFO = { name: 'allin-governance', version: '0.2.0' }
@@ -55,9 +76,9 @@ function pythonBin() {
   return process.env.ALLIN_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
 }
 
-function run(cmd, args, { timeout = DEFAULT_TIMEOUT_MS, cwd = REPO } = {}) {
+function run(cmd, args, { timeout = DEFAULT_TIMEOUT_MS, cwd = REPO, env } = {}) {
   const started = Date.now()
-  const res = spawnSync(cmd, args, { cwd, timeout, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 })
+  const res = spawnSync(cmd, args, { cwd, timeout, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, env: env || process.env })
   const ms = Date.now() - started
   const out = `${res.stdout || ''}${res.stderr || ''}`
   return {
@@ -103,6 +124,33 @@ function memoryVolumes() {
   } catch {
     return []
   }
+}
+
+// SQL 字符串字面量转义（只接基本类型，不接任意代码）。
+function sqlStr(v) {
+  return "'" + String(v).replace(/\\/g, '\\\\').replace(/'/g, "''") + "'"
+}
+
+// 正则特殊字符转义（用于把 id 当字面量塞进 RegExp）。
+function escapeRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// 本地 dolt 二进制探测（Windows 安装器不写 PATH，按候选目录兜底）。
+function findDoltBin() {
+  const exe = process.platform === 'win32' ? 'dolt.exe' : 'dolt'
+  return DOLT_BIN_CANDIDATES.find((c) => {
+    try { return fs.existsSync(path.join(c, exe)) } catch { return false }
+  }) || null
+}
+
+// 把探测到的 dolt bin 前置到 PATH（不污染全局环境，仅本进程子进程可见）。
+function withDoltEnv(env = process.env) {
+  const found = findDoltBin()
+  if (!found) return env
+  const p = env.PATH || env.Path || ''
+  if (p.split(/[;:]/).map((x) => x.toLowerCase()).includes(found.toLowerCase())) return env
+  return { ...env, PATH: `${found};${p}` }
 }
 
 // ---------------------------------------------------------------- BM25 检索（P2-①，2026-11-02）
@@ -306,6 +354,92 @@ const TOOLS = [
       properties: { threshold: { type: 'number', description: '晋升阈值，默认 3（2–10）' } },
       additionalProperties: false,
     },
+  },
+  {
+    name: 'gate.explain',
+    tier: 'read',
+    description: '解读单个门禁：标题 / tier / 基线 / 脚本路径 / 是否带基线棘轮（从 governance registry.json 取全字段）',
+    inputSchema: { type: 'object', properties: { gate: { type: 'string' } }, required: ['gate'], additionalProperties: false },
+  },
+  {
+    name: 'facts.query',
+    tier: 'read',
+    description: '查询 facts.json 派生索引投影（P0-A 真身）：按 type=machine/volume/service_port/fact 过滤，query 做子串匹配；返回命中条数与摘要',
+    inputSchema: {
+      type: 'object',
+      properties: { type: { type: 'string', description: 'machine / volume / service_port / fact' }, query: { type: 'string' }, limit: { type: 'number' } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'facts.diff',
+    tier: 'read',
+    description: '某 fact 当前值（HEAD）与上一提交（HEAD~1）差异；依赖 dolt 工作区，dolt 未装/未初始化时如实返回 diff_available:false（P1-4 实证机制）',
+    inputSchema: { type: 'object', properties: { factId: { type: 'string' } }, required: ['factId'], additionalProperties: false },
+  },
+  {
+    name: 'registry.add',
+    tier: 'write-reversible',
+    description: '起草一份项目登记（写 audit/registry-drafts/，不直接改 registry；避免触发 D1）。需要 confirm=true。',
+    inputSchema: {
+      type: 'object',
+      properties: { id: { type: 'string' }, name: { type: 'string' }, category: { type: 'string' }, path: { type: 'string' }, body: { type: 'string' }, confirm: { type: 'boolean' } },
+      required: ['id', 'name', 'category'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'exceptions.detail',
+    tier: 'read',
+    description: '读 exceptions.yml 中单条 EX-### 例外台账：id / kind / gate / status / expires 全字段',
+    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'], additionalProperties: false },
+  },
+  {
+    name: 'exceptions.add',
+    tier: 'write-reversible',
+    description: '起草一条治理例外（写 audit/exception-drafts/，不直接改 exceptions.yml；避免触发对应门禁）。需要 confirm=true。',
+    inputSchema: {
+      type: 'object',
+      properties: { id: { type: 'string' }, kind: { type: 'string' }, gate: { type: 'string' }, status: { type: 'string', description: 'open / closed' }, expires: { type: 'string' }, body: { type: 'string' }, confirm: { type: 'boolean' } },
+      required: ['id', 'kind', 'gate', 'status'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'docs.cite',
+    tier: 'read',
+    description: '把引用 `file#line` 解析成可指回源文档的片段：返回该行 ±上下文，便于 agent 把结论 grounding 到精确行（呼应 docs.search 的 citation）',
+    inputSchema: { type: 'object', properties: { citation: { type: 'string', description: '如 docs/规范/SPEC-001-铁律.md#L12' } }, required: ['citation'], additionalProperties: false },
+  },
+  {
+    name: 'audit.read',
+    tier: 'read',
+    description: '读治理审计留痕尾迹：mcp-actions.jsonl（写操作审计）与 gate-runs.jsonl（门禁执行），默认各取最近 20 条',
+    inputSchema: { type: 'object', properties: { which: { type: 'string', description: 'mcp-actions / gate-runs / both（默认 both）' }, limit: { type: 'number' } }, additionalProperties: false },
+  },
+  {
+    name: 'metrics.trend',
+    tier: 'read',
+    description: '读门禁性能指标趋势文件（如有）：逃逸率 / 证据新鲜度 / 例外燃尽 / 性能预算的历史序列；文件不存在如实返回 available:false',
+    inputSchema: { type: 'object', properties: { limit: { type: 'number' } }, additionalProperties: false },
+  },
+  {
+    name: 'sync.status',
+    tier: 'read',
+    description: '治理下游同步状态快检：NetBox 同步器 selftest + Dolt 导入器 --verify（环境缺席时如实降级，不冒充通过）',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'project.verify',
+    tier: 'read',
+    description: '无头验证**单个**登记项目（registry.verify 的单项目子集）：返回 passed/failed 与 verified',
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, timeoutMs: { type: 'number' } }, required: ['id'], additionalProperties: false },
+  },
+  {
+    name: 'repo.health',
+    tier: 'read',
+    description: '对给定路径做仓 hygiene 自检（git 视角，离线可跑）：未提交改动、领先/落后、最近提交、当前分支；路径默认仓根',
+    inputSchema: { type: 'object', properties: { path: { type: 'string' } }, additionalProperties: false },
   },
 ]
 
@@ -702,6 +836,262 @@ function callTool(name, args) {
         }, null, 2),
       }
     }
+    case 'gate.explain': {
+      if (!a.gate) return reject('需要 gate id')
+      const registry = readJson(path.join(GOVERNANCE, 'registry.json'))
+      if (!registry) return fail('registry.json 不可读')
+      const g = (registry.gates || []).find((x) => x.id === a.gate)
+      if (!g) return reject(`未登记的门禁 id：${a.gate}`)
+      return {
+        text: JSON.stringify({
+          id: g.id, title: g.title, tier: g.tier,
+          baseline: g.baseline || null,
+          hasBaselineRatchet: Boolean(g.baseline),
+          script: g.script || null,
+          description: g.description || null,
+        }, null, 2),
+      }
+    }
+    case 'facts.query': {
+      const doc = readJson(FACTS_JSON)
+      if (!doc) return fail('facts/facts.json 不可读')
+      const alias = {
+        machine: 'machines', volume: 'volumes', runtime: 'runtimes',
+        service_port: 'ports', port: 'ports', fact: 'facts',
+        doc_ref: 'doc_refs', observation_run: 'observation_runs',
+        project: 'projects', tiering: 'tiering', tool: 'tools',
+        license: 'licenses',
+      }
+      const key = alias[a.type] || a.type
+      const arr = Array.isArray(doc[key]) ? doc[key] : null
+      if (!arr) return reject(`未知 facts 类型：${a.type}（可选 ${Object.keys(alias).join(' / ')}）`)
+      const q = String(a.query || '').toLowerCase()
+      const matched = q ? arr.filter((row) => JSON.stringify(row).toLowerCase().includes(q)) : arr
+      const limit = Math.min(a.limit || 20, 200)
+      return {
+        text: JSON.stringify({
+          type: a.type, table: key, total: arr.length,
+          matched: matched.length, query: a.query || null,
+          hits: matched.slice(0, limit).map((r) => {
+            const label = r.machine_id || r.fact_id || r.port || r.project || r.tool ||
+              r.license || r.doc_id || r.run_id || r.observation_run || null
+            return { label, row: r }
+          }),
+        }, null, 2),
+      }
+    }
+    case 'facts.diff': {
+      if (!a.factId) return reject('需要 factId')
+      const ready = findDoltBin() && (() => { try { return fs.existsSync(path.join(DOLT_WORKSPACE, '.dolt')) } catch { return false } })()
+      if (!ready) {
+        return { text: JSON.stringify({
+          fact_id: a.factId, diff_available: false,
+          reason: 'dolt 二进制缺失或 facts/dolt-workspace 未初始化（派生库如实降级，不冒充通过）',
+        }, null, 2) }
+      }
+      const pick = (ref) => {
+        const q = `SELECT value_text, value_number, attribute, status FROM fact AS OF ${ref} WHERE fact_id = ${sqlStr(a.factId)}`
+        const r = run('dolt', ['sql', '-q', q, '-r', 'json'], { cwd: DOLT_WORKSPACE, env: withDoltEnv() })
+        if (r.exit !== 0) return null
+        let parsed
+        try { parsed = JSON.parse(r.output.trim().split('\n').filter(Boolean).pop()) } catch { return null }
+        const rows = parsed && parsed.rows ? parsed.rows : []
+        if (!rows.length) return null
+        const row = rows[0]
+        return {
+          value_text: row.value_text ?? null,
+          value_number: row.value_number ?? null,
+          attribute: row.attribute ?? null,
+          status: row.status ?? null,
+        }
+      }
+      let head, prev
+      try {
+        head = pick("'HEAD'")
+        prev = pick("'HEAD~1'")
+      } catch (e) {
+        return { text: JSON.stringify({ fact_id: a.factId, diff_available: false, reason: 'dolt 查询异常', detail: String(e && e.message) }, null, 2) }
+      }
+      if (!head) return { text: JSON.stringify({ fact_id: a.factId, diff_available: false, reason: 'HEAD 无该 fact（可能尚未导入）' }, null, 2) }
+      const changed = JSON.stringify(head) !== JSON.stringify(prev)
+      return {
+        text: JSON.stringify({
+          fact_id: a.factId, diff_available: true, changed,
+          head, prev: prev || null,
+          note: prev ? (changed ? 'HEAD 与 HEAD~1 不同' : 'HEAD 与 HEAD~1 一致') : 'HEAD~1 无该 fact（首次导入）',
+        }, null, 2),
+      }
+    }
+    case 'registry.add': {
+      if (a.confirm !== true) return reject('该工具会写文件：请带 confirm=true 再调用一次')
+      const id = String(a.id || '').trim()
+      const name = String(a.name || '').trim()
+      const category = String(a.category || '').trim()
+      if (!id || !name || !category) return reject('id / name / category 必填')
+      fs.mkdirSync(REGISTRY_DRAFTS, { recursive: true })
+      const date = new Date().toISOString().slice(0, 10)
+      const slug = id.replace(/[^\w一-龥-]+/g, '-')
+      const file = path.join(REGISTRY_DRAFTS, `${slug}_${date}.yaml`)
+      const body = [
+        '# 草稿：项目登记（未经治理确认，不进 registry/）',
+        `id: ${id}`,
+        `name: ${name}`,
+        `category: ${category}`,
+        a.path ? `path: ${a.path}` : '# path: 待填',
+        'status: draft',
+        `drafted_at: ${date}`,
+        a.body ? `\n${a.body}` : '',
+      ].join('\n')
+      fs.writeFileSync(file, body, 'utf8')
+      auditWrite(name, file)
+      return { text: JSON.stringify({ written: path.relative(REPO, file).replace(/\\/g, '/'),
+        note: '草稿落在 audit/registry-drafts/（不进 registry）；要生效须由人移入 platform/registry/projects/ 并过 D1 门禁' }, null, 2) }
+    }
+    case 'exceptions.detail': {
+      if (!a.id) return reject('需要 id（EX-###）')
+      let text
+      try { text = fs.readFileSync(path.join(GOVERNANCE, 'exceptions.yml'), 'utf8') } catch { return fail('exceptions.yml 不可读') }
+      const m = text.match(new RegExp(`-\\s*id:\\s*${escapeRe(a.id)}[\\s\\S]*?(?=\\n\\s*-\\s*id:|\\n\\S|$)`))
+      if (!m) return { text: JSON.stringify({ id: a.id, found: false, reason: 'exceptions.yml 中无此 id' }, null, 2) }
+      const block = m[0]
+      const pick = (k) => { const x = block.match(new RegExp(`^\\s*${k}:\\s*(.+)$`, 'm')); return x ? x[1].trim() : null }
+      return { text: JSON.stringify({
+        id: a.id, found: true, kind: pick('kind'), gate: pick('gate'), status: pick('status'),
+        expires: pick('expires'), target: pick('target'), reason: pick('reason'), approver: pick('approver'),
+      }, null, 2) }
+    }
+    case 'exceptions.add': {
+      if (a.confirm !== true) return reject('该工具会写文件：请带 confirm=true 再调用一次')
+      const id = String(a.id || '').trim()
+      const kind = String(a.kind || '').trim()
+      const gate = String(a.gate || '').trim()
+      const status = String(a.status || '').trim()
+      if (!id || !kind || !gate || !status) return reject('id / kind / gate / status 必填')
+      if (status !== 'open' && status !== 'closed') return reject(`status 只能是 open 或 closed（收到「${status}」）`)
+      fs.mkdirSync(EXCEPTION_DRAFTS, { recursive: true })
+      const date = new Date().toISOString().slice(0, 10)
+      const slug = id.replace(/[^\w一-龥-]+/g, '-')
+      const file = path.join(EXCEPTION_DRAFTS, `${slug}_${date}.yaml`)
+      const body = [
+        '# 草稿：治理例外（未经治理确认，不进 exceptions.yml）',
+        `id: ${id}`,
+        `kind: ${kind}`,
+        `gate: ${gate}`,
+        `status: ${status}`,
+        a.expires ? `expires: ${a.expires}` : '# expires: 待填（到期即转红）',
+        `drafted_at: ${date}`,
+        a.body ? `\nreason: ${a.body}` : '',
+      ].join('\n')
+      fs.writeFileSync(file, body, 'utf8')
+      auditWrite(name, file)
+      return { text: JSON.stringify({ written: path.relative(REPO, file).replace(/\\/g, '/'),
+        note: '草稿落在 audit/exception-drafts/（不进 exceptions.yml）；要生效须由人并入 tools/gate/governance/exceptions.yml 并过 g18 门禁' }, null, 2) }
+    }
+    case 'docs.cite': {
+      const citation = String(a.citation || '').trim()
+      if (!citation) return reject('需要 citation（如 docs/规范/SPEC-001-铁律.md#L12）')
+      const [filePart, linePart] = citation.split('#L')
+      if (!filePart) return reject('citation 缺少文件路径')
+      const file = path.isAbsolute(filePart) ? filePart : path.join(REPO, filePart)
+      if (!fs.existsSync(file)) return reject(`文件不存在：${filePart}`)
+      const lines = readLines(file)
+      const center = linePart ? parseInt(linePart, 10) : null
+      const ctx = 3
+      const lo = center ? Math.max(1, center - ctx) : 1
+      const hi = center ? Math.min(lines.length, center + ctx) : Math.min(lines.length, ctx * 2)
+      const snippet = []
+      for (let i = lo; i <= hi; i++) {
+        const marker = (center && i === center) ? '▶' : ' '
+        snippet.push(`${marker}${i}: ${lines[i - 1] || ''}`)
+      }
+      return { text: JSON.stringify({
+        citation, found: true, file: path.relative(REPO, file).replace(/\\/g, '/'),
+        line: center, contextLines: ctx, snippet: snippet.join('\n'),
+      }, null, 2) }
+    }
+    case 'audit.read': {
+      const which = a.which || 'both'
+      const limit = Math.min(a.limit || 20, 200)
+      const readTail = (f) => readLines(path.join(AUDIT_DIR, f)).filter((l) => l.trim()).slice(-limit)
+      let mcp = [], gate = []
+      if (which === 'mcp-actions' || which === 'both') mcp = readTail('mcp-actions.jsonl')
+      if (which === 'gate-runs' || which === 'both') gate = readTail('gate-runs.jsonl')
+      return { text: JSON.stringify({ which, limit, mcp_actions: mcp, gate_runs: gate,
+        counts: { mcp_actions: mcp.length, gate_runs: gate.length } }, null, 2) }
+    }
+    case 'metrics.trend': {
+      const limit = Math.min(a.limit || 20, 500)
+      if (!fs.existsSync(METRICS_TREND)) {
+        return { text: JSON.stringify({ available: false,
+          file: path.relative(REPO, METRICS_TREND).replace(/\\/g, '/'),
+          reason: '趋势文件尚未生成（gate_metrics.py --snapshot 才会写入；属可选可重建派生物）' }, null, 2) }
+      }
+      const series = readLines(METRICS_TREND).filter((l) => l.trim())
+        .map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean).slice(-limit)
+      return { text: JSON.stringify({ available: true,
+        file: path.relative(REPO, METRICS_TREND).replace(/\\/g, '/'),
+        count: series.length, series }, null, 2) }
+    }
+    case 'sync.status': {
+      // 下游同步器 selftest：环境缺席时如实降级，不冒充通过。
+      const netbox = (() => {
+        const r = run(pythonBin(), [NETBOX_SYNCER, '--selftest'], { timeout: 60000 })
+        if (r.exit !== 0) return { ok: false, exit: r.exit, tail: r.tail }
+        try {
+          const j = JSON.parse(r.output.trim().split('\n').pop())
+          return { ok: j.selftest === 'PASS', selftest: j.selftest, detail: j }
+        } catch { return { ok: false, tail: r.tail } }
+      })()
+      const dolt = (() => {
+        const bin = findDoltBin()
+        if (!bin) return { ok: false, reason: 'dolt 二进制缺失（如实 SKIP）' }
+        if (!fs.existsSync(path.join(DOLT_WORKSPACE, '.dolt'))) return { ok: false, reason: 'facts/dolt-workspace 未初始化（如实 SKIP）' }
+        const r = run('dolt', ['log', '--oneline', '-n', '1'], { cwd: DOLT_WORKSPACE, timeout: 30000, env: withDoltEnv() })
+        const usable = r.exit === 0
+        return { ok: usable, exit: r.exit,
+          reason: usable ? null : '工作区未 commit 或无效（import_from_git.py --apply 后才可用）',
+          tail: usable ? null : r.tail }
+      })()
+      return { text: JSON.stringify({ netbox, dolt,
+        note: '下游同步器（NetBox / Dolt）均为可重建派生物；selftest 通过≠已同步，只证明链路可用' }, null, 2) }
+    }
+    case 'project.verify': {
+      if (!a.id) return reject('需要 id')
+      const res = run(pythonBin(), [path.join(REPO, 'tools', 'verify_projects.py'), '--only', a.id, '--limit', '1'],
+        { timeout: a.timeoutMs || 300000 })
+      const failed = (res.output.match(/^\s*FAIL\b/gm) || []).length
+      const passed = (res.output.match(/^\s*PASS\b/gm) || []).length
+      return {
+        text: JSON.stringify({
+          id: a.id, exit: res.exit, ms: res.ms, passed, failed,
+          verified: res.exit === 0 && failed === 0,
+          verifiedBy: res.exit === 0 && failed === 0 ? 'exit=0 且输出无 FAIL 行' : `exit=${res.exit}，FAIL 行 ${failed} 条`,
+          tail: res.tail,
+        }, null, 2),
+      }
+    }
+    case 'repo.health': {
+      const target = a.path ? (path.isAbsolute(a.path) ? a.path : path.join(REPO, a.path)) : REPO
+      if (!fs.existsSync(path.join(target, '.git'))) return reject(`非 git 仓库：${a.path || '(仓根)'}`)
+      const status = run('git', ['status', '--porcelain'], { cwd: target, timeout: 20000 })
+      const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: target, timeout: 20000 })
+      const ab = run('git', ['rev-list', '--left-right', '--count', '@{upstream}...HEAD'], { cwd: target, timeout: 20000 })
+      const last = run('git', ['log', '-1', '--format=%h %ci %s'], { cwd: target, timeout: 20000 })
+      const dirty = status.output.trim().split('\n').filter(Boolean)
+      let ahead = null, behind = null
+      const parts = ab.output.trim().split('\t')
+      if (parts.length === 2) { ahead = parseInt(parts[0], 10); behind = parseInt(parts[1], 10) }
+      return {
+        text: JSON.stringify({
+          path: path.relative(REPO, target).replace(/\\/g, '/') || '.',
+          branch: branch.output.trim() || null,
+          dirtyCount: dirty.length,
+          dirtySample: dirty.slice(0, 10),
+          ahead, behind,
+          lastCommit: last.output.trim() || null,
+        }, null, 2),
+      }
+    }
     default:
       return reject(`unknown tool: ${name}`)
   }
@@ -856,14 +1246,25 @@ if (argv.includes('--selftest')) {
   handle({ id: 11, method: 'tools/call', params: { name: 'memory.append', arguments: { entry: '自检探针' } } })
   handle({ id: 12, method: 'tools/call', params: { name: 'memory.promotable', arguments: {} } })
   handle({ id: 13, method: 'tools/call', params: { name: 'memory.append', arguments: { entry: 'x', layer: '瞎写的层', confirm: true } } })
+  handle({ id: 14, method: 'tools/call', params: { name: 'gate.explain', arguments: { gate: 'g01-paths' } } })
+  handle({ id: 15, method: 'tools/call', params: { name: 'facts.query', arguments: { type: 'machine' } } })
+  handle({ id: 16, method: 'tools/call', params: { name: 'facts.diff', arguments: { factId: 'FCT-000001' } } })
+  handle({ id: 17, method: 'tools/call', params: { name: 'exceptions.detail', arguments: { id: 'EX-001' } } })
+  handle({ id: 18, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: 'docs/规范/SPEC-001-铁律.md#L1' } } })
+  handle({ id: 19, method: 'tools/call', params: { name: 'audit.read', arguments: { which: 'both', limit: 5 } } })
+  handle({ id: 20, method: 'tools/call', params: { name: 'metrics.trend', arguments: { limit: 5 } } })
+  handle({ id: 21, method: 'tools/call', params: { name: 'sync.status', arguments: {} } })
+  handle({ id: 22, method: 'tools/call', params: { name: 'repo.health', arguments: {} } })
+  handle({ id: 23, method: 'tools/call', params: { name: 'registry.add', arguments: { id: 'x', name: 'x', category: 'x' } } })
+  handle({ id: 24, method: 'tools/call', params: { name: 'exceptions.add', arguments: { id: 'EX-999', kind: 'known-gap', gate: 'g17-registry', status: 'open' } } })
   process.stdout.write = origWrite
   const msgs = captured.map((c) => JSON.parse(c.trim()))
   const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
   check('initialize 返回 protocolVersion', msgs[0]?.result?.protocolVersion === PROTOCOL)
-  check('tools/list 返回 13 个工具', msgs[1]?.result?.tools?.length === 13, `got ${msgs[1]?.result?.tools?.length}`)
+  check('tools/list 返回 25 个工具', msgs[1]?.result?.tools?.length === 25, `got ${msgs[1]?.result?.tools?.length}`)
   check('tools/list 含 tier 三级分级', msgs[1]?.result?.tools?.every((t) => t.tier), '部分工具缺 tier')
   check('写工具标记为 write-reversible', msgs[1]?.result?.tools
-    ?.filter((t) => t.name === 'record.append' || t.name === 'memory.append')
+    ?.filter((t) => ['record.append', 'memory.append', 'registry.add', 'exceptions.add'].includes(t.name))
     ?.every((t) => t.tier === 'write-reversible'), '写工具 tier 应为 write-reversible')
   check('gate.list 返回门禁清单', textOf(2).includes('"gates"'))
   check('registry.query 返回结构', textOf(3).includes('"total"'))
@@ -880,6 +1281,17 @@ if (argv.includes('--selftest')) {
   check('memory.append 未确认即拒绝', msgs[10]?.result?.isError === true)
   check('memory.promotable 返回晋升看板', textOf(11).includes('promotable'))
   check('memory.append 拒绝非法 layer', msgs[12]?.result?.isError === true)
+  check('gate.explain 返回门禁字段', textOf(13).includes('"title"'))
+  check('facts.query 返回命中', textOf(14).includes('"total"') && textOf(14).includes('"matched"'))
+  check('facts.diff 如实降级或给差异', textOf(15).includes('diff_available'))
+  check('exceptions.detail 返回台账', textOf(16).includes('"found"'))
+  check('docs.cite 返回片段', textOf(17).includes('snippet') || textOf(17).includes('found'))
+  check('audit.read 返回留痕', textOf(18).includes('mcp_actions') && textOf(18).includes('gate_runs'))
+  check('metrics.trend 返回可用性/序列', textOf(19).includes('available'))
+  check('sync.status 返回下游状态', textOf(20).includes('netbox') && textOf(20).includes('dolt'))
+  check('repo.health 返回仓健康', textOf(21).includes('branch') || textOf(21).includes('dirtyCount'))
+  check('registry.add 未确认即拒绝', msgs[22]?.result?.isError === true)
+  check('exceptions.add 未确认即拒绝', msgs[23]?.result?.isError === true)
 
   // ── agent trace 留痕自检（2026-11-02 新增）────────────────────────
   // 为什么要有：**遥测本身也要能被验证** —— 一个从不落盘的 trace 等于没有 trace，
@@ -889,7 +1301,7 @@ if (argv.includes('--selftest')) {
   try {
     spans = fs.readFileSync(traceFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
   } catch { spans = [] }
-  const toolCalls = 11 // 自检里共 11 次 tools/call（id 3..13）
+  const toolCalls = 22 // 自检里共 22 次 tools/call（id 3..24）
   const mine = spans.filter((s) => s.trace_id === trace.sessionId)
   check('agent trace 落盘', mine.length === toolCalls, `落 ${mine.length}/${toolCalls} 条`)
   check('trace 带 OTel GenAI 属性',
@@ -900,7 +1312,7 @@ if (argv.includes('--selftest')) {
     mine.every((s) => s.trace_id && s.span_id))
   check('trace 步数连续', mine.every((s, i) => s.span_index === i + 1))
   check('策略拒绝标记为 rejected（不计失败）',
-    mine.filter((s) => s.error_kind === 'rejected').length === 4,
+    mine.filter((s) => s.error_kind === 'rejected').length === 6,
     `rejected=${mine.filter((s) => s.error_kind === 'rejected').length}`)
   check('trace 不含工具参数内容（只记元数据）',
     !mine.some((s) => JSON.stringify(s).includes('自检探针')))

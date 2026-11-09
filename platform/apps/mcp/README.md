@@ -13,38 +13,54 @@ node platform/apps/mcp/src/index.js --selftest # 自检：脚本化会话走一�
 node platform/apps/mcp/src/index.js --list-tools
 ```
 
-自测覆盖 13 条断言（协议版本、工具数量、各工具返回结构、两个写工具未确认即拒绝、非法 layer 拒绝、未知工具报错）。
+自测覆盖 40 条断言（协议版本、工具数量、各工具返回结构、四个写工具未确认即拒绝、非法 layer 拒绝、未知工具报错、facts.diff/metrics.trend/sync.status 如实降级、trace/审计留痕、调用预算熔断器）。
 
-## 工具（13 个，11 读 2 写）
+## 工具（25 个，21 读 4 写）
 
 | 工具 | 作用 | 是否写入 |
 | --- | --- | --- |
 | `gate.list` | 列出治理门禁（id / title / tier / 基线） | 只读 |
 | `gate.run` | 跑单个门禁（指定 `gate`）或整套聚合（`all=true`） | 只读（执行检查） |
 | `gate.history` | 汇总门禁执行留痕：总次数 / 失败 / 各标签最近退出码 / 最近 N 条 | 只读 |
+| `gate.explain` | 解读单个门禁：标题 / tier / 基线 / 脚本路径 / 是否带基线棘轮（取全字段） | 只读 |
 | `metrics.snapshot` | 跑 `gate_metrics.py --json`：逃逸率 / 证据新鲜度 / 例外燃尽 / 性能预算 | 只读 |
+| `metrics.trend` | 读门禁性能指标趋势（`exceptions-snapshots.jsonl`）；文件缺失如实报 `available:false` | 只读 |
 | `exceptions.list` | 读例外台账（id / kind / gate / status / expires + open/closed 计数） | 只读 |
+| `exceptions.detail` | 读单条 EX-### 例外台账全字段 | 只读 |
 | `registry.query` | 按 id / category 查项目注册表 | 只读 |
 | `registry.verify` | 无头验证登记项目（`only` / `category` / `limit`） | 只读（执行验证） |
-| `docs.search` | 文档枢纽全文检索（不含 `md/` 历史树） | 只读 |
+| `docs.search` | 文档枢纽全文检索（不含 `md/` 历史树），返回 grounding citation | 只读 |
+| `docs.cite` | 把 `file#line` 引用解析成 ±上下文片段，便于把结论 grounding 到精确行 | 只读 |
 | `project.status` | 单项目登记信息 + 本地克隆最后提交天数 + 上次验证结论 | 只读 |
+| `project.verify` | 无头验证**单个**登记项目（registry.verify 单项目子集） | 只读（执行验证） |
+| `facts.query` | 查 `facts.json` 派生索引投影（machine/volume/service_port/fact/…），子串匹配 | 只读 |
+| `facts.diff` | 某 fact 的 HEAD 与 HEAD~1 差异（依赖 dolt 工作区，缺席时 `diff_available:false`） | 只读 |
 | `memory.read` | 召回 agent 长期记忆（`docs/记录/记忆/` 按月卷；可按关键词/层过滤，默认隐藏已取代条目） | 只读 |
 | `memory.promotable` | 记忆晋升看板：同 tag ≥阈值条且未晋升 ⇒ 固化为 skill 的候选清单 | 只读 |
+| `audit.read` | 读治理审计尾迹：`mcp-actions.jsonl`（写审计）+ `gate-runs.jsonl`（门禁执行） | 只读 |
+| `sync.status` | 下游同步快检：NetBox 同步器 selftest + Dolt 工作区探活（缺席如实降级） | 只读 |
+| `repo.health` | 对给定路径做 git hygiene 自检（未提交改动 / 领先落后 / 最近提交 / 分支） | 只读 |
 | `record.append` | 起草治理记录 | **写**（必须 `confirm=true`） |
 | `memory.append` | 向当月记忆卷追加一条带日期的经验（自学习回路记账入口） | **写**（必须 `confirm=true`） |
+| `registry.add` | 起草项目登记（落 `audit/registry-drafts/`，不碰 registry，避免触发 D1） | **写**（必须 `confirm=true`） |
+| `exceptions.add` | 起草治理例外（落 `audit/exception-drafts/`，不碰 exceptions.yml，避免触发 g18） | **写**（必须 `confirm=true`） |
 
 ### 安全边界
 
-- **只读默认**：除 `record.append` / `memory.append` 外全部只读。
+- **只读默认**：除 `record.append` / `memory.append` / `registry.add` / `exceptions.add` 外全部只读。
 - **工具面三级权限（tier）**：每个工具声明 `tier` —— `read`（只读）／`write-reversible`（追加写、
   可经 git 回滚）／`write-irreversible`（外部不可逆副作用，当前架构尚无此类工具）。
   `tools/list` 与 `--list-tools` 均返回 `tier`，便于客户端/门禁按级管控。
-- **写操作要显式确认**：两个写工具（`write-reversible`）不带 `confirm=true` 直接返回 `isError`。
+- **写操作要显式确认**：四个写工具（`record.append` / `memory.append` / `registry.add` / `exceptions.add`，均为 `write-reversible`）不带 `confirm=true` 直接返回 `isError`。
 - **`record.append` 写在 `tools/gate/audit/mcp-drafts/`**，不进 `docs/`——否则会立刻触发
   文档索引契约 D1「文件未登记」；草稿要成为正式记录，须由人移入 `docs/记录/` 并在 `INDEX.md` 登记。
 - **`memory.append` 只追加、不新建**：目标必须是**已存在且已在 `docs/INDEX.md` §4 登记**的
   当月卷 `docs/记录/记忆/<YYYY-MM>.md`（未登记直接拒绝，避免 D1 打红）；开新卷属治理动作，
   由人（或走完整文档流程）完成。条目**只增不改**，纠错另起新条目注明取代关系。
+- **`registry.add` 写在 `tools/gate/audit/registry-drafts/`**，不碰 `platform/registry/projects/`
+  —— 否则会立刻触发 D1「注册表条目未登记」；草稿要生效，须由人移入 registry 并过 D1。
+- **`exceptions.add` 写在 `tools/gate/audit/exception-drafts/`**，不碰 `exceptions.yml`
+  —— 否则会立刻触发 g18「例外字段不全」；草稿要生效，须由人并入 exceptions.yml 并过 g18。
 - **每次接受写操作都落审计** `tools/gate/audit/mcp-actions.jsonl`（ts / tool / file，路径用正斜杠）。
 - **每次工具调用都落 agent trace** `tools/gate/audit/agent-runs.jsonl`（AgentOps 最小闭环，2026-11-02 新增）：
   一次 MCP 会话 = 一个 `trace_id`，每次工具调用 = 一个 `span`；字段向 **OTel GenAI 语义约定**对齐
