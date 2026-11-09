@@ -1,5 +1,27 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-09 16:55（**@`DESKTOP-KQABATS` 全量现场复测 · 刷新主机事实文档** ——
+>   用户指令「刷新本机主机事实文档」（@`DESKTOP-KQABATS`）：按 `机器分区索引.md` 的归属纪律
+>   「改事实源前先复测」与头部失效条款，用 `tools/facts/measure.py` 自动采集
+>   （`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）+ PowerShell `Get-CimInstance` /
+>   `Test-Path` / 逐仓 `.git/config` 复测 + Gitee 匿名 API 分页，与 2026-11-08 19:15 块逐项比对。
+>   ✅ **未漂移**：hostname、系统 10.0.26300（build 26300）、C·D·E 三卷与 F·G 伪盘、
+>   单块 NVMe 954 GB + 2 USB、仓根、发布区 **137** 目录（**137/137** 含 `.git`、**137/137** 含 origin）、
+>   远端 **138** 仓（匿名 API page1=100 / page2=38 / page3=0；跨机共识值唯一登记处仍为 `机器分区索引.md`）、
+>   主 Python 3.14.7（Tk 9.0）、便携 3.13.14 与仓内 `.venv` 3.13.14、node v22.22.2 / npm 10.9.7、
+>   git 两份（vendor 2.55.0.windows.3 / 系统 2.55.0.windows.5）、`pushurl` **2** 条、
+>   三个跨仓环境变量均未设置、`calculator` 已由用户移除。
+>   ⚠ **两处动态量漂移**：`D:` 可用 247 → **246** GB；`E:` 可用 312 → **308** GB
+>   （容量 200 / 377 / 377 GB 未变；可用空间随用随变，属动态量，已在盘位表就地订正并保留旧值）。
+>   本仓 `master` HEAD 因本日三次远端拉取快进至 `1e10d4b`（0 ahead / 0 behind，工作树干净），
+>   属版本控制状态推进，不是机器事实改动。
+>   `E:\projects\repos\calculator` **已不存在**（2026-11-08 用户确认自行移除，裁决已闭环）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **137** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百五十（@`DESKTOP-KQABATS` 本机自留痕）
 > **时点** 2026-11-08 19:15（**@`DESKTOP-KQABATS` `calculator` 漂移闭环（用户确认）+ registry 条目删除** ——
 >   用户确认：`E:\projects\repos\calculator` 已移除（由用户自行删除，非异常漂移），上块「成因待用户确认」就此闭环；
 >   registry 条目 `calculator.yaml` 按用户指令删除（注册表 **146 → 145**；该仓本就不在 Gitee 远端，
@@ -95,13 +117,13 @@
 | **受管凭据库** | `C:\Users\13122\.dsvault\vault.enc`（**DPAPI CurrentUser 信封加密**，密文与本用户+本机绑定；工具 `~/.dsvault/dsvault.py`；**明文零落盘**，取用走子进程 stdout、退出即清） | `dsvault.py list` / `selftest` |
 | 发布区 | `E:\projects\repos` | 与仓根同级 |
 
-## 2. 盘位（2026-10-30 实测）
+## 2. 盘位（布局 2026-10-30 实测；可用空间 2026-11-09 16:55 复测）
 
 | 盘 | 卷标 | 文件系统 | 容量 GB | 可用 GB | 角色 |
 | --- | --- | --- | --- | --- | --- |
 | `C:` | （无） | NTFS | 200 | 101 | 系统盘；`C:\Users\13122` 家目录（含 `.workbuddy` 便携工具链） |
-| `D:` | 本地磁盘 | NTFS | 377 | 247 | **工具与数据盘**：Python / node / musickit / 各工具现役落点 |
-| `E:` | 本地磁盘 | NTFS | 377 | 312 | **工作区 / 项目盘** |
+| `D:` | 本地磁盘 | NTFS | 377 | **246**（原 247） | **工具与数据盘**：Python / node / musickit / 各工具现役落点 |
+| `E:` | 本地磁盘 | NTFS | 377 | **308**（原 312） | **工作区 / 项目盘** |
 
 - 另有一个 **0.3 GB FAT32 无盘符分区**（系统/恢复类，未挂盘符）。
 - `measure.py` 的卷表另列 `F:` / `G:` 两项（**0 容量、无文件系统、无盘符**）⇒ 那是**读不到盘符**，
@@ -138,7 +160,7 @@
 | Python | `python\versions\3.13.12\python.exe`（**目录名是 3.13.12，实际版本 3.13.14**） |
 | PortableGit | `PortableGit\versions\{1.3.0, current}\`（**不在 PATH**） |
 
-## 4. 仓数口径（2026-11-08 复测）
+## 4. 仓数口径（2026-11-08 复测，2026-11-09 16:55 复核一致）
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
@@ -160,7 +182,7 @@
 - ⚠ **与 `DESKTOP-8RSV60V` 的差异**：`calculator` 原在本机发布区是独立目录，那台已把它收拢进
   `arcade` 并转 `archived`；2026-11-08 本机实测该目录已不在发布区（成因待用户确认，见头部时点块漂移观察）。
 
-## 5. 运行时与工具链（2026-10-30 实测；PATH 实际解析，非文档声称）
+## 5. 运行时与工具链（2026-10-30 实测，2026-11-09 16:55 复测；PATH 实际解析，非文档声称）
 
 | 工具 | 现值 | 备注 |
 | --- | --- | --- |
