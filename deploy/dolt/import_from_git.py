@@ -218,6 +218,7 @@ def main(argv=None) -> int:
     ap.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
     ap.add_argument("--workspace", type=Path, default=DEFAULT_WORKSPACE)
     ap.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    ap.add_argument("--sha", default=None, help="显式指定导入的 Git SHA（默认 git rev-parse HEAD）；用于导入任意历史 SHA 并带正确溯源键")
     ap.add_argument("--apply", action="store_true", help="真正写 Dolt（需 dolt 在 PATH）")
     ap.add_argument("--verify", action="store_true", help="读 dolt log 与 AS OF 验证")
     ap.add_argument("--selftest", action="store_true")
@@ -241,7 +242,7 @@ def main(argv=None) -> int:
             print(f"VERIFY {label} exit={rc}\n{out[-600:]}")
         return EXIT_OK
     doc = json.loads(a.data.read_text(encoding="utf-8"))
-    sha = git_sha(ROOT)
+    sha = a.sha or git_sha(ROOT)
     run_id = f"git-{sha}"          # 确定性：同一 Git 提交重复导入生成完全相同的 SQL
     ts = git_commit_time(ROOT)     # 确定性：不用当前时间
     sql_text, counts = build_import_sql(doc, sha, run_id, ts)
