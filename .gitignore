@@ -141,3 +141,15 @@ packages/*/dist/
 *.sqlite
 facts/build/
 facts/generated/
+
+# ===== B 期派生层运行态（2026-11-09）=====
+# Dolt 库目录 / 下游同步 state / GraphRAG 语料全是本机运行态，不进 Git；
+# 跨机只共享 deploy/ 里的配置与判据，不共享可重建的数据。
+facts/dolt-workspace/
+deploy/dolt/state/
+deploy/netbox/state/
+deploy/graphrag/input/
+.dolt/
+
+# AI Agent 变更日志构建产物（输出目录可由 AI_AGENT_CHANGELOG_OUT 覆盖）
+scripts/ai-agent-changelog/out/

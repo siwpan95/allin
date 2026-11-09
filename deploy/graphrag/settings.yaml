@@ -1,0 +1,127 @@
+# allin × GraphRAG —— 叙述层知识库配置（v3.x 键名，待落仓骨架）
+#
+# 语料边界（硬约束）：只索引**叙述层**——docs/规范/、docs/记录/、architecture/adr/、CHANGELOG.md、README.md。
+#   ⚠ 不索引结构化取值（facts.json / NetBox 导出 / Dolt 表 / ports.yaml / 计数表）。
+#      「138 还是 137」必须走 facts CLI / MCP 的 SQL 工具，禁止交给概率性图抽取。
+#
+# ⚠ 版本口径：microsoft/graphrag v3.3.0（维护模式，官方 README 明说 "largely in maintenance mode"）。
+#   v3.x 顶层键名是 models / input / chunking / extract_graph / summarize_descriptions /
+#   cluster_graph / community_reports / embed_text / vector_store / cache；
+#   旧版 `llm:` / `chunks:` / `entity_extraction:` / `models.default_chat_model` 均已废弃，
+#   照抄旧配置会直接启动失败。以 graphrag init 生成的 settings.yaml + 官方 config 文档为准：
+#   https://microsoft.github.io/graphrag/config/yaml/  ·  https://microsoft.github.io/graphrag/config/models/
+# 本文件是**骨架**：落仓前必须 `graphrag init --root <dir>` 后用其生成的 settings.yaml 做基准逐键核对。
+
+models:
+  completion_models:
+    default_completion_model:
+      type: litellm
+      model_provider: openai
+      model: gpt-4o-mini
+      auth_method: api_key
+      api_key: ${GRAPHRAG_API_KEY}
+      concurrent_requests: 4
+      model_supports_json: true
+      max_retries: 3
+  embedding_models:
+    default_embedding_model:
+      type: litellm
+      model_provider: openai
+      model: text-embedding-3-small
+      auth_method: api_key
+      api_key: ${GRAPHRAG_API_KEY}
+      concurrent_requests: 4
+
+# build_input.py 生成的是 .txt，正好命中默认 file_pattern；不索引 .md 避免重复读入
+input:
+  type: text
+  file_pattern: ".*\\.txt$"
+  encoding: utf-8
+
+# 中文语料：encoding_model 默认 o200k_base，汉字 token 更贵；size 调小 + prepend 元数据
+chunking:
+  type: tokens
+  encoding_model: o200k_base
+  size: 600
+  overlap: 100
+  prepend_metadata: [title]
+
+# 中文必须 prompt-tune（--language Chinese），并把 entity_types 换成中文领域词
+extract_graph:
+  completion_model_id: default_completion_model
+  prompt: "prompts/extract_graph_zh.txt"
+  entity_types: [机器, 规范, 门禁, 仓库, 服务, 端口, 决策, 事故, 凭据事件, agent]
+  max_gleanings: 1
+
+# 数值型事实不进图，claims 默认关闭（省调用 + 防幻觉）
+extract_claims:
+  enabled: false
+
+summarize_descriptions:
+  completion_model_id: default_completion_model
+  max_length: 500
+
+cluster_graph:
+  max_cluster_size: 10
+  use_lcc: true
+
+community_reports:
+  completion_model_id: default_completion_model
+  max_length: 2000
+
+embed_text:
+  names: [text_unit_text, entity_description, community_full_content]
+
+vector_store:
+  type: lancedb
+
+cache:
+  type: json
+
+# output/ 下是 parquet（entities / relationships / communities / claims / text units），全部不入库
+output:
+  type: file
+  base_dir: "output"
+storage:
+  type: file
+  base_dir: "output"
+reporting:
+  type: file
+  base_dir: "logs"
+
+local_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  text_unit_prop: 0.5
+  community_prop: 0.1
+  top_k_entities: 10
+  top_k_relationships: 10
+  max_context_tokens: 12000
+
+global_search:
+  completion_model_id: default_completion_model
+  map_max_tokens: 1000
+  reduce_max_tokens: 2000
+  max_context_tokens: 12000
+  dynamic_search_llm: gpt-4o-mini
+  dynamic_search_keep_parent: true
+  dynamic_search_max_depth: 3
+
+drift_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  drifts_completion_model_id: default_completion_model
+  n_depth: 3
+  drift_k_followups: 20
+  primer_folds: 2
+  primer_llm_temperature: 0.0
+  primer_max_tokens: 12000
+
+basic_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  k: 10
+  max_context_tokens: 12000
+
+# 注意：降级开关（full / offline / readonly）**不属于 GraphRAG 官方 schema**，
+# 不能塞进本文件（会被 Pydantic 校验拒绝）。见同目录 qa.yaml，由自建 QA 封装层读取。

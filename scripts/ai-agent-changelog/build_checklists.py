@@ -5,7 +5,13 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-OUT_DIR = r"C:\Users\psw\WorkBuddy\2026-11-08-22-02-35"
+# 输出目录：环境变量优先，缺省写到脚本同级 out/（铁律 5 / g01-paths：不写死盘符）。
+# 原值 r"C:\Users\psw\WorkBuddy\..." 属他机会话临时目录，随 clone 扩散会让门禁报红。
+OUT_DIR = os.environ.get(
+    "AI_AGENT_CHANGELOG_OUT",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"),
+)
+os.makedirs(OUT_DIR, exist_ok=True)
 
 # (章节, 发布日期, 发布主体, 事件/变化, 对照基线, 官方来源URL, 来源说明, 日期备注)
 CONFIRMED = [

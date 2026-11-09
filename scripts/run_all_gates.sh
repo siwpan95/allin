@@ -274,6 +274,12 @@ run "$PY" tools/gate/facts_parity.py
 run "$PY" tools/gate/relative_refs_gate.py --json
 # ④ 离线北极星端到端验收：无派生库时 get/asof 回落纯 JSON、判据可离线自检、派生层可重建。
 run "$PY" tools/facts/cli.py offline-check
+# --- B 期（2026-11-09）：溯源与导入器判据，同样零服务依赖 ---
+# ⑤ g25：每条 fact 的 source_file:line 完整性 + 下游 state 的 source_git_sha 可解析；
+#    下游未接入时显式 SKIPPED 并计数（不冒充通过、不拖红跑批）。
+run "$PY" tools/gate/facts_provenance.py
+# ⑥ Dolt 导入器判据自证：幂等 SQL / 显式 CALL DOLT_COMMIT / sha 入 SQL；不写下游、不需要 dolt 二进制。
+run "$PY" deploy/dolt/import_from_git.py --selftest
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
@@ -283,7 +289,9 @@ run "$PY" preset/allin/refresh-gov-block.py --check
 # 中间目录名单是本仓布局事实，仍由 --exclude 提供。
 # 2026-11-08：tests/ 是 monorepo 的内部测试目录，不是独立项目，裸跑会产生
 # 「无 README / 无 LICENSE / 无依赖声明」等必然假阳性（README 已写明此口径）。
-run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests --fail-on error
+# 2026-11-09 B 期：facts/（数据面真身）与 deploy/（三栈配置）同为 monorepo 中间目录，
+# 不是独立项目；裸跑会必然产生「无 LICENSE / 无依赖声明 / README 结构不完整」假阳性。
+run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy --fail-on error
 # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
 # packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
 # 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。

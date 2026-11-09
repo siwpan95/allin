@@ -1,0 +1,68 @@
+# allin × NetBox —— 本机 WSL2 部署覆盖文件（待落仓骨架）
+#
+# 来源：netbox-community/netbox-docker 官方 wiki「Getting Started」
+#   https://github.com/netbox-community/netbox-docker/wiki/Getting-Started
+#   （官方明确：应在 Linux/macOS 上运行；Windows 需 Docker Desktop 的 Linux backend 或 WSL2，官方指南不覆盖）
+# 本机实测（2026-11-09）：docker NOT FOUND，wsl 存在 → 先装 Docker Desktop 并启用 WSL2 集成。
+#
+# 版本口径：NetBox 4.7 GA（官方 https://netboxlabs.com/blog/netbox-4-7-is-ga）
+#   PostgreSQL >= 15、Redis >= 6.0；4.7 的 django-mptt -> ltree 迁移会阻塞读写且实际不可逆，
+#   首次上线建议直接锁 4.7.x，不要从 4.6 原地升级。
+# netbox-docker 5.0.0 起移除预定义默认密钥，所有 secret 必须显式给：
+#   https://newreleases.io/project/github/netbox-community/netbox-docker/release/5.0.0
+#
+# 安全：只绑回环地址，对齐 allin portal 的 Host 围栏 / loopbackOnly 纪律（SPEC-204 §4）。
+#       禁止把 8000 暴露到 0.0.0.0；跨机访问走 SSH 隧道，不开防火墙入站。
+
+services:
+  netbox:
+    ports:
+      - "127.0.0.1:8000:8080"
+    environment:
+      # 从仓外密钥环注入，绝不写进本文件（公开仓铁律 0 / g03-credentials）
+      SECRET_KEY: "${NETBOX_SECRET_KEY:?set via env}"
+      DB_PASSWORD: "${NETBOX_DB_PASSWORD:?set via env}"
+      REDIS_PASSWORD: "${NETBOX_REDIS_PASSWORD:?set via env}"
+      ALLOWED_HOSTS: "127.0.0.1 localhost"
+      ISOLATED_DEPLOYMENT: "true"
+      # v2 token 的 HMAC pepper；改值会让所有 Bearer nbt_... token 失效，必须随 configuration/ 一起备份
+      API_TOKEN_PEPPER_1: "${NETBOX_API_TOKEN_PEPPER_1:?set via env}"
+      # 默认 SKIP_SUPERUSER=true，不关掉它 SUPERUSER_* 不生效
+      SKIP_SUPERUSER: "false"
+      # 首次启动自动建超管（生产建议改用 createsuperuser 并关闭这些变量）
+      SUPERUSER_NAME: "${NETBOX_SUPERUSER_NAME:-allin-admin}"
+      SUPERUSER_EMAIL: "${NETBOX_SUPERUSER_EMAIL:-admin@example.invalid}"
+      SUPERUSER_PASSWORD: "${NETBOX_SUPERUSER_PASSWORD:?set via env}"
+      SUPERUSER_API_TOKEN: "${NETBOX_SUPERUSER_API_TOKEN:?set via env}"
+    volumes:
+      - netbox-media:/opt/netbox/netbox/media:z
+
+  netbox-worker:
+    environment:
+      SECRET_KEY: "${NETBOX_SECRET_KEY:?set via env}"
+      DB_PASSWORD: "${NETBOX_DB_PASSWORD:?set via env}"
+      REDIS_PASSWORD: "${NETBOX_REDIS_PASSWORD:?set via env}"
+      ISOLATED_DEPLOYMENT: "true"
+
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: "${NETBOX_DB_PASSWORD:?set via env}"
+    volumes:
+      - netbox-postgres-data:/var/lib/postgresql
+
+  redis:
+    environment:
+      REDIS_PASSWORD: "${NETBOX_REDIS_PASSWORD:?set via env}"
+    volumes:
+      - netbox-redis-data:/data
+
+  # 官方 release 分支的 compose 把「任务队列」与「缓存」拆成两个 redis 实例，
+  # 覆盖文件必须沿用同名服务，否则 docker compose 会新建一个孤儿服务。
+  redis-cache:
+    environment:
+      REDIS_PASSWORD: "${NETBOX_REDIS_PASSWORD:?set via env}"
+
+volumes:
+  netbox-media:
+  netbox-postgres-data:
+  netbox-redis-data:

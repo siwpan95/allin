@@ -1,0 +1,53 @@
+# allin 知识库 QA 封装层降级配置（**非 GraphRAG 官方 schema**，由自建 facts.query 读取）
+#
+# 硬要求：治理门禁（g00–g20 + 新增独立门禁）在任何在线服务缺席时仍须全绿。
+# GraphRAG 不进 run_all_gates.sh 的阻断链；本文件只控制查询侧行为。
+
+mode: full            # full | offline | readonly
+
+modes:
+  full:
+    description: "GraphRAG 索引可用 + facts.sqlite 派生库可用"
+    pipeline:
+      - "router.classify(query) -> structured | narrative | hybrid"
+      - "structured -> facts_cli.get/query/asof（SQL，带 observed_at + source_file:line）"
+      - "narrative  -> graphrag global/local/drift（社区摘要只作导航线索）"
+      - "hybrid     -> 两路召回后交叉复核：数字必须由 facts.get 复算一次"
+      - "answer.attach_citations()"
+    index_required: true
+    llm_required: true
+
+  offline:
+    description: "无 GRAPHRAG_API_KEY 或索引构建失败：叙述层退回确定性检索"
+    pipeline:
+      - "structured -> facts_cli（SQLite 派生库，可离线重建）"
+      - "narrative  -> mcp:docs.search（现有 BM25 + field weights + file#L citation）"
+    disclose_in_response: "knowledge_index=offline"
+    llm_required: false
+    index_required: false
+
+  readonly:
+    description: "连 facts.sqlite 都不可用时：只用 Git 内结构化真身 + 文档文本"
+    pipeline:
+      - "structured -> 直接读 facts.json（JSON Schema 校验后）"
+      - "narrative  -> 自建 SQLite FTS5 trigram / BM25 只读索引"
+    disclose_in_response: "knowledge_index=readonly"
+    llm_required: false
+    index_required: false
+
+# ⚠ GraphRAG 的 basic_search 需要 embedding provider + 已建向量存储，
+#   无 key 时**不能**当降级路径；readonly 档必须自建 BM25/SQLite FTS5。
+
+citation:
+  common_model: "source_file:line | observed_at | evidence_ref | retrieval_path"
+  structured_source: "facts.json / facts.sqlite"
+  narrative_source: "docs/**/*.md + GraphRAG text_unit id"
+  no_evidence_policy: "拒答（不编造、不用社区摘要当事实陈述）"
+  numeric_claim_policy: "必须由 facts.get 复算，逐字符一致才允许写入答案"
+
+budget:
+  index_first_run_docs: 10          # 官方建议先小语料 + 便宜模型跑通
+  entity_types_limit: 10
+  max_gleanings: 1
+  incremental_unit: "docs/记录/ 月卷"
+  cost_guard: "索引前打印预估 TextUnit 数与 LLM 调用次数，人工确认后才执行"

@@ -185,6 +185,14 @@ citation 带 `source_type` 与 `state_kind`（**声明态 / 意图态 / 运行�
 NetBox 非 Apache 的 `branching` / `Custom Objects` 插件按用户决策**不引入**，
 分支能力全部由 Dolt 承担（离线可 `dolt clone`）。
 
+**B 期落地（2026-11-09）**：三栈配置与单向导入器已从工作区落仓到 `deploy/`
+（`dolt/schema.sql` + `import_from_git.py` / `netbox/sync_from_git.py` + compose override /
+`graphrag/settings.yaml` + `qa.yaml` + `build_input.py`），新增 `tools/gate/facts_provenance.py`
+（g25：fact 的 `source_file:line` 完整性 + 下游 state 的 `source_git_sha` 可解析）。
+Dolt 2.7.2 已在本机以单二进制落地并真机执行 schema + 导入；**Docker Desktop / WSL2 / NetBox
+服务仍按 O8 边界未安装**，NetBox 侧保持配置就绪与 dry-run 可用。
+派生库目录、下游 state、GraphRAG 语料全部由 `.gitignore` 排除，随 clone 只带配置不带运行态。
+
 ## 3. 数据流
 
 ### 3.1 平台启停与分歧事件链路（`platform`）

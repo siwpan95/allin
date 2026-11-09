@@ -91,6 +91,11 @@
 > `tools/facts/cli.py offline-check`（离线北极星：拔网 / 停三栈 / 删派生库）。
 > 契约见 `SPEC-005 §3.11` 与 `SPEC-005 §3.12`；架构见 `SPEC-204 §2.8`。
 > 生成物尚未启用时 g23 **显式 SKIPPED 并计数**，不冒充通过（未做项见交接卷 §一百四十六）。
+> **B 期增补（2026-11-09）**：`tools/gate/facts_provenance.py`（g25：事实引用 `source_file:line`
+> 完整性 + 下游 state 的 `source_git_sha` 可解析；下游未接入显式 SKIPPED 计数）与
+> `deploy/dolt/import_from_git.py --selftest`（幂等 SQL / 显式 `CALL DOLT_COMMIT` / sha 入 SQL）
+> 一并接跑批。Dolt 为本地单二进制、零常驻服务；**三栈全停时以上判据仍须全绿**。
+> 见 `SPEC-005 §3.11`、`SPEC-204 §2.8`。
 
 ### 4.2 DSH 分发版门禁（`governance/`，18 条，随 `siwpan/deepseek-harness` 分发）
 
