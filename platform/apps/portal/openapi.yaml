@@ -73,7 +73,7 @@ paths:
                 version: '0.1.0'
                 uptime: 137
                 platform: allin-platform
-                port: 9000
+                boundPort: 53121
         '403':
           $ref: '#/components/responses/Forbidden'
 
@@ -627,11 +627,11 @@ components:
         platform:
           type: string
           example: allin-platform
-        port:
+        boundPort:
           type: integer
-          description: 实际绑定的端口
-          example: 9000
-      required: [version, uptime, platform, port]
+          description: 实际绑定的端口（listen 后回填；PORT=0 按需形态下为 OS 分配的临时端口，非配置端口）
+          example: 53121
+      required: [version, uptime, platform, boundPort]
 
     LibraryItem:
       type: object
@@ -893,7 +893,7 @@ components:
 
     OverviewPortal:
       type: object
-      description: 门户自身状态（version 取自 package.json，port 为实际绑定端口——PORT=0 按需形态下与配置端口不同）
+      description: 门户自身状态（version 取自 package.json，boundPort 为实际绑定端口——PORT=0 按需形态下与配置端口不同）
       properties:
         version:
           type: string
@@ -903,12 +903,12 @@ components:
           type: integer
           description: 进程自启动以来的秒数
           example: 15
-        port:
+        boundPort:
           type: integer
           nullable: true
-          description: 实际绑定端口（listen 后回填）
+          description: 实际绑定端口（listen 后回填；PORT=0 下为临时端口）
           example: 9399
-      required: [version, uptime, port]
+      required: [version, uptime, boundPort]
 
     OverviewLibrary:
       type: object

@@ -37,6 +37,8 @@ _TOOLS = ROOT / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 from sha256util import digest_obj  # noqa: E402
+# 第二阶段（2026-11-11）：offline-check 的子进程自检超时收敛到单一事实源。
+import runtime_defaults as _rd  # noqa: E402
 HERE = Path(__file__).resolve().parent
 DEFAULT_SCHEMA = ROOT / "facts" / "facts.schema.json"
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
@@ -402,7 +404,8 @@ def cmd_offline_check(data: Path, schema: Path) -> int:
         p = gate_dir / name
         if p.is_file():
             r = subprocess.run([sys.executable, str(p), "--selftest"],
-                               capture_output=True, text=True, encoding="utf-8", timeout=60)
+                               capture_output=True, text=True, encoding="utf-8",
+                               timeout=_rd.timeout("subprocess_default"))
             oks.append(r.returncode == 0)
     checks.append(("g23/g24 判据可离线自检", len(oks) == 2 and all(oks)))
     print("OFFLINE CHECK (拔网 / 停栈 / 删派生库 / 仅留 git clone)")

@@ -28,6 +28,19 @@ test('GET /api/status', async () => {
   const res = await fetch(base + '/api/status')
   const body = await res.json()
   assert.equal(body.platform, 'allin-platform')
+  // §六第二阶段契约：报「实际绑定端口」（PORT=0 下为临时端口），字段名 boundPort；
+  // 旧字段 port 已退役，不得残留 —— 报配置端口 0 会让消费方误判为「端口未知」。
+  assert.equal(body.boundPort, server.address().port, '/api/status.boundPort 必须等于实际绑定端口')
+  assert.equal(Object.prototype.hasOwnProperty.call(body, 'port'), false, 'port 已更名 boundPort，不得残留旧字段')
+})
+
+test('GET /api/overview（bridge）：portal.boundPort 为实际绑定端口，无旧 port 字段', async () => {
+  const res = await fetch(base + '/api/overview')
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  // deps 注入值来自 listen 回填；字段名已在 bridge.js 同步 port→boundPort。
+  assert.equal(body.portal.boundPort, server.address().port, 'overview.portal.boundPort 必须等于实际绑定端口')
+  assert.equal(Object.prototype.hasOwnProperty.call(body.portal, 'port'), false, 'overview 旧字段 port 不得残留')
 })
 
 // Phase 1（2026-09-24）：Host 头围栏——防 DNS rebinding 打穿 loopbackOnly。

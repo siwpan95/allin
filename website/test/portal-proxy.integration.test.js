@@ -40,7 +40,7 @@ const CLOSED_BASE = 'http://127.0.0.1:1';
 // ---- 可控假 portal：行为由 mode 切换，响应体由各用例按需覆写 ----
 let mode = 'ok-overview';
 let overviewBody = {
-  portal: { version: '1.2.3', uptime: 123, port: 9100 },
+  portal: { version: '1.2.3', uptime: 123, boundPort: 9100 },
   library: { total: 10, running: 7, invalid: 1 },
   gates: { passed: 5, failed: 0 },
   alerts: [{ level: 'info', text: 'ok' }],
@@ -53,7 +53,7 @@ let orchestrationBody = {
   lastCheckAt: '2026-11-08T00:00:00Z',
   lastCheckError: null,
 };
-let statusBody = { platform: 'allin-platform', version: '1.2.3', uptime: 99, port: 9100 };
+let statusBody = { platform: 'allin-platform', version: '1.2.3', uptime: 99, boundPort: 9100 };
 let libraryBody = { items: [] };
 
 let BASE = CLOSED_BASE;
@@ -146,7 +146,7 @@ test('U-Q09④ UPSTREAM_TIMEOUT（无快照）：缓存为空时超时 → data=
 
 test('U-Q07① overview 数字一致：portal /api/overview 的 running/total 维度原样透传', async () => {
   overviewBody = {
-    portal: { version: '1.2.3', uptime: 123, port: 9100 },
+    portal: { version: '1.2.3', uptime: 123, boundPort: 9100 },
     library: { total: 10, running: 7, invalid: 1 },
     gates: { passed: 5, failed: 0 },
     alerts: [{ level: 'info', text: 'ok' }],
@@ -179,7 +179,7 @@ test('U-Q07② orchestration 数字一致：routes/drift 数量与 portal 响应
 
 test('U-Q07③ bridge 未上线（/api/overview 404）→ 退化为 /api/status + /api/library 聚合，数字一致', async () => {
   mode = 'fallback-404';
-  statusBody = { platform: 'allin-platform', version: '1.2.3', uptime: 99, port: 9100 };
+  statusBody = { platform: 'allin-platform', version: '1.2.3', uptime: 99, boundPort: 9100 };
   libraryBody = {
     items: [
       { id: 'a', running: true, valid: true },
@@ -191,6 +191,7 @@ test('U-Q07③ bridge 未上线（/api/overview 404）→ 退化为 /api/status 
   assert.equal(r.ok, true, '404 fallback 路径必须 ok:true（不算平台故障）');
   assert.equal(r.degraded, null);
   assert.equal(r.data.portal.version, '1.2.3', 'portal 维度来自 /api/status');
+  assert.equal(r.data.portal.boundPort, 9100, '404 fallback 路径必须透传 /api/status.boundPort（§六第二阶段 port→boundPort）');
   assert.equal(r.data.library.total, 3, 'total 来自 /api/library items 长度');
   assert.equal(r.data.library.running, 2, 'running 来自 items 中 running:true 计数');
   assert.equal(r.data.library.invalid, 1, 'invalid 来自 items 中 valid===false 计数');

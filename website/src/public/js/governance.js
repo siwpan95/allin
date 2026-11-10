@@ -144,7 +144,7 @@
     var rows = [
       ['版本', p.version || '—'],
       ['运行时长', fmtUptime(p.uptime)],
-      ['端口', p.port == null ? '—' : p.port],
+      ['端口', p.boundPort == null ? '—' : p.boundPort],
       ['登记项目', lib.total == null ? '不可读' : lib.total + ' 个'],
       ['运行中', lib.running == null ? '—' : lib.running + ' 个'],
       ['异常登记', lib.invalid == null ? '—' : lib.invalid + ' 个'],

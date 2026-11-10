@@ -9,5 +9,8 @@
   "network_probe": 15,
   "subprocess_pip": 120,
   "subprocess_ensurepip": 300,
-  "subprocess_install": 900
+  "subprocess_install": 900,
+  "git_fsck": 300,
+  "git_lsremote": 120,
+  "http_upload": 1800
 }

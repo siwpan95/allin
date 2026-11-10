@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "allin-platform 前台 :9000 —— 库 Library / 工坊 Workshop / 引擎 Engine（自 private-radio-stations/apps/portal 升级迁移）",
+  "description": "allin-platform 前台（PORT 指定端口，默认 0 临时端口）—— 库 Library / 工坊 Workshop / 引擎 Engine（自 private-radio-stations/apps/portal 升级迁移）",
   "scripts": {
     "start": "node src/index.js"
   },

@@ -59,6 +59,14 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from pathlib import Path
+
+# 第二阶段（2026-11-11）：网络超时收敛到 tools/runtime_defaults.py 单一事实源。
+# tools/ 即本脚本所在目录，显式注入以支持从任意 cwd 直接执行（不写死盘符）。
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+import runtime_defaults as _rd  # noqa: E402
 
 API = "https://gitee.com/api/v5"
 MAX_ATTACH_MB = 100.0        # Gitee 社区版单附件上限（见文件头）
@@ -102,11 +110,17 @@ def load_token(arg=None, token_file=None):
     raise SystemExit("[ERR] 没给令牌。用 --token / --token-file，或设环境变量 GITEE_TOKEN。")
 
 
-def api(method, path, token, data=None, timeout=60, retries=2):
+def api(method, path, token, data=None, timeout=None, retries=2):
     """JSON 请求。返回 (status, parsed_or_text)。网络抖动重试两次。
 
     P5：令牌经 Authorization 头传递（不再拼进 URL query），重定向仅限同主机，
-    避免令牌出现在 URL（日志/代理/referer）或被 3xx 带去第三方。"""
+    避免令牌出现在 URL（日志/代理/referer）或被 3xx 带去第三方。
+
+    第二阶段：默认超时取单一事实源 url_open=60（值不变）；延迟到调用时读取，
+    显式传值者优先（见 cmd_release 里创建 release 的 POST=120 显式豁免）。
+    """
+    if timeout is None:
+        timeout = _rd.timeout("url_open")
     url = API + path
     body = json.dumps(data, ensure_ascii=False).encode("utf-8") if data is not None else None
     last = None
@@ -138,8 +152,13 @@ def api(method, path, token, data=None, timeout=60, retries=2):
     return -1, str(last)
 
 
-def upload_file(path, token, filepath, timeout=1800):
-    """流式 multipart 上传（不把上百 MB 的附件读进内存）。"""
+def upload_file(path, token, filepath, timeout=None):
+    """流式 multipart 上传（不把上百 MB 的附件读进内存）。
+
+    第二阶段：默认超时取单一事实源 http_upload=1800（值不变）；大附件上传需长窗口。
+    """
+    if timeout is None:
+        timeout = _rd.timeout("http_upload")
     name = os.path.basename(filepath)
     size = os.path.getsize(filepath)
     boundary = "----pp" + uuid.uuid4().hex

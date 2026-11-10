@@ -1,4 +1,5 @@
-// @allin/portal —— 平台前台 :9000（零依赖纯 Node http，自 @relay/portal 升级）。
+// @allin/portal —— 平台前台（PORT 指定端口，默认 0 = OS 临时端口；零依赖纯 Node http，自 @relay/portal 升级）。
+// 端口口径以 docs/事实源/ports.yaml 为准：9000 已退役为「仅手动可选」，不再是默认值（审计 §六第二阶段）。
 // 三个页签：库 Library（启停/状态）/ 工坊 Workshop（订阅）/ 引擎 Engine（allin_engine dump-profile）。
 import http from 'node:http'
 import fs from 'node:fs'
@@ -37,9 +38,12 @@ const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(PLATFORM, 'registry'
 // allin_engine 引擎视图：外部项目目录不进仓（聚合不融合）——env 未配置时引擎页报「未配置」
 // 而不是指向某台机器的硬编码路径（2026-09-24 强化：仓库区 repos/ 解绑，盘符随机器）。
 const ENGINE_CWD = process.env.PLATFORM_ALLIN_ENGINE_CWD || null
-const port = process.env.PORT !== undefined ? Number(process.env.PORT) : 9000
-// 实际绑定端口（listen 后回填）：PORT=0 按需形态下配置端口与实际端口不同，
-// bridge overview 的 portal.port 必须报实际值（2026-11-04 实测修正：报 0 会让消费方误判）
+// 配置端口：默认 0（OS 临时端口），对齐 docs/事实源/ports.yaml「9000 退役、按需临时端口」口径。
+// 显式 PORT=9000 仍可手动占固定端口（仅手动可选），但默认不再常驻。
+const port = process.env.PORT !== undefined ? Number(process.env.PORT) : 0
+// 实际绑定端口（listen 后回填）：PORT=0 时配置端口恒为 0，与实际端口不同。
+// /api/status 与 bridge overview 都只报 boundPort（实际值），报配置端口会让消费方误判
+// （2026-11-04 实测修正；2026-11-11 第二阶段把 /api/status 口径一并对齐）。
 let boundPort = port
 
 const MIME = {
@@ -213,7 +217,7 @@ async function requestHandler(req, res) {
   const p = url.pathname
 
   if (p === '/api/status' && req.method === 'GET') {
-    return json(res, 200, { version: '0.1.0', uptime: Math.round(process.uptime()), platform: 'allin-platform', port })
+    return json(res, 200, { version: '0.1.0', uptime: Math.round(process.uptime()), platform: 'allin-platform', boundPort })
   }
   if (p === '/api/library' && req.method === 'GET') {
     return json(res, 200, await libraryPayload())
@@ -294,7 +298,7 @@ async function requestHandler(req, res) {
   // deps 注入：bridge 不 import core，依赖方向 index → bridge 单向无环（P2 §1.1）。
   if (p === '/api/overview' && req.method === 'GET') {
     if (!loopbackOnly(req, res)) return
-    return json(res, 200, await overviewPayload({ loadRegistry, isRunning, readAlerts, registryDir: REGISTRY, port: boundPort }))
+    return json(res, 200, await overviewPayload({ loadRegistry, isRunning, readAlerts, registryDir: REGISTRY, boundPort }))
   }
   if (p === '/api/orchestration' && req.method === 'GET') {
     if (!loopbackOnly(req, res)) return

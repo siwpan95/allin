@@ -156,7 +156,9 @@ export async function overviewPayload(deps) {
 }
 
 function buildOverview(deps) {
-  const { loadRegistry, isRunning, readAlerts, registryDir, port } = deps
+  // 第二阶段口径：字段名 port→boundPort，值来自 index.js 的 listen 回填（实际绑定端口）。
+  // PORT=0 时配置端口恒为 0，报「配置端口」会让消费方误判为端口未知，故只报实际值。
+  const { loadRegistry, isRunning, readAlerts, registryDir, boundPort } = deps
   // library：pid 存活级（isRunning）而非 probeEntry 探测级——overview 只回答「活着几个」，
   // 探测级细节走既有 /api/library（P2 D-B2 裁决，保 P95 ≤ 500ms 预算）
   let library = { total: 0, running: 0, invalid: 0, problems: 0 }
@@ -184,7 +186,7 @@ function buildOverview(deps) {
   } catch { /* alerts 块降级 */ }
 
   return {
-    portal: { version: PKG.version || null, uptime: Math.round(process.uptime()), port: port ?? null },
+    portal: { version: PKG.version || null, uptime: Math.round(process.uptime()), boundPort: boundPort ?? null },
     library,
     alerts,
     gates: gateSummary(),

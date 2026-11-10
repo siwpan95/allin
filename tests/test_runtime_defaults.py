@@ -160,17 +160,27 @@ print("MIGRATIONS_OK", len(rd.MIGRATIONS))
 def test_migrations_landed():
     r = _py(_S_MIGRATED)
     assert r.returncode == 0, (r.stdout[-900:], r.stderr[-900:])
-    assert "MIGRATIONS_OK 17" in r.stdout
+    # 17（P2 首批 8 + venv_security 9）+ 7（第二阶段：push_archives / facts cli / watchdog 3 / gitee_release 2）
+    assert "MIGRATIONS_OK 24" in r.stdout
 
 
 def test_no_bare_timeout_literals_in_migrated_files():
-    """8+9 处迁移后，这些文件不应再残留被迁移的裸 timeout=<数字> 字面量。"""
+    """8+9+7 处迁移后，这些文件不应再残留被迁移的裸 timeout=<数字> 字面量。
+
+    显式豁免（登记在 tools/runtime_defaults.py 注释，不列入下方 banned 集）：
+    push_archives.py:36=300（归档后远端核对）、gitee_release.py:495=120（release POST）、
+    watchdog.py:176=30（fsutil 本地探测，短于最小 key）。
+    """
     targets = {
         "deploy/dolt/import_from_git.py": {10, 180},
         "deploy/graphrag/build_input.py": {60},
         "deploy/netbox/sync_from_git.py": {10, 15},
         "tools/build_portfolio.py": {60},
         "tools/security/venv_security.py": {60, 120, 300, 900},
+        "tools/tier_archive/push_archives.py": {3600},
+        "tools/facts/cli.py": {60},
+        "tools/gate/watchdog.py": {300, 120, 180},
+        "tools/gitee_release.py": {60, 1800},
     }
     rex = re.compile(r"timeout\s*=\s*(\d+)")
     for rel, banned in targets.items():

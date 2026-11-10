@@ -65,11 +65,27 @@ MIGRATIONS: tuple[tuple[str, int, str], ...] = (
     ("tools/security/venv_security.py", 120, "subprocess_pip"),        # Baseline.verify  <py> -c 校验 certifi
     ("tools/security/venv_security.py", 900, "subprocess_install"),    # Baseline.apply  pip install --upgrade
     ("tools/security/venv_security.py", 900, "subprocess_install"),    # CAEmSignG3.apply  pip --force-reinstall
+    # 第二阶段（2026-11-11）单列 PR：行为变更组消费方迁移 + 语义明确的剩余 timeout。
+    ("tools/tier_archive/push_archives.py", 3600, "subprocess_archive_push"),  # git push archive/*
+    ("tools/facts/cli.py", 60, "subprocess_default"),                          # offline-check 自检子进程
+    ("tools/gate/watchdog.py", 300, "git_fsck"),                               # git fsck 全库对象
+    ("tools/gate/watchdog.py", 120, "git_lsremote"),                           # git ls-remote 对端
+    ("tools/gate/watchdog.py", 180, "subprocess_long"),                        # ps() PowerShell 片段默认
+    ("tools/gitee_release.py", 60, "url_open"),                                # api() urllib opener 默认
+    ("tools/gitee_release.py", 1800, "http_upload"),                           # upload_file 大附件流式上传
 )
 
-# 第二阶段预留 key（权威源已定义并校验合法，但本轮不改消费方，见报告）：
-#   subprocess_build=600 / subprocess_archive_push=3600
-#   —— 端口 9000 联动组、/api/status port→boundPort、push_archives.py 等属行为变更/单列 PR。
+# 第二阶段（2026-11-11）评估后的**显式豁免**（值不变、语义无现成 key 或属上游锁源，
+# 登记理由而非散落裸值；新增豁免前先在此登记，避免「改了没人知道」）：
+#   subprocess_build=600     —— 权威源已定义校验合法；当前无生产消费方（verify_projects.py
+#                              仅在 selfcheck 里做 argv 拼装字符串），留作预留 key 待构建脚本接入。
+#   tools/tier_archive/push_archives.py:36  timeout=300 —— 归档后 ls-remote 远端分支核对，
+#                              与 watchdog 的实时探活(git_lsremote=120)语义不同、值不同，保留显式值。
+#   tools/gitee_release.py:495  timeout=120 —— 创建 release 的 POST，与 api() 默认(url_open=60)
+#                              不同语义；值无现成 key，保留显式值。
+#   tools/gate/watchdog.py:176  timeout=30 —— fsutil dirty 本地探测，短于最小 key(60)，保留显式值。
+#   vendor/cordis/src/cordis/create.py:98/153/242 —— 上游锁源 a3d0c17（VENDOR.md），
+#                              整目录豁免 timeout 收敛，不改上游代码。
 
 
 class ConfigError(Exception):

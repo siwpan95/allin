@@ -65,14 +65,21 @@ from pathlib import Path
 # `import cli as F` 的既有写法一致；保证从任意 cwd 直接跑本脚本（含 --selftest）也能找到。
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "repocheck"))
 import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
+# 第二阶段（2026-11-11）：长操作超时收敛到单一事实源；tools/ 根与上面 repocheck 相邻，
+# 这里显式补 tools/ 自身，确保 runtime_defaults 从任意 cwd 都能解析（不写死盘符）。
+_TOOLS_ROOT = str(Path(__file__).resolve().parents[1])
+if _TOOLS_ROOT not in sys.path:
+    sys.path.insert(0, _TOOLS_ROOT)
+import runtime_defaults as _rd  # noqa: E402
 
 
 # ------------------------------------------------------------------ P2 #18 只读 git 单一入口
 # 原有 check_repo / check_sync / main-quick 共三份自写 git() 闭包 + 一份 ls-remote 裸调用，
 # 全部删除，统一委托 scanctx.run_git（默认 10s / GIT_OPTIONAL_LOCKS=0 / stdin=DEVNULL /
 # capture_output / 无黑窗）。确属长操作的，仍走同一入口、仅显式放宽 timeout，理由随调用写明：
-_GIT_FSCK_TIMEOUT = 300      # fsck 遍历全库对象，大仓实测可能 >10s（原实现 t=300）
-_GIT_LSREMOTE_TIMEOUT = 120  # ls-remote 走网络，受对端/网络延迟影响（原实现 timeout=120）
+# 第二阶段（2026-11-11）：长操作超时收敛到单一事实源，值与原字面量完全一致（300/120）。
+_GIT_FSCK_TIMEOUT = _rd.timeout("git_fsck")      # fsck 遍历全库对象，大仓实测可能 >10s
+_GIT_LSREMOTE_TIMEOUT = _rd.timeout("git_lsremote")  # ls-remote 走网络，受对端/网络延迟影响
 
 
 def _git(repo, *args, timeout=None):
@@ -127,8 +134,14 @@ class Alert:
         return "[{}] {} :: {}".format(self.code, self.target, self.detail)
 
 
-def ps(script, timeout=180):
-    """执行 PowerShell 片段并返回 stdout（只读操作用）。"""
+def ps(script, timeout=None):
+    """执行 PowerShell 片段并返回 stdout（只读操作用）。
+
+    第二阶段：默认超时改为运行时单一事实源 subprocess_long=180（值不变）；
+    延迟到调用时读取，避免 import 期即要求权威源在场。显式传值者优先（见 fsutil=30 豁免）。
+    """
+    if timeout is None:
+        timeout = _rd.timeout("subprocess_long")
     for exe in ("pwsh", "powershell"):
         try:
             p = subprocess.run([exe, "-NoProfile", "-NonInteractive", "-Command", script],
@@ -280,7 +293,7 @@ def check_sync(repo):
     if rc != 0 or not url.strip():
         return []
     # **只信 ls-remote**（MEMORY 调试铁律 13：陈旧的 remote-tracking ref 会造成假阳性）。
-    # 长操作：走网络、受对端延迟影响（原实现 timeout=120）；仍委托同一入口 _git，
+    # 长操作：走网络、受对端延迟影响（原实现 120s，现取单一事实源 git_lsremote）；仍委托同一入口 _git，
     # 仅显式放宽 timeout（理由见 _GIT_LSREMOTE_TIMEOUT 常量）。
     rc, out = _git(repo, "ls-remote", "origin", "refs/heads/" + br,
                    timeout=_GIT_LSREMOTE_TIMEOUT)

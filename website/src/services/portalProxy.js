@@ -128,7 +128,7 @@ function libraryAggregate(items) {
 function composeOverview(statusBody, libraryBody) {
   return {
     portal: statusBody && typeof statusBody === 'object'
-      ? { version: statusBody.version ?? null, uptime: statusBody.uptime ?? null, port: statusBody.port ?? null }
+      ? { version: statusBody.version ?? null, uptime: statusBody.uptime ?? null, boundPort: statusBody.boundPort ?? null }
       : null,
     library: libraryAggregate(libraryBody && libraryBody.items),
     alerts: null, // 既有端点不吐 alerts 聚合，bridge 上线后补齐

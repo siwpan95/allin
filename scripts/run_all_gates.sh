@@ -256,6 +256,13 @@ run "$PY" tools/gate/docs_index.py
 # docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。
 run "$PY" tools/gate/docs_index.py --selfcheck
+# P0 遗留独立核验项（§六第二阶段收口，2026-11-11）：审计/报告类**结论型文档**的
+# 证据锚点与结构自洽性（E1 锚点 / E2 章节 / E3 排序 / E4 无源 / E6 口径 / E7 疑点）。
+# 此前只手工跑、从未接跑批 —— 与 #12 同源的「写了不跑 = 没有检查」缺口。两条同源：
+#   ① CLI 面（agent / `allin docs audit-check` 驱动面）：证明命令真能跑、历史基线为 0；
+#   ② 判据自面（--selfcheck，14 探针）：证明每条判据仍会红，护栏自身失效不被 CI 常绿掩盖。
+run "$PY" allin_cli.py docs audit-check --quiet
+run "$PY" tools/gate/audit_doc_check.py --selfcheck
 # S9（2026-11-08 审查闭环）：度量口径本身也是门禁 —— gate_metrics.py --selfcheck
 # 接入跑批，随每次跑批回归「SKIP 单列 / 反假绿 / legacy 兼容回放」，
 # 防止指标口径被改坏却 CI 常绿（门禁写了不跑 = 没有门禁）。

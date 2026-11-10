@@ -6,6 +6,13 @@
 import subprocess, os, sys
 from pathlib import Path
 
+# 第二阶段（2026-11-11）：超时收敛到 tools/runtime_defaults.py 单一事实源。
+# tools/ 不在默认 sys.path，按脚本位置注入（与 facts/cli.py 同法，不写死盘符）。
+_TOOLS = str(Path(__file__).resolve().parents[1])
+if _TOOLS not in sys.path:
+    sys.path.insert(0, _TOOLS)
+import runtime_defaults as _rd  # noqa: E402
+
 _WORK = os.environ.get("TIER3_WORK", "")
 _REPOS = os.environ.get("TIER3_REPOS", "")
 if not (_WORK and _REPOS):
@@ -30,7 +37,7 @@ for path, expect in TARGETS:
     name = os.path.basename(path)
     print(f"\n=== {name} ===", flush=True)
     r = run(["git", "-C", path, "push", "origin", "master",
-             "refs/heads/archive/*:refs/heads/archive/*"], timeout=3600)
+             "refs/heads/archive/*:refs/heads/archive/*"], timeout=_rd.timeout("subprocess_archive_push"))
     tail = (r.stderr or r.stdout).strip().splitlines()[-1] if (r.stderr or r.stdout) else ""
     print(f"  push rc={r.returncode} {tail[:110]}", flush=True)
     r2 = run(["git", "-C", path, "ls-remote", "--heads", "origin"], timeout=300)

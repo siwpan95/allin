@@ -268,9 +268,13 @@ async function checkpointPortal() {
   try {
     const res = await fetchT(`http://127.0.0.1:${port}/api/status`, {}, 3000);
     const j = await res.json();
-    const ok = res.status === 200 && j.platform === 'allin-platform' && Number.isInteger(j.port);
+    // §六第二阶段（2026-11-11）：/api/status 字段 port→boundPort（报实际绑定端口，
+    // PORT=0 下为临时端口）。这是**第 5 处**消费方断言 —— 报告 §六原盘点 4 处遗漏此处，
+    // 由全量跑批 CP3 兜住（j.port 变 undefined ⇒ Number.isInteger=false ⇒ 假红）。
+    const bound = j.boundPort;
+    const ok = res.status === 200 && j.platform === 'allin-platform' && Number.isInteger(bound);
     step('CP3', 'portal 回环探活（临时实例）', ok,
-      ok ? `HTTP 200 port=${port} version=${j.version}${portalReused ? '（复用存活实例）' : ''}`
+      ok ? `HTTP 200 boundPort=${bound} version=${j.version}${portalReused ? '（复用存活实例）' : ''}`
          : `portal 面：HTTP ${res.status} body=${JSON.stringify(j).slice(0, 120)}`,
       false, Date.now() - t);
   } catch (e) {
