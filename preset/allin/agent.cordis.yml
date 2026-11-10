@@ -105,6 +105,7 @@
       - 仓库远端→本地同步 → repo-sync-remote-to-local <!-- route:repo-sync-remote-to-local -->
       - venv 安全巡检与加固 → venv-security-audit <!-- route:venv-security-audit -->
       - Windows Node 环境诊断 → windows-node-env-diagnose <!-- route:windows-node-env-diagnose -->
+      - 审计报告检查 / 证据锚点核对 / 报告查错漏 → allin-audit-doc-check <!-- route:allin-audit-doc-check -->
       模型降级处置顺序（大模型 LLM 降级选择）：本工作区有确定性 MCP 工具面兜底——即使所有远程 LLM 不可达，25 个治理工具（docs.search / facts.query / registry.* / gate.* 等）仍全可用，天然构成降级终点。模型降级按 `docs/事实源/模型凭据登记.yaml` 的三档执行：online（主模型可达）→ fallback（429/5xx/超时/预算耗尽切次高优先级）→ offline（全部远程不可达，走本地 Ollama 或纯确定性工具面）。远程模型调用一律放在仓外编排层（DSH / WorkBuddy）执行，本仓只声明策略、记录凭据槽位、观测降级轨迹，不引入 LLM 运行时（见 `SPEC-204-系统架构.md`）。
       <!-- GOVERNANCE:END -->
 - id: agent-instructions

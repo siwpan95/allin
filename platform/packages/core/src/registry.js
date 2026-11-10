@@ -54,26 +54,102 @@ export const REPOS_ROOT = process.env.PLATFORM_REPOS_ROOT || path.join(WORKSPACE
 // 其他模块（portal / website / kernel）只读 portal.port / running.json 等产物，不自行解析 registry。
 const RX_DRIVE = /^[A-Za-z]:[\\/]/
 
-// ── 命令形状校验（2026-11-08 深度审核 P1）────────────────────────────────
-// launch/stop/verify 的 command 会被 launch.js 以 spawn(..., {shell:true}) 执行。
+// ── 命令形状校验（2026-11-08 深度审核 P1 · 2026-11-10 深度审计 P0-1 补强）──
+// launch/stop/verify 的 command 会被 launch.js 交给 shell 执行。
 // 此前 validateEntry 只判字段存在 —— 能写一份 yaml 就等同拿到任意命令执行入口。
 // 这里把命令钉成「单个程序调用 + 参数」的形状：禁止 shell 控制符、路径穿越、
-// 首词不在受控集合。白名单已对本仓 145 份清单 / 90 条命令做过零误伤核验。
+// 首词不在受控集合。白名单已对本仓 145 份清单做过零误伤核验。
+//
+// ⚠️ 2026-11-10 深度审计 S-1：只禁 shell 元字符**不够**。首词白名单里含
+// bash / sh / python / node / cmd / powershell 等解释器，而 `-c` / `-e` / `/c`
+// 这类「内联代码」参数不是元字符 —— 实测 `bash -c id`、`python -c ...` 曾全部
+// 被 commandProblems 放行，随后经 spawn({shell:true}) 真正执行任意代码。
+// ⇒ 增加「解释器 + 内联执行 flag」判定。放行合法 flag（如 `python -m app.main`、
+// `node --version`、`bash scripts/run.sh`），避免把正常启动命令误伤。
 const COMMAND_FORBIDDEN = /[;&|<>`$]|\r|\n/
 const COMMAND_TRAVERSAL = /(^|[\\/])\.\.([\\/]|$)/
 const COMMAND_HEAD = /^(?:python|python3|pythonw|py|node|npm|npx|dse|ls|dir|echo|git|cmd|powershell|pwsh|bash|sh|robocopy|make|explorer|start)(?:\.exe)?(?:\s|$)/i
 const COMMAND_FILE_HEAD = /^[A-Za-z0-9_.-]+\.(?:bat|cmd|html|exe)(?:\s|$)/i
 const COMMAND_REL_EXE = /^(?:[A-Za-z0-9_.-]+[\\/])+[A-Za-z0-9_.-]+\.exe(?:\s|$)/i
 
+// 能「把一段字符串当代码执行」的宿主程序。命中这些首词时，参数面必须更严。
+const INLINE_EXEC_HOST = /^(?:python|python3|pythonw|py|node|bash|sh|cmd|powershell|pwsh)(?:\.exe)?$/i
+// 内联执行 flag：单独出现（-c / -e /c）、带等号（--eval=...）、或粘连值（-ccode）。
+// Python 支持 `-cCODE`（无空格）形态，故粘连形式也必须拦。
+const INLINE_EXEC_FLAG = /^(?:-c|-e|-p|\/c|\/k|--eval|--print|--command|-command|-encodedcommand|-enc|--exec|--execute)$/i
+const INLINE_EXEC_ATTACHED = /^(?:-(?:c|e|p)\S|\/c\S|\/k\S|--(?:eval|print|command|exec|execute)=|-encodedcommand=)/i
+
+/** 把命令串按 shell 词法拆成 token（支持单/双引号）。
+ *  校验与执行**共用同一个分词器**，避免两处实现各自漂移。 */
+export function splitCommandTokens(s) {
+  const out = []
+  let cur = ''
+  let quote = null
+  for (const ch of s) {
+    if (quote) {
+      if (ch === quote) quote = null
+      else cur += ch
+    } else if (ch === '"' || ch === "'") {
+      quote = ch
+    } else if (/\s/.test(ch)) {
+      if (cur) { out.push(cur); cur = '' }
+    } else {
+      cur += ch
+    }
+  }
+  if (cur) out.push(cur)
+  return out
+}
+
 export function commandProblems(cmd) {
   if (typeof cmd !== 'string' || !cmd.trim()) return ['命令为空']
   const s = cmd.trim()
   if (COMMAND_FORBIDDEN.test(s)) return ['含 shell 控制符（; & | < > ` $ 或换行）']
   if (COMMAND_TRAVERSAL.test(s)) return ['路径含 ..（禁止越出项目目录）']
+  const tokens = splitCommandTokens(s)
+  const head = tokens[0] || ''
+  if (INLINE_EXEC_HOST.test(head)) {
+    const bad = tokens.slice(1).find((t) => INLINE_EXEC_FLAG.test(t) || INLINE_EXEC_ATTACHED.test(t))
+    if (bad) return [`解释器内联代码参数被禁止（${head} ${bad}）：能写 yaml 不等于能执行任意代码`]
+  }
   if (!(COMMAND_HEAD.test(s) || COMMAND_FILE_HEAD.test(s) || COMMAND_REL_EXE.test(s))) {
     return [`首词不在受控命令集合：${s.split(/\s/)[0]}`]
   }
   return []
+}
+
+// ── path 边界校验（2026-11-10 深度审计 S-2 / CWE-22）─────────────────────────
+// 此前 validateEntry 只用 RX_DRIVE 禁盘符，**完全没有 `..` 检查** —— 实测
+// `path: ".."` / `"../allin"` / `"../../projects"` 全部零报错通过，resolvePath("..")
+// 解析到 D:\projects（仓外），随后被用作 spawn 的 cwd 与门户读取文件的目录。
+// ⇒ 清单准入层拒绝一切越界形状；执行层（resolvePath）再做一次防线。
+const RX_POSIX_ABS = /^\//
+const RX_DOT_SEGMENT = /(^|[\\/])\.\.([\\/]|$)/
+
+/**
+ * 清单里 path 的形状校验。
+ * @param {string} p
+ * @param {{allowAbsolute?: boolean}} opts allowAbsolute 供程序内部构造的 entry
+ *   使用（如测试夹具用 os.tmpdir() 作 cwd）；**清单准入必须用缺省的 false**。
+ */
+export function pathProblems(p, opts = {}) {
+  if (typeof p !== 'string' || !p.trim()) return ['path 为空']
+  const s = p.trim().replace(/\\/g, '/')
+  if (RX_DOT_SEGMENT.test(s)) return [`path 含 .. 越界段（CWE-22）：${p}`]
+  if (!opts.allowAbsolute && (RX_DRIVE.test(p) || RX_POSIX_ABS.test(s))) {
+    return [`path 禁止盘符 / 绝对路径（去符盘铁律，应写 repos/<仓名>）: ${p}`]
+  }
+  return []
+}
+
+/** 只有落在允许根之内的路径才可用于启动 cwd / 文件读取。 */
+export function isPathContained(p) {
+  if (typeof p !== 'string' || !p.trim()) return false
+  const s = p.trim().replace(/\\/g, '/')
+  if (RX_DOT_SEGMENT.test(s)) return false
+  const abs = path.resolve(p)
+  const bases = [path.resolve(ALLIN_ROOT), path.resolve(WORKSPACE_ROOT), path.resolve(REPOS_ROOT)]
+  return bases.some((base) => abs === base || abs.startsWith(base + path.sep))
 }
 
 /**
@@ -87,6 +163,13 @@ export function commandProblems(cmd) {
 export function resolvePath(p) {
   if (!p) return p
   if (path.isAbsolute(p)) return p
+  // 2026-11-10 深度审计 S-2 执行层二次防御：即便调用方绕过 validateEntry
+  // 直接构造 entry，`..` 也不得把 cwd / 文件读取目标带出仓根。
+  if (RX_DOT_SEGMENT.test(p.replace(/\\/g, '/'))) {
+    const err = new Error(`path 含 .. 越界段，拒绝解析（CWE-22）：${p}`)
+    err.code = 'PATH_ESCAPE'
+    throw err
+  }
   return (p === 'repos' || p.startsWith('repos/'))
     ? path.resolve(WORKSPACE_ROOT, p)
     : path.resolve(ALLIN_ROOT, p)
@@ -143,9 +226,13 @@ export function validateEntry(entry, ports) {
   }
   if (entry.id && !/^[a-z0-9][a-z0-9-]*$/.test(entry.id)) errors.push(`bad id: ${entry.id}`)
   if (!entry.path) errors.push('missing path（去符盘纪律：repos/<仓名>）')
-  else if (RX_DRIVE.test(entry.path)) errors.push(`path 禁止盘符（去符盘铁律，应写 repos/<仓名>）: ${entry.path}`)
-  else if (pathCheckMode() === 'exists' && !skipLocalExistence(entry) && !fs.existsSync(resolvePath(entry.path))) {
-    errors.push(`path 不存在: ${entry.path} → 解析为 ${resolvePath(entry.path)}`)
+  else {
+    // 2026-11-10 深度审计 S-2：盘符检查之外补 `..` 越界与 POSIX 绝对路径。
+    const pathErrs = pathProblems(entry.path)
+    for (const problem of pathErrs) errors.push(`path ${problem}`)
+    if (!pathErrs.length && pathCheckMode() === 'exists' && !skipLocalExistence(entry) && !fs.existsSync(resolvePath(entry.path))) {
+      errors.push(`path 不存在: ${entry.path} → 解析为 ${resolvePath(entry.path)}`)
+    }
   }
   if (!entry.launch || !entry.launch.command) errors.push('missing launch.command')
   // 命令形状：不能只判「字段存在」，否则一份 yaml 就是任意命令执行入口。

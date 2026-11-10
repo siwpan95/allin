@@ -9,10 +9,14 @@ import { spawn, spawnSync } from 'node:child_process'
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-launch-'))
 process.env.PLATFORM_ROOT = tmp
 
-const { startEntry, stopEntry, isRunning, runningIds } = await import('../src/index.js')
+const { startEntry, stopEntry, isRunning, runningIds, buildSpawnPlan } = await import('../src/index.js')
 const RUNNING = path.join(tmp, 'data', 'running.json')
-// 2026-11-08：命令形状校验禁止 `>`（防重定向），夹具避免箭头函数写法。
-const SLEEPER = 'node -e "setTimeout(function(){},60000)"'
+// 2026-11-10 深度审计 P0-1：内联代码参数（node -e / bash -c / python -c）已被
+// commandProblems 禁止 —— 这正是本次修复要堵的 RCE 入口。夹具改为落一个真实的
+// 脚本文件，用 `node <file>` 启动，既不绕过校验、也不削弱启停行为的验证强度。
+const SLEEPER_SCRIPT = path.join(tmp, 'sleeper.cjs')
+fs.writeFileSync(SLEEPER_SCRIPT, 'setTimeout(function(){},60000)\n', 'utf8')
+const SLEEPER = `node "${SLEEPER_SCRIPT}"`
 
 function readRunning() {
   try { return JSON.parse(fs.readFileSync(RUNNING, 'utf8')) } catch { return {} }
@@ -99,4 +103,34 @@ test('running.json 损坏时回退 .bak（durable publish 纪律，Phase 1）', 
 after(async () => {
   for (const id of ['t1', 't2', 't3', 't4', 't5', 'ext1', 'ext2']) { try { await stopEntry(id, null) } catch { /* 已清 */ } }
   try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* Windows 文件占用容错 */ }
+})
+
+// ── 2026-11-10 深度审计 P0-1 回归：执行层 shell 收敛 ──────────────────────────
+test('S-1 回归：常规命令走 shell:false + 参数数组（命令与参数严格分离）', () => {
+  const plan = buildSpawnPlan('python main.py --port 8080')
+  assert.equal(plan.shell, false, '可执行文件形态不得经 shell')
+  assert.equal(plan.file, 'python')
+  assert.deepEqual(plan.args, ['main.py', '--port', '8080'])
+})
+
+test('S-1 回归：带引号路径参数不被引号破坏，且仍走无 shell 路径', () => {
+  const plan = buildSpawnPlan('python "my script.py"')
+  assert.equal(plan.shell, false)
+  assert.deepEqual(plan.args, ['my script.py'])
+})
+
+test('S-1 回归：依赖 shell 关联的形态保留 shell，但危险内联载荷在准入层就被拒', () => {
+  const bat = buildSpawnPlan('run.bat')
+  assert.equal(bat.shell, true, '批处理依赖 shell 关联打开')
+  assert.throws(() => buildSpawnPlan('bash -c id'), (e) => e.code === 'UNSAFE_COMMAND')
+  assert.throws(() => buildSpawnPlan('node -e 1'), (e) => e.code === 'UNSAFE_COMMAND')
+})
+
+test('S-2 回归：startEntry 对越界 path fail-closed（绕过 loadRegistry 也拦得住）', () => {
+  const escape = { ...fakeEntry('escape'), path: '../outside' }
+  assert.throws(
+    () => startEntry(escape, { owner: 'test' }),
+    (e) => e.code === 'PATH_ESCAPE',
+    'path 含 .. 必须在执行层被拒，而不是只靠 validateEntry',
+  )
 })

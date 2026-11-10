@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -331,6 +332,23 @@ def evaluate_fail_on(results: list[dict], fail_on: str = "none") -> int:
     ``score:N``   任一项目健康分低于 N
     """
     spec = (fail_on or "none").strip().lower()
+
+    # 2026-11-10 深度审计 S-3（假绿修复）：规则内部异常此前**完全不参与判定**。
+    # rulebase 把崩掉的规则记进 result.errors → scanner 汇总成 result["rule_errors"]
+    # 后 `continue`，既不产生 Finding 也不进评分分母；evaluate_fail_on 只遍历 findings
+    # ⇒ 任一规则崩溃都会让该规则静默失效，而 `--fail-on error` 仍返回 0。
+    # 判据：**规则崩溃不是「扫描跑完」，是「检查没跑成」** —— 任何 fail_on 口径下
+    # 都必须 fail-closed。返回 2（工具故障）以区别于「发现违规」的 1，
+    # 让 CI 能一眼分辨「代码有问题」和「体检器自己坏了」。
+    broken = [e for r in results for e in r.get("rule_errors", [])]
+    if broken:
+        print(
+            f"repocheck: {len(broken)} 条规则内部异常，检查结果不完整，拒绝判绿："
+            + "; ".join(f"#{e.get('id', '?')} {e.get('error', '')}" for e in broken[:3]),
+            file=sys.stderr,
+        )
+        return 2
+
     if spec in ("", "none"):
         return 0
 

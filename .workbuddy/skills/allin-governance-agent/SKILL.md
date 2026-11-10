@@ -186,6 +186,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 | 仓库远端→本地同步 | `repo-sync-remote-to-local` <!-- route:repo-sync-remote-to-local --> |
 | venv 安全巡检与加固 | `venv-security-audit` <!-- route:venv-security-audit --> |
 | Windows Node 环境诊断 | `windows-node-env-diagnose` <!-- route:windows-node-env-diagnose --> |
+| 审计报告检查 / 证据锚点核对 / 报告查错漏 | `allin-audit-doc-check` <!-- route:allin-audit-doc-check --> |
 
 > 路由台账唯一事实源：`tools/orchestration/routes.yaml`（机器可读，锚点 `<!-- route:<id> -->`
 > 由 `tools/gate/agent_parity.py` 门禁三方对账——改本表、routes.yaml 或 preset 治理段任一侧，必跑该门禁）。

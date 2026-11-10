@@ -80,6 +80,10 @@ def dispatch(args) -> object:
             return svc.aliases()
         if args.action == 'index':
             return svc.index()
+        if args.action == 'audit-check':
+            docs = [a for a in (getattr(args, 'docs', None) or []) if a != '--']
+            return svc.audit_check(docs=docs, as_json=getattr(args, 'json', False),
+                                   quiet=getattr(args, 'quiet', False))
     if args.domain == 'platform':
         svc = ctx.platform
         if args.action == 'check-repos':
@@ -119,6 +123,10 @@ def build_parser() -> argparse.ArgumentParser:
     ds_pf.add_argument('--apply', action='store_true')
     ds.add_parser('aliases')
     ds.add_parser('index')
+    ds_ac = ds.add_parser('audit-check', help='审计/报告类文档错漏自动检查（E1 证据锚点 / E2 章节 / E3 排序 / E4 无源 / E6 口径 / E7 疑点）')
+    ds_ac.add_argument('docs', nargs='*', help='待检文档路径（相对仓根）；省略则检查 docs/记录/审计/ 下全部')
+    ds_ac.add_argument('--json', action='store_true', help='机器可读输出')
+    ds_ac.add_argument('--quiet', action='store_true', help='只输出结论，不展开基线明细')
 
     p_plat = sub.add_parser('platform', help='platform 治理/门禁')
     pl = p_plat.add_subparsers(dest='action', required=True)

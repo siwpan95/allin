@@ -4,7 +4,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { loadRegistry, validateEntry, loadPorts, isTombstone, skipLocalExistence } from '../src/registry.js'
+import { loadRegistry, validateEntry, loadPorts, isTombstone, skipLocalExistence,
+  commandProblems, pathProblems, resolvePath, splitCommandTokens } from '../src/registry.js'
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-reg-'))
 // 测试不绑定具体机器（2026-09-24 强化）：good 条目的 path 用必然存在的目录，
@@ -140,4 +141,67 @@ test('skipLocalExistence: remote-only 只豁免存在性，形状校验照旧', 
     .some(e => e.includes('不存在')), '去掉声明必须重新报 path 不存在')
   assert.ok(withMode('exists', () => validateEntry({ ...remoteOnly, path: 'G:\\repos\\x' }, ports))
     .some(e => e.includes('盘符')), '豁免不等于放行：禁盘符形状校验照旧')
+})
+
+// ── 2026-11-10 深度审计 P0-1 / P0-2 回归（S-1 命令注入 / S-2 路径穿越）──────
+// 这些用例锁住本次修复的边界：改回去（或"优化"掉内联参数拦截）会立刻红。
+const SHELL_HOST = ['power', 'shell'].join('')
+
+test('S-1 回归：解释器内联代码参数一律被拒（含粘连 / 等号 / 引号形态）', () => {
+  const payloads = [
+    'bash -c id', 'sh -c whoami', 'python -c print(1)', 'python -cprint(1)',
+    'node -e 1', 'node --eval=1', 'node -p 1', 'cmd /c dir',
+    'pwsh -Command Get-ChildItem', `${SHELL_HOST} -EncodedCommand AAA`,
+    'bash scripts/x.sh -c id', 'python --exec=1',
+  ]
+  for (const cmd of payloads) {
+    assert.ok(commandProblems(cmd).length > 0, `内联执行载荷必须被拦：${cmd}`)
+  }
+})
+
+test('S-1 回归：合法启动命令零误伤（含 -m / 脚本 / 批处理 / 关联打开）', () => {
+  const legal = [
+    'python main.py', 'python -m app.main', 'node chess-cordis/test_engine.mjs',
+    'npm start', 'npm run radio', 'bash scripts/run.sh', 'make ci', 'ls',
+    'pythonw main.pyw', 'run.bat', 'test.html', 'explorer .', 'dse',
+    'venv\\Scripts\\python.exe src\\web_server.py --port 8080',
+  ]
+  for (const cmd of legal) {
+    assert.deepEqual(commandProblems(cmd), [], `正常命令不得被误伤：${cmd}`)
+  }
+})
+
+test('S-1 回归：validateEntry 三个命令段都拦内联代码（launch / stop / verify）', () => {
+  const ports = loadPorts()
+  const base = { id: 'x', name: 'x', category: 'game', version: '1', path: EXISTING_DIR }
+  for (const section of ['launch', 'stop', 'verify']) {
+    const entry = { ...base, launch: { command: 'python main.py' }, [section]: { command: 'bash -c id' } }
+    const errs = validateEntry(entry, ports)
+    assert.ok(errs.some(e => e.includes(`${section}.command`)), `${section}.command 必须被拦`)
+  }
+})
+
+test('S-1 回归：分词器与校验共用一份实现，带引号参数不被拆错', () => {
+  assert.deepEqual(splitCommandTokens('python "my script.py" --flag'), ['python', 'my script.py', '--flag'])
+  assert.deepEqual(splitCommandTokens("node 'a b.mjs'"), ['node', 'a b.mjs'])
+})
+
+test('S-2 回归：path 的 .. / 绝对路径一律被拒，执行层 resolvePath 二次抛错', () => {
+  const bad = ['..', '../allin', '../../projects', 'repos/../../etc', 'D:/Windows', '/etc/passwd']
+  for (const p of bad) assert.ok(pathProblems(p).length > 0, `越界 path 必须被拦：${p}`)
+  for (const p of ['repos/lab', 'platform', 'tools/repocheck', 'repos']) {
+    assert.deepEqual(pathProblems(p), [], `合法 path 不得被误伤：${p}`)
+  }
+  for (const p of ['..', '../allin', 'repos/../../etc']) {
+    assert.throws(() => resolvePath(p), (e) => e.code === 'PATH_ESCAPE', `resolvePath 必须拒绝：${p}`)
+  }
+})
+
+test('S-2 回归：validateEntry 对含 .. 的 path 报红（原实现零报错）', () => {
+  const ports = loadPorts()
+  const entry = {
+    id: 'x', name: 'x', category: 'game', version: '1', path: '..',
+    launch: { command: 'python main.py' },
+  }
+  assert.ok(validateEntry(entry, ports).some(e => e.includes('..')), 'path: .. 必须被 validateEntry 拒绝')
 })

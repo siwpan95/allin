@@ -43,6 +43,36 @@ const NETBOX_SYNCER = path.join(REPO, 'deploy', 'netbox', 'sync_from_git.py')
 const METRICS_TREND = path.join(AUDIT_DIR, 'exceptions-snapshots.jsonl')
 const REGISTRY_DRAFTS = path.join(AUDIT_DIR, 'registry-drafts')
 const EXCEPTION_DRAFTS = path.join(AUDIT_DIR, 'exception-drafts')
+
+// ── 路径边界（2026-11-10 深度审计 S-4 / CWE-22）──────────────────────────────
+// 此前 docs.cite / repo.health 直接 `path.join(REPO, a.path)` 或**原样采信绝对路径**，
+// 无任何「必须落在允许根内」的校验 ⇒ MCP 客户端（含被提示注入的 agent）可读取
+// 机器上任意文本文件 / 任意目录的 git 状态，把内容带回模型上下文。
+//
+// 采用 CWE-22 推荐的 canonicalize-then-contain：先 path.resolve 做词法收敛，
+// 再用 fs.realpathSync 防 symlink / junction 逃逸；分隔符感知的 startsWith
+// 避免 `/repo-evil` 被 `/repo` 前缀误判为内部路径。
+const REPOS_SIBLING = path.resolve(REPO, '..', 'repos')
+const REPO_BASES = [path.resolve(REPO)]
+const REPO_AND_SIBLING_BASES = [path.resolve(REPO), REPOS_SIBLING]
+
+/**
+ * 把外部传入的路径解析到允许根之内；越界返回 null。
+ * 目标不存在时 realpath 会抛错 —— 此时词法校验已过，交给调用方 existsSync 判定。
+ */
+function resolveWithinBases(input, bases = REPO_BASES) {
+  if (typeof input !== 'string' || !input.trim()) return null
+  const roots = bases.map((b) => path.resolve(b))
+  const abs = path.isAbsolute(input) ? path.resolve(input) : path.resolve(REPO, input)
+  const lexOK = roots.some((r) => abs === r || abs.startsWith(r + path.sep))
+  if (!lexOK) return null
+  try {
+    const real = fs.realpathSync(abs)
+    const realRoots = roots.map((r) => { try { return fs.realpathSync(r) } catch { return r } })
+    if (!realRoots.some((r) => real === r || real.startsWith(r + path.sep))) return null
+  } catch { /* 目标尚不存在：词法已过，由调用方判定 */ }
+  return abs
+}
 // dolt 二进制不在全局 PATH 时的本地兜底候选。
 // 2026-11-10 换机可移植整改：此前写死 Windows 盘符，换机后该路径不存在 ⇒
 // facts.diff / sync.status 永久不可用（且因「本机恰好存在」被 g01 豁免，
@@ -515,7 +545,8 @@ function callTool(name, args, trace = null) {
       const registry = readJson(path.join(GOVERNANCE, 'registry.json'))
       const entry = (registry?.gates || []).find((g) => g.id === a.gate)
       if (!entry) return reject(`未登记的门禁 id：${a.gate}`)
-      const script = path.join(REPO, 'tools', 'gate', entry.script)
+      const script = resolveWithinBases(path.join('tools', 'gate', entry.script))
+      if (!script) return reject(`门禁脚本路径越出仓根（CWE-22）：${entry.script}`)
       const res = run(pythonBin(), [script, '--quiet'], { timeout: a.timeoutMs || DEFAULT_TIMEOUT_MS })
       return {
         text: JSON.stringify({
@@ -1067,7 +1098,8 @@ function callTool(name, args, trace = null) {
       if (!citation) return reject('需要 citation（如 docs/规范/SPEC-001-铁律.md#L12）')
       const [filePart, linePart] = citation.split('#L')
       if (!filePart) return reject('citation 缺少文件路径')
-      const file = path.isAbsolute(filePart) ? filePart : path.join(REPO, filePart)
+      const file = resolveWithinBases(filePart)
+      if (!file) return reject(`路径越出仓根，拒绝引用（CWE-22）：${filePart}`)
       if (!fs.existsSync(file)) return reject(`文件不存在：${filePart}`)
       const lines = readLines(file)
       const center = linePart ? parseInt(linePart, 10) : null
@@ -1146,7 +1178,8 @@ function callTool(name, args, trace = null) {
       }
     }
     case 'repo.health': {
-      const target = a.path ? (path.isAbsolute(a.path) ? a.path : path.join(REPO, a.path)) : REPO
+      const target = a.path ? resolveWithinBases(a.path, REPO_AND_SIBLING_BASES) : path.resolve(REPO)
+      if (!target) return reject(`路径越出允许根（仓根 / 同级 repos/），拒绝检查（CWE-22）：${a.path}`)
       if (!fs.existsSync(path.join(target, '.git'))) return reject(`非 git 仓库：${a.path || '(仓根)'}`)
       const status = run('git', ['status', '--porcelain'], { cwd: target, timeout: 20000 })
       const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: target, timeout: 20000 })
@@ -1332,6 +1365,11 @@ if (argv.includes('--selftest')) {
   handle({ id: 22, method: 'tools/call', params: { name: 'repo.health', arguments: {} } })
   handle({ id: 23, method: 'tools/call', params: { name: 'registry.add', arguments: { id: 'x', name: 'x', category: 'x' } } })
   handle({ id: 24, method: 'tools/call', params: { name: 'exceptions.add', arguments: { id: 'EX-999', kind: 'known-gap', gate: 'g17-registry', status: 'open' } } })
+  // 2026-11-10 深度审计 S-4 回归：路径穿越必须被拒（CWE-22 canonicalize-then-contain）。
+  handle({ id: 25, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: '../../../../Windows/System32/drivers/etc/hosts#L1' } } })
+  handle({ id: 26, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: 'C:/Windows/System32/drivers/etc/hosts#L1' } } })
+  handle({ id: 27, method: 'tools/call', params: { name: 'repo.health', arguments: { path: 'C:/Windows' } } })
+  handle({ id: 28, method: 'tools/call', params: { name: 'repo.health', arguments: { path: '../../..' } } })
   process.stdout.write = origWrite
   const msgs = captured.map((c) => JSON.parse(c.trim()))
   const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
@@ -1367,6 +1405,11 @@ if (argv.includes('--selftest')) {
   check('repo.health 返回仓健康', textOf(21).includes('branch') || textOf(21).includes('dirtyCount'))
   check('registry.add 未确认即拒绝', msgs[22]?.result?.isError === true)
   check('exceptions.add 未确认即拒绝', msgs[23]?.result?.isError === true)
+  // S-4 回归：四个越界载荷全部被拒，且提示含 CWE-22 定位。
+  for (const [i, label] of [[24, 'docs.cite 相对穿越'], [25, 'docs.cite 仓外绝对路径'],
+                            [26, 'repo.health 仓外绝对路径'], [27, 'repo.health 相对穿越']]) {
+    check(`S-4 回归：${label} 被拒`, msgs[i]?.result?.isError === true && textOf(i).includes('CWE-22'))
+  }
 
   // ── agent trace 留痕自检（2026-11-02 新增）────────────────────────
   // 为什么要有：**遥测本身也要能被验证** —— 一个从不落盘的 trace 等于没有 trace，
@@ -1376,7 +1419,10 @@ if (argv.includes('--selftest')) {
   try {
     spans = fs.readFileSync(traceFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
   } catch { spans = [] }
-  const toolCalls = 22 // 自检里共 22 次 tools/call（id 3..24）
+  // 2026-11-10 S-4 回归追加了 4 次 tools/call（id 25..28，均为「策略拒绝」），
+  // 两个计数断言改为从常量推导，避免以后每加一条用例就要手改两个数字。
+  const S4_EXTRA_CALLS = 4
+  const toolCalls = 22 + S4_EXTRA_CALLS // 自检里共 26 次 tools/call（id 3..28）
   const mine = spans.filter((s) => s.trace_id === trace.sessionId)
   check('agent trace 落盘', mine.length === toolCalls, `落 ${mine.length}/${toolCalls} 条`)
   check('trace 带 OTel GenAI 属性',
@@ -1387,7 +1433,7 @@ if (argv.includes('--selftest')) {
     mine.every((s) => s.trace_id && s.span_id))
   check('trace 步数连续', mine.every((s, i) => s.span_index === i + 1))
   check('策略拒绝标记为 rejected（不计失败）',
-    mine.filter((s) => s.error_kind === 'rejected').length === 6,
+    mine.filter((s) => s.error_kind === 'rejected').length === 6 + S4_EXTRA_CALLS,
     `rejected=${mine.filter((s) => s.error_kind === 'rejected').length}`)
   check('trace 不含工具参数内容（只记元数据）',
     !mine.some((s) => JSON.stringify(s).includes('自检探针')))

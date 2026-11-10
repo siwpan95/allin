@@ -25,3 +25,4 @@ routes:
   - { id: repo-sync-remote-to-local, skill: repo-sync-remote-to-local, entry: .workbuddy/skills/repo-sync-remote-to-local/SKILL.md, forms: [workbuddy, dsh], trigger: 仓库远端→本地同步, lastVerified: "2026-11-04" }
   - { id: venv-security-audit, skill: venv-security-audit, entry: .workbuddy/skills/venv-security-audit/SKILL.md, forms: [workbuddy, dsh], trigger: venv 安全巡检与加固, lastVerified: "2026-11-07" }
   - { id: windows-node-env-diagnose, skill: windows-node-env-diagnose, entry: .workbuddy/skills/windows-node-env-diagnose/SKILL.md, forms: [workbuddy, dsh], trigger: Windows Node 环境诊断, lastVerified: "2026-11-04" }
+  - { id: allin-audit-doc-check, skill: allin-audit-doc-check, entry: .workbuddy/skills/allin-audit-doc-check/SKILL.md, forms: [workbuddy, dsh], trigger: 审计报告检查 / 证据锚点核对 / 报告查错漏, lastVerified: "2026-11-10" }

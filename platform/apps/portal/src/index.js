@@ -198,7 +198,12 @@ function readAlerts() {
   return alerts.slice(0, 100)
 }
 
-const server = http.createServer(async (req, res) => {
+// 2026-11-10 深度审计 H-1：请求处理抽成独立 async 函数，由下面的 wrapper 统一兜底。
+// 原写法 `http.createServer(async (req,res)=>{...})` 的抛错**不会被 Node 捕获**：
+// async 函数 throw = Promise rejection，Node ≥15 默认 --unhandled-rejections=throw
+// ⇒ 整个 portal 进程 exit 1。实测一条 `port: not-a-number` 的 registry 数据就能
+// 经 probePort → Promise.all → libraryPayload 打挂门户。
+async function requestHandler(req, res) {
   // Host 围栏在最前：GET 读取面（/api/library 含全盘路径信息）同样受保护，
   // 不止写操作的 loopbackOnly（2026-09-24 Phase 1）
   if (!hostAllowed(req)) { res.writeHead(403); return res.end('forbidden') }
@@ -394,6 +399,32 @@ const server = http.createServer(async (req, res) => {
   }
   res.setHeader('Content-Type', MIME[path.extname(abs)] || 'application/octet-stream')
   fs.createReadStream(abs).pipe(res)
+}
+
+/** 统一兜底：任何同步 throw 或 Promise rejection 都转成 500 响应，不让进程退出。
+ *  返回体只带错误类型与稳定提示，不回显堆栈/内部路径（避免信息泄露）。 */
+function failLoudResponse(req, res, err) {
+  console.error(`[portal] 未处理异常 ${req.method} ${req.url}: ${err && err.stack ? err.stack : err}`)
+  if (res.headersSent) { try { res.end() } catch { /* 连接已断 */ } return }
+  try {
+    res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' })
+    res.end(JSON.stringify({ error: 'internal_error', hint: '见服务端日志' }))
+  } catch { /* 连接已断 */ }
+}
+
+const server = http.createServer((req, res) => {
+  // 用 Promise.resolve() 把同步 throw 也纳入同一个 catch（不等 microtask 之外的缝隙）。
+  Promise.resolve()
+    .then(() => requestHandler(req, res))
+    .catch((err) => failLoudResponse(req, res, err))
+})
+
+// 末位安全网：请求 handler 之外（定时器 / 后台任务 / 第三方库）的未处理拒绝。
+// 只记录后退出，**不吞** —— Node 官方语义下继续跑会留下状态不确定的进程。
+// 由 supervisor / 启动器重启一个干净实例比带病运行安全。
+process.on('unhandledRejection', (reason) => {
+  console.error('[portal] FATAL unhandledRejection: ' + (reason && reason.stack ? reason.stack : reason))
+  process.exit(1)
 })
 
 // 2026-11-08 深度审核：此前无 body / 头部超时，慢请求可占连接至 Node 默认 5 分钟。

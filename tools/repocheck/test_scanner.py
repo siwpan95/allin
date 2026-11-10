@@ -552,6 +552,39 @@ def test_fail_on_invalid_raises():
     raise AssertionError("非法 --fail-on 应抛 ValueError")
 
 
+# ── 2026-11-10 深度审计 S-3 回归：规则崩溃不得判绿 ──────────────────────────
+def _results_with_rule_error():
+    """构造「所有 finding 都通过，但一条规则内部崩了」的结果 —— 正是原实现的假绿场景。"""
+    return [{
+        "name": "x", "path": "x", "score": 10.0,
+        "findings": [{"id": 1, "severity": "info", "passed": True}],
+        "rule_errors": [{"id": 7, "label": "demo", "error": "TypeError: boom"}],
+    }]
+
+
+def test_s3_rule_error_fails_closed_on_every_fail_on_mode():
+    # 原实现：rule_errors 完全不参与判定 ⇒ --fail-on error 仍返回 0（门禁假绿）。
+    for spec in ("none", "error", "warn", "any", "score:8"):
+        assert scanner.evaluate_fail_on(_results_with_rule_error(), spec) == 2, (
+            f"规则崩溃必须在 {spec} 口径下 fail-closed（退出码 2）")
+
+
+def test_s3_clean_results_still_pass():
+    # 反向：没有规则异常时，各口径保持原语义，不因本次改动误伤。
+    clean = _results("info", True)
+    for spec in ("none", "error", "warn", "any", "score:7.0"):
+        assert scanner.evaluate_fail_on(clean, spec) == 0, f"干净结果在 {spec} 下应仍为 0"
+
+
+def test_s3_rule_error_count_is_separate_from_findings():
+    from report import summarize, render_text
+    s = summarize(_results_with_rule_error())
+    assert s["rule_error_count"] == 1, "异常必须单独计数"
+    assert s["errors"] == 0, "不得污染 error 级 finding 的计数语义"
+    assert "规则内部异常" in render_text(_results_with_rule_error()), "文本报告必须可见"
+
+
+
 # ---------------------------------------------------------------------------
 # 编码与报告
 # ---------------------------------------------------------------------------

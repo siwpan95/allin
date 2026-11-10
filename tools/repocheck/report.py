@@ -71,6 +71,9 @@ def summarize(results: list[dict]) -> dict:
         "skipped_count": skipped,
         "degraded_rules": sorted(degraded),
         "rule_errors": rule_errors,
+        # 2026-11-10 深度审计 S-3：单独给计数，避免文本/JSON 消费方只读 errors 时
+        # 看不到「规则崩了」。刻意**不混进 errors** —— 那是 finding 计数，混了会污染语义。
+        "rule_error_count": len(rule_errors),
     }
 
 
@@ -92,6 +95,13 @@ def render_text(results: list[dict], *, root: str = "", min_severity: str = "inf
         lines.append(
             f"健康分：均值 {summary['score_mean']} / 最低 {summary['score_min']}"
             f"　通过率 {summary['pass_rate']:.0%}"
+        )
+    # 2026-11-10 深度审计 S-3：规则崩溃必须在文本报告里可见。
+    # 此前只有 HTML 的 notes 里有一句，文本/JSON 消费方只读 errors 时完全看不到。
+    if summary.get("rule_error_count"):
+        lines.append(
+            f"⚠ 规则内部异常 {summary['rule_error_count']} 条 —— 检查不完整，结果不可判绿"
+            f"（见下方明细 / JSON 的 rule_errors）"
         )
     lines.append("")
 
@@ -250,7 +260,10 @@ def render_html(results: list[dict], *, root: str = "", min_severity: str = "inf
         ids = ", ".join(str(i) for i in summary["degraded_rules"])
         notes.append(f"规则 {ids} 使用内置降级实现（未安装对应可选依赖，结论口径不变）。")
     if summary.get("rule_errors"):
-        notes.append(f"{len(summary['rule_errors'])} 条规则内部异常，已从评分分母剔除。")
+        notes.append(
+            f"⚠ {len(summary['rule_errors'])} 条规则内部异常：这些规则未产生判定、已从评分分母剔除，"
+            "检查结果不完整 —— CLI 以退出码 2 拒绝判绿（2026-11-10 S-3 修复）。"
+        )
     notes.append(
         "健康分 = 10 × log1p(通过项权重) / log1p(总权重)，权重 error=3 / warn=2 / info=1；"
         "公式压缩较强，请同时参考通过率。"

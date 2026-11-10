@@ -46,3 +46,33 @@ class DocsService(Service):
             print('（docs_index.py 不存在）', file=sys.stderr)
             return 3
         return subprocess.run([sys.executable, tool], cwd=ROOT)
+
+    # ---- 审计/报告类文档错漏自动检查（E1–E7）----
+    def audit_check(self, docs=None, as_json: bool = False, quiet: bool = False):
+        """检查结论型文档（审计报告 / 复评报告）的证据锚点与结构自洽性。
+
+        未指定文档时默认检查 ``docs/记录/审计/`` 下全部 ``*.md``。
+        历史欠账基线内的违例不计门禁（输出 BASE）；新增违例才判红。
+        退出码原样透传：0 无新增违例 / 1 有新增违例 / 2 用法错 / 3 环境错。
+        """
+        tool = os.path.join(TOOLS_DIR, 'gate', 'audit_doc_check.py')
+        if not os.path.isfile(tool):
+            print('（audit_doc_check.py 不存在）', file=sys.stderr)
+            return 3
+        flags = (['--json'] if as_json else []) + (['--quiet'] if quiet else [])
+        args = [sys.executable, tool] + flags
+        if docs:
+            args.extend(docs)
+        else:
+            listing = subprocess.run([sys.executable, tool, '--list-all'], cwd=ROOT,
+                                     capture_output=True, text=True,
+                                     encoding='utf-8', errors='replace')
+            if listing.returncode != 0:
+                sys.stderr.write(listing.stderr or '')
+                return listing.returncode
+            targets = [line.strip() for line in listing.stdout.splitlines() if line.strip()]
+            if not targets:
+                print('（未找到受检文档）', file=sys.stderr)
+                return 3
+            args = [sys.executable, tool] + flags + targets
+        return subprocess.run(args, cwd=ROOT)

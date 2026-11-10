@@ -3,7 +3,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolvePath, commandProblems } from './registry.js'
+import { resolvePath, commandProblems, pathProblems, splitCommandTokens } from './registry.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
@@ -178,20 +178,50 @@ export function runningInfo(id) {
 }
 
 /**
- * 启动命令预处理：npm 类命令经 npm.cmd 批处理垫片启动时，Windows 下 detached
- * 会让该批处理卡死在 CALL node 之前（实测 2026-08-28：detached + ignore/pipe
- * 均卡死、attached 正常，导致"运行中"为卡死空壳）。改为由当前 node 直启
- * npm-cli.js，绕开批处理垫片，同时保留 detached 的控制台隔离（关闭门户窗口
- * 不连坐项目进程）。npm-cli.js 缺失（无内置 npm 的 node）时回退原命令。
+ * 启动命令预处理 —— 2026-11-10 深度审计 P0-1 重构。
+ *
+ * 原实现把整条命令字符串交给 `spawn(..., {shell:true})`。即便 commandProblems 禁了
+ * shell 元字符，shell 仍是多余的一层解释器：解释器内联参数、shell 内建命令、
+ * 关联打开都经它，攻击面无法收敛（OWASP OS Command Injection Defense Cheat Sheet：
+ * 「Avoid running sh -c, cmd.exe or powershell.exe with untrusted input」）。
+ *
+ * 现在按命令形态分流：
+ *   - 「可执行文件 + 参数」（python/node/npm/bash/git/make/... 及 *.exe）
+ *     → `spawn(file, args, {shell:false})`，命令与参数严格分离，元字符无解释层；
+ *   - 依赖 shell 关联 / 内建的少数形态（*.bat / *.cmd / *.html / start / dir）
+ *     → 保留 `shell:true`，但它们已通过 commandProblems 的严格形状白名单。
+ *
+ * npm 沿用既有垫片修正（2026-08-28 实测）：detached 下 npm.cmd 批处理会卡死，
+ * 改由当前 node 直启 npm-cli.js —— 数组化后路径含空格也无需再加引号。
  */
-function prepareCommand(command) {
-  const text = String(command).trim()
-  const m = /^npm(?:\s+(.*))?$/.exec(text)
-  if (!m) return text
-  const npmCli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js')
-  if (!fs.existsSync(npmCli)) return text
-  const args = m[1] || ''
-  return `"${process.execPath}" "${npmCli}"${args ? ' ' + args : ''}`
+const NO_SHELL_HEAD = /^(?:python|python3|pythonw|py|node|npm|npx|bash|sh|git|make|ls|echo|dse|robocopy|explorer)(?:\.exe)?$/i
+
+export function buildSpawnPlan(command) {
+  const problems = commandProblems(command)
+  if (problems.length) {
+    const err = new Error(`命令未通过形状校验：${problems.join('; ')}`)
+    err.code = 'UNSAFE_COMMAND'
+    throw err
+  }
+  const tokens = splitCommandTokens(String(command).trim())
+  const head = tokens[0]
+  const rest = tokens.slice(1)
+  if (/^npm$/i.test(head)) {
+    const npmCli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js')
+    if (fs.existsSync(npmCli)) return { file: process.execPath, args: [npmCli, ...rest], shell: false }
+  }
+  if (NO_SHELL_HEAD.test(head) || /\.exe$/i.test(head)) {
+    return { file: head, args: rest, shell: false }
+  }
+  return { command: String(command).trim(), args: [], shell: true }
+}
+
+/** 统一执行计划：所有 spawn 都必须经此，避免某个调用点漏掉 shell 收敛。 */
+function spawnFromPlan(plan, options) {
+  const opts = { ...options, shell: plan.shell }
+  return plan.shell
+    ? spawn(plan.command, opts)
+    : spawn(plan.file, plan.args, opts)
 }
 
 /** 启动清单条目（子进程隔离：shell 执行 launch.command，cwd = entry.path；
@@ -212,9 +242,16 @@ export function startEntry(entry, options = {}) {
     err.code = 'UNSAFE_COMMAND'
     throw err
   }
+  // 2026-11-10 深度审计 S-2 执行层二次防御：path 也不得越界（allowAbsolute 是给
+  // 程序内部构造的临时 entry 用的，如测试夹具用 os.tmpdir() 当 cwd）。
+  const pathErrs = pathProblems(entry.path, { allowAbsolute: true })
+  if (pathErrs.length) {
+    const err = new Error(`启动路径未通过形状校验（${entry._file || entry.id}）：${pathErrs.join('; ')}`)
+    err.code = 'PATH_ESCAPE'
+    throw err
+  }
   const startedAt = Date.now()
-  const child = spawn(prepareCommand(entry.launch.command), {
-    shell: true,
+  const child = spawnFromPlan(buildSpawnPlan(entry.launch.command), {
     cwd: resolvePath(entry.path),
     detached: true,
     stdio: 'ignore',
@@ -274,11 +311,22 @@ export async function stopEntry(id, entry = null, options = {}) {
   }
   const stopCmd = entry && entry.stop && typeof entry.stop.command === 'string' ? entry.stop.command : null
   let usedGraceful = false
-  if (stopCmd && commandProblems(stopCmd).length === 0) {
+  if (stopCmd && commandProblems(stopCmd).length === 0 && pathProblems(entry.path || '', { allowAbsolute: true }).length === 0) {
     usedGraceful = true
     // 优雅停止：等待 stop 命令退出（graceMs 封顶杀之），不阻塞事件循环
     await new Promise((resolve) => {
-      const g = spawn(stopCmd, { shell: true, cwd: (entry.path && resolvePath(entry.path)) || process.cwd(), stdio: 'ignore' })
+      let g
+      try {
+        g = spawnFromPlan(buildSpawnPlan(stopCmd), {
+          cwd: (entry.path && resolvePath(entry.path)) || process.cwd(), stdio: 'ignore',
+        })
+      } catch (e) {
+        // 2026-11-10：命令/路径校验异常不得让 stopEntry 变成 unhandled rejection。
+        logTask({ project: id, action: 'stop-graceful-error', error: String(e.message) })
+        usedGraceful = false
+        resolve()
+        return
+      }
       const t = setTimeout(() => { try { g.kill() } catch { /* 已退出 */ } resolve() }, graceMs)
       g.on('exit', () => { clearTimeout(t); resolve() })
       g.on('error', () => { clearTimeout(t); resolve() })

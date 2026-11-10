@@ -11,7 +11,20 @@ export const STARTING_GRACE_MS = 180000
 
 export function probePort(port, timeout = 800) {
   return new Promise((resolve) => {
-    const sock = net.connect({ port, host: '127.0.0.1', timeout })
+    // 2026-11-10 深度审计 H-1：`net.connect` 对非法端口（NaN / 越界 / 非数字）
+    // 会**同步**抛 ERR_SOCKET_BAD_PORT。在 Promise executor 里抛 = rejected Promise，
+    // 顺着 Promise.all → libraryPayload → async handler 变成 unhandledRejection，
+    // Node ≥15 默认直接把整个 portal 进程打挂。一条写错的 yaml 不该有这种威力。
+    // ⇒ 参数先校验：非法端口按「未就绪」处理，不抛。
+    const n = Number(port)
+    if (!Number.isInteger(n) || n < 0 || n > 65535) { resolve(false); return }
+    let sock
+    try {
+      sock = net.connect({ port: n, host: '127.0.0.1', timeout })
+    } catch {
+      resolve(false)
+      return
+    }
     sock.on('connect', () => { sock.destroy(); resolve(true) })
     sock.on('timeout', () => { sock.destroy(); resolve(false) })
     sock.on('error', () => resolve(false))
