@@ -155,6 +155,12 @@ assert CRED_PATTERNS[TOKEN_NAME_PATTERN_INDEX].pattern.startswith(b"private"), \
 URL_QUERY_TOKEN_INDEX = 4
 assert CRED_PATTERNS[URL_QUERY_TOKEN_INDEX].pattern.startswith(b"[?&]"), \
     "CRED_PATTERNS 重排了：请把 URL_QUERY_TOKEN_INDEX 指到「URL 查询参数」那条，否则宿主判别会静默失效"
+#: 「URL 内嵌凭据」（形态② user:pass@host）那条的下标（P3 L-8）。原先两处直接写死
+#: 下标 1 与魔数比较，模式重排后会静默改判；改枚举 + 命名常量后，
+#: 顺序一变下面的 assert 立刻炸，不再悄悄失效。
+URL_CREDENTIAL_PATTERN_INDEX = 1
+assert CRED_PATTERNS[URL_CREDENTIAL_PATTERN_INDEX].pattern.startswith(b"https://"), \
+    "CRED_PATTERNS 重排了：请把 URL_CREDENTIAL_PATTERN_INDEX 指到「URL 内嵌凭据」那条"
 
 #: 环回 / 私网地址（RFC 1122/1918 + IPv6 环回）。用于形态④的宿主判别：
 #: 令牌挂在**本机或内网**服务上 ⇒ 是本机会话凭据，判；挂在公共站上 ⇒ 多为分享链接，不判。
@@ -481,7 +487,7 @@ def check_h5_credentials(repo, tracked, ctx):
         if body and body in data:
             f.append(Finding("H5", repo, t, "含令牌本体（从凭据文件子串匹配命中）—— 必须吊销重发"))
             continue
-        for pat in CRED_PATTERNS:
+        for index, pat in enumerate(CRED_PATTERNS):
             m = pat.search(data)
             if not m:
                 continue
@@ -500,13 +506,12 @@ def check_h5_credentials(repo, tracked, ctx):
             line = data[line_start: line_end if line_end != -1 else len(data)]
             if b"repo-hygiene: allow" in line or b"gov-credentials: allow" in line:
                 continue
-            index = CRED_PATTERNS.index(pat)
             # 形态②（URL 内嵌凭据）：**主机名**若是 RFC 2606/6761 保留域，则必然不是真实服务。
             # 结构判定（2026-09-28，DSH 实证）：g04_push_evidence.py 的自检夹具写的是
             # `https://svc:8f14e45f…@host.invalid/x.git` —— `.invalid` 是保留的无效 TLD，
             # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。
             # 用户名:口令 的形态在这里无法靠"值像不像"判，但**主机名能**。
-            if index == 1:
+            if index == URL_CREDENTIAL_PATTERN_INDEX:
                 tail = data[m.end(): m.end() + 96]
                 hm = re.match(rb"[^/\s\"'`]+", tail)
                 if hm and re.search(rb"\.(?:invalid|test|example|localhost)(?=[/:]|$)", hm.group(0), re.I):
@@ -544,8 +549,9 @@ def check_h5_credentials(repo, tracked, ctx):
     cfg = os.path.join(repo, ".git", "config")
     if os.path.isfile(cfg):
         try:
-            d = open(cfg, "rb").read()
-            if CRED_PATTERNS[1].search(d):
+            with open(cfg, "rb") as fh:  # gov-python: allow (binary I/O; encoding N/A) P3 L-1
+                d = fh.read()
+            if CRED_PATTERNS[URL_CREDENTIAL_PATTERN_INDEX].search(d):
                 f.append(Finding("H5", repo, ".git/config", "remote URL 内嵌明文凭据"))
         except OSError:
             pass
@@ -589,7 +595,8 @@ def check_h6_attribution(repo, tracked, ctx):
         try:
             if os.path.getsize(p) > 2 * MIB:
                 continue
-            txt = open(p, encoding="utf-8", errors="replace").read()
+            with open(p, encoding="utf-8", errors="replace") as fh:  # P3 L-1（文本，已显式 encoding）
+                txt = fh.read()
         except OSError:
             continue
         if not trigger.search(txt):
@@ -676,7 +683,8 @@ def check_h8_eol(repo, tracked, ctx):
             # P2 #18：二进制 blob 逐字节比对，走统一入口的 binary=True（原始 bytes），
             # 与其余只读 git 调用共享同一份超时/环境口径。
             _rc, blob = run_git(repo, "cat-file", "blob", "HEAD:" + p, binary=True)
-            wt = open(real, "rb").read()
+            with open(real, "rb") as fh:  # gov-python: allow (binary I/O; encoding N/A) P3 L-1
+                wt = fh.read()
         except Exception:
             continue
         if blob == wt:
@@ -1339,7 +1347,8 @@ def main():
     ctx = {"worktree": args.worktree, "verbose": args.verbose}
     if args.token_file and os.path.isfile(args.token_file):
         try:
-            txt = open(args.token_file, encoding="utf-8", errors="replace").read()
+            with open(args.token_file, encoding="utf-8", errors="replace") as fh:  # P3 L-1（文本，已显式 encoding）
+                txt = fh.read()
             m = re.search(r"\b([0-9a-fA-F]{32}|[0-9a-fA-F]{64})\b", txt)
             if m:
                 ctx["token_body"] = m.group(1).encode()

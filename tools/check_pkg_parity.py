@@ -18,10 +18,13 @@ CI 接线：gates.yml 的 init 端到端 job 在 `pip install packages/allin-gov
 from __future__ import annotations
 
 import argparse
-import hashlib
 import os
 import sys
 from pathlib import Path
+
+# P3 L-4：文件字节摘要委托 tools/sha256util.py 的同族实现（完整 64 位 + LF 归一，铁律 12）。
+# 本脚本与 sha256util 同在 tools/ 根，作为脚本运行时该目录即 sys.path[0]，可直接导入。
+from sha256util import file_sha256
 
 # Windows CI runner 的 stdout 默认 ANSI(cp1252)：本脚本逐文件打印中文进度，
 # 不 reconfigure 会在第一行「包内 N 文件已对账」就 UnicodeEncodeError，独立 step
@@ -57,15 +60,15 @@ REPO_ONLY_OK = {
 
 
 def sha256_of(path: Path) -> str:
-    data = path.read_bytes()
-    # 铁律 12（见 tools/gate/check_gate_drift.py）：跨副本比对不归一化 EOL 会得出
-    # 假差异。Windows 上 setuptools 以文本模式构建 wheel 会把 .py 写成 CRLF，而
-    # 仓内 .gitattributes 强制 eol=lf；两侧是同一份源码，只是换行形态不同，不是漂移。
-    # 实测：把已装包内一份 .py 改 CRLF，旧实现即报「哈希不等」（Linux 全 LF 不复现）。
-    # 这两个目录全是文本源码（.py/.md/.txt/.yml/.json/.ts/.spec/.toml），无二进制，
-    # 统一按 LF 归一后再取 sha256。
-    data = data.replace(b"\r\n", b"\n")
-    return hashlib.sha256(data).hexdigest()
+    """文件字节摘要（完整 64 位 + LF 归一）—— 委托 tools/sha256util.py（P3 L-4）。
+
+    铁律 12（见 tools/gate/check_gate_drift.py）：跨副本比对不归一化 EOL 会得出
+    假差异。Windows 上 setuptools 以文本模式构建 wheel 会把 .py 写成 CRLF，而
+    仓内 .gitattributes 强制 eol=lf；两侧是同一份源码，只是换行形态不同，不是漂移。
+    实测：把已装包内一份 .py 改 CRLF，旧实现即报「哈希不等」（Linux 全 LF 不复现）。
+    这两个目录全是文本源码（.py/.md/.txt/.yml/.json/.ts/.spec/.toml），无二进制。
+    """
+    return file_sha256(path)
 
 
 def gh_escape(s: str) -> str:

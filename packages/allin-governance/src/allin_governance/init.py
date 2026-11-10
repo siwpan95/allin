@@ -449,6 +449,11 @@ def _registry_subset(source: Path, gate_ids: tuple[str, ...]) -> dict:
 
     不从零手写注册表：字段约束（八个必填、`requires` 的词法、`tier` 的取值）
     都写在 `g00-meta` 里，手写一份等于把同一套约束再实现一次，迟早对不上。
+
+    分义（审计 L-6）：此处读的 `registry.json` 是**门禁清单**（governance 套件本体），
+    与 platform/packages/core/src/registry.js（构建期项目清单+端口表）、
+    platform/harness/registry.mjs（运行时组件单例）、kernel/registry.py（服务短名白名单）
+    同名但语义无关——它决定的是「哪些门禁落地到目标仓」。
     """
     raw = json.loads((source / "registry.json").read_text(encoding="utf-8"))
     gates = [entry for entry in raw.get("gates", []) if entry.get("id") in gate_ids]

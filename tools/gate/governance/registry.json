@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "comment": "Registry of the governance gates shipped by this distribution repository. The meta gate reads this file and refuses to pass when an entry is incomplete, when a gate cannot prove itself, or when a gate is missing from governance/RULES.md.",
+  "comment": "Registry of the governance gates shipped by this distribution repository. The meta gate reads this file and refuses to pass when an entry is incomplete, when a gate cannot prove itself, or when a gate is missing from governance/RULES.md. Scope note (audit L-6): this 'registry' lists governance gates only and is unrelated to the same-named platform/packages/core/src/registry.js (build-time project/port table), platform/harness/registry.mjs (runtime component singleton), or kernel/registry.py (service short-name whitelist).",
   "gates": [
     {
       "id": "g00-meta",

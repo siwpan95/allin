@@ -1,4 +1,7 @@
 // @allin/core — 项目注册表：platform.yaml 加载 / 校验 / 端口查表（fail-loud）。
+// 分义（审计 L-6）：本 registry 是「构建期项目清单 + 端口分配表」，只读磁盘上的
+// platform/**/*.yaml；与运行时的 platform/harness/registry.mjs（组件单例）、
+// kernel/registry.py（服务短名白名单）、governance/registry.json（门禁清单）同名但无关。
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

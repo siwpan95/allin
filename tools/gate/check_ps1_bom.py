@@ -96,7 +96,8 @@ def has_non_ascii(data):
 def scan_file(path, strict=False):
     """返回问题描述字符串；None = 合规。"""
     try:
-        data = open(path, "rb").read()
+        with open(path, "rb") as fh:  # gov-python: allow (binary I/O; encoding N/A) P3 L-1
+            data = fh.read()
     except OSError as e:
         return "无法读取: {}".format(e)
     has_bom = data.startswith(BOM)
@@ -117,7 +118,8 @@ def scan_file(path, strict=False):
 
 
 def fix_file(path):
-    data = open(path, "rb").read()
+    with open(path, "rb") as fh:  # gov-python: allow (binary I/O; encoding N/A) P3 L-1
+        data = fh.read()
     if data.startswith(BOM):
         return False
     with open(path, "wb") as fh:

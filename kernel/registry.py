@@ -6,6 +6,11 @@
 任意 import 的评审绕过风险（cordis 的 Loader 会把 entry 的 name 直接 import）。
 
 新增一个被内核调度的支柱/工具，只改这张表 + 对应 services/*.py，不再加样板文件。
+
+分义（审计 L-6）：本 registry 是「服务短名 → 实现类」的**内核挂载白名单**，
+只在 cordis 挂载前解析短名；与 platform/packages/core/src/registry.js（构建期项目
+清单+端口表）、platform/harness/registry.mjs（运行时组件单例）、
+governance/registry.json（门禁清单）同名但语义无关。
 """
 from __future__ import annotations
 

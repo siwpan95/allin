@@ -47,7 +47,15 @@ ANNOTATION = "gov-python: allow"
 #: Lines that carry the check's own pattern definitions stay out of their own judgment.
 PATTERN_DEFINITION = re.compile(r"re\.compile\(")
 #: Readers that own their encoding explicitly, so callers cannot get it wrong.
-SAFE_HELPERS = ("govlib.read_text(", "govlib.tracked_files(", "govlib.staged_blobs(")
+#: ``docs_contract.read_text`` is the single D9–D17 judge implementation: its body
+#: hard-codes ``encoding="utf-8", errors="replace", newline=""``. After P3 L-5 the
+#: two duplicate wrappers (docs_index.py / g15_docs_contract.py) were removed and all
+#: call sites delegate straight to it, so naming it here keeps the rule aimed at real
+#: stdlib calls instead of flagging every delegation (same rationale as govlib.read_text).
+SAFE_HELPERS = (
+    "govlib.read_text(", "govlib.tracked_files(", "govlib.staged_blobs(",
+    "docs_contract.read_text(",
+)
 LITERAL = re.compile(r"'[^'\n]*'|\"[^\"\n]*\"")
 
 
@@ -196,6 +204,27 @@ def selfcheck() -> int:
                       "    return read_text(path)\n")
         report = scan(sandbox.path)
         check.detects("locally defined helper that drops the encoding",
+                      any(finding.kind == "io-without-encoding" for finding in report.findings))
+
+    with govlib.Sandbox() as sandbox:
+        # P3 L-5：委托给 SAFE_HELPERS 里已显式 encoding 的跨模块 reader，调用点不判红。
+        sandbox.write("tools/delegated_ok.py",
+                      "import docs_contract\n"
+                      "def load(path):\n"
+                      "    return docs_contract.read_text(path)\n")
+        report = scan(sandbox.path)
+        check.quiet("delegation to an encoding-owning cross-module reader",
+                    any(finding.kind == "io-without-encoding" for finding in report.findings))
+
+    with govlib.Sandbox() as sandbox:
+        # 成对反例：同样的委托形态，目标却**不在** SAFE_HELPERS（谁也不能证明它有
+        # encoding），仍须判红 —— 证明上面的豁免是精确白名单，不是「见委托就放行」。
+        sandbox.write("tools/delegated_bad.py",
+                      "import unknown_reader\n"
+                      "def load(path):\n"
+                      "    return unknown_reader.read_text(path)\n")
+        report = scan(sandbox.path)
+        check.detects("delegation to an unknown reader without encoding",
                       any(finding.kind == "io-without-encoding" for finding in report.findings))
 
     with govlib.Sandbox() as sandbox:

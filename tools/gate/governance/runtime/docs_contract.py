@@ -101,6 +101,9 @@ COUNT_SECTIONS = (("规范", "规范"), ("事实源", "事实源"), ("记录", "
 
 
 def read_text(path: str) -> str:
+    """判据读文本的**唯一实现**（P3 L-5）：docs_index.py 与 g15_docs_contract.py
+    都 import 本函数，不再各自复制一份逐字相同的包装。errors="replace" + newline=""
+    是判据口径的一部分，勿改。"""
     with io.open(path, "r", encoding="utf-8", errors="replace", newline="") as f:
         return f.read()
 

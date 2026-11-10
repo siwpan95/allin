@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import shutil
 import subprocess
@@ -37,6 +36,7 @@ _TOOLS = ROOT / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 import runtime_defaults as _rd  # noqa: E402
+from sha256util import digest_text as _digest_text  # noqa: E402 —— P3 L-4 摘要单一实现
 
 
 def git_commit_time(root: Path) -> str:
@@ -254,7 +254,7 @@ def main(argv=None) -> int:
     sql_text, counts = build_import_sql(doc, sha, run_id, ts)
     print(json.dumps({"mode": "apply" if a.apply else "dry-run", "source_git_sha": sha,
                       "ingest_run_id": run_id, "row_counts": counts,
-                      "sql_sha256": hashlib.sha256(sql_text.encode("utf-8")).hexdigest()[:16]},
+                      "sql_sha256": _digest_text(sql_text)},
                      ensure_ascii=False))
     if not a.apply:
         print("DRY-RUN: 未写 Dolt。加 --apply 才生效（写入需显式确认）。")

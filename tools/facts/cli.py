@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sqlite3
@@ -32,6 +31,12 @@ def _repo_root() -> Path:
 
 
 ROOT = _repo_root()
+# P3 L-4：sha256 摘要口径收敛到 tools/sha256util.py 单一实现。
+# tools/ 不在 facts CLI 的默认 sys.path，按脚本位置注入（与 netbox/dolt 的 runtime_defaults 同法）。
+_TOOLS = ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+from sha256util import digest_obj  # noqa: E402
 HERE = Path(__file__).resolve().parent
 DEFAULT_SCHEMA = ROOT / "facts" / "facts.schema.json"
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
@@ -430,7 +435,7 @@ def expected_hash(doc: dict, machine_id: str) -> str:
         "facts": [f for f in doc.get("facts", []) if f.get("machine_id") == machine_id
                   or (f["scope"] == "global" and machine_id == doc["machines"][0]["machine_id"])],
     }
-    return hashlib.sha256(json.dumps(subset, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+    return digest_obj(subset)
 
 
 def cmd_render(data: Path, outdir: Path, check: bool) -> int:

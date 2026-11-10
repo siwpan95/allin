@@ -408,6 +408,11 @@ run "$PY" -m pytest tests/test_allin_cli.py tests/test_gate_strict_skip.py -q
 run "$PY" -m pytest tests/test_p2_sec_remediation.py tests/test_p2_convergence.py -q
 run "$PY" -m pytest tests/test_vendor_cordis_archive_boundary.py tests/test_runtime_defaults.py -q
 run "$PY" -m pytest tests/test_docs_contract_pure.py tests/test_repo_hygiene_pure.py tests/test_facts_cli_pure.py tests/test_gitee_release_pure.py -q
+# ⑥ P3（2026-11-10 深度审计 #25/#26）：sha256 摘要单一实现（三族分治、摘要值逐字节不变）、
+#    read_text 单一实现、裸 open() 改 with、CRED_PATTERNS 命名常量反查、registry 五处分义。
+#   sha256util 自检单独接一条（含坏值/归一/位宽 9 探针），pytest 覆盖形态断言与逐字节一致。
+run "$PY" tools/sha256util.py
+run "$PY" -m pytest tests/test_p3_pure.py -q
 # ⑦ 仓根 README「可机检事实」护栏（2026-11-04 工程审查 Docu Top3-2 落地）：
 #    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
 #    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。

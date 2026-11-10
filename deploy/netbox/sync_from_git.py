@@ -14,7 +14,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import subprocess
@@ -34,10 +33,12 @@ _TOOLS = _ROOT / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 import runtime_defaults as _rd  # noqa: E402
+from sha256util import digest_obj as _digest_obj  # noqa: E402 —— P3 L-4 摘要单一实现
 
 
 def digest(obj: dict) -> str:
-    return hashlib.sha256(json.dumps(obj, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+    """结构化对象摘要（16 位）—— 委托 tools/sha256util.py，口径与 facts marker 一致。"""
+    return _digest_obj(obj)
 
 
 def git_sha(root: Path) -> str:

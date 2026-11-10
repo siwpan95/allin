@@ -92,7 +92,8 @@ def load_token(arg=None, token_file=None):
         return env
     if token_file:
         try:
-            txt = open(token_file, encoding="utf-8", errors="replace").read()
+            with open(token_file, encoding="utf-8", errors="replace") as fh:  # P3 L-1
+                txt = fh.read()
         except OSError as e:
             raise SystemExit("[ERR] 读不到令牌文件 %s (%s)" % (token_file, e))
         for tok in re.findall(r"[0-9a-f]{32,64}", txt):
@@ -474,7 +475,11 @@ def cmd_release(args, token):
     if get_release(args, token, tag):
         print("[SKIP] 发行版已存在: %s" % release_url(args, tag))
         return 0
-    body = open(args.notes_file, encoding="utf-8").read() if args.notes_file else ""
+    if args.notes_file:
+        with open(args.notes_file, encoding="utf-8") as fh:  # P3 L-1
+            body = fh.read()
+    else:
+        body = ""
     data = {"tag_name": tag, "name": args.title, "body": body, "prerelease": args.pre}
     # ⚠⚠ Gitee 的 POST /releases **必须**带 `target_commitish`，否则直接
     #   400 {"messages": ["target_commitish is missing"]}（2026-09-22 实测撞到）。

@@ -87,11 +87,6 @@ class Report:
         self.skipped.append(what)
 
 
-def read_text(path: str) -> str:
-    with io.open(path, "r", encoding="utf-8", errors="replace", newline="") as f:
-        return f.read()
-
-
 def iter_docs_files(docs: str):
     """产出 docs 相对路径；显式跳过 ASCII 别名目录与历史树。
 
@@ -122,7 +117,7 @@ def load_index(docs: str, rep: Report) -> dict[str, str]:
     if not os.path.isfile(idx):
         rep.block("D2", "INDEX.md 不存在（总目录缺失）")
         return {}
-    text = read_text(idx)
+    text = docs_contract.read_text(idx)
     reg: dict[str, str] = {}
     for m in LINK_TO_DOCS.finditer(text):
         t = m.group(1)
@@ -171,7 +166,7 @@ def check_d3(spec_dir: str, rep: Report) -> None:
     for fn in sorted(os.listdir(spec_dir)):
         if not (fn.startswith("SPEC-") and fn.endswith(".md")):
             continue
-        text = read_text(os.path.join(spec_dir, fn))
+        text = docs_contract.read_text(os.path.join(spec_dir, fn))
         for field in SPEC_HDR_FIELDS:
             if ("**%s**" % field) not in text:
                 rep.block("D3", "%s 头部缺字段：%s" % (fn, field))
@@ -253,7 +248,7 @@ def check_d8(docs: str, files: list[str], rep: Report) -> None:
     if not os.path.isfile(idx):
         rep.block("D8", "INDEX.md 不存在，无法核对自述份数")
         return
-    head = "\n".join(read_text(idx).splitlines()[:20])
+    head = "\n".join(docs_contract.read_text(idx).splitlines()[:20])
     m = COUNT_LINE.search(head)
     if not m:
         rep.block("D8", "INDEX.md 头部缺自述份数行（形如：**覆盖** 根 N + 规范 N + 事实源 N + 记录 N = **M 份**）")
@@ -298,7 +293,7 @@ def check_d7(docs: str, rep: Report) -> None:
         if m == 13:
             y, m = y + 1, 1
     for v in vols:
-        head = "\n".join(read_text(os.path.join(d, v)).splitlines()[:6])
+        head = "\n".join(docs_contract.read_text(os.path.join(d, v)).splitlines()[:6])
         if "卷" not in head or "~" not in head:
             rep.block("D7", "交接卷 %s 首行未声明覆盖区间（形如 `<YYYY-MM> 卷（<起> ~ <止>）`）" % v)
         else:
@@ -347,7 +342,7 @@ def load_baseline(root: str) -> set[str]:
     p = baseline_path(root)
     if not os.path.isfile(p):
         return set()
-    return {ln.strip() for ln in read_text(p).splitlines() if ln.strip() and not ln.startswith("#")}
+    return {ln.strip() for ln in docs_contract.read_text(p).splitlines() if ln.strip() and not ln.startswith("#")}
 
 
 def emit(rep: Report, args, baseline: set[str]) -> int:

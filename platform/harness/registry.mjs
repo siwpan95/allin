@@ -1,6 +1,9 @@
 // registry.mjs — 跨组件唯一组合点（模块单例）。
 // 对齐 lab/chess-cordis/src/registry.mjs（lab 仓盘符随机器，按仓名定位）：组件注册表 + 众数共识/分歧分析。
 // 时间维回收：effects 栈 disposeAll 逆序执行（等价 Cordis Fiber effect 栈逆序串行回收）。
+// 分义（审计 L-6）：本 registry 是「运行时组件/引擎实例单例」（engines: Map），
+// 与构建期的 platform/packages/core/src/registry.js（项目清单+端口表）、
+// kernel/registry.py（服务短名白名单）、governance/registry.json（门禁清单）同名但无关。
 const engines = new Map()
 const effects = []
 
