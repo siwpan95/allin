@@ -57,7 +57,7 @@ export const OTEL_GENAI_MAP = {
 }
 
 /** 单条 trace 的字段名（与 OTel GenAI 对齐的部分加注释，便于将来机械映射）。 */
-export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes, sessionId, spanIndex, tier, budgetExceeded }) {
+export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes, sessionId, spanIndex, tier, budgetExceeded, degradationTier, degradationReason, fallbackFrom }) {
   const spanId = crypto.randomBytes(8).toString('hex')
   return {
     ts: new Date().toISOString(),
@@ -90,6 +90,12 @@ export function buildSpan({ toolName, ok, errorKind, ms, argsBytes, resultBytes,
     error: ok ? undefined : (errorKind === 'rejected'
       ? 'rejected by policy or validation'
       : 'tool failed or threw'),
+    // ── LLM 降级可观测段（2026-11-10）：当本次调用伴随模型降级决策时记录档位，
+    // 便于事后从 agent-runs.jsonl 复盘「为何落到 offline / fallback」。字段名对齐
+    // GenAI 约定（degradation.tier / .reason / .fallback_from）。
+    'degradation.tier': degradationTier || null,          // 'online' | 'fallback' | 'offline'
+    'degradation.reason': degradationReason || null,      // 触发原因（budget-exceeded / primary-unavailable / explicit-offline ...）
+    'degradation.fallback_from': fallbackFrom || null,    // 从哪个档位降级而来
   }
 }
 

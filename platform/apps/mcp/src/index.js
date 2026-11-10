@@ -484,7 +484,7 @@ const TOOLS = [
 function reject(text) { return { isError: true, errorKind: 'rejected', text } }
 function fail(text) { return { isError: true, errorKind: 'failed', text } }
 
-function callTool(name, args) {
+function callTool(name, args, trace = null) {
   const a = args || {}
   switch (name) {
     case 'gate.list': {
@@ -541,6 +541,16 @@ function callTool(name, args) {
         lastError: a.lastError || null,
         preferTier: a.preferTier || null,
       })
+      // C5（2026-11-10）：把本次降级决策落到 agent trace，使「为何落到 offline/fallback」
+      // 可被事后复盘（degradation.tier / .reason / .fallback_from）。
+      if (trace) {
+        trace.record(buildSpan({
+          toolName: 'model.route.decision', ok: true, ms: 0,
+          argsBytes: byteSize(a), resultBytes: byteSize(route),
+          sessionId: trace.sessionId, tier: 'read',
+          degradationTier: route.tier, degradationReason: route.reason, fallbackFrom: route.fallbackFrom,
+        }))
+      }
       return {
         text: JSON.stringify({
           ...route,
@@ -1209,7 +1219,7 @@ function callToolTraced(name, args, tr = trace) {
   let result
   let threw = false
   try {
-    result = callTool(name, args)
+    result = callTool(name, args, tr)
   } catch (e) {
     threw = true
     result = fail(String(e && e.message ? e.message : e))
