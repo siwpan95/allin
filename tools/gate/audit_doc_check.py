@@ -90,12 +90,19 @@ def is_cross_repo_doc(doc: Path, text: str) -> bool:
 
 # ── 章节必备性（E2）──────────────────────────────────────────────────────────
 # 报告类文档必须有的章节（按「别名」匹配，命中任一别名即算存在）
+#
+# 2026-11-10 补别名：历史审计卷的章节命名并不是「审计范围 / 问题清单 / 来源 /
+# 疑点 / 处置建议」这套字面，而是「评估范围与方法」「发现与定级」「知识库检索结果
+# 与边界」「审核范围与方法」「本轮真实复测证据索引」「仍未补齐的未实测维度」
+# 「放行口径」等等价写法。此前按字面枚举，把 12 处**确实存在**的章节判成缺失 ——
+# 是判据假阳性，不是文档欠账。别名只收「语义等价的章节标题」，不收泛词；
+# 自检里有「标题乱写仍报 E2」的反向用例兜底。
 REQUIRED_SECTIONS: list[tuple[str, tuple[str, ...]]] = [
-    ("审计范围", ("审计范围", "范围与依据", "审计范围与依据")),
-    ("问题清单", ("问题清单", "问题列表", "发现清单", "风险清单")),
-    ("来源", ("来源", "联网检索", "参考来源", "检索来源", "来源清单")),
-    ("疑点", ("待验证", "疑点", "未确认", "待核实")),
-    ("处置建议", ("处置建议", "建议", "整改建议", "处置计划", "优先级")),
+    ("审计范围", ("审计范围", "范围与依据", "审计范围与依据", "评估范围", "审核范围")),
+    ("问题清单", ("问题清单", "问题列表", "发现清单", "风险清单", "发现与定级", "阻断问题")),
+    ("来源", ("来源", "联网检索", "参考来源", "检索来源", "来源清单", "知识库检索", "检索结果", "证据索引")),
+    ("疑点", ("待验证", "疑点", "未确认", "待核实", "需人工确认", "未实测维度", "未补齐")),
+    ("处置建议", ("处置建议", "建议", "整改建议", "处置计划", "优先级", "放行口径")),
 ]
 
 # ── 证据锚点（E1）────────────────────────────────────────────────────────────
@@ -150,6 +157,15 @@ CONCLUSION_RE = re.compile(
 )
 SOURCE_MARK_RE = re.compile(
     r"(https?://|OWASP|CWE-\d+|CWE\s|Node\.js|Bandit|MITRE|CVE-\d+|实测|已复核|已确认)"
+)
+# 结构化元数据字段行：这些行是条目的**元数据**而非独立结论段落，证据在同条目
+# 的「位置 / 影响 / 依据」行里。按行判 E4 曾把三类写法误判成无源推测：
+#   ① `- 构成：约 26 个上游解压包…`（「构成」是字段名，不是「构成漏洞」）；
+#   ② `- **边界**：…不构成公开仓泄露`（否定式边界声明）；
+#   ③ `- **置信度**：High（…不构成现时漏洞）`（否定式置信度说明）。
+# 只豁免元数据字段，「影响 / 审计意见」等结论行照判，不削弱 E4 的检测面。
+METADATA_FIELD_RE = re.compile(
+    r"^[-*+]\s*\**(边界|置信度|构成|位置|类型|性质|状态|口径|来源)\**\s*[:：]"
 )
 # 显式把结论降级为疑点的标记：出现即说明作者**主动**标注了不确定性，
 # 属正确处理方式，不应再被 E4/E7 重复报警。
@@ -460,6 +476,8 @@ def check_unsourced_claims(doc: Path, text: str, findings: list[Finding]) -> Non
             continue
         if s.startswith("|") or s.startswith(">"):
             continue  # 表格与引用块按人读，不逐行判
+        if METADATA_FIELD_RE.match(s):
+            continue  # 条目元数据行（边界 / 置信度 / 构成 / 位置…），非独立结论
         if not CONCLUSION_RE.search(s):
             continue
         if ANCHOR_RE.search(s) or SOURCE_MARK_RE.search(s):
@@ -618,6 +636,48 @@ def selfcheck() -> int:
         bad = [f for f in found if f.code in ("E2", "E3", "E4", "E6", "E7")]
         print(f"  {'OK  ' if not bad else 'FAIL'} 清单类文档不误报: 实得 {[f.code for f in bad]}")
         if bad:
+            ok = False
+    # E2 别名：历史卷的等价章节标题不该被判「缺失」
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "aliases.md"
+        alias_body = (
+            "# 深度审核报告（自检样例）\n"
+            "## 评估范围与方法\n## 发现与定级\n## 知识库检索结果与边界\n"
+            "## 需人工确认的处置\n## 放行口径\n"
+        )
+        p.write_text(alias_body, encoding="utf-8")
+        found = check_document(p)
+        bad = [f for f in found if f.code == "E2"]
+        print(f"  {'OK  ' if not bad else 'FAIL'} 等价章节别名不误报 E2: 实得 {[f.message for f in bad]}")
+        if bad:
+            ok = False
+    # E4 元数据行豁免的边界：字段行不报，结论行仍必报
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "meta.md"
+        meta_body = (
+            "# 深度审计报告（自检样例）\n"
+            "## 审计范围\n## 问题清单\n## 来源\n## 疑点\n## 处置建议\n"
+            "- 构成：约 26 个上游解压包\n"
+            "- **置信度**：High（不构成现时漏洞）\n"
+        )
+        p.write_text(meta_body, encoding="utf-8")
+        found = check_document(p)
+        bad = [f for f in found if f.code == "E4"]
+        print(f"  {'OK  ' if not bad else 'FAIL'} 元数据字段行不误报 E4: 实得 {len(bad)} 条")
+        if bad:
+            ok = False
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "claim.md"
+        claim_body = (
+            "# 深度审计报告（自检样例）\n"
+            "## 审计范围\n## 问题清单\n## 来源\n## 疑点\n## 处置建议\n"
+            "- **影响**：这会构成越权风险\n"
+        )
+        p.write_text(claim_body, encoding="utf-8")
+        found = check_document(p)
+        hit = any(f.code == "E4" for f in found)
+        print(f"  {'OK  ' if hit else 'FAIL'} 结论行仍必报 E4（豁免未削弱判据）")
+        if not hit:
             ok = False
     # 基线分流（2026-11-10）：配额内不计门禁，超额 / 未登记文档必须判红
     fake = [
