@@ -176,7 +176,7 @@ def main(argv: list[str]) -> int:
     new_findings = report.findings if args.no_baseline else baseline.filter_new(report.findings)
     report.findings = report.findings if args.list_all else new_findings
     print(report.render().splitlines()[0] if args.quiet else report.render())
-    return EXIT_BLOCKING if new_findings else EXIT_OK
+    return report.exit_code(new_findings)
 
 
 if __name__ == "__main__":

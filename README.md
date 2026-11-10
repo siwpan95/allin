@@ -25,7 +25,7 @@
 
 ## 安装步骤
 
-前置要求：Python 3.9+、Node.js（跑治理门禁套件需要）、Git。
+前置要求：Python ≥3.11、Node.js（跑治理门禁套件需要）、Git；kernel 的 Cordis 服务图另要求 Python ≥3.12（见各 `pyproject.toml` 的 `requires-python`）。
 
 ```bash
 git clone <本仓远端地址>
@@ -59,7 +59,7 @@ python tools/repocheck/main.py <目录>   # 离线仓库体检（无参数 = GUI
 **统一命令行入口**：经 [`allin.bat`](allin.bat)（或仓内 venv 的 python）运行
 [`allin_cli.py`](allin_cli.py)，子命令为 `tools` / `docs` / `platform` / `preset` / `status`。
 
-**平台门户**：按需启动（默认端口 9000，已登记 [`docs/事实源/ports.yaml`](docs/事实源/ports.yaml)）；
+**平台门户**：按需启动（默认 `PORT=0`，由系统分配临时端口；固定端口 9000 已在 [`docs/事实源/ports.yaml`](docs/事实源/ports.yaml) 记为 `status: retired`，仅手动模式可选）；
 website 默认端口 9042，同样以 ports.yaml 登记为准。
 
 > `site/` 与 `website/` 不是一回事：**`site/`** 是 GitHub Pages 门面单页

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import os
+import sys
 
 from kernel.cordis import Service
 
@@ -44,8 +45,11 @@ class PresetService(Service):
     # ---- 列出全部 preset 组合包 ----
     def list(self):
         if not os.path.isdir(PRESET_DIR):
-            print('（preset 目录不存在）')
-            return None
+            # 2026-11-10 深度审计 H-4：目录不存在是「环境不具备」，不是「成功列出 0 个」。
+            # 此前 return None 被 CLI 映射成 exit 0（preset list 目录缺失仍判绿）。
+            # 与 docs_service.aliases()/index() 的既有修法统一，返回环境错误码 3。
+            print(f'（preset 目录不存在：{PRESET_DIR}）', file=sys.stderr)
+            return 3
         for name in sorted(os.listdir(PRESET_DIR)):
             full = os.path.join(PRESET_DIR, name)
             kind = '目录' if os.path.isdir(full) else '文件'

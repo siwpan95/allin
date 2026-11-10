@@ -92,8 +92,10 @@ class ToolService(Service):
     def skills(self):
         skill_dir = os.path.join(ROOT, '.workbuddy', 'skills')
         if not os.path.isdir(skill_dir):
-            print('（allin 项目级技能目录不存在，技能尚未吸收）')
-            return None
+            # 2026-11-10 深度审计 H-4：与 preset_service.list / docs_service 统一，
+            # 「目录不存在」不得静默映射成 exit 0（什么都没做 ≠ 成功）。
+            print(f'（allin 项目级技能目录不存在，技能尚未吸收：{skill_dir}）', file=sys.stderr)
+            return 3
         for name in sorted(os.listdir(skill_dir)):
             print(name)
         return None

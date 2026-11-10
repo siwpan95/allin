@@ -404,7 +404,7 @@ def main(argv: list[str]) -> int:
     stale = baseline.stale(all_findings) if baseline.keys else []
     if stale and not args.quiet:
         print(f"  note: {len(stale)} baseline entr(ies) no longer reproduce; refresh with --write-baseline")
-    return EXIT_BLOCKING if new_findings else EXIT_OK
+    return report.exit_code(new_findings)
 
 
 if __name__ == "__main__":

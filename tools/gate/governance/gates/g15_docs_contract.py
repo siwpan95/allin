@@ -380,7 +380,13 @@ def emit(rep: Report, args, baseline: set[str]) -> int:
         print("已写入基线：%s（%d 条）" % (p, len(set(rep.blocking))))
         return EXIT_OK
 
-    return EXIT_FAIL if new_block else EXIT_OK
+    # 2026-11-10 深度审计 H-2：SKIP ≠ pass。本门禁用的是自有 Report（无 govlib
+    # exit_code），故在此显式对齐同一口径：严格模式下 skipped 以 EXIT_USAGE 暴露。
+    if new_block:
+        return EXIT_FAIL
+    if rep.skipped and os.environ.get('ALLIN_GATE_STRICT_SKIP') == '1':
+        return 2  # EXIT_USAGE：有检查未完成，不判绿
+    return EXIT_OK
 
 
 # ---------------------------------------------------------------- selfcheck

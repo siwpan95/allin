@@ -19,7 +19,7 @@
   <rect x="0" y="0" width="1240" height="1060" fill="#f8fafc"/>
 
   <!-- Title -->
-  <text x="40" y="34" class="ttl">allin 系统架构 —— 核心模块与分层（2026-10-27 起草 · 2026-11-06 修订）</text>
+  <text x="40" y="34" class="ttl">allin 系统架构 —— 核心模块与分层（2026-10-27 起草 · 2026-11-10 修订）</text>
   <text x="40" y="52" class="cap">三位一体治理仓：制度(docs/) + 文档枢纽 + 执行器(kernel CLI / platform) + 治理大脑(Agent 双形态) + 门禁(监工) + 对外交付物(packages / website)</text>
 
   <!-- LAYER 0: docs -->
@@ -60,7 +60,7 @@
   <!-- 2b platform -->
   <rect x="620" y="320" width="580" height="170" rx="10" fill="#cffafe" stroke="#0891b2" stroke-width="1.5"/>
   <text x="640" y="344" class="ttl" fill="#155e75">执行面 B · platform 集成平台（Node + Cordis，聚合不融合）</text>
-  <text x="640" y="366" class="ts">• portal :9000 —— node:http 零依赖，绑 127.0.0.1</text>
+  <text x="640" y="366" class="ts">• portal —— node:http 零依赖，绑 127.0.0.1（默认 PORT=0 临时端口）</text>
   <text x="640" y="386" class="ts">• 安全：Host 围栏 + loopbackOnly 防 DNS rebinding</text>
   <text x="640" y="406" class="ts">• @allin/core：registry / launch / workshop / probe</text>
   <text x="640" y="426" class="ts">• data/：running.json + tasks.log（日志即事实源）</text>
@@ -115,7 +115,7 @@
   <text x="60" y="802" class="cap" fill="#9d174d">与治理子系统零代码耦合 —— 图中不与治理层连线即此意；健康度由独立 CI job / repocheck 排除清单兜底</text>
   <g>
     <rect x="60" y="810" width="540" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
-    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，0.0.0a2）</text>
+    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，0.0.0a5）</text>
     <text x="72" y="848" class="chip-t">init / repocheck / verify · 源码映射自 tools/（sha256 对账，ADR-0008）</text>
     <rect x="620" y="810" width="560" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
     <text x="632" y="830" class="chip-t" font-weight="700">website/ 对外站点（Express + node:sqlite，:9042）</text>

@@ -24,15 +24,32 @@ MIRROR = ROOT / "platform" / "registry" / "ports.yaml"
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
 
 
-def _yaml_load(path: Path) -> dict | None:
+class AuthUnavailable(Exception):
+    """权威 YAML 在场但无法解析（缺 PyYAML / 语法错 / 顶层非 mapping）。
+
+    2026-11-10 深度审计 H-3：此前 ``_yaml_load`` 用 ``except Exception: return None``
+    把「语法错」与「文件不存在 / 缺 yaml」混成同一个 None，``check_sync`` /
+    ``check_mirror`` 据此返回 ``EXIT_OK, ["SKIP(auth unpar.able)"]`` —— 实测把
+    ``ports.yaml`` 写坏后 ``--check`` 仍是 ``rc=0``，权威源损坏被判绿。
+    """
+
+
+def _yaml_load(path: Path) -> dict:
+    """读权威 YAML；文件是否存在由调用方先行判定。
+
+    在场但不可解析 → 抛 ``AuthUnavailable``，**绝不**返回 None 让调用方降级为 SKIP。
+    """
     try:
         import yaml
-    except ImportError:
-        return None
+    except ImportError as exc:
+        raise AuthUnavailable(f"PyYAML 未安装：{exc}") from exc
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        return None
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        raise AuthUnavailable(f"YAML 解析失败：{type(exc).__name__}: {exc}") from exc
+    if not isinstance(doc, dict):
+        raise AuthUnavailable(f"顶层不是 mapping：{type(doc).__name__}")
+    return doc
 
 
 def collect_ports(auth: Path = AUTH_PORTS) -> tuple[list[dict], list[str]]:
@@ -40,9 +57,9 @@ def collect_ports(auth: Path = AUTH_PORTS) -> tuple[list[dict], list[str]]:
     warnings: list[str] = []
     if not auth.is_file():
         return [], [f"权威端口源不存在：{auth}"]
+    # H-3：解析失败必须抛错（由 main 转 EXIT_ENV），不能退化成「空端口列表 +
+    # 一条 warning」——那样默认收集会打印 [] 并 exit 0，同样是「损坏被判绿」。
     doc = _yaml_load(auth)
-    if doc is None:
-        return [], [f"权威端口源无法解析（缺 yaml 或语法错）：{auth}"]
     ports = [p for p in (doc.get("ports") or []) if isinstance(p, dict) and "port" in p]
     if not ports:
         warnings.append("权威端口源无 ports 条目")
@@ -94,9 +111,11 @@ def check_sync(data: Path, auth: Path = AUTH_PORTS) -> tuple[int, list[str]]:
     findings: list[str] = []
     if not auth.is_file():
         return EXIT_OK, ["SKIP(no auth ports)"]
-    adoc = _yaml_load(auth)
-    if adoc is None:
-        return EXIT_OK, ["SKIP(auth unpar.able)"]
+    # H-3：权威源在场却读不出来 = 数据损坏，必须 BLOCK；只有「文件不存在」才允许 SKIP。
+    try:
+        adoc = _yaml_load(auth)
+    except AuthUnavailable as exc:
+        return EXIT_BLOCKING, [f"权威端口源在场但无法解析（不得判绿）：{auth} — {exc}"]
     a_ports = {p["port"]: p for p in (adoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     doc = json.loads(data.read_text(encoding="utf-8"))
     j_ports = {p["port"]: p for p in doc.get("ports", []) if isinstance(p, dict) and "port" in p}
@@ -118,10 +137,12 @@ def check_mirror(mirror: Path, auth: Path = AUTH_PORTS) -> tuple[int, list[str]]
         return EXIT_OK, ["SKIP(no mirror)"]
     if not auth.is_file():
         return EXIT_OK, ["SKIP(no auth ports)"]
-    mdoc = _yaml_load(mirror)
-    adoc = _yaml_load(auth)
-    if mdoc is None or adoc is None:
-        return EXIT_OK, ["SKIP(mirror/auth 不可解析)"]
+    # H-3：镜像/权威源任一在场但不可解析都属损坏，BLOCK 而非 SKIP 判绿。
+    try:
+        mdoc = _yaml_load(mirror)
+        adoc = _yaml_load(auth)
+    except AuthUnavailable as exc:
+        return EXIT_BLOCKING, [f"ports 镜像/权威源在场但无法解析（不得判绿）：{exc}"]
     m_ports = {p["port"]: p for p in (mdoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     a_ports = {p["port"]: p for p in (adoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     if not m_ports:
@@ -161,8 +182,17 @@ def selftest() -> int:
     data.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
     rc_drift, _ = check_sync(data, auth)
     ok_drift = rc_drift == EXIT_BLOCKING
-    ok = ok_sync and ok_drift and len(ports) == 2
+    # H-3 回归：写坏权威源，--check 的两条判据都必须非 0，不得 SKIP 判绿。
+    bad_auth = root / "docs" / "事实源" / "broken.yaml"
+    bad_auth.write_text("ports: [ { port: [unclosed\n  bad: : :\n", encoding="utf-8")
+    rc_bad_sync, msg_bad_sync = check_sync(data, bad_auth)
+    rc_bad_mirror, _ = check_mirror(mirror, bad_auth)
+    ok_bad_auth = rc_bad_sync == EXIT_BLOCKING and rc_bad_mirror == EXIT_BLOCKING
+    print(f"  H-3 坏权威源注入：check_sync={rc_bad_sync} check_mirror={rc_bad_mirror}"
+          f"（期望均 {EXIT_BLOCKING}）{msg_bad_sync[:1]}")
+    ok = ok_sync and ok_drift and ok_bad_auth and len(ports) == 2
     print(json.dumps({"collect": len(ports), "sync_clean": ok_sync, "drift_caught": ok_drift,
+                      "bad_auth_caught": ok_bad_auth,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 
@@ -189,7 +219,12 @@ def main(argv=None) -> int:
         print(f"ports-sync: {'clean' if both else 'blocking'} (facts={rc1} mirror={rc2})")
         return EXIT_OK if both else EXIT_BLOCKING
     # 默认收集并打印；--write 才落盘
-    ports, warnings = collect_ports(a.auth)
+    try:
+        ports, warnings = collect_ports(a.auth)
+    except AuthUnavailable as exc:
+        # H-3：权威源在场但读不出来，绝不打印空列表后 exit 0。
+        print(f"ENV ERROR: 权威端口源在场但无法解析，不得判绿：{a.auth} — {exc}", file=sys.stderr)
+        return EXIT_ENV
     for w in warnings:
         print(f"  WARN {w}")
     if a.write:

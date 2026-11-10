@@ -345,7 +345,7 @@ def main(argv: list[str] | None = None) -> int:
                    exempted=report.exempted, skipped=report.skipped, notes=report.notes,
                    scanned=report.scanned)
     print(shown.render().splitlines()[0] if args.quiet else shown.render())
-    return EXIT_BLOCKING if new else EXIT_OK
+    return report.exit_code(new)
 
 
 if __name__ == "__main__":

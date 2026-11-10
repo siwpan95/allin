@@ -249,10 +249,13 @@ def test_dispatch_docs_index(fake_ctx):
     assert fake_ctx.docs.calls[-1] == ("index",)
 
 
-def test_dispatch_docs_unknown_action_returns_none(fake_ctx):
-    # 进入 docs 分支但 action 不匹配任何已知项 —— 覆盖末尾 return None
+def test_dispatch_docs_unknown_action_is_usage_error(fake_ctx, capsys):
+    # 2026-11-10 深度审计 H-4：未命中分支必须非零 + 留痕，
+    # 不能把「什么都没做」编码成成功（旧契约断言 rc is None，正是假绿来源）。
     rc = allin_cli.dispatch(argparse.Namespace(domain="docs", action="mystery", apply=False))
-    assert rc is None
+    assert rc == allin_cli.EXIT_USAGE == 2
+    err = capsys.readouterr().err
+    assert "未命中的子命令分支" in err and "docs" in err
 
 
 # --------------------------------------------------------------------------
@@ -310,16 +313,18 @@ def test_dispatch_status(fake_ctx):
     assert fake_ctx.status.calls[-1] == ("summary", True, True)
 
 
-def test_dispatch_platform_unknown_action_returns_none(fake_ctx):
-    # platform 分支内 action 不匹配任何已知项 —— 覆盖 87->89 防御性落空
+def test_dispatch_platform_unknown_action_is_usage_error(fake_ctx, capsys):
+    # H-4：platform 分支内 action 不匹配任何已知项 ⇒ 用法错，不是 None⇒exit 0。
     rc = allin_cli.dispatch(argparse.Namespace(domain="platform", action="mystery"))
-    assert rc is None
+    assert rc == allin_cli.EXIT_USAGE == 2
+    assert "未命中的子命令分支" in capsys.readouterr().err
 
 
-def test_dispatch_preset_unknown_action_returns_none(fake_ctx):
-    # preset 分支内 action 不匹配任何已知项 —— 覆盖 95->102 防御性落空
+def test_dispatch_preset_unknown_action_is_usage_error(fake_ctx, capsys):
+    # H-4：preset 分支内 action 不匹配任何已知项 ⇒ 用法错，不是 None⇒exit 0。
     rc = allin_cli.dispatch(argparse.Namespace(domain="preset", action="mystery", name=None, yes=False))
-    assert rc is None
+    assert rc == allin_cli.EXIT_USAGE == 2
+    assert "未命中的子命令分支" in capsys.readouterr().err
 
 
 # --------------------------------------------------------------------------
@@ -334,3 +339,58 @@ def test_main_returns_exit_code(monkeypatch):
     monkeypatch.setattr(allin_cli, "build_parser", lambda: _FakeParser())
     monkeypatch.setattr(allin_cli, "dispatch", lambda args: 5)
     assert allin_cli.main() == 5
+
+
+def test_main_unknown_action_is_nonzero(fake_ctx, monkeypatch, capsys):
+    """H-4 端到端：路由缺分支时进程退出码必须是 2，而不是 0。"""
+    class _MysteryParser:
+        def parse_args(self, argv=None):
+            return argparse.Namespace(domain="docs", action="mystery", apply=False)
+
+    monkeypatch.setattr(allin_cli, "build_parser", lambda: _MysteryParser())
+    assert allin_cli.main() == allin_cli.EXIT_USAGE == 2
+    assert "未命中的子命令分支" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------
+# H-4：服务层「目录不存在」不得被映射成 exit 0（验收口径：allin preset list
+#      目录缺失必须返回非 0）。同时保留「目录存在且正常列出」的干净路径。
+# --------------------------------------------------------------------------
+class _SvcReflect:
+    def provide(self, *args, **kwargs):
+        return None
+
+
+class _SvcCtx:
+    def __init__(self):
+        self.reflect = _SvcReflect()
+
+
+def test_preset_list_missing_dir_is_nonzero(monkeypatch, tmp_path, capsys):
+    import kernel.services.preset_service as ps
+
+    monkeypatch.setattr(ps, "PRESET_DIR", str(tmp_path / "no-preset-dir"))
+    rc = ps.PresetService(_SvcCtx()).list()
+    assert rc == allin_cli.EXIT_ENV == 3
+    assert allin_cli._exit_code(rc) != 0
+    assert "preset 目录不存在" in capsys.readouterr().err
+
+
+def test_preset_list_present_dir_still_clean(monkeypatch, tmp_path):
+    import kernel.services.preset_service as ps
+
+    monkeypatch.setattr(ps, "PRESET_DIR", str(tmp_path))
+    (tmp_path / "demo").mkdir()
+    rc = ps.PresetService(_SvcCtx()).list()
+    assert rc is None                      # 服务正常完成且无退出码
+    assert allin_cli._exit_code(rc) == 0   # 不得误伤「成功列出」路径
+
+
+def test_tools_skills_missing_dir_is_nonzero(monkeypatch, tmp_path, capsys):
+    import kernel.services.tools_service as ts
+
+    monkeypatch.setattr(ts, "ROOT", str(tmp_path))
+    rc = ts.ToolService(_SvcCtx()).skills()
+    assert rc == allin_cli.EXIT_ENV == 3
+    assert allin_cli._exit_code(rc) != 0
+    assert "技能目录不存在" in capsys.readouterr().err

@@ -7,13 +7,14 @@
 三处数字落后两代）。ADR-0007 只把**叙事正文**迁进了 SPEC-204，图源与 ADR 仍在
 判据外 —— 本脚本把这两类资产的「声明 ↔ 事实」对账变成退出码（门禁写了不跑 = 没有门禁）。
 
-六项对账（全部从真身推导，不抄声明）：
+七项对账（全部从真身推导，不抄声明）：
   A. adr/ 索引 ↔ adr/*.md 文件集合（双向差集 + 状态闭集 + 链接文件存在）
   B. SVG 门禁数 ↔ tools/gate/governance/gates/ 实际文件（数量 / 编号范围 / 缺号）
   C. SVG docs_index D 范围 ↔ SPEC-204 声明（SPEC-204 受 g19 管辖，作传递锚）
   D. SVG + SPEC-204 仓数 ↔ PORTFOLIO.md（Gitee API 脚本生成物，仓数离线代理）
   E. 两张 SVG 标题必须带「修订」日期（起草·修订双日期，让陈旧度可见）
   F. website 默认端口 ↔ docs/事实源/ports.yaml 登记（README 声称已登记，2026-11-04 实测在案）
+  G. SVG 的 packages/allin-governance 版本声明 ↔ pyproject.toml 的 version（2026-11-10 H-5：图内 0.0.0a2 落后两代静默存活，此前六项对账唯独漏版本号）
 
 纯标准库；退出码：0 = 全部对账通过，1 = 存在 blocking。
 """
@@ -111,6 +112,31 @@ def check_svg_gates(rep: Report) -> None:
             rep.block(f"system-architecture.svg 缺声明「{needle}」({label}) —— 图落后于 gates/ 真身")
 
 
+def check_svg_version(rep: Report) -> None:
+    """G. SVG 的 packages/allin-governance 版本声明 ↔ pyproject.toml 的 version。
+
+    从真值来源（pyproject）解析 version，在图里定位
+    `packages/allin-governance（PyPI，x.y.z…）` 这一声明，要求两者**恰好相等**；
+    不等或任一侧解析不到都 blocking（图内旧版本号此前是六项对账的唯一盲区）。
+    """
+    pyproject = _read("packages/allin-governance/pyproject.toml")
+    m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.M)
+    if not m:
+        rep.block('packages/allin-governance/pyproject.toml 缺 `version = "..."` 声明 —— 版本对账失去基准')
+        return
+    pkg_version = m.group(1)
+    svg = _read("architecture/system-architecture.svg")
+    decl = re.search(r"packages/allin-governance（PyPI[，,]\s*([^）)]+?)\s*[）)]", svg)
+    if not decl:
+        rep.block("system-architecture.svg 缺 `packages/allin-governance（PyPI，版本号）` 声明 —— 版本对账失去锚点")
+        return
+    svg_version = decl.group(1).strip()
+    if svg_version == pkg_version:
+        rep.ok(f"system-architecture.svg 版本号 ↔ pyproject 一致（{pkg_version}）")
+    else:
+        rep.block(f"system-architecture.svg 版本号 {svg_version} ≠ pyproject version {pkg_version} —— 图落后于事实源")
+
+
 def check_svg_drange(rep: Report) -> None:
     """C. SVG docs_index D 范围 ↔ SPEC-204 声明（SPEC-204 受 g19 管辖）。"""
     spec = _read(os.path.join("docs", "规范", "SPEC-204-系统架构.md"))
@@ -180,6 +206,7 @@ def main() -> int:
     rep = Report()
     check_adr_index(rep)
     check_svg_gates(rep)
+    check_svg_version(rep)
     check_svg_drange(rep)
     check_repo_count(rep)
     check_svg_revision_date(rep)

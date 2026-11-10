@@ -22,6 +22,9 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+# 与治理门禁同一套退出码词汇：0 干净 / 1 finding / 2 用法错 / 3 环境错。
+EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
+
 from kernel.tree import mount_tree, WANT_ALL, config_path, ALLIN_CONFIG  # noqa: E402
 
 
@@ -43,6 +46,13 @@ async def _boot():
 
 
 def _exit_code(rc):
+    """把服务返回值归一为进程退出码。
+
+    约定（2026-11-10 深度审计 H-4 后明确）：服务方法「正常执行完且无退出码」
+    返回 ``None`` ⇒ 0；子进程结果取 ``returncode``；显式整数原样透传。
+    **「未命中的子命令分支」不走这里** —— dispatch 末尾现在显式返回 EXIT_USAGE，
+    不再把「什么都没做」伪装成一次成功的 None。
+    """
     if isinstance(rc, int):
         return rc
     if hasattr(rc, 'returncode'):
@@ -105,7 +115,15 @@ def dispatch(args) -> object:
             return 0
     if args.domain == 'status':
         return ctx.status.summary(as_json=args.json, strict=args.strict)
-    return None
+    # 2026-11-10 深度审计 H-4：此前这里是 `return None`，经 _exit_code 映射为 0 ——
+    # 「CLI 路由缺了一条分支、什么都没做」被编码成「成功」。CI / agent 无法区分
+    # 「列出了 0 个」与「分支根本没命中」。改为显式用法错 + 可读诊断，fail-closed。
+    print(
+        f'allin: 未命中的子命令分支：domain={args.domain!r} '
+        f'action={getattr(args, "action", None)!r}（CLI 路由缺失，拒绝把「什么都没做」映射为成功）',
+        file=sys.stderr,
+    )
+    return EXIT_USAGE
 
 
 def build_parser() -> argparse.ArgumentParser:

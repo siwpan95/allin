@@ -559,7 +559,7 @@ def main(argv: list[str]) -> int:
     blocking = report.findings if args.list_all else new_findings
     rendered = report.render()
     print(rendered.splitlines()[0] if args.quiet else rendered)
-    return EXIT_BLOCKING if blocking else EXIT_OK
+    return report.exit_code(blocking)
 
 
 if __name__ == "__main__":

@@ -153,7 +153,7 @@
   `verify-upstream-merge.ps1`（上游 PR 合并门禁）、`bundle/`、`安装说明.md`。
 
 ### 2.6 可安装产物 —— `packages/allin-governance`（2026-10-31 起）
-- PyPI 包 `allin-governance`（现版本 0.0.0a2，演进见根 `CHANGELOG.md`）：
+- PyPI 包 `allin-governance`（现版本 0.0.0a5，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
 - **一份源码两处消费**：`pyproject.toml` 的 `package-dir` 把仓内 `tools/repocheck` 与
   `tools/gate/governance` 映射进包（`_repocheck` / `_gatesuite`），不复制；

@@ -238,8 +238,20 @@ class Report:
     def note(self, message: str) -> None:
         self.notes.append(message)
 
-    def exit_code(self) -> int:
-        if self.findings:
+    def exit_code(self, findings: list | None = None) -> int:
+        """门禁统一出口：blocking > 严格模式下的 skip > clean。
+
+        ``findings`` 供「基线过滤后判红」的门禁传入 ``new_findings``：这些门禁在
+        ``--list-all`` 时会把 ``report.findings`` 换成**全量**列表，若直接用
+        self.findings 判定，列出基线内条目也会被误判成 blocking。传显式列表即可
+        把「展示用 findings」与「判红用 findings」分开。
+
+        2026-11-10 深度审计 H-2：此前 11 道门禁绕过本方法直接返回
+        ``EXIT_BLOCKING if new_findings else EXIT_OK``，使 ``ALLIN_GATE_STRICT_SKIP=1``
+        只对其余门禁生效 —— 同一个环境变量在不同门禁上语义不一致，本身就是假绿。
+        """
+        effective = self.findings if findings is None else findings
+        if effective:
             return EXIT_BLOCKING
         # 2026-11-08 深度审核 A1：SKIP ≠ pass。此前 render() 明写
         # 「SKIPPED (not a pass)」，退出码却恒 0，聚合器把整类未检查当成 clean。

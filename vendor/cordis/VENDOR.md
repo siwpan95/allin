@@ -58,8 +58,10 @@ v4.0.0 的 `Context` 采用 **fiber 属性式 API**：`provide` / `inject` / `ef
 源码布局保留上游 src-layout：`vendor/cordis/src/cordis/` 即包根。两种接法任选：
 
 1. **已为本 venv 挂 .pth**（推荐，已做）：
-   `.venv/Lib/site-packages/zz_vendor_cordis.pth` 含一行
-   `G:/repos/3dworld/vendor/cordis/src` → 任意 `.venv` 下代码直接 `import cordis`。
+   `.venv/Lib/site-packages/zz_vendor_cordis.pth` 含一行 `<repo>/vendor/cordis/src`
+   （仓内相对路径 `vendor/cordis/src`）→ 任意 `.venv` 下代码直接 `import cordis`。
+   2026-11-10 补记：原文此处为他机绝对路径 `G:/repos/3dworld/vendor/cordis/src`；
+   本机 G 盘已不存在，故改为与机器无关的占位表述，其余历史事实保持不变。
 2. **临时加路径**（换环境/CI）：
    ```python
    import sys, os
@@ -87,3 +89,24 @@ v4.0.0 在 `import cordis` 时**硬依赖** `pyyaml`（`src/cordis/include.py` �
 - `VENDOR.md` —— 本文件（记账）
 
 > 同步变更：`.gitignore` 已忽略 `cordis-py-main.zip`（仅留作溯源，不入库）。
+
+## 补记（2026-11-10）：H-6 双副本清理
+
+- **现状**：本目录现仅存**一份** cordis 包源码 `src/cordis/`（包根，src-layout），
+  连同 `tests/`、`pyproject.toml`、`README.md`、`LICENSE`、`VENDOR.md` 构成全部内容；
+  运行时 `kernel/_cordis_locate.py`、`.pth`、`pyproject.toml` 的
+  `[tool.hatch.build.targets.wheel] packages = ["src/cordis"]` 与回归测试均指向这一份。
+- **已删除**：原并列存在的陈旧副本 `vendor/cordis/cordis/`（16 个模块，与
+  `src/cordis/` 内容仅 `hmr.py` 不同）已于 **2026-11-10** 按五维深度审计 H-6 用
+  `git rm -r vendor/cordis/cordis/` 删除（含更新 index）。
+- **删除原因**：① 与真身发生**修复漂移** —— 真身 `src/cordis/hmr.py` 已加
+  `if WATCHDOG_AVAILABLE:` 类定义守卫，副本缺失该守卫，在无 watchdog 环境导入期会抛
+  `TypeError: NoneType takes no arguments`；② 该副本**全仓零引用**（`git grep` 排除
+  `docs/记录/**` 历史留档后零命中），却仍被 git 跟踪、随 clone 扩散到每台机器。
+- **恢复方式**：内容可从 HEAD（`dcebb02`）完整恢复，例如
+  `git show HEAD:vendor/cordis/cordis/<file>`（如
+  `git show HEAD:vendor/cordis/cordis/hmr.py`），或整体
+  `git checkout HEAD -- vendor/cordis/cordis/`。
+- **说明**：以上为追加补记，上文「来源 / 许可证 / 借用范围 / 导入方式 / 文件清单」
+  等历史结论性段落文字均未改写；仅「导入方式」第 1 项的 `.pth` 路径由他机绝对路径
+  改为机器无关占位表述。

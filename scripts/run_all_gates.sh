@@ -383,14 +383,23 @@ run "$PY" -m unittest discover -s kernel/tests
 # B1 整改：原来直跑脚本只走 test_scanner.py:723 的 _smoke()（约 10 项 check），
 # 62 个 pytest 用例虽全绿却从未进跑批。改为 pytest 全量收集，与 CI 口径一致。
 run "$PY" -m pytest tools/repocheck/test_scanner.py -q
+# ⑥ P1（2026-11-10 深度审计 H-2 / H-4）：CLI 与服务层退出码、治理门禁严格模式
+#    SKIP 的两组回归。此前 tests/test_allin_cli.py 的 42 个用例从未进跑批，
+#    正是「测试写了不跑 = 没有测试」的同一类缺口，一并接入。
+run "$PY" -m pytest tests/test_allin_cli.py tests/test_gate_strict_skip.py -q
 # ⑦ 仓根 README「可机检事实」护栏（2026-11-04 工程审查 Docu Top3-2 落地）：
 #    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
 #    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。
 run "$PY" tools/gate/check_readme_refs.py
+#    P1 #10（2026-11-10 深度审计 H-5）：R2 判定面扩到 25 份现行声明文档并改
+#    「集合相等」口径后，把自检也接进跑批 —— 注入旧版本号探针必须判红、恢复后判绿，
+#    否则「护栏自身失效」和旧口径漂移一样静默。
+run "$PY" tools/gate/check_readme_refs.py --selfcheck
 # ⑧ 架构资产对账（2026-11-04 体检落地，ADR-0009）：architecture/ 的 SVG 与 adr/ 在
-#    文档契约判据之外，本门禁把「SVG 数字 / adr 索引 / website 端口登记」六项声明
+#    文档契约判据之外，本门禁把「SVG 数字 / adr 索引 / website 端口登记 / 包版本」七项声明
 #    对账成退出码 —— 体检实测 5 处漂移（ADR 索引缺 0006–0008、图内三处数字落后两代）
-#    曾静默存活近月，此后同类漂移跑批即红。
+#    曾静默存活近月，此后同类漂移跑批即红。2026-11-10 深度审计 H-5 补第七项：
+#    SVG 里的 allin-governance 版本声明必须与 pyproject.toml 相等。
 run "$PY" tools/gate/check_arch_assets.py
 # ⑨ 月度治理盘点器自身逻辑回归（ERP P2 备用路线，2026-11-07）：真跑由
 #    ALLIN-monthly-audit 计划任务负责（每台机器本地 JSONL），这里只跑夹具自测，

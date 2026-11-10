@@ -82,7 +82,17 @@ def check_ports(data: Path, ports_yaml: Path, findings: list[str], infos: list[s
     if yaml is None:
         return {"mode": "SKIPPED(yaml 不可用)"}
     doc = F.load_json(data)
-    ydoc = yaml.safe_load(ports_yaml.read_text(encoding="utf-8")) or {}
+    # H-3：此前这里裸调 yaml.safe_load，权威端口源写坏会抛 ParserError 直接崩溃；
+    # 与 check_index_sync 的「静默 SKIP」正好构成同一文件内两种相反口径。统一为
+    # 在场但解析失败 → BLOCK（可读诊断 + 非 0 退出），不崩溃、也不假装没检查。
+    try:
+        ydoc = yaml.safe_load(ports_yaml.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        findings.append(f"ports.yaml 权威源在场但解析失败，不得判绿：{ports_yaml} — {type(exc).__name__}: {exc}")
+        return {"mode": "BLOCK(auth parse failed)"}
+    if not isinstance(ydoc, dict):
+        findings.append(f"ports.yaml 顶层不是 mapping：{ports_yaml}（{type(ydoc).__name__}）")
+        return {"mode": "BLOCK(auth parse failed)"}
     y_ports = {p["port"]: p for p in (ydoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     j_ports = {p["port"]: p for p in doc.get("ports", []) if isinstance(p, dict) and "port" in p}
     # 方向性判据：facts.json.ports 必须是 ports.yaml 的子集（真身不得凭空多 Port）；
@@ -131,7 +141,15 @@ def check_source_lines(data: Path, root: Path, findings: list[str]) -> dict:
 def check_dolt_state(state: Path, head: str | None, findings: list[str], warnings: list[str]) -> dict:
     if not state.is_file():
         return {"mode": "SKIPPED(no dolt state)"}
-    st = json.loads(state.read_text(encoding="utf-8"))
+    # H-3 同口径：在场但读不出来是数据损坏，不是「没有这份派生物」。
+    try:
+        st = json.loads(state.read_text(encoding="utf-8"))
+    except Exception as exc:
+        findings.append(f"Dolt state 在场但解析失败，不得判绿：{state} — {type(exc).__name__}: {exc}")
+        return {"mode": "BLOCK(state parse failed)"}
+    if not isinstance(st, dict):
+        findings.append(f"Dolt state 顶层不是对象：{state}（{type(st).__name__}）")
+        return {"mode": "BLOCK(state parse failed)"}
     sha = st.get("source_git_sha")
     if not sha:
         return {"mode": "SKIPPED(state 无 sha)"}
@@ -210,15 +228,33 @@ def check_projects(data: Path, root: Path, findings: list[str]) -> dict:
 
 
 def _load_yaml_list(path: Path, key: str):
+    """加载权威 YAML 索引源；三种「不可用」必须可区分。
+
+    2026-11-10 深度审计 H-3：此前 ``except Exception: return None`` 把
+    「YAML 写坏了」与「文件不存在」混成同一个 ``None``，调用方按「文件不存在」
+    记 ``SKIPPED(no auth)`` —— 权威源损坏这种本该红灯的状态被当成「没检查」
+    静默放过，facts.json 投影滞后/凭空多的漂移判据随之整组失效。
+
+    Returns:
+        list            正常（可为空列表）
+        None            文件不存在 → 调用方可 SKIP（派生物纪律：源可删可重建）
+        "NO_YAML"       PyYAML 未安装 → 环境能力缺失，由调用方显式留痕
+        "PARSE_FAILED:…" 文件在场但解析失败 / 结构不对 → 调用方**必须 BLOCK**
+    """
     if not path.is_file():
         return None
     if yaml is None:
         return "NO_YAML"
     try:
         doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        return None
-    return doc.get(key) or []
+    except Exception as exc:
+        return f"PARSE_FAILED:{type(exc).__name__}: {exc}"
+    if not isinstance(doc, dict):
+        return f"PARSE_FAILED:顶层不是 mapping（{type(doc).__name__}）"
+    rows = doc.get(key) or []
+    if not isinstance(rows, list):
+        return f"PARSE_FAILED:{key} 不是列表（{type(rows).__name__}）"
+    return rows
 
 
 def check_index_sync(data: Path, root: Path, findings: list[str], *,
@@ -234,6 +270,11 @@ def check_index_sync(data: Path, root: Path, findings: list[str], *,
         return {"mode": f"SKIPPED(no {name} auth)"}
     if rows == "NO_YAML":
         return {"mode": "SKIPPED(yaml 不可用)"}
+    if isinstance(rows, str) and rows.startswith("PARSE_FAILED:"):
+        # H-3：权威源在场却读不出内容 = 数据损坏，绝不能降级成「没这个文件」。
+        detail = rows.split(":", 1)[1]
+        findings.append(f"{name} 权威源在场但解析失败，不得判绿：{auth_rel} — {detail}")
+        return {"mode": "BLOCK(auth parse failed)"}
     a_ids = {r.get(id_field) for r in rows if isinstance(r, dict) and r.get(id_field)}
     doc = F.load_json(data)
     j_index = doc.get(key) or []
@@ -259,8 +300,17 @@ def check_ports_mirror(root: Path, findings: list[str]) -> dict:
         return {"mode": "SKIPPED(yaml 不可用)"}
     if not auth.is_file():
         return {"mode": "SKIPPED(no auth ports)"}
-    mdoc = yaml.safe_load(mirror.read_text(encoding="utf-8")) or {}
-    adoc = yaml.safe_load(auth.read_text(encoding="utf-8")) or {}
+    # H-3：镜像与权威源都在场，任一读不出来都属数据损坏，统一 BLOCK 而不是
+    # 裸抛 ParserError 或静默 SKIP（「双源对账没跑」不能算通过）。
+    try:
+        mdoc = yaml.safe_load(mirror.read_text(encoding="utf-8")) or {}
+        adoc = yaml.safe_load(auth.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        findings.append(f"ports 镜像/权威源在场但解析失败，不得判绿：{type(exc).__name__}: {exc}")
+        return {"mode": "BLOCK(ports parse failed)"}
+    if not isinstance(mdoc, dict) or not isinstance(adoc, dict):
+        findings.append(f"ports 镜像/权威源顶层不是 mapping：mirror={type(mdoc).__name__} auth={type(adoc).__name__}")
+        return {"mode": "BLOCK(ports parse failed)"}
     m_ports = {p["port"]: p for p in (mdoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     a_ports = {p["port"]: p for p in (adoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
     for k in sorted(set(m_ports) - set(a_ports)):
@@ -304,6 +354,38 @@ def run(data: Path, ports_yaml: Path, state: Path, root: Path = ROOT) -> int:
     return EXIT_OK if clean else EXIT_BLOCKING
 
 
+def _selftest_bad_auth() -> bool:
+    """H-3 回归：把权威 tiering.yaml 写成语法错误，run() 必须非 0。
+
+    修复前的实测行为：``_load_yaml_list`` 返回 None ⇒ ``check_index_sync`` 记
+    ``SKIPPED(no tiering auth)`` ⇒ findings 为空 ⇒ ``run()`` 返回 0。这个夹具把
+    「权威源损坏却判绿」钉成一条可重复执行的失败用例。
+    """
+    import shutil
+    import tempfile
+    if yaml is None:
+        # 无 PyYAML 时连「解析失败」都构造不出来（会走 NO_YAML 分支）；如实标注，
+        # 既不算自证通过也不制造无依赖环境上的假红。
+        print("  H-3 坏权威源注入：跳过（本机无 PyYAML，无法构造解析失败）")
+        return True
+    root = Path(tempfile.mkdtemp(prefix="allin-drift-badauth-"))
+    try:
+        data = root / "facts.json"
+        empty_facts = json.dumps({"ports": [], "facts": [], "machines": [],
+                                  "projects": [], "tiering": [], "tools": [], "licenses": []})
+        # g09-python-hygiene 按行检查文本 I/O：write_text 与 encoding 必须同一行。
+        data.write_text(empty_facts, encoding="utf-8")
+        auth = root / "docs" / "事实源" / "tiering.yaml"
+        auth.parent.mkdir(parents=True)
+        auth.write_text("tiering: [ { repo: [unclosed\n  bad: : :\n", encoding="utf-8")
+        rc = run(data, root / "no-ports.yaml", root / "no-state.json", root)
+        caught = rc != EXIT_OK
+        print(f"  H-3 坏权威源注入：run exit={rc}（期望非 0），caught={caught}")
+        return caught
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def selftest() -> int:
     import tempfile
     root = Path(tempfile.mkdtemp(prefix="allin-drift-selftest-"))
@@ -316,8 +398,10 @@ def selftest() -> int:
     badp.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
     drift_caught = run(badp, DEFAULT_PORTS, DEFAULT_STATE, ROOT)
     clean = run(data, DEFAULT_PORTS, DEFAULT_STATE, ROOT)
-    ok = drift_caught == EXIT_BLOCKING and clean == EXIT_OK
+    bad_auth_caught = _selftest_bad_auth()
+    ok = drift_caught == EXIT_BLOCKING and clean == EXIT_OK and bad_auth_caught
     print(json.dumps({"gate": GATE, "clean": clean, "drift_caught": drift_caught,
+                      "bad_auth_caught": bad_auth_caught,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 

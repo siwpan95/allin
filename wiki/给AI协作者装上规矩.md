@@ -155,7 +155,7 @@ Windows CI 的默认控制台编码是 cp1252，装不下中文。
 ```json
 {
   "generator": "allin-governance",
-  "version": "0.0.0a1",
+  "version": "0.0.0a5",
   "generated_at": "2026-10-31 10:39:18 +0800",
   "gates": ["g00-meta", "g01-paths", "..."],
   "files": {

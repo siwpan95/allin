@@ -12,6 +12,14 @@ exit codes. For each registry entry it asserts:
 * the gate id is documented in ``governance/RULES.md``, so a rule can always be
   traced to the check that enforces it.
 
+It also audits the audit inventory itself (2026-11-10 deep audit H-7):
+
+* every ``gates/gXX_*.py`` on disk must be declared in ``registry.json`` — the
+  registry is the aggregator's only list, so an undeclared gate script is never
+  run ("a gate that is written but not wired is no gate at all");
+* numbering holes must be declared. ``g02`` is a documented historical hole;
+  any new hole has to be added to ``KNOWN_NUMBERING_GAPS`` explicitly.
+
 Exit codes follow the governance vocabulary: 0 clean, 1 blocking finding,
 2 usage error, 3 environment error.
 """
@@ -44,6 +52,14 @@ REQUIRED_SWITCHES = ("--selfcheck", "--quiet", "--baseline", "--no-baseline", "-
 # 用契约文本本身当正则：格式偏差即判「没打印摘要」，不留「打印了就算」的模糊地带。
 SELFCHECK_LINE = re.compile(r'^SELFCHECK (\{"caught":\d+,"clean":\d+,"misreports":\d+\})$', re.MULTILINE)
 SELFCHECK_TIMEOUT_SECONDS = 600
+
+#: 与 check_arch_assets.py B 项同一命名口径。
+GATE_SCRIPT_RE = re.compile(r"^(g\d{2})_.+\.py$")
+#: registry id 形如 ``g00-meta``。
+GATE_ID_RE = re.compile(r"^g(\d{2})-")
+#: 编号缺口白名单：g02 是本仓既有设计缺口（registry.json 与 docs/INDEX.md 均
+#: 明确登记「编号缺 g02」），不是遗漏。新增缺号必须在此显式声明，否则一律判红。
+KNOWN_NUMBERING_GAPS = frozenset({2})
 
 
 def run_gate_script(python: str, script: Path, args: list[str], root: Path) -> tuple[int, str]:
@@ -81,6 +97,63 @@ def untracked_support(root: Path, registry_path: Path, tracked: set[str]) -> lis
                   if path.relative_to(root).as_posix() not in tracked)
 
 
+def _rel(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def check_gate_inventory(root: Path, registry_path: Path, identifiers: set[str],
+                         report: Report) -> None:
+    """H-7：registry 之外不得存在「看起来像门禁」的脚本。
+
+    ``untracked_support()`` 只能发现「在盘上但没进 git index」的支持模块；它
+    发现不了「进了 index、却没登记进 registry.json」的门禁脚本。而 registry 是
+    聚合器 run.ts 的唯一清单 —— 没登记的脚本永远不会被跑到，这正是本仓反复
+    踩过的「门禁写了不跑 = 没有门禁」。
+    """
+    gates_dir = registry_path.parent / "gates"
+    if not gates_dir.is_dir():
+        return
+    declared = {int(m.group(1)) for ident in identifiers
+                if (m := GATE_ID_RE.match(ident))}
+    for path in sorted(gates_dir.glob("g??_*.py")):
+        m = GATE_SCRIPT_RE.fullmatch(path.name)
+        if not m:
+            continue
+        num = int(m.group(1)[1:])
+        if num not in declared:
+            report.block("rogue-gate", _rel(path, root), 0,
+                         f"{path.name}: 命名像门禁但 {_rel(registry_path, root)} 未登记 —— "
+                         f"该脚本不会被聚合器执行（门禁写了不跑 = 没有门禁）")
+
+
+def check_numbering(identifiers: list[str], registry_path: Path, root: Path,
+                     report: Report) -> None:
+    """H-7：编号缺口必须可解释；重复编号同样判红。
+
+    自检沙箱夹具用的是 ``ok`` / ``bad`` 这类非 gNN- 形式的 id，没有编号可判，
+    此时直接跳过，避免给夹具制造假红。
+    """
+    nums = [int(m.group(1)) for ident in identifiers
+            if (m := GATE_ID_RE.match(ident))]
+    if not nums:
+        return
+    duplicates = sorted({n for n in nums if nums.count(n) > 1})
+    if duplicates:
+        report.block("registry", _rel(registry_path, root), 0,
+                     f"门禁编号重复：{', '.join(f'g{n:02d}' for n in duplicates)}")
+    present = set(nums)
+    gaps = [n for n in range(0, max(present) + 1) if n not in present]
+    unexpected = [n for n in gaps if n not in KNOWN_NUMBERING_GAPS]
+    if unexpected:
+        allowed = ', '.join(f"g{n:02d}" for n in sorted(KNOWN_NUMBERING_GAPS)) or '（无）'
+        report.block("registry", _rel(registry_path, root), 0,
+                     f"门禁编号出现未声明缺口：{', '.join(f'g{n:02d}' for n in unexpected)}；"
+                     f"白名单仅允许 {allowed}（新增缺口须改 KNOWN_NUMBERING_GAPS 并说明理由）")
+
+
 def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> Report:
     """Judge every registered gate and return the classified report."""
     report = Report(title=TITLE)
@@ -94,6 +167,12 @@ def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> R
     if not isinstance(entries, list) or not entries:
         raise GateError(f"{registry_path}: 'gates' must be a non-empty list")
     tracked = set(govlib.tracked_files(root))
+    identifiers = [str(entry.get("id", "<missing id>")) for entry in entries
+                    if isinstance(entry, dict)]
+    # H-7：先审「审计清单本身」——未登记的门禁脚本 / 未声明的编号缺口，
+    # 再逐条审 registry 里登记过的门禁。
+    check_gate_inventory(root, registry_path, set(identifiers), report)
+    check_numbering(identifiers, registry_path, root, report)
     for missing in untracked_support(root, registry_path, tracked):
         report.block("untracked-support", missing, 0,
                      f"{missing}: present on disk but absent from the git index (an ignore rule can hide it)")
@@ -224,6 +303,8 @@ def selfcheck() -> int:
         sandbox.write("governance/gates/ok_gate.py", good_gate)
         sandbox.write("governance/gates/bad_gate.py", bad_gate)
         sandbox.write("governance/gates/silent_gate.py", silent_gate)
+        # H-7：进了 git index、却没登记进 registry 的门禁脚本 —— 聚合器永远不会跑它。
+        sandbox.write("governance/gates/g99_rogue.py", good_gate)
         registry = {
             "version": 1,
             "gates": [
@@ -266,6 +347,10 @@ def selfcheck() -> int:
                       any(kind.startswith("registry:incomplete") for kind in blocked))
         check.detects("a gate claiming a profile probe it cannot disable",
                       any("profile-claim" in finding.text for finding in report.findings))
+        # H-7：gates/ 里有未登记的 gXX_*.py ⇒ 必须判红，否则该门禁永不执行。
+        check.detects("an undeclared gXX gate script",
+                      any(finding.kind == "rogue-gate" and "g99_rogue.py" in finding.text
+                          for finding in report.findings))
         # 平台跳过自证（2026-10-31 新增）：声明「不支持本机平台」的门禁必须被
         # **跳过而不是判红**，且跳过要留痕（SKIP ≠ 通过）。
         # 这个夹具补的是一个真实事故：g20-facts 声明 platforms=["nt"]，
@@ -297,6 +382,36 @@ def selfcheck() -> int:
                          sandbox.path / "governance/RULES.md", sys.executable)
         check.detects("a support module missing from the index",
                       any(finding.kind == "untracked-support" for finding in report.findings))
+
+    # H-7 反向：白名单只声明了 g02，故意缺 g01 ⇒ 必须判红。
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("governance/gates/ok_gate.py", good_gate)
+        sandbox.write("governance/RULES.md", "# Rules\n\n| g00-a | r1 |\n| g02-c | r2 |\n")
+        sandbox.write("governance/registry.json", json.dumps({"version": 1, "gates": [
+            {"id": "g00-a", "title": "a", "script": "governance/gates/ok_gate.py", "tier": "P0",
+             "rules": ["r1"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
+            {"id": "g02-c", "title": "c", "script": "governance/gates/ok_gate.py", "tier": "P0",
+             "rules": ["r2"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
+        report = inspect(sandbox.path, sandbox.path / "governance/registry.json",
+                         sandbox.path / "governance/RULES.md", sys.executable)
+        check.detects("an undeclared numbering hole",
+                      any("未声明缺口" in finding.text for finding in report.findings))
+
+    # H-7 正向：本仓真实形态「缺 g02」在白名单内，不得误报（防真实跑批被拖红）。
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("governance/gates/ok_gate.py", good_gate)
+        sandbox.write("governance/RULES.md", "# Rules\n\n| g00-a | r1 |\n| g01-b | r2 |\n| g03-c | r3 |\n")
+        sandbox.write("governance/registry.json", json.dumps({"version": 1, "gates": [
+            {"id": "g00-a", "title": "a", "script": "governance/gates/ok_gate.py", "tier": "P0",
+             "rules": ["r1"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
+            {"id": "g01-b", "title": "b", "script": "governance/gates/ok_gate.py", "tier": "P0",
+             "rules": ["r2"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True},
+            {"id": "g03-c", "title": "c", "script": "governance/gates/ok_gate.py", "tier": "P0",
+             "rules": ["r3"], "platforms": ["nt", "posix"], "requires": ["python"], "selfcheck": True}]}) + "\n")
+        report = inspect(sandbox.path, sandbox.path / "governance/registry.json",
+                         sandbox.path / "governance/RULES.md", sys.executable)
+        check.quiet("the whitelisted g02 numbering hole",
+                    any("未声明缺口" in finding.text for finding in report.findings))
     return check.finish()
 
 
