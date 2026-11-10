@@ -9,7 +9,8 @@ set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 3
 
-export PATH="/c/Program Files/Dolt/bin:$PATH"
+# 2026-11-10 换机可移植：dolt 定位收敛到共享解析（不再硬编码安装盘位）
+. "$ROOT/deploy/dolt/dolt_env.sh"
 WS="$ROOT/facts/dolt-workspace"
 HOST="127.0.0.1"
 PORT="3306"
@@ -22,7 +23,7 @@ for a in "$@"; do
 done
 
 if ! command -v dolt >/dev/null 2>&1; then
-  echo "ENV ERROR: dolt 不在 PATH（预期 C:\\Program Files\\Dolt\\bin\\dolt.exe）"; exit 3
+  allin_dolt_env_error; exit 3
 fi
 if [ ! -d "$WS/.dolt" ]; then
   echo "ENV ERROR: $WS 未初始化（先跑 import_from_git.py --apply）"; exit 3

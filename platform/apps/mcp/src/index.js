@@ -42,13 +42,19 @@ const NETBOX_SYNCER = path.join(REPO, 'deploy', 'netbox', 'sync_from_git.py')
 const METRICS_TREND = path.join(AUDIT_DIR, 'exceptions-snapshots.jsonl')
 const REGISTRY_DRAFTS = path.join(AUDIT_DIR, 'registry-drafts')
 const EXCEPTION_DRAFTS = path.join(AUDIT_DIR, 'exception-drafts')
-// dolt 二进制不在全局 PATH 时的本地兜底候选（Windows 安装器默认落这里，不写 PATH）。
+// dolt 二进制不在全局 PATH 时的本地兜底候选。
+// 2026-11-10 换机可移植整改：此前写死 Windows 盘符，换机后该路径不存在 ⇒
+// facts.diff / sync.status 永久不可用（且因「本机恰好存在」被 g01 豁免，
+// 正是换机必坏的盲区）。现在改为**从环境推导**：显式 env 优先，
+// Windows 默认安装位置由 %ProgramFiles% 推导（不写盘符），POSIX 保留通用安装位置。
 const DOLT_BIN_CANDIDATES = [
-  'C:\\Program Files\\Dolt\\bin',
-  'C:\\Program Files (x86)\\Dolt\\bin',
+  process.env.ALLIN_DOLT_BIN,
+  process.env.DOLT_HOME ? path.join(process.env.DOLT_HOME, 'bin') : null,
+  process.env.DOLT_HOME,
+  process.env.ProgramFiles ? path.join(process.env.ProgramFiles, 'Dolt', 'bin') : null,
   '/opt/dolt/bin',
   '/usr/local/bin',
-]
+].filter(Boolean)
 
 const PROTOCOL = '2025-06-18'
 const SERVER_INFO = { name: 'allin-governance', version: '0.2.0' }

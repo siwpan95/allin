@@ -12,11 +12,19 @@
 #      watchdog（cordis 的 hmr 可选增强，缺失时 cordis 退回 mtime 轮询）
 #   3. 建 docs/ 下的 ASCII 别名（spec/ facts/ records/ 历史/）——
 #      别名是 junction/symlink，**不入库**，换机或克隆后必须重建
-#   4. 打印下一步命令（跑门禁 / 装平台依赖 / 看门禁自检）
+#   4. 装 Node 侧依赖（platform 必装；website 用 --with-node）——
+#      干净检出缺 node_modules 时 portal 会 ERR_MODULE_NOT_FOUND 启动即崩
+#   5. 打印下一步命令（跑门禁 / 看门禁自检）
+#
+# 换机纪律（2026-11-10 整改）：本脚本**不再有静默跳过**——
+#   · 无 pwsh 时改用 cmd 内建 mklink /J 建 junction（原先只 echo 警告就跳过，
+#     导致 g15 的 D6 必红而用户以为环境就绪 = 假绿的第一处）；
+#   · Node 依赖未装时如实说明「哪些能力会降级为 not_applicable」。
 #
 # 用法：
 #   bash scripts/bootstrap.sh
 #   bash scripts/bootstrap.sh --no-aliases   # 跳过别名（Linux/CI 上别名意义有限）
+#   bash scripts/bootstrap.sh --with-node     # 连 website 依赖一并装
 #
 # 退出码：0 = 全部完成；非 0 = 某一步失败（说明哪一步，不静默吞错）
 
@@ -31,11 +39,13 @@ cd "$ROOT"
 
 VENV="$ROOT/.venv"
 SKIP_ALIASES=0
+WITH_NODE=0
 for arg in "$@"; do
   case "$arg" in
     --no-aliases) SKIP_ALIASES=1 ;;
+    --with-node) WITH_NODE=1 ;;
     -h|--help)
-      sed -n '2,30p' "$SELF" | sed 's/^# \{0,1\}//'
+      sed -n '2,34p' "$SELF" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "未知参数：$arg（用 --help 看用法）" >&2; exit 2 ;;
@@ -44,9 +54,13 @@ done
 
 say() { printf '\n== %s\n' "$1"; }
 die() { printf '!! %s\n' "$1" >&2; exit 1; }
+# 步骤计数（2026-11-10：新增 Node 依赖步，共 5 步；此前硬编码 /4 会误导）
+STEP=0
+TOTAL_STEPS=5
+step() { STEP=$((STEP + 1)); say "$STEP/$TOTAL_STEPS $1"; }
 
 # ---------------------------------------------------------------- 1) 解释器
-say "1/4 选定 Python 解释器"
+step "选定 Python 解释器"
 PY_BOOTSTRAP=""
 for cand in python3.13 python3.12 python3 python; do
   if command -v "$cand" >/dev/null 2>&1; then
@@ -60,7 +74,7 @@ done
 echo "   解释器：$PY_BOOTSTRAP（$("$PY_BOOTSTRAP" --version 2>&1)）"
 
 # ---------------------------------------------------------------- 2) venv
-say "2/4 准备仓内 .venv"
+step "准备仓内 .venv"
 if [ -x "$VENV/bin/python" ] || [ -x "$VENV/Scripts/python.exe" ]; then
   echo "   已存在，复用：$VENV"
 else
@@ -71,7 +85,7 @@ if [ -x "$VENV/bin/python" ]; then VENV_PY="$VENV/bin/python"; else VENV_PY="$VE
 echo "   解释器：$VENV_PY"
 
 # ---------------------------------------------------------------- 3) 依赖
-say "3/4 安装依赖"
+step "安装依赖"
 # PyYAML 是硬依赖：g18-exceptions 要解析 exceptions.yml，kernel/tree.py 要读 cordis 配置树。
 # watchdog 是 cordis 的 hmr 可选增强（cordis[hmr]）；缺它 cordis 退回 mtime 轮询，不崩。
 # 两者都装，是为了让「换台机器跑出同样结论」成立，而不是让新人踩 g18 假红。
@@ -85,7 +99,7 @@ fi
 "$VENV_PY" -c 'import yaml; print("   PyYAML", yaml.__version__)'
 
 # ---------------------------------------------------------------- 4) ASCII 别名
-say "4/4 建 docs/ ASCII 别名"
+step "建 docs/ ASCII 别名"
 # 别名是 junction（Windows）/ symlink（POSIX），**不入库**（.gitignore 已屏蔽），
 # 换机或克隆后必须重建。不建的话门禁 g15 的 D6 会报「别名缺失」。
 #
@@ -124,10 +138,72 @@ elif command -v pwsh >/dev/null 2>&1; then
   # 权威实现：tools/gate/make_doc_aliases.ps1（Windows 用 junction，管理员不需要）
   pwsh -File "$ROOT/tools/gate/make_doc_aliases.ps1" || die "别名重建失败（Windows 上若因权限失败，看 FAQ 第 6 条）"
   echo "   已用 make_doc_aliases.ps1 重建"
+elif command -v cmd.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
+  # 2026-11-10 换机可移植整改：无 pwsh 时**不再静默跳过**（那会让 g15 的 D6 必红，
+  # 而用户以为环境就绪 —— 假绿的第一处）。改用 cmd 内建的 mklink /J 建 junction：
+  # 不依赖 PowerShell 7，权限要求与 pwsh 路径相同（junction 不需要管理员）。
+  created=0; kept=0; failed=0
+  for pair in "spec:规范" "facts:事实源" "records:记录" "历史:md"; do
+    alias_name="${pair%%:*}"; real_name="${pair##*:}"
+    ap="$ROOT/docs/$alias_name"; rp="$ROOT/docs/$real_name"
+    if [ ! -d "$rp" ]; then
+      echo "   !! 真身目录缺失：docs/$real_name"; failed=$((failed+1)); continue
+    fi
+    ap_win="$(cygpath -w "$ap" 2>/dev/null || printf '%s' "$ap")"
+    rp_win="$(cygpath -w "$rp" 2>/dev/null || printf '%s' "$rp")"
+    if [ -e "$ap" ] || [ -L "$ap" ]; then
+      # rmdir 只删链接本身（非空目录会失败），比 rm -rf 安全（不会误删真身内容）
+      cmd.exe //c "rmdir \"$ap_win\"" >/dev/null 2>&1 || rm -rf "$ap" 2>/dev/null || true
+    fi
+    if cmd.exe //c "mklink /J \"$ap_win\" \"$rp_win\"" >/dev/null 2>&1; then
+      created=$((created+1))
+    else
+      echo "   !! 建别名失败：docs/$alias_name"; failed=$((failed+1))
+    fi
+  done
+  echo "   已建 $created 个、失败 $failed 个（cmd mklink /J，无 pwsh 路径）"
+  [ "$failed" = "0" ] || die "别名重建有失败项（见上）—— g15 的 D6 会红，必须先解决"
 else
-  echo "   未找到 pwsh，跳过别名重建。"
-  echo "   ⚠ docs/spec docs/facts docs/records docs/历史 是 junction，不入库；"
-  echo "     换机/克隆后需重建（Windows 装 PowerShell 7 后重跑本脚本即可）。"
+  echo "   !! 无法重建别名：既无 pwsh，也无 cmd.exe+cygpath。"
+  echo "     别名是 junction/symlink、不入库；缺了 g15 的 D6 必红。"
+  die "请装 PowerShell 7（pwsh），或在 Git Bash/WSL 下重跑本脚本"
+fi
+
+# ---------------------------------------------------------------- 5) Node 侧依赖
+step "安装 Node 侧依赖（platform / website）"
+# 2026-11-10 换机可移植整改：干净检出里 platform/node_modules 与 website/node_modules
+# 不存在 ⇒ portal 的 ESM 首行 import '@allin/core' 直接 ERR_MODULE_NOT_FOUND，
+# 「按 bootstrap 走完仍起不来」。这里默认装 platform（门户启动的硬前提）；
+# website 体量较大，用 --with-node 一并装。不装的后果在下方如实标注。
+install_node() {
+  local dir="$1"
+  if [ ! -f "$ROOT/$dir/package-lock.json" ]; then
+    echo "   -- $dir 无 package-lock.json，跳过"
+    return 0
+  fi
+  if [ -d "$ROOT/$dir/node_modules" ]; then
+    echo "   -- $dir 依赖已存在，跳过"
+    return 0
+  fi
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "   !! 找不到 npm —— $dir 依赖未安装（该目录相关能力将降级为 not_applicable）"
+    return 1
+  fi
+  echo "   -- 安装 $dir 依赖（npm ci，需网络或已配置的镜像）..."
+  npm ci --prefix "$ROOT/$dir" --no-audit --no-fund || return 1
+  echo "   -- $dir 依赖已就位"
+  return 0
+}
+
+node_ok=1
+install_node platform || node_ok=0
+if [ "$WITH_NODE" = "1" ]; then
+  install_node website || node_ok=0
+fi
+if [ "$node_ok" != "1" ]; then
+  echo "   ⚠ 部分 Node 依赖未就位：platform 门户与 smoke:e2e 会记为 not_applicable"
+  echo "     （跑批汇总会如实列出，不再是「什么都没检查却全绿」）。"
+  echo "     修复：npm ci --prefix platform --prefix website  （或配好 npm 镜像）"
 fi
 
 # ---------------------------------------------------------------- 下一步
@@ -144,8 +220,11 @@ cat <<'EOF'
   # 文档索引契约（期望：存量应为 0）
   python tools/gate/docs_index.py --no-baseline --list-all
 
-  # 如需集成平台（Node 侧）
-  cd platform && npm install --registry=https://registry.npmmirror.com && npm test
+  # 如需集成平台（Node 侧）：platform 依赖通常已由本脚本装好
+  cd platform && npm test
+
+  # 若上面报「依赖未就位」，手工补装（国内网络可加 --registry=https://registry.npmmirror.com）：
+  #   npm ci --prefix platform && npm ci --prefix website
 
 EOF
 echo "   （Windows 上若中文输出乱码：用 allin.bat，或设 PYTHONIOENCODING=utf-8）"

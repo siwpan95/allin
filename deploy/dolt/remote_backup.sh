@@ -10,18 +10,28 @@ set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 3
 
-# dolt 二进制注入（§147 装到 C:\Program Files\Dolt\bin，未入 PATH）
-export PATH="/c/Program Files/Dolt/bin:$PATH"
+# 2026-11-10 换机可移植：dolt 定位收敛到共享解析（不再硬编码安装盘位）
+. "$ROOT/deploy/dolt/dolt_env.sh"
 WS="$ROOT/facts/dolt-workspace"
 REMOTE_NAME="allin-git"                                  # 推到 allin GitHub 仓的 refs/dolt/data
 REMOTE_URL="git@github.com:siwpan95/allin.git"
 BACKUP_NAME="local-backup"
-BACKUP_URL="file://E:/allin-dolt-backup"                  # 本地灾备（E: 大容量盘，可重建派生物）
+# 灾备根不再写死盘符：2026-11-10 起由 DOLT_BACKUP_ROOT 提供（无默认值 —— 盘符随机器变）。
+BACKUP_ROOT="${DOLT_BACKUP_ROOT:-}"
+BACKUP_URL=""
+if [ -n "$BACKUP_ROOT" ]; then
+  BACKUP_URL="file://$(printf '%s' "$BACKUP_ROOT" | sed 's|\\|/|g')"
+fi
 APPLY=0
 [ "${1:-}" = "--apply" ] && APPLY=1
 
 if ! command -v dolt >/dev/null 2>&1; then
-  echo "ENV ERROR: dolt 不在 PATH（预期 C:\\Program Files\\Dolt\\bin\\dolt.exe）"; exit 3
+  allin_dolt_env_error; exit 3
+fi
+if [ $APPLY -eq 1 ] && [ -z "$BACKUP_URL" ]; then
+  echo "ENV ERROR: 灾备根未配置（--apply 需要它）。"
+  echo "  修法：设 DOLT_BACKUP_ROOT=<灾备目录>（不再默认写死某个盘符）。"
+  exit 3
 fi
 if [ ! -d "$WS/.dolt" ]; then
   echo "ENV ERROR: $WS 未初始化（先跑 import_from_git.py --apply）"; exit 3
@@ -45,9 +55,9 @@ have_bk="$(dolt remote 2>/dev/null | awk -v n="$BACKUP_NAME" '$1==n{print 1}')"
 if [ "$have_bk" = "1" ]; then
   echo "BACKUP 已配置: $BACKUP_NAME -> $(dolt remote 2>/dev/null | awk -v n="$BACKUP_NAME" '$1==n{print $2}')"
 else
-  echo "BACKUP 待配置: $BACKUP_NAME -> $BACKUP_URL"
+  echo "BACKUP 待配置: $BACKUP_NAME -> ${BACKUP_URL:-<未配置 DOLT_BACKUP_ROOT>}"
   if [ $APPLY -eq 1 ]; then
-    dolt backup add "$BACKUP_NAME" "$BACKUP_URL" && echo "  added" || echo "  backup add 失败（检查 E: 可写）"
+    dolt backup add "$BACKUP_NAME" "$BACKUP_URL" && echo "  added" || echo "  backup add 失败（检查灾备目录可写）"
   fi
 fi
 

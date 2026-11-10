@@ -16,16 +16,15 @@ set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 3
 
-# dolt 二进制注入（§147 装到 C:\Program Files\Dolt\bin，未入 PATH）
-export PATH="/c/Program Files/Dolt/bin:$PATH"
-if ! command -v dolt >/dev/null 2>&1; then
-  echo "ENV ERROR: dolt 二进制不在 PATH（预期 C:\\Program Files\\Dolt\\bin\\dolt.exe）"
+# 2026-11-10 换机可移植：dolt 与 Python 的定位收敛到共享解析（deploy/dolt/dolt_env.sh）——
+# 此前硬编码了本机安装盘位与某台机器的 Python 绝对路径，换机即坏。
+. "$ROOT/deploy/dolt/dolt_env.sh"
+if ! allin_resolve_dolt; then
+  allin_dolt_env_error
   exit 3
 fi
 
-# 优先用本机主力 Python（E:\Python314），回退 python3/python
-PY="$(command -v /e/Python314/python.exe || command -v python3 || command -v python)"
-[ -n "$PY" ] || { echo "ENV ERROR: 找不到 Python"; exit 3; }
+PY="$(allin_resolve_python)" || { echo "ENV ERROR: 找不到 Python（设 ALLIN_PYTHON 或用仓内 .venv）"; exit 3; }
 
 # 一次性工作区放在仓内已 gitignore 的 facts/dolt-workspace/.asof_proof（NTFS 路径，rm 可靠）
 WS="$ROOT/facts/dolt-workspace/.asof_proof"

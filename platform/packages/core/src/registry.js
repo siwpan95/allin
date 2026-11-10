@@ -23,7 +23,21 @@ export const PORTS_YAML = process.env.PLATFORM_PORTS || path.join(PLATFORM_DIR, 
 // 连测试都切不动 ⇒ `PLATFORM_PATH_CHECK=absolute npm test` 下「path 不存在应报错」
 // 类断言集体失去前提而红。该缺陷 2026-09-24 专题记录里已写明，README 却仍推荐这条异机命令。
 export function pathCheckMode() {
-  return process.env.PLATFORM_PATH_CHECK === 'absolute' ? 'absolute' : 'exists'
+  const explicit = process.env.PLATFORM_PATH_CHECK
+  if (explicit === 'absolute' || explicit === 'exists') return explicit
+  // 2026-11-10 换机可移植整改：此前固定 'exists' ⇒ 换机（无同级 repos/ 发布区）
+  // 时 145 条清单全部报「path 不存在」，把形状校验淹掉。现在按「发布区是否真的存在」
+  // 自动选：有发布区才要求路径存在，否则退到形状校验（absolute）。
+  try {
+    const root = REPOS_ROOT
+    if (fs.existsSync(root)) {
+      const hasRepo = fs.readdirSync(root).some((name) => {
+        try { return fs.statSync(path.join(root, name)).isDirectory() } catch { return false }
+      })
+      if (hasRepo) return 'exists'
+    }
+  } catch { /* 读不到发布区：按形状校验继续，不硬失败 */ }
+  return 'absolute'
 }
 
 // ── path 去符盘（2026-10-26 三仓整合 + repos 约定）───────────────────────────
