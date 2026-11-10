@@ -31,6 +31,10 @@ const cache = {
   entries: null,
 };
 
+// R-01（2026-11-10 收尾）：website 面端口发现的唯一读取入口。
+// 口径：读 portFile → parseInt → 校验 1-65535 → 返回 URL；非合法端口返回 null（交由三态降级）。
+// 与 kernel（仅判存在性，G3 零网络铁律）、cli（/api/status 探活兜底，进程强杀残留）、
+// harness（port>0）的校验口径**有意不同**，不可强行统一为一份——各面职责不同（见各面读取点注释）。
 function readPortalBase() {
   const explicit = config.portal.baseUrl;
   if (explicit) return explicit.replace(/\/+$/, '');

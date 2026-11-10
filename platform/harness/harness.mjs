@@ -18,6 +18,9 @@ const resolve = (s) => (s || '')
 // 并写端口发现文件 data/portal.port。固定端口会让「门户不在线」成为常态，
 // 配合 informational 用例忽略 errors ⇒ harness 恒报全绿。这里改为优先读
 // 实际绑定端口，环境变量 PLATFORM_PORTAL_URL 可显式覆盖。
+// R-01（2026-11-10 收尾）：harness 面端口发现读取。口径：读 portFile → parseInt → port>0 → URL；
+// env PLATFORM_PORTAL_URL 可显式覆盖（回退 manifest 声明失败时须计入 failures，不得恒绿）。
+// 与 website（1-65535 + 三态降级）/ kernel（仅存在性）/ cli（探活兜底）有意差异，不可强行统一。
 function probeTarget(c) {
   if (process.env.PLATFORM_PORTAL_URL) return process.env.PLATFORM_PORTAL_URL
   try {

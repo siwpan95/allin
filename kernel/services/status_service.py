@@ -170,6 +170,9 @@ def _platform_summary(running_json: str = RUNNING_JSON, portal_port: str = PORTA
              if isinstance(rec, dict) and _pid_alive(rec.get('pid'))}
     stale = len(entries) - len(alive)
     port = None
+    # R-01（2026-11-10 收尾）：kernel 面端口发现读取——G3 铁律零网络，仅判存在性 + 尝试 int，
+    # 不探活、不校验 1-65535（那是 website 三态降级的职责）。残留垃圾文件 → 视同未发现。
+    # 与 website（1-65535 触发降级）/ cli（探活兜底）/ harness（port>0）口径有意不同，不可强行统一。
     if os.path.exists(portal_port):
         try:
             with open(portal_port, 'r', encoding='utf-8') as fh:

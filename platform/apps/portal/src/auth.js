@@ -8,6 +8,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { writeAtomically } from '@allin/core'
 
 export function createTokenGate(dataDir) {
   const file = path.join(dataDir, 'portal.token')
@@ -21,9 +22,11 @@ export function createTokenGate(dataDir) {
   }
   if (!token) throw new Error('门户令牌为空，拒绝以无鉴权状态启动')
   // 无论令牌来自环境变量还是自动生成，都落盘一次，供 CLI / website 代理读取。
+  // R-05 收敛（2026-11-10）：改原子写（temp+fsync+rename），不再裸 writeFileSync；
+  // mode 0o600 仅 Unix 生效，Windows 忽略（原 chmodSync 兜底保留）。
   try {
     fs.mkdirSync(dataDir, { recursive: true })
-    fs.writeFileSync(file, token + '\n', { mode: 0o600 })
+    writeAtomically(file, token + '\n', { mode: 0o600 })
     try { fs.chmodSync(file, 0o600) } catch { /* Windows 权限语义有限，尽力而为 */ }
   } catch (e) {
     console.error('[portal] 令牌文件写入失败（其它进程需改用 ALLIN_PORTAL_TOKEN 注入）：' + e.message)

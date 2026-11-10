@@ -921,12 +921,21 @@ function callTool(name, args, trace = null) {
     case 'facts.query': {
       const doc = readJson(FACTS_JSON)
       if (!doc) return fail('facts/facts.json 不可读')
+      // C-09（2026-11-08 深度审核 P1 · 2026-11-10 收尾）：别名表自维护。
+      // 友好别名 → facts.json 复数顶层键；每次查询校验别名值都命中真实顶层键，
+      // 一旦 facts.json 顶层键改名即 fail-loud，而非静默返回空数组被误读为「无匹配」。
       const alias = {
         machine: 'machines', volume: 'volumes', runtime: 'runtimes',
         service_port: 'ports', port: 'ports', fact: 'facts',
         doc_ref: 'doc_refs', observation_run: 'observation_runs',
         project: 'projects', tiering: 'tiering', tool: 'tools',
         license: 'licenses',
+      }
+      const topKeys = Object.keys(doc)
+      for (const [friendly, real] of Object.entries(alias)) {
+        if (!topKeys.includes(real)) {
+          return fail(`facts 别名映射漂移：'${friendly}' -> '${real}' 不在 facts.json 顶层键中`)
+        }
       }
       const key = alias[a.type] || a.type
       const arr = Array.isArray(doc[key]) ? doc[key] : null

@@ -22,7 +22,7 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
+from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV  # 单一事实源，勿重定义
 def _repo_root() -> Path:
     """从脚本位置向上找仓根，不写死盘符（铁律 5 / g01-paths）。"""
     for p in Path(__file__).resolve().parents:

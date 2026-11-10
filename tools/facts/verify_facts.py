@@ -53,7 +53,9 @@ import sys
 from pathlib import Path
 
 GATE_MODULE_DIR = Path(__file__).resolve().parents[2] / "tools" / "gate" / "governance" / "gates"
-EXIT_OK, EXIT_FINDING, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
+# 退出码单一事实源（R-08 收敛，2026-11-10）；EXIT_FINDING 是历史别名，等价于 EXIT_BLOCKING
+from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+EXIT_FINDING = EXIT_BLOCKING
 
 
 def load_gate():

@@ -49,6 +49,9 @@ export function pathCheckMode() {
 const WORKSPACE_ROOT = path.join(ALLIN_ROOT, '..')
 export const REPOS_ROOT = process.env.PLATFORM_REPOS_ROOT || path.join(WORKSPACE_ROOT, 'repos')
 
+// C-03（2026-11-08 深度审核 P1 · 2026-11-10 收尾）：registry 解析唯一入口。
+// loadRegistry / validateEntry / loadPorts / resolvePath / commandProblems 全部集中于此；
+// 其他模块（portal / website / kernel）只读 portal.port / running.json 等产物，不自行解析 registry。
 const RX_DRIVE = /^[A-Za-z]:[\\/]/
 
 // ── 命令形状校验（2026-11-08 深度审核 P1）────────────────────────────────

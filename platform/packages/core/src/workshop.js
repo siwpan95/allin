@@ -5,7 +5,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { DATA_DIR, PLATFORM_ROOT, logTask } from './launch.js'
+import { DATA_DIR, PLATFORM_ROOT, logTask, writeAtomically } from './launch.js'
 import { fetchBranchCommitStatus } from './gitee.js'
 
 const STATE_FILE = path.join(DATA_DIR, 'workshop.json')
@@ -21,13 +21,9 @@ function loadState() {
 
 function saveState(state) {
   fs.mkdirSync(DATA_DIR, { recursive: true })
-  // 原子写（2026-09-24 Phase 1 升级，对齐 running.json 同款 durable 纪律）：
-  // temp + fsync + rename，杜绝半截 JSON；与 launch.js writeDurable 同语义
-  const tmp = STATE_FILE + '.' + process.pid + '.tmp'
-  const data = JSON.stringify(state, null, 2)
-  const fd = fs.openSync(tmp, 'w')
-  try { fs.writeSync(fd, data); fs.fsyncSync(fd) } finally { fs.closeSync(fd) }
-  fs.renameSync(tmp, STATE_FILE)
+  // 原子写统一走 core 的 writeAtomically（R-05 收敛，2026-11-10）：与 running.json 同款
+  // durable 纪律；此前此处重实现了一遍 temp+fsync+rename 且漏了 .bak 回退，现已补齐。
+  writeAtomically(STATE_FILE, JSON.stringify(state, null, 2), { backup: true })
 }
 
 function repoUrl(repo, override) {

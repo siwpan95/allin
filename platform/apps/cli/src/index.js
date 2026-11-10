@@ -7,6 +7,8 @@
 //   - 其余写命令（订阅 / shutdown 等）走门户 HTTP API（缓存与事务在门户层）。
 // 端口发现：portal 启动时把实际端口写入 data/portal.port；本 CLI 读取后先以
 // /api/status 探活兜底（进程被强杀时端口文件可能残留）。
+// R-01（2026-11-10 收尾）：CLI 面端口发现读取口径——读取 + 探活兜底，与 website（1-65535 触发降级）/
+// kernel（仅判存在性）/ harness（port>0）有意差异，不可强行统一（见各面读取点注释）。
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'

@@ -70,23 +70,33 @@ function readRunning() {
 
 function writeRunning(map) {
   ensureData()
-  // 原子写（对齐 DSH「Windows durable publish」ADR）：temp 文件 + fsync + rename 原子替换，
+  // 原子写统一走 writeAtomically（R-05 收敛，2026-11-10）：temp 文件 + fsync + rename 原子替换，
   // 覆盖前把当前完好内容存 .bak——并发写/崩溃不再产生半截 JSON 或丢整表。
-  // fsync 在 rename 前（Phase 1）：writeFileSync 只保证进页缓存，掉电场景 rename 可能
-  // 指向空/半截 tmp；先 fsync 再 rename 才是 durable 语义（目录 fsync Windows 无 POSIX 等价，Node 层尽力）。
-  try {
-    const cur = fs.readFileSync(RUNNING_FILE, 'utf8')
-    JSON.parse(cur)
-    fs.writeFileSync(RUNNING_FILE + '.bak', cur, 'utf8')
-  } catch { /* 主文件缺失/损坏：无可备份 */ }
-  const tmp = RUNNING_FILE + '.' + process.pid + '.tmp'
-  writeDurable(tmp, JSON.stringify(map, null, 2) + '\n')
-  fs.renameSync(tmp, RUNNING_FILE)
+  // （此前 writeRunning 内联了一份 temp+fsync+rename，与 writeDurable 同语义但各写一遍。）
+  writeAtomically(RUNNING_FILE, JSON.stringify(map, null, 2) + '\n', { backup: true })
+}
+
+/** 原子写（R-05 收敛，2026-11-10）：temp 文件 + fsync + rename，可选 .bak 回退。
+ * 供所有需要 durable 落盘的状态文件（running.json / workshop.json / portal.port / portal.token）复用，
+ * 避免各处重实现 temp+fsync+rename 且口径不一致（此前 workshop / portal 漏了 fsync 或 .bak）。
+ * @param {boolean} [opts.backup] 覆盖前把当前完好内容存 .bak（崩溃可回退整表）
+ * @param {number}  [opts.mode]   创建/落盘权限位（默认不显式设，沿用 umask；令牌类传 0o600） */
+export function writeAtomically(file, data, { backup = false, mode } = {}) {
+  const tmp = file + '.' + process.pid + '.tmp'
+  writeDurable(tmp, data, mode)
+  if (backup) {
+    try {
+      const cur = fs.readFileSync(file, 'utf8')
+      JSON.parse(cur)
+      fs.writeFileSync(file + '.bak', cur, 'utf8')
+    } catch { /* 主文件缺失/损坏：无可备份 */ }
+  }
+  fs.renameSync(tmp, file)
 }
 
 /** durable 写：open → write → fsync → close（供 temp+rename 前置落盘）。 */
-function writeDurable(file, data) {
-  const fd = fs.openSync(file, 'w')
+export function writeDurable(file, data, mode) {
+  const fd = fs.openSync(file, 'w', mode)
   try { fs.writeSync(fd, data); fs.fsyncSync(fd) } finally { fs.closeSync(fd) }
 }
 

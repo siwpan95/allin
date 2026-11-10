@@ -23,6 +23,7 @@ import {
   checkUpdate,
   DATA_DIR,
   resolvePath,
+  writeAtomically,
 } from '@allin/core'
 import { overviewPayload, orchestrationPayload } from './bridge.js'
 import { createTokenGate } from './auth.js'
@@ -408,7 +409,9 @@ server.listen(port, '127.0.0.1', () => {
   const PORT_FILE = path.join(DATA_DIR, 'portal.port')
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true })
-    fs.writeFileSync(PORT_FILE, String(actual), 'utf8')
+    // R-05 收敛（2026-11-10）：改原子写（temp+fsync+rename），不再裸 writeFileSync；
+    // 此前直接 writeFileSync 违反 AGENTS.md 第 5 条 durable 语义（崩溃可能半截）。
+    writeAtomically(PORT_FILE, String(actual))
     process.on('exit', () => { try { fs.rmSync(PORT_FILE, { force: true }) } catch { /* 已不在 */ } })
   } catch (e) {
     console.error('[portal] 端口文件写入失败: ' + e.message)

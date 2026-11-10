@@ -30,7 +30,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-EXIT_OK, EXIT_USAGE, EXIT_ENV = 0, 2, 3
+# 退出码单一事实源（R-08 收敛，2026-11-10）；measure 只采集不判 blocking，仍 import 全档防漂移
+from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
 
 # 这些目录按仓根相对写，避免把盘符写进代码（铁律 5）。
 REPO_MARKERS = ("docs", "preset", "tools")
