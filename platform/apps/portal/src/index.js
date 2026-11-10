@@ -221,7 +221,11 @@ const server = http.createServer(async (req, res) => {
     try {
       return json(res, 200, startEntry(entry, { owner: 'portal' }))
     } catch (e) {
-      return json(res, 400, { error: String(e.message) })
+      // E-01（2026-11-10 功能内聚整改）：core 抛的是带 err.code 的结构化错误
+      // （INVALID_ENTRY / UNSAFE_COMMAND），这里必须保留 code 跨接缝存活，否则下游
+      // （CLI / website / MCP）无法区分「清单非法」与「命令不安全」。
+      const code = (e && e.code) || 'START_FAILED'
+      return json(res, 400, { error: String(e.message), code })
     }
   }
   const stopM = p.match(/^\/api\/library\/([a-z0-9-]+)\/stop$/)
@@ -235,7 +239,9 @@ const server = http.createServer(async (req, res) => {
     try {
       return json(res, 200, await stopEntry(stopM[1], entry || null))
     } catch (e) {
-      return json(res, 200, { ok: false, reason: 'stop-failed', error: String((e && e.message) || e) })
+      // E-01：保留上游 code（STOP_FAILED / UNSAFE_COMMAND 等），供 website 侧透传。
+      const code = (e && e.code) || 'STOP_FAILED'
+      return json(res, 200, { ok: false, reason: 'stop-failed', code, error: String((e && e.message) || e) })
     }
   }
   const alertsM = p.match(/^\/api\/alerts$/)

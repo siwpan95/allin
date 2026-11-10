@@ -104,7 +104,13 @@ function removeRunning(id) {
   }
 }
 
-/** pid 存活探测（跨平台；EPERM 视为存活——存在但不可信号）。 */
+/** pid 存活探测（跨平台；EPERM 视为存活——存在但不可信号）。
+ *
+ * 语义约定（R-02 2026-11-10 功能内聚整改）：本函数与
+ * kernel/services/status_service.py:_pid_alive 必须为**同一语义**，否则 portal 与 kernel
+ * 对同一 pid 给出不同「存活」结论。约定：pid 非法/≤0 → false；可发 signal-0（含 EPERM
+ * 无权限）→ true；不存在(ESRCH/ENOENT)或异常 → false。改动此处须同步 Python 侧。
+ */
 function pidAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false
   try {

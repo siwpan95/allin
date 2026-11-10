@@ -212,7 +212,9 @@ async function proxyEntryAction(id, action) {
   if (r.status === 200) return { ok: true, id, result: r.body || {} };
   if (r.status === 404) return { ok: false, code: 'NOT_FOUND', message: '注册表中没有这个项目。' };
   if (r.status === 400) {
-    return { ok: false, code: 'UPSTREAM_REJECTED', message: (r.body && r.body.error) || '平台拒绝了这次操作。' };
+    // E-02（2026-11-10 功能内聚整改）：上游 body 现已带结构化 code（INVALID_ENTRY /
+    // UNSAFE_COMMAND 等），原样透传，避免二次丢失——否则 website 只能靠字符串匹配。
+    return { ok: false, code: (r.body && r.body.code) || 'UPSTREAM_REJECTED', message: (r.body && r.body.error) || '平台拒绝了这次操作。' };
   }
   return { ok: false, code: 'UPSTREAM_ERROR', message: `平台返回异常状态 ${r.status}。` };
 }

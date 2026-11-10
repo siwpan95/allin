@@ -43,6 +43,11 @@ def _pid_alive(pid) -> bool:
     Windows：OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION) 打开成功即存活——仅查询
     权限，不产生任何终止语义；打不开（句柄无效/已退出）即不存活。
     POSIX：os.kill(pid, 0) 是标准 signal-0 探活（EPERM 视为存活，对齐 launch.js 口径）。
+
+    语义约定（R-02 2026-11-10 功能内聚整改）：本函数与
+    platform/packages/core/src/launch.js:pidAlive 必须为同一语义（权限不足=存活，
+    不存在/异常=不存活）。改动此处必须同步 Node 侧，否则 portal 与 kernel 对同一 pid
+    给出不同「存活」结论。
     """
     try:
         pid = int(pid)
