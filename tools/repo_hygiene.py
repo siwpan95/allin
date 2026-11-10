@@ -69,12 +69,18 @@ import stat
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 except Exception:
     pass
+
+# P2 #18：跨目录 import 稳健化 —— scanctx 在 tools/repocheck/，按顶层模块名 import。
+# 与仓内 `from scanctx import ...` 既有写法一致，保证从任意 cwd 直接跑本脚本也能找到。
+sys.path.insert(0, str(Path(__file__).resolve().parent / "repocheck"))
+import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
 
 MIB = 1024 * 1024
 BIG_FILE_LIMIT = 5 * MIB
@@ -253,13 +259,15 @@ class Finding:
 
 
 def run_git(repo, *args, binary=False):
-    """执行 git 命令；返回 (rc, stdout)。失败不抛异常，由调用方判定。"""
-    cmd = ["git", "-C", repo] + list(args)
-    try:
-        p = subprocess.run(cmd, capture_output=True, timeout=180)
-    except Exception as e:
-        return 128, (b"" if binary else str(e))
-    return p.returncode, (p.stdout if binary else p.stdout.decode("utf-8", "replace"))
+    """执行 git 命令；返回 ``(rc, stdout)``。失败不抛异常，由调用方判定。
+
+    P2 #18：委托 :func:`scanctx.run_git` 统一 10s / GIT_OPTIONAL_LOCKS=0 /
+    stdin=DEVNULL / CREATE_NO_WINDOW 口径，去掉自写的 180s subprocess 实现。
+    保留原返回签名与 ``binary`` 语义：binary=False → (rc, str)、失败 (128, 诊断串)；
+    binary=True → (rc, bytes)、失败 (128, b"")，四种组合与改造前逐字一致。
+    """
+    # scanctx.run_git 的 text 语义与本函数恰好相反：binary=True ⇒ text=False。
+    return scanctx.run_git(repo, *args, text=not binary)
 
 
 def is_git_repo(path):
@@ -665,8 +673,9 @@ def check_h8_eol(repo, tracked, ctx):
         if not os.path.isfile(real):
             continue
         try:
-            blob = subprocess.run(["git", "-C", repo, "cat-file", "blob", "HEAD:" + p],
-                                  capture_output=True, timeout=60).stdout
+            # P2 #18：二进制 blob 逐字节比对，走统一入口的 binary=True（原始 bytes），
+            # 与其余只读 git 调用共享同一份超时/环境口径。
+            _rc, blob = run_git(repo, "cat-file", "blob", "HEAD:" + p, binary=True)
             wt = open(real, "rb").read()
         except Exception:
             continue

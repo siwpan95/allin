@@ -23,33 +23,11 @@ AUTH_PORTS = ROOT / "docs" / "事实源" / "ports.yaml"
 MIRROR = ROOT / "platform" / "registry" / "ports.yaml"
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
 
-
-class AuthUnavailable(Exception):
-    """权威 YAML 在场但无法解析（缺 PyYAML / 语法错 / 顶层非 mapping）。
-
-    2026-11-10 深度审计 H-3：此前 ``_yaml_load`` 用 ``except Exception: return None``
-    把「语法错」与「文件不存在 / 缺 yaml」混成同一个 None，``check_sync`` /
-    ``check_mirror`` 据此返回 ``EXIT_OK, ["SKIP(auth unpar.able)"]`` —— 实测把
-    ``ports.yaml`` 写坏后 ``--check`` 仍是 ``rc=0``，权威源损坏被判绿。
-    """
-
-
-def _yaml_load(path: Path) -> dict:
-    """读权威 YAML；文件是否存在由调用方先行判定。
-
-    在场但不可解析 → 抛 ``AuthUnavailable``，**绝不**返回 None 让调用方降级为 SKIP。
-    """
-    try:
-        import yaml
-    except ImportError as exc:
-        raise AuthUnavailable(f"PyYAML 未安装：{exc}") from exc
-    try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception as exc:
-        raise AuthUnavailable(f"YAML 解析失败：{type(exc).__name__}: {exc}") from exc
-    if not isinstance(doc, dict):
-        raise AuthUnavailable(f"顶层不是 mapping：{type(doc).__name__}")
-    return doc
+# P2 #19：权威 YAML 读取（含 P1 #7 的「在场但解析失败 → BLOCK」语义）收敛为
+# tools/facts/cli.py 里唯一一份；本模块删除自写的 class AuthUnavailable / _yaml_load。
+# 跨目录稳健：保证同目录 cli / exit_codes 可 import（从任意 cwd 直接跑或经包导入均可）。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli import AuthUnavailable, yaml_load  # noqa: E402
 
 
 def collect_ports(auth: Path = AUTH_PORTS) -> tuple[list[dict], list[str]]:
@@ -59,7 +37,7 @@ def collect_ports(auth: Path = AUTH_PORTS) -> tuple[list[dict], list[str]]:
         return [], [f"权威端口源不存在：{auth}"]
     # H-3：解析失败必须抛错（由 main 转 EXIT_ENV），不能退化成「空端口列表 +
     # 一条 warning」——那样默认收集会打印 [] 并 exit 0，同样是「损坏被判绿」。
-    doc = _yaml_load(auth)
+    doc = yaml_load(auth)
     ports = [p for p in (doc.get("ports") or []) if isinstance(p, dict) and "port" in p]
     if not ports:
         warnings.append("权威端口源无 ports 条目")
@@ -113,7 +91,7 @@ def check_sync(data: Path, auth: Path = AUTH_PORTS) -> tuple[int, list[str]]:
         return EXIT_OK, ["SKIP(no auth ports)"]
     # H-3：权威源在场却读不出来 = 数据损坏，必须 BLOCK；只有「文件不存在」才允许 SKIP。
     try:
-        adoc = _yaml_load(auth)
+        adoc = yaml_load(auth)
     except AuthUnavailable as exc:
         return EXIT_BLOCKING, [f"权威端口源在场但无法解析（不得判绿）：{auth} — {exc}"]
     a_ports = {p["port"]: p for p in (adoc.get("ports") or []) if isinstance(p, dict) and "port" in p}
@@ -139,8 +117,8 @@ def check_mirror(mirror: Path, auth: Path = AUTH_PORTS) -> tuple[int, list[str]]
         return EXIT_OK, ["SKIP(no auth ports)"]
     # H-3：镜像/权威源任一在场但不可解析都属损坏，BLOCK 而非 SKIP 判绿。
     try:
-        mdoc = _yaml_load(mirror)
-        adoc = _yaml_load(auth)
+        mdoc = yaml_load(mirror)
+        adoc = yaml_load(auth)
     except AuthUnavailable as exc:
         return EXIT_BLOCKING, [f"ports 镜像/权威源在场但无法解析（不得判绿）：{exc}"]
     m_ports = {p["port"]: p for p in (mdoc.get("ports") or []) if isinstance(p, dict) and "port" in p}

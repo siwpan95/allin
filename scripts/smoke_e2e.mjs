@@ -22,6 +22,7 @@
  */
 
 import { spawn, execSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -354,7 +355,9 @@ async function checkpointGovernanceWiring() {
   try {
     // 注册通道建一个临时会员并直接拿到会话 Cookie（overview 仅需 requireAuth）
     const email = `cp7-smoke-${Date.now()}@allin.local`;
-    const password = 'Cp7Smoke2026';
+    // 口令运行时生成（可被 ALLIN_SMOKE_PASSWORD 覆盖），绝不写死字面量；
+    // 与 website/scripts/seed.js 的「env 覆盖 + 随机生成 + 默认不打印」惯例一致。
+    const password = process.env.ALLIN_SMOKE_PASSWORD || `Cp7Smoke-${randomBytes(8).toString('hex')}`;
     const regRes = await fetchT(`${BASE}/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },

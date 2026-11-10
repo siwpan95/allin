@@ -74,6 +74,12 @@ import sys
 import threading
 import time
 
+# 超时默认值单一事实源（P2 #20）：本文件在 tools/security/，按位置自发现 tools/（铁律 5）。
+_TOOLS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+import runtime_defaults as _rd  # noqa: E402
+
 # ----------------------------------------------------------------- 常量
 
 # 默认扫描根：各机用 ALLIN_VENV_SCAN_ROOT 环境变量覆盖；缺省扫当前目录。
@@ -273,7 +279,7 @@ def standalone_uv_version():
     if not exe:
         return None
     try:
-        r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=60)
+        r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_default"))
     except Exception:
         return None
     m = re.search(r"(\d+\.\d+\.\d+)", (r.stdout or "") + (r.stderr or ""))
@@ -302,7 +308,7 @@ def uv_baseline_status(uv_ver):
 
 def probe(py):
     try:
-        r = subprocess.run([py, "--version"], capture_output=True, text=True, timeout=60)
+        r = subprocess.run([py, "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_default"))
         return r.returncode == 0
     except Exception:
         return False
@@ -310,7 +316,7 @@ def probe(py):
 
 def pip_works(py):
     try:
-        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=120)
+        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
         return r.returncode == 0
     except Exception:
         return False
@@ -469,12 +475,12 @@ class PipBootstrap(Check):
         if not py or pip_works(py):
             return None
         r = subprocess.run([py, "-m", "ensurepip", "--upgrade"],
-                           capture_output=True, text=True, timeout=300)
+                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_ensurepip"))
         if pip_works(py):
             return "pip bootstrapped via ensurepip"
         moved = quarantine_broken_pip(venv)
         r = subprocess.run([py, "-m", "ensurepip", "--upgrade"],
-                           capture_output=True, text=True, timeout=300)
+                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_ensurepip"))
         if pip_works(py):
             return "pip bootstrapped (quarantined: %s)" % (",".join(moved) or "none")
         tail = (r.stderr or r.stdout or "").strip().splitlines()[-1:]
@@ -539,7 +545,7 @@ class PipCertifiUvBaseline(Check):
         py = ctx["py"]
         if not py or not probe(py):
             return ["interpreter broken"]
-        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=120)
+        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
         if r.returncode != 0:
             issues.append("pip broken/missing")
         else:
@@ -553,7 +559,7 @@ class PipCertifiUvBaseline(Check):
                 "p=pathlib.Path(certifi.where());"
                 "t=p.read_text(errors='replace');"
                 "print(certifi.__version__, t.count('emSign ECC Root CA - G3'))")
-        r2 = subprocess.run([py, "-c", code], capture_output=True, text=True, timeout=120)
+        r2 = subprocess.run([py, "-c", code], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
         if r2.returncode == 0 and r2.stdout.strip():
             parts = r2.stdout.split()
             t0 = ver_tuple(parts[0])
@@ -578,7 +584,7 @@ class PipCertifiUvBaseline(Check):
         if not targets:
             return None
         r = subprocess.run([py, "-m", "pip", "install", "--upgrade"] + targets,
-                           capture_output=True, text=True, timeout=900)
+                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_install"))
         if r.returncode != 0:
             tail = (r.stderr or r.stdout or "").strip().splitlines()[-3:]
             return "upgrade failed: " + " | ".join(tail)
@@ -609,7 +615,7 @@ class CAEmSignG3(Check):
         if not py or not pip_works(py):
             return "活跃 G3 残留，但 pip 不可用，无法强制重装"
         subprocess.run([py, "-m", "pip", "install", "--upgrade", "--force-reinstall", "pip"],
-                       capture_output=True, text=True, timeout=900)
+                       capture_output=True, text=True, timeout=_rd.timeout("subprocess_install"))
         leftovers = [b for b in scan_bundles(venv) if b[1] > 0 and b[3] == "active"]
         if leftovers:
             return "强制重装 pip 后活跃 G3 仍残留: " + ", ".join(b[0] for b in leftovers)

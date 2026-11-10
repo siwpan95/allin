@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
@@ -21,25 +22,20 @@ DEFAULT_DATA = ROOT / "facts" / "facts.json"
 KEY = "licenses"
 ID_FIELD = "dir"
 
-
-def _yaml_load(path: Path) -> dict | None:
-    try:
-        import yaml
-    except ImportError:
-        return None
-    try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        return None
+# P2 #19：权威 YAML 读取收敛为 tools/facts/cli.py 唯一一份；本模块删除自写 _yaml_load。
+# 在场但解析失败 → cli.yaml_load 抛 AuthUnavailable，调用方必须显式非 0（不得 SKIP 判绿）。
+# 跨目录稳健：保证同目录 cli / exit_codes 可 import。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli import AuthUnavailable, yaml_load  # noqa: E402
 
 
 def collect(auth: Path = AUTH) -> tuple[list[dict], list[str]]:
     warnings: list[str] = []
-    if not auth.is_file():
-        return [], [f"权威源不存在：{auth}"]
-    doc = _yaml_load(auth)
+    # P2 #19：yaml_load 四态 —— 缺席→None(SKIP)、在场解析失败→抛 AuthUnavailable
+    # （由 main 转非 0）、正常→dict。绝不退化成「空索引 + 一条 warning」判绿。
+    doc = yaml_load(auth)
     if doc is None:
-        return [], [f"权威源无法解析：{auth}"]
+        return [], [f"权威源不存在：{auth}"]
     rows = doc.get(KEY) or []
     if not rows:
         warnings.append("权威源无 licenses 条目")
@@ -60,9 +56,13 @@ def check_sync(data: Path, auth: Path = AUTH) -> tuple[int, list[str]]:
     findings: list[str] = []
     if not auth.is_file():
         return EXIT_OK, ["SKIP(no auth)"]
-    adoc = _yaml_load(auth)
+    # P2 #19：在场但解析失败 → BLOCK + 可读诊断，绝不 SKIP 判绿（P1 #7 口径）。
+    try:
+        adoc = yaml_load(auth)
+    except AuthUnavailable as exc:
+        return EXIT_BLOCKING, [f"权威源在场但无法解析（不得判绿）：{auth} — {exc}"]
     if adoc is None:
-        return EXIT_OK, ["SKIP(auth unpar.able)"]
+        return EXIT_OK, ["SKIP(no auth)"]
     a_ids = {r[ID_FIELD] for r in (adoc.get(KEY) or []) if isinstance(r, dict) and r.get(ID_FIELD)}
     doc = json.loads(data.read_text(encoding="utf-8"))
     j_index = doc.get(KEY) or []
@@ -115,7 +115,12 @@ def main(argv=None) -> int:
             print(f"  {'SKIP' if m.startswith('SKIP') else 'BLOCK'} [licenses] {m}")
         print(f"licenses-sync: {'clean' if rc == EXIT_OK else 'blocking'} (exit={rc})")
         return rc
-    index, warnings = collect(a.auth)
+    try:
+        index, warnings = collect(a.auth)
+    except AuthUnavailable as exc:
+        # P2 #19：权威源在场但读不出来，绝不打印空索引后 exit 0（判绿）。
+        print(f"ENV ERROR: 权威源在场但无法解析，不得判绿：{a.auth} — {exc}", file=sys.stderr)
+        return EXIT_ENV
     for w in warnings:
         print(f"  WARN {w}")
     if a.write:

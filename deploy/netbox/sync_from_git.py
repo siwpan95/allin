@@ -29,6 +29,12 @@ if hasattr(sys.stdout, "reconfigure"):
 EXIT_OK, EXIT_CHANGED, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
 DEFAULT_DATA = Path(__file__).resolve().parents[2] / "facts" / "facts.json"
 
+_ROOT = Path(__file__).resolve().parents[2]
+_TOOLS = _ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+import runtime_defaults as _rd  # noqa: E402
+
 
 def digest(obj: dict) -> str:
     return hashlib.sha256(json.dumps(obj, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
@@ -38,7 +44,7 @@ def git_sha(root: Path) -> str:
     """当前 Git 真身短 SHA；取不到就明确写 UNKNOWN，绝不编造溯源键。"""
     try:
         out = subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
-                             capture_output=True, text=True, encoding="utf-8", timeout=10)
+                             capture_output=True, text=True, encoding="utf-8", timeout=_rd.timeout("git_probe"))
         return out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else "UNKNOWN"
     except (OSError, subprocess.SubprocessError):
         return "UNKNOWN"
@@ -125,7 +131,7 @@ def apply_remote(base: str, token: str, doc: dict, keys: list[str], sha: str) ->
             headers={"Authorization": auth, "Content-Type": "application/json",
                      "Accept": "application/json"}, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with urllib.request.urlopen(req, timeout=_rd.timeout("network_probe")) as r:
                 print(f"  APPLY {k} -> HTTP {r.status}")
                 ok += 1
         except (urllib.error.URLError, urllib.error.HTTPError) as e:

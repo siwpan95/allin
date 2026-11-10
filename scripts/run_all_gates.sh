@@ -89,10 +89,17 @@ skips=()
 # 不是检查项缺失，记入 not_applicable；只有真实性 SKIP 才让 status=incomplete。
 # 这样 CI 的 status=clean 才真正表示「所有适用项都跑过且通过」，而不会被
 # 「含环境性 SKIP ⇒ 永远 incomplete」逼成常红，也不会再让没检查冒充通过。
+#
+# 分类口径（2026-11-10 深度审计 #13）：BENIGN_SKIP_PATTERNS 是**纯环境不适用**标签
+# 白名单，按「工具名 + skip(原因)」子串匹配 note_skip 的 $1 标签；命中 → not_applicable，
+# 未命中 → skips[]（真实性 SKIP，status=incomplete）。新增环境性 SKIP 必须同步登记，
+# 否则会被误算成「本应跑却没跑」让 status 失真（scan_hardcoded 此前即漏登）；反过来
+# 也**不得**把真实失败/真实缺失塞进白名单 —— 那是把 SKIP 当 pass 的反向偷渡。
 BENIGN_SKIP_PATTERNS=(
   'repo_hygiene:skip('
   'smoke:e2e:skip(missing-node-deps'
   'restore-drill:skip(no-powershell'
+  'scan_hardcoded:skip(no-powershell'
   'platform:skip(no-platform-dir'
 )
 not_applicable=()
@@ -300,6 +307,13 @@ run "$PY" tools/facts/build_ports.py --check
 run "$PY" tools/facts/build_tiering.py --check
 run "$PY" tools/facts/build_tools.py --check
 run "$PY" tools/facts/build_licenses.py --check
+# ⑦ g27（2026-11-10 深度审计 M-10 / P2 #20）：运行时超时单一事实源。
+#    docs/事实源/runtime_defaults.json 是唯一权威；在场损坏→exit 1、缺席→exit 3，
+#    均不判绿（对齐 g26 的 P1 #7 口径）。独立脚本落 tools/gate/（非 governance/gates/，
+#    g00-meta 沙箱只含 governance/、够不到 docs/事实源）。--selftest 含坏 JSON / 缺席 /
+#    缺 unit / 值 0 / bool 值 / 非法 key 等 15 探针，--check 核 17 处迁移值不变 + 调用落地。
+run "$PY" tools/gate/runtime_defaults_check.py --selftest
+run "$PY" tools/gate/runtime_defaults_check.py --check
 # 派生副本新鲜度：治理段一份正文 + 三份副本（存档件 / bundle / 已挂载 profile 层）。
 # 仓内门禁看不见仓外那份挂载层 —— 2026-10-29 它就落后了整整一代（仍写「15 道门禁」）。
 # 落后即 exit 3；本机没有挂载层时该脚本记 skipped（不是通过）。
@@ -387,6 +401,13 @@ run "$PY" -m pytest tools/repocheck/test_scanner.py -q
 #    SKIP 的两组回归。此前 tests/test_allin_cli.py 的 42 个用例从未进跑批，
 #    正是「测试写了不跑 = 没有测试」的同一类缺口，一并接入。
 run "$PY" -m pytest tests/test_allin_cli.py tests/test_gate_strict_skip.py -q
+# ⑥ P2（2026-11-10 深度审计）：本轮新增回归，同样按「写了不跑 = 没有测试」接入。
+#   分三组：安全可靠性（#13-16/22）、跨模块性能与收敛（#17-19）、纯函数单测（#21）+
+#   vendored 归档边界（M-2）+ 超时单一事实源（#20）。facts 相关用例全部子进程隔离，
+#   不占 sys.modules["cli"]（否则会静默劫持 governance 的裸名 import cli）。
+run "$PY" -m pytest tests/test_p2_sec_remediation.py tests/test_p2_convergence.py -q
+run "$PY" -m pytest tests/test_vendor_cordis_archive_boundary.py tests/test_runtime_defaults.py -q
+run "$PY" -m pytest tests/test_docs_contract_pure.py tests/test_repo_hygiene_pure.py tests/test_facts_cli_pure.py tests/test_gitee_release_pure.py -q
 # ⑦ 仓根 README「可机检事实」护栏（2026-11-04 工程审查 Docu Top3-2 落地）：
 #    README 引用的仓内路径存在性 + allin-governance 版本与 pyproject 对账 ——
 #    README 不在 docs_index 判据内，本门禁是其唯一机检护栏（曾实测四处漂移静默存活）。

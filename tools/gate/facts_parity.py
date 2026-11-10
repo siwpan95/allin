@@ -37,11 +37,30 @@ def run(data: Path, generated_dir: Path, root: Path = ROOT) -> int:
     doc = F.load_json(data)
     refs = doc.get("doc_refs", [])
     findings = []
-    for r in refs:
+    # 深度审计 #16：doc_refs 可能被手工改坏或由生成器写坏。裸下标（r["path"]）
+    # 会把「数据损坏」升级成 KeyError/TypeError 崩溃，既丢结构化 finding，又让
+    # 门禁以 traceback 代替判红。先逐条校验，把坏条目转成结构化 finding，只让
+    # 合法条目进入解析链；下方 doc_refs / missing 的计数口径保持不变。
+    if not isinstance(refs, list):
+        findings.append(f"doc_refs 结构损坏：期望 list，实为 {type(refs).__name__}")
+        refs = []
+    valid = []
+    for i, r in enumerate(refs):
+        if not isinstance(r, dict):
+            findings.append(f"doc_ref <#{i}> 结构损坏：条目非 mapping（{type(r).__name__}）")
+            continue
+        path = r.get("path")
+        if not isinstance(path, str) or not path:
+            findings.append(
+                f"doc_ref {r.get('doc_id', '<#%d>' % i)} 结构损坏：缺 path / path 非字符串")
+            continue
+        valid.append(r)
+
+    for r in valid:
         target = root / r["path"]
         if not target.is_file():
             findings.append(f"doc_ref {r.get('doc_id')} 指向不存在的文件：{r['path']}")
-    pending = [r for r in refs if r.get("generated")]
+    pending = [r for r in valid if r.get("generated")]
 
     generated_files = sorted(generated_dir.glob("*.facts.md")) if generated_dir.is_dir() else []
     if generated_files:
@@ -90,6 +109,26 @@ def selftest() -> int:
     badp.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
     caught_bad_ref = run(badp, outdir, ROOT)
 
+    # 深度审计 #16：结构损坏注入 —— 三条均须结构化判红（EXIT_BLOCKING）且不抛异常。
+    # 放在 cmd_render 之前，此时 outdir 为空，避免生成物完备性分支干扰判定。
+    injections = [
+        ("refs 非 list", lambda d: d.__setitem__("doc_refs", {"oops": 1})),
+        ("某 ref 缺 path", lambda d: d["doc_refs"][0].pop("path", None)),
+        ("某 ref 是字符串", lambda d: d["doc_refs"].__setitem__(0, "not-a-mapping")),
+    ]
+    inject_results = {}
+    for idx, (name, mutate) in enumerate(injections):
+        broken = json.loads(json.dumps(doc))
+        mutate(broken)
+        p = root / ("inject_%d.json" % idx)
+        p.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
+        try:
+            inject_results[name] = run(p, outdir, ROOT)
+        except Exception as e:  # noqa: BLE001 - 注入用例把「抛异常」也记为失败
+            inject_results[name] = -1
+            print(f"  [selftest] 注入 {name} 抛异常：{type(e).__name__}: {e}")
+    inject_ok = all(v == EXIT_BLOCKING for v in inject_results.values())
+
     F.cmd_render(data, outdir, check=False)
     with_generated = run(data, outdir, ROOT)
     target = outdir / "SIWPAN.facts.md"
@@ -103,10 +142,11 @@ def selftest() -> int:
 
     ok = (clean == EXIT_OK and caught_bad_ref == EXIT_BLOCKING
           and with_generated == EXIT_OK and drift == EXIT_BLOCKING
-          and missing_artifact == EXIT_BLOCKING)
+          and missing_artifact == EXIT_BLOCKING and inject_ok)
     print(json.dumps({"gate": GATE, "clean": clean, "bad_doc_ref": caught_bad_ref,
                       "marker_active": with_generated, "marker_drift": drift,
                       "completeness_missing": missing_artifact,
+                      "structure_injections": inject_results,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 

@@ -32,12 +32,18 @@ DEFAULT_SCHEMA = ROOT / "deploy" / "dolt" / "schema.sql"
 DEFAULT_WORKSPACE = ROOT / "facts" / "dolt-workspace"
 DEFAULT_STATE = ROOT / "deploy" / "dolt" / "state" / "last_import.json"
 
+# 超时默认值单一事实源（P2 #20）：tools/ 不在子进程默认 sys.path，按脚本位置注入（铁律 5）。
+_TOOLS = ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+import runtime_defaults as _rd  # noqa: E402
+
 
 def git_commit_time(root: Path) -> str:
     """Git 提交时间，确定性值；避免用当前时间让同一真身的两次导入产生不同 SQL。"""
     try:
         r = subprocess.run(["git", "-C", str(root), "show", "-s", "--format=%cI", "HEAD"],
-                           capture_output=True, text=True, encoding="utf-8", timeout=10)
+                           capture_output=True, text=True, encoding="utf-8", timeout=_rd.timeout("git_probe"))
         s = r.stdout.strip()
         return s[:19].replace("T", " ") if r.returncode == 0 and s else "1970-01-01 00:00:00"
     except (OSError, subprocess.SubprocessError):
@@ -58,7 +64,7 @@ def q(v) -> str:
 def git_sha(root: Path) -> str:
     try:
         r = subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
-                           capture_output=True, text=True, encoding="utf-8", timeout=10)
+                           capture_output=True, text=True, encoding="utf-8", timeout=_rd.timeout("git_probe"))
         return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else "UNKNOWN"
     except (OSError, subprocess.SubprocessError):
         return "UNKNOWN"
@@ -162,10 +168,10 @@ def run_cmd(cmd: list[str], cwd: Path, stdin_file: Path | None = None) -> tuple[
         if stdin_file:
             with stdin_file.open("r", encoding="utf-8") as fh:
                 r = subprocess.run(cmd, cwd=str(cwd), stdin=fh, capture_output=True,
-                                   text=True, encoding="utf-8", errors="replace", timeout=180)
+                                   text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_long"))
         else:
             r = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True,
-                               encoding="utf-8", errors="replace", timeout=180)
+                               encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_long"))
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except (OSError, subprocess.SubprocessError) as e:
         return 3, str(e)

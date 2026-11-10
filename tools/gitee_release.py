@@ -285,11 +285,59 @@ def cmd_selfcheck(args, token):
             got = resolve_repo(_A("release", ""))
         check("子目录归一化到工作树根",
               os.path.realpath(got) == os.path.realpath(repo_a), got)
+
+        # ⑦ P5 回归（深度审计 #14）：附件上传 URL 不得含任何令牌，且请求仍带
+        #    Authorization 头。全程离线：静态断言 URL + 假 HTTPSConnection 记录头部。
+        url = attach_files_url("/api/v5", "/repos/siwpan/pluginplayer", "12345")
+        check("附件上传 URL 无令牌字样且保留 /api/v5 与 release id",
+              "token" not in url.lower()
+              and url.startswith("/api/v5/repos/")
+              and url.endswith("/releases/12345/attach_files"), url)
+
+        class _FakeResp:
+            status = 201
+            def read(self):
+                return b"{}"
+
+        class _FakeConn:
+            seen = None
+            def __init__(self, *a, **k):
+                _FakeConn.seen = self
+                self.headers = []
+                self.request_line = None
+            def putrequest(self, method, path):
+                self.request_line = (method, path)
+            def putheader(self, k, v):
+                self.headers.append((k, v))
+            def endheaders(self, *a, **k):
+                pass
+            def send(self, *a, **k):
+                pass
+            def getresponse(self):
+                return _FakeResp()
+
+        tiny = os.path.join(root, "attach.bin")
+        with open(tiny, "wb") as fh:  # gov-python: allow (binary fixture; encoding N/A)
+            fh.write(b"x")
+        real_conn = http.client.HTTPSConnection
+        http.client.HTTPSConnection = _FakeConn
+        try:
+            st, _txt = upload_file(url, "FAKETOKEN0000", tiny)
+        finally:
+            http.client.HTTPSConnection = real_conn
+        conn = _FakeConn.seen
+        hdrs = conn.headers if conn else []
+        req_path = conn.request_line[1] if conn and conn.request_line else ""
+        check("上传请求仍带 Authorization 头且 path 无令牌（假连接，离线）",
+              st == 201
+              and ("Authorization", "token FAKETOKEN0000") in hdrs
+              and "token" not in req_path.lower(),
+              repr(hdrs) + " | " + repr(req_path))
     finally:
         os.chdir(saved)
         shutil.rmtree(root, ignore_errors=True)
 
-    total = 8
+    total = 10
     print("SELFCHECK_%s (%d/%d)" % ("PASSED" if not fails else "FAILED",
                                     total - len(fails), total))
     return 0 if not fails else 1
@@ -451,6 +499,17 @@ def release_url(args, tag):
     return "https://gitee.com/%s/%s/releases/%s" % (args.owner, args.name, tag)
 
 
+def attach_files_url(api_path, repo, release_id):
+    """附件上传 URL（P5：令牌绝不进 URL，只经 Authorization 头传递）。
+
+    `upload_file` 是直连 HTTPSConnection("gitee.com") + 原样 path，必须自带
+    `/api/v5` 前缀；令牌由 upload_file() 的 `Authorization: token ...` 头携带。
+    早期实现把令牌作为 query 参数拼进 URL，会随日志/代理/referer 外泄，
+    与文件头 P5 声明及 api() 的口径冲突，已收敛为纯路径。
+    """
+    return "%s%s/releases/%s/attach_files" % (api_path, repo, release_id)
+
+
 def upload_attachments(args, token, files):
     rel = get_release(args, token, args.tag)
     if not rel:
@@ -478,8 +537,8 @@ def upload_attachments(args, token, files):
         #    2026-09-22 实测踩到：4 个附件全部返回 `你所访问的页面不存在 (404)` 的 HTML 页，
         #    而同一路径手工带上 /api/v5 后立刻 201。这个坑不报错、只静默失败，非常阴。
         _api_path = API[len("https://gitee.com"):]          # "/api/v5"
-        url = "%s%s/releases/%s/attach_files?access_token=%s" % (
-            _api_path, repo_path(args), rel["id"], token)
+        # P5：URL 不带任何 query（尤其不带令牌）；令牌只经 upload_file() 的 Authorization 头。
+        url = attach_files_url(_api_path, repo_path(args), rel["id"])
         t0 = time.time()
         try:
             st, txt = upload_file(url, token, path)

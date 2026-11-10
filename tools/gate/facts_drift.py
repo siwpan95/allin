@@ -21,6 +21,7 @@ import argparse
 import json
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 try:
@@ -37,6 +38,33 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
 DEFAULT_PORTS = ROOT / "docs" / "事实源" / "ports.yaml"
 DEFAULT_STATE = ROOT / "deploy" / "dolt" / "state" / "last_import.json"
+
+
+@lru_cache(maxsize=8)
+def _parse_facts_text(raw: str) -> dict:
+    """M-7：facts.json 内容级缓存 —— 同一份文本只做一次 json.loads。
+
+    `run()` 会依次跑 6 个判据，每个都重新解析一遍 88 KB 的 facts.json。
+    缓存键取**文件内容本身**而非 mtime/size：自检会用同路径、相近尺寸覆盖
+    注入坏数据，元数据键有返回陈旧结果的风险；内容键天然免疫这类误判。
+    """
+    return json.loads(raw)
+
+
+def load_facts(data: Path) -> dict:
+    """与 F.load_json 等价的错误语义（RuntimeError 包装），但走内容级缓存。
+
+    返回的 dict 由调用方只读使用（本模块 6 个判据均只读）；注入坏数据的
+    selftest 用 json.loads(json.dumps(...)) 自行深拷贝后再改。
+    """
+    try:
+        raw = data.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"读取失败 {data}: {exc}") from exc
+    try:
+        return _parse_facts_text(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"读取失败 {data}: {exc}") from exc
 
 
 def git_head() -> str | None:
@@ -81,7 +109,7 @@ def check_ports(data: Path, ports_yaml: Path, findings: list[str], infos: list[s
         return {"mode": "SKIPPED(no ports.yaml)"}
     if yaml is None:
         return {"mode": "SKIPPED(yaml 不可用)"}
-    doc = F.load_json(data)
+    doc = load_facts(data)
     # H-3：此前这里裸调 yaml.safe_load，权威端口源写坏会抛 ParserError 直接崩溃；
     # 与 check_index_sync 的「静默 SKIP」正好构成同一文件内两种相反口径。统一为
     # 在场但解析失败 → BLOCK（可读诊断 + 非 0 退出），不崩溃、也不假装没检查。
@@ -113,7 +141,7 @@ def check_ports(data: Path, ports_yaml: Path, findings: list[str], infos: list[s
 
 
 def check_source_lines(data: Path, root: Path, findings: list[str]) -> dict:
-    doc = F.load_json(data)
+    doc = load_facts(data)
     facts = doc.get("facts", [])
     bad = 0
     for f in facts:
@@ -184,7 +212,7 @@ def check_dolt_state(state: Path, head: str | None, findings: list[str], warning
 
 
 def check_machines(data: Path, root: Path, findings: list[str]) -> dict:
-    doc = F.load_json(data)
+    doc = load_facts(data)
     j_machines = {m.get("machine_id") for m in doc.get("machines", []) if m.get("machine_id")}
     md_dir = root / "docs" / "事实源" / "机器"
     md_machines = set()
@@ -211,7 +239,7 @@ def check_projects(data: Path, root: Path, findings: list[str]) -> dict:
     registry_stems = {p.stem for p in registry.glob("*.yaml")}
     if not registry_stems:
         return {"mode": "SKIPPED(empty registry)"}
-    doc = F.load_json(data)
+    doc = load_facts(data)
     projects = doc.get("projects")
     if not projects:
         return {"mode": "SKIPPED(no facts.projects — 派生物可删，不强制)"}
@@ -276,7 +304,7 @@ def check_index_sync(data: Path, root: Path, findings: list[str], *,
         findings.append(f"{name} 权威源在场但解析失败，不得判绿：{auth_rel} — {detail}")
         return {"mode": "BLOCK(auth parse failed)"}
     a_ids = {r.get(id_field) for r in rows if isinstance(r, dict) and r.get(id_field)}
-    doc = F.load_json(data)
+    doc = load_facts(data)
     j_index = doc.get(key) or []
     j_ids = {r.get(id_field) for r in j_index if isinstance(r, dict) and r.get(id_field)}
     for k in sorted(a_ids - j_ids):
@@ -390,7 +418,7 @@ def selftest() -> int:
     import tempfile
     root = Path(tempfile.mkdtemp(prefix="allin-drift-selftest-"))
     data = F.DEFAULT_DATA
-    bad = json.loads(json.dumps(F.load_json(data)))
+    bad = json.loads(json.dumps(load_facts(data)))
     bad["ports"].append({"port": 99999, "service": "phantom", "owner": "/x", "segment": "x",
                          "status": "active", "observed_at": "2026-11-09",
                          "evidence_ref": "x", "machine_id": "SIWPAN"})
@@ -399,9 +427,19 @@ def selftest() -> int:
     drift_caught = run(badp, DEFAULT_PORTS, DEFAULT_STATE, ROOT)
     clean = run(data, DEFAULT_PORTS, DEFAULT_STATE, ROOT)
     bad_auth_caught = _selftest_bad_auth()
-    ok = drift_caught == EXIT_BLOCKING and clean == EXIT_OK and bad_auth_caught
+    # M-7 回归：内容级缓存命中，且内容变化后立即失效（不得返回陈旧真身）。
+    _parse_facts_text.cache_clear()
+    cached_doc = load_facts(data)
+    cache_hit = load_facts(data) is cached_doc
+    fresh_doc = load_facts(badp)
+    cache_invalidates = (fresh_doc is not cached_doc
+                         and len(fresh_doc["ports"]) == len(cached_doc["ports"]) + 1)
+    cache_ok = cache_hit and cache_invalidates
+    ok = (drift_caught == EXIT_BLOCKING and clean == EXIT_OK
+          and bad_auth_caught and cache_ok)
     print(json.dumps({"gate": GATE, "clean": clean, "drift_caught": drift_caught,
                       "bad_auth_caught": bad_auth_caught,
+                      "facts_cache_hit": cache_hit, "facts_cache_invalidates": cache_invalidates,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 

@@ -25,6 +25,7 @@
 
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AgentTrace, buildSpan, byteSize } from './agent-trace.js'
@@ -225,14 +226,85 @@ function tokenizeQuery(q) {
   return [...out].filter((t) => t.length >= 1)
 }
 
-// 子串计数（大小写不敏感）：CJK 词整体匹配，ASCII 词大小写归一。
-function countOcc(haystack, needle) {
-  if (!needle) return 0
-  const h = haystack.toLowerCase()
-  const n = needle.toLowerCase()
+// 子串计数：调用方传入**已小写**的 haystack / needle（M-7 索引缓存预小写每行，
+// 查询词也只 lowercase 一次），避免原实现「每行 × 每词」重复分配小写字符串。
+// 计数语义与原 countOcc(haystack, needle) 完全一致：
+//   等价于 indexOf(haystack.toLowerCase(), needle.toLowerCase())。
+function countOccLower(h, n) {
+  if (!n) return 0
   let c = 0, i = 0
   while ((i = h.indexOf(n, i)) !== -1) { c += 1; i += n.length }
   return c
+}
+
+// ── M-7 docs 索引缓存（2026-11-10 深度审计）────────────────────────────────
+// docs.search 每次 agent 搜索都重扫 docs/ 全树（345 个 .md / 5.4 MB）并对每行
+// readLines + 逐词 lowercase。语料本身与 query 无关，只有 tf / df / 命中行随
+// query 变 ⇒ 把「逐行预处理后的静态行 + 全局统计」按 docs 目录签名缓存。
+// 签名覆盖每份文件的 (相对路径, mtimeMs, size)：内容改动 / 增删文件都会改变签名，
+// 命中时只做元数据 stat、不再 readFileSync 任何文档，绝不返回陈旧结果。
+// 缓存只复用「从固定根 path.join(REPO,'docs') 自 readdir 枚举出的文件」，不引入
+// 任何外部路径输入 ⇒ P0 的 resolveWithinBases() 边界未被触碰或绕过。
+let docsIndexCache = null   // { signature, rows, totalLen, totalLines, skippedNonText, avgdl }
+
+/** 显式失效入口：供 --selftest 与 docs 批量变更后调用。 */
+function invalidateDocsIndexCache() { docsIndexCache = null }
+
+/** 自底向上的元数据遍历：收集签名 + 待处理文件列表（不读文件内容）。 */
+function collectDocs(docsRoot) {
+  const files = []
+  const sig = []
+  const walk = (dir) => {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (ent.name === 'md') continue
+      const full = path.join(dir, ent.name)
+      if (ent.isDirectory()) { walk(full); continue }
+      const rel = path.relative(REPO, full).replace(/\\/g, '/')
+      let st
+      try { st = fs.statSync(full) } catch { st = null }
+      sig.push(`${rel}:${st ? st.mtimeMs : 'missing'}:${st ? st.size : 'missing'}`)
+      files.push({ full, rel, name: ent.name, depth: rel.split('/').length, isMd: ent.name.endsWith('.md') })
+    }
+  }
+  walk(docsRoot)
+  return { signature: `${docsRoot}|${sig.sort().join('|')}`, files }
+}
+
+/** 由文件列表构建与 query 无关的静态行（仅在签名未命中时执行，会读文件内容）。 */
+function buildDocsRows(files) {
+  const rows = []
+  let totalLen = 0, totalLines = 0, skippedNonText = 0
+  for (const f of files) {
+    if (!f.isMd) { skippedNonText += 1; continue }
+    const nameLower = f.name.toLowerCase()
+    const fileLines = readLines(f.full)
+    let heading = ''
+    fileLines.forEach((line, i) => {
+      const trimmed = line.trim()
+      if (!trimmed) return
+      const isHeading = trimmed.startsWith('#')
+      const body = isHeading ? trimmed.replace(/^#+\s*/, '') : trimmed
+      if (isHeading) heading = body
+      const len = body.length || 1
+      totalLen += len; totalLines += 1
+      rows.push({
+        file: f.rel, line: i + 1, section: heading || null,
+        snippet: (isHeading ? '# ' : '') + body.slice(0, 160),
+        len, depth: f.depth, nameLower,
+        headingLower: heading.toLowerCase(), isHeading,
+        bodyLower: body.toLowerCase(),
+      })
+    })
+  }
+  return { rows, totalLen, totalLines, skippedNonText, avgdl: totalLines ? totalLen / totalLines : 1 }
+}
+
+function getDocsIndex(docsRoot) {
+  const { signature, files } = collectDocs(docsRoot)   // 可能抛，交给 docs.search 的 catch 兜底
+  if (docsIndexCache && docsIndexCache.signature === signature) return docsIndexCache
+  const built = buildDocsRows(files)
+  docsIndexCache = { signature, ...built }
+  return docsIndexCache
 }
 
 // ---------------------------------------------------------------- tools
@@ -629,54 +701,34 @@ function callTool(name, args, trace = null) {
       if (!terms.length) return reject('query 无可索引词')
       // 单次遍历建语料统计（df / 平均行长度）并收集命中行。无 embedding、无重排模型，
       // 只用 词频(tf) + 文档频率(idf, BM25) + 长度归一 —— 确定性、可审计、零外部依赖。
+      // M-7：与 query 无关的静态语料（逐行预处理 + 全局统计）走索引缓存，命中时不再
+      // 重读 docs/ 全树；只有 tf / df / 命中行这些 query 相关量在每次搜索时重算。
+      // 只索引 Markdown：PDF / 表格 / 扫描件等二进制一律跳过并如实计数（见 skip 说明）。
+      let idx
+      try { idx = getDocsIndex(docs) } catch (e) { return fail(String(e.message)) }
+      const skippedNonText = idx.skippedNonText
       const lines = []            // {file,line,section,snippet,tf,len,depth,nameLower,headingLower,isHeading}
       const docHas = new Map()    // file -> Set(term)  用于文档频率 df
-      let totalLen = 0, totalLines = 0, skippedNonText = 0
-      const walk = (dir) => {
-        for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-          if (ent.name === 'md') continue
-          const full = path.join(dir, ent.name)
-          if (ent.isDirectory()) { walk(full); continue }
-          // 只索引 Markdown：PDF / 表格 / 扫描件等二进制一律跳过并如实计数 ——
-          // 专用解析引擎（如 RAGflow DeepDoc）与本机零依赖原则冲突，明确不做，
-          // 所以**必须把跳过量报出来**，避免 agent 误以为「搜过但没结果」。
-          if (!ent.name.endsWith('.md')) { skippedNonText += 1; continue }
-          const rel = path.relative(REPO, full).replace(/\\/g, '/')
-          const relDepth = rel.split('/').length
-          const nameLower = ent.name.toLowerCase()
-          const fileLines = readLines(full)
-          const present = new Set()
-          let heading = ''
-          fileLines.forEach((line, i) => {
-            const trimmed = line.trim()
-            if (!trimmed) return
-            const isHeading = trimmed.startsWith('#')
-            const body = isHeading ? trimmed.replace(/^#+\s*/, '') : trimmed
-            if (isHeading) heading = body
-            const tf = {}
-            let hasAny = false
-            for (const t of terms) {
-              const c = countOcc(body, t)
-              if (c > 0) { tf[t] = c; hasAny = true }
-            }
-            const len = body.length || 1
-            totalLen += len; totalLines += 1
-            if (hasAny) {
-              lines.push({
-                file: rel, line: i + 1, section: heading || null,
-                snippet: (isHeading ? '# ' : '') + body.slice(0, 160),
-                tf, len, depth: relDepth, nameLower,
-                headingLower: heading.toLowerCase(), isHeading,
-              })
-              for (const t of Object.keys(tf)) present.add(t)
-            }
-          })
-          if (present.size) docHas.set(rel, present)
+      const lowerTerms = terms.map((t) => t.toLowerCase())
+      for (const row of idx.rows) {
+        const tf = {}
+        let hasAny = false
+        for (let k = 0; k < terms.length; k += 1) {
+          const c = countOccLower(row.bodyLower, lowerTerms[k])
+          if (c > 0) { tf[terms[k]] = c; hasAny = true }
         }
+        if (!hasAny) continue
+        lines.push({
+          file: row.file, line: row.line, section: row.section,
+          snippet: row.snippet, tf, len: row.len, depth: row.depth,
+          nameLower: row.nameLower, headingLower: row.headingLower, isHeading: row.isHeading,
+        })
+        let present = docHas.get(row.file)
+        if (!present) { present = new Set(); docHas.set(row.file, present) }
+        for (const t of Object.keys(tf)) present.add(t)
       }
-      try { walk(docs) } catch (e) { return fail(String(e.message)) }
       const N = docHas.size || 1
-      const avgdl = totalLines ? totalLen / totalLines : 1
+      const avgdl = idx.avgdl
       const idfCache = {}
       const idfOf = (t) => {
         if (idfCache[t] !== undefined) return idfCache[t]
@@ -1466,6 +1518,75 @@ if (argv.includes('--selftest')) {
     `第3次 isError=${rb3.isError}`)
   if (prevBudget === undefined) delete process.env.AGENT_TOOL_CALL_BUDGET
   else process.env.AGENT_TOOL_CALL_BUDGET = prevBudget
+
+  // ── M-7 回归：docs.search 索引缓存（命中不重读 / 文件变化即失效 / 显式失效）──
+  // 用临时 docs 树做夹具，不触碰真实 docs/（避免 INDEX 登记纪律与并行改动干扰）。
+  {
+    const tmpDocs = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-docs-idx-'))
+    const f1 = path.join(tmpDocs, 'a.md')
+    fs.writeFileSync(f1, '# 门禁标题\n门禁 门禁 门禁\n', 'utf8')
+    fs.writeFileSync(path.join(tmpDocs, 'b.md'), '# 另一篇\n无关内容\n', 'utf8')
+    fs.writeFileSync(path.join(tmpDocs, 'skip.txt'), 'binary-ish', 'utf8')
+    const origRead = fs.readFileSync
+    let reads = 0
+    fs.readFileSync = function (...args) { reads += 1; return origRead.apply(this, args) }
+    try {
+      invalidateDocsIndexCache()
+      const coldIdx = getDocsIndex(tmpDocs)
+      const cold = reads
+      reads = 0
+      const warmIdx = getDocsIndex(tmpDocs)
+      const warm = reads
+      check('M-7 回归：docs 索引缓存命中不重复读盘',
+        cold > 0 && warm === 0 && coldIdx.rows.length === warmIdx.rows.length,
+        `cold=${cold} warm=${warm}`)
+      check('M-7 回归：索引统计对账（非 Markdown 跳过计数）',
+        coldIdx.skippedNonText === 1 && coldIdx.totalLines > 0 && coldIdx.avgdl > 0)
+      // 内容 + mtime 变化 ⇒ 签名变化 ⇒ 重新读盘建索引
+      reads = 0
+      fs.writeFileSync(f1, '# 门禁标题\n门禁 门禁 门禁\n新增一行 门禁\n', 'utf8')
+      fs.utimesSync(f1, new Date(Date.now() + 2000), new Date(Date.now() + 2000))
+      const changedIdx = getDocsIndex(tmpDocs)
+      const changed = reads
+      check('M-7 回归：docs 文件内容/mtime 变化后缓存失效并重建',
+        changed > 0 && changedIdx.rows.length > coldIdx.rows.length,
+        `changed=${changed} rows ${coldIdx.rows.length}→${changedIdx.rows.length}`)
+      // 新增文档也应让签名失效
+      reads = 0
+      fs.writeFileSync(path.join(tmpDocs, 'c.md'), '# 新增文档\n门禁\n', 'utf8')
+      const addedIdx = getDocsIndex(tmpDocs)
+      check('M-7 回归：新增文档后缓存失效并重建',
+        reads > 0 && addedIdx.rows.length > changedIdx.rows.length)
+      // 显式失效入口
+      invalidateDocsIndexCache()
+      reads = 0
+      getDocsIndex(tmpDocs)
+      check('M-7 回归：显式 invalidateDocsIndexCache() 后重新读盘', reads > 0)
+    } finally {
+      fs.readFileSync = origRead
+      fs.rmSync(tmpDocs, { recursive: true, force: true })
+    }
+  }
+
+  // ── M-7 ③ 边界实证：索引缓存只从 REPO 内读取，P0 的 resolveWithinBases() 未被绕过 ──
+  // 上方 selftest 已有 4 条 S-4 回归（docs.cite / repo.health 的越界载荷全部 isError + CWE-22）；
+  // 这里再从「缓存实际读了哪些路径」这一侧证明：索引枚举出的每个文件都落在允许根内。
+  // 缓存只是复用「固定根 path.join(REPO,'docs') 自 readdir 枚举出的文件」，不引入任何外部路径。
+  {
+    const origRead = fs.readFileSync
+    const readPaths = []
+    fs.readFileSync = function (...args) { readPaths.push(String(args[0])); return origRead.apply(this, args) }
+    try {
+      invalidateDocsIndexCache()
+      getDocsIndex(path.join(REPO, 'docs'))
+      const outside = readPaths.filter((p) => !resolveWithinBases(p))
+      check('M-7 回归③：docs 索引缓存未绕过 resolveWithinBases() 边界',
+        readPaths.length > 0 && outside.length === 0,
+        `实读 ${readPaths.length} 个文件，越界 ${outside.length} 个`)
+    } finally {
+      fs.readFileSync = origRead
+    }
+  }
 
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
   process.exit(failures === 0 ? 0 : 1)

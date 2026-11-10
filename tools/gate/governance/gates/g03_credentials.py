@@ -436,185 +436,127 @@ def scan(root: Path, *, include_docs: bool = True,
 
 def selfcheck() -> int:
     """Prove the gate catches each credential shape and excuses real samples."""
-    check = govlib.SelfCheck(gate=GATE)
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/clean.ts", "const url = 'https://example.invalid/path'\n"
-                                      "const note = 'password: <GITEE_TOKEN>'\n"
-                                      "const sample = 'api_key = your-key-here'\n"
-                                      "const word = 'tokenization of the sentence'\n"
-                                      "const fixture = 'glpat-ABCDEFGHIJKLMNOPQRST'  // gov-credentials: allow\n")  # gov-credentials: allow
-        sandbox.write("src/config.ts",
-                      "const fromEnv = process.env.GITHUB_TOKEN\n"
-                      "const fromEnv2 = 'token: ' + import.meta.env.DSH_TOKEN\n"
-                      "readonly token: ToolExecutionToken\n"
-                      "const token = getComputedStyle(document.body).getPropertyValue('--x-bg').trim()\n"
-                      "const named = 'github-webhook-review-secret'\n"
-                      "const e2e = 'github-webhook-real-e2e-secret'\n"
-                      "const SECRET = 'plum-galaxy-1791'\n"
-                      "const url = 'https://user:password@example.test/file?token=secret'\n")
-        sandbox.write("config/settings.ts", "const key = 'sk-abcdefghijklmnop1234567890abcd'\n")  # gov-credentials: allow
-        sandbox.write("src/auth.ts", "const header = 'Authorization: Bearer abcdefghijklmnop1234567890'\n")  # gov-credentials: allow
-        sandbox.write("src/keys.ts", "const apiKey = 'a8f3d9e2b7c4a1f6d0e5b8c3a9f2d7e4'\n")  # gov-credentials: allow
-        sandbox.write("src/legacy.ts",
-                      "const token = 'https://svc:8f14e45fceea167a5a36dedd4bea2543@git.corp-net.io/x'\n")  # gov-credentials: allow
-        # Deliberately no annotation: the fixture must prove the environment-reference
+    from selfcheck_fixtures import Case, run_cases, signals
+
+    # One mixed sandbox used to drive six assertions at once; the table keeps the
+    # same fixture dict and yields one declarative row per assertion.
+    mixed = {
+        "src/clean.ts": ("const url = 'https://example.invalid/path'\n"
+                         "const note = 'password: <GITEE_TOKEN>'\n"
+                         "const sample = 'api_key = your-key-here'\n"
+                         "const word = 'tokenization of the sentence'\n"
+                         "const fixture = 'glpat-ABCDEFGHIJKLMNOPQRST'  // gov-credentials: allow\n"),  # gov-credentials: allow
+        "src/config.ts": (
+            "const fromEnv = process.env.GITHUB_TOKEN\n"
+            "const fromEnv2 = 'token: ' + import.meta.env.DSH_TOKEN\n"
+            "readonly token: ToolExecutionToken\n"
+            "const token = getComputedStyle(document.body).getPropertyValue('--x-bg').trim()\n"
+            "const named = 'github-webhook-review-secret'\n"
+            "const e2e = 'github-webhook-real-e2e-secret'\n"
+            "const SECRET = 'plum-galaxy-1791'\n"
+            "const url = 'https://user:password@example.test/file?token=secret'\n"),
+        "config/settings.ts": "const key = 'sk-abcdefghijklmnop1234567890abcd'\n",  # gov-credentials: allow
+        "src/auth.ts": "const header = 'Authorization: Bearer abcdefghijklmnop1234567890'\n",  # gov-credentials: allow
+        "src/keys.ts": "const apiKey = 'a8f3d9e2b7c4a1f6d0e5b8c3a9f2d7e4'\n",  # gov-credentials: allow
+        "src/legacy.ts": ("const token = 'https://svc:8f14e45fceea167a5a36dedd4bea2543@git.corp-net.io/x'\n"),  # gov-credentials: allow
+        # Deliberately no annotation: this must prove the environment-reference
         # allowance inside a URL userinfo, not the inline opt-out.
-        sandbox.write("src/push_example.ts",
-                      "const push = 'https://<user>:${TOKEN}@gitee.com/<owner>/<repo>.git'\n")
-        # 沙箱没有仓内白名单文件，显式声明本夹具路径（等价于此处的「受评审登记」）。
-        report = scan(sandbox.path, machine_roots=[],
-                      annotation_paths={"src/clean.ts"})
-        blocked = {finding.kind for finding in report.findings}
-        blocked_paths = {finding.path for finding in report.findings}
-        check.detects("provider token", "provider-token" in blocked)
-        check.detects("bearer header", "bearer-header" in blocked)
-        check.detects("url userinfo", "url-userinfo" in blocked)
-        check.detects("secret-shaped assignment", "assignment" in blocked)
-        check.quiet("clean lines, placeholders, env references, and sample hosts",
-                    "src/clean.ts" in blocked_paths or "src/config.ts" in blocked_paths)
-        check.quiet("a URL userinfo that expands an environment variable",
-                    "src/push_example.ts" in blocked_paths)
+        "src/push_example.ts": "const push = 'https://<user>:${TOKEN}@gitee.com/<owner>/<repo>.git'\n",
+    }
+    # .git/config is written untracked by sandbox_with (git cannot stage its own
+    # metadata); the branch token and the empty helper are the two config faces.
+    remote_config = (
+        "[remote \"origin\"]\n\turl = https://gitee.com/owner/name.git\n"  # gov-python: allow —— 自检夹具，非真路径伪影
+        "[branch \"main\"]\n\tremote = https://owner:8f14e45fceea167a5a36dedd4bea2543@gitee.com/owner/name.git\n")  # gov-credentials: allow
 
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/ok.ts", "export const answer = 42\n")
-        (sandbox.path / ".git" / "config").write_text(  # gov-python: allow —— 检测用常量/自检夹具，不是真路径转义伪影
-            "[remote \"origin\"]\n\turl = https://gitee.com/owner/name.git\n"
-            "[branch \"main\"]\n\tremote = https://owner:8f14e45fceea167a5a36dedd4bea2543@gitee.com/owner/name.git\n",  # gov-credentials: allow
-            encoding="utf-8")
-        report = scan(sandbox.path, machine_roots=[])
-        check.detects("token recorded in branch.<name>.remote",
-                      any(finding.kind == "config-credential" for finding in report.findings))
+    # Gitee 裸 hex PAT 形态（2026-11-02 审计漏报）：键名族 + 纯裸 hex，附 git SHA 对照。
+    hex_files = {
+        "src/gitee_config.ts": "const GITEE_TOKEN = 'a1b2c3d4e5f6789012345678901234'\n",  # gov-credentials: allow
+        "src/raw_hex.ts": "a1b2c3d4e5f6789012345678901234\n",  # gov-credentials: allow
+        "src/commit_sha.ts": "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n",
+    }
 
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/ok.ts", "export const answer = 42\n")
-        config = sandbox.path / ".git" / "config"
-        config.write_text(config.read_text(encoding="utf-8") + "[credential]\n\thelper =\n", encoding="utf-8")
-        report = scan(sandbox.path, machine_roots=[])
-        check.detects("empty credential.helper clears the helper chain",
-                      any(finding.kind == "empty-credential-helper" for finding in report.findings))
+    # 2026-11-04 工程审查 P1：JSON 引号键 / URL query / 64hex / 凭据语境裸串 / 128hex，
+    # 外加无凭据语境的 40/64 digest 对照。hex 夹具行尾注解让 CI 增量扫描跳过。
+    hex40 = "a1b2c3d4e5f6789012345678901234567890abcd"  # gov-credentials: allow
+    hex64 = "d4c3b2a1" * 8
+    p1_files = {
+        "src/json_key.ts": f'const cfg = {{ "token": "{hex40}" }};\n',
+        "src/query.ts": f"const url = 'https://gitee.com/api/v5/user?access_token={hex40}';\n",
+        "src/long_key.ts": f'const cfg = {{ "api_key": "{hex64}" }};\n',
+        "src/bare_with_context.ts": f"// 凭据 token 留档：{hex40}\n",
+        "src/very_long_hex.ts": "c1d2e3f4a5b6" * 10 + "c1d2e3f4\n",
+        "src/quiet_digest.ts": (
+            "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"  # gov-credentials: allow
+            "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n"),  # gov-credentials: allow
+    }
 
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/ok.ts", "export const answer = 42\n")
-        report = scan(sandbox.path, machine_roots=[])
-        check.quiet("a repository with no credential shape", bool(report.findings))
+    # 第三面（机器本地明文）：@ 前缀把夹具写到索引外，等价于旧的 direct-write。
+    machine_real = {"@outside/creds.txt": "token = github_pat_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8\n",  # gov-credentials: allow
+                    "@outside/notes.md": "口令见受管库；此文件无凭据形态。\n"}
+    machine_placeholder = {"@outside/creds.txt": "token = <GITEE_TOKEN>\n"}
+    clean_repo = {"src/ok.ts": "export const answer = 42\n"}
+    hidden_real = {"src/hidden.ts": "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n"}  # gov-credentials: allow
+    declared_fixture = {"src/fixture.ts": "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n"}  # gov-credentials: allow
 
-    # P0-2（2026-11-08）：样例后缀不再是豁免权。
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/config.sample.ts",
-                      "const key = 'sk-abcdefghijklmnopqrstuvwxyz012345'\n")  # gov-credentials: allow
-        report = scan(sandbox.path, machine_roots=[])
-        check.detects("a real token shape hidden behind a .sample suffix",
-                      any(f.path.endswith("config.sample.ts") for f in report.findings))
+    cases = [
+        Case("provider token", mixed, by="provider-token"),
+        Case("bearer header", mixed, by="bearer-header"),
+        Case("url userinfo", mixed, by="url-userinfo"),
+        Case("secret-shaped assignment", mixed, by="assignment"),
+        Case("clean lines, placeholders, env references, and sample hosts", mixed,
+             expect="clean", by="src/clean.ts||src/config.ts"),
+        Case("a URL userinfo that expands an environment variable", mixed,
+             expect="clean", by="src/push_example.ts"),
+        Case("token recorded in branch.<name>.remote",
+             {**clean_repo, ".git/config": remote_config}, by="config-credential"),
+        Case("empty credential.helper clears the helper chain",
+             {**clean_repo, ".git/config": "[credential]\n\thelper =\n"}, by="empty-credential-helper"),
+        Case("a repository with no credential shape", clean_repo, expect="clean"),
+        # P0-2（2026-11-08）：样例后缀不再是豁免权。
+        Case("a real token shape hidden behind a .sample suffix",
+             {"src/config.sample.ts": "const key = 'sk-abcdefghijklmnopqrstuvwxyz012345'\n"},  # gov-credentials: allow
+             by="src/config.sample.ts"),
+        Case("a placeholder inside a sample-suffixed file stays quiet",
+             {"src/config.example.ts": "const key = 'sk-example-placeholder-000000000000'\n"},
+             expect="clean", by="src/config.example.ts"),
+        # 第三面：机器本地明文凭据文件（2026-11-01）。
+        Case("a plaintext credential file outside the repository is reported",
+             machine_real, by="kind~machine-plaintext"),
+        Case("a machine-local file without a credential shape stays quiet",
+             machine_real, expect="clean", by="notes.md"),
+        Case("a placeholder value in a machine-local file is a sample, not a leak",
+             machine_placeholder, expect="clean", by="kind~machine-plaintext"),
+        Case("Gitee-style token assignment (GITEE_TOKEN = <hex>)",
+             hex_files, by="src/gitee_config.ts::assignment"),
+        Case("bare high-entropy hex on its own line", hex_files, by="src/raw_hex.ts::hex-secret"),
+        Case("a 40-char git SHA is not flagged as a secret", hex_files, expect="clean", by="src/commit_sha.ts"),
+        Case("40-char hex behind a JSON quoted key", p1_files, by="src/json_key.ts::assignment"),
+        Case("40-char hex in a URL query parameter", p1_files, by="src/query.ts::assignment"),
+        Case("64-char hex behind a JSON quoted key", p1_files, by="src/long_key.ts::assignment"),
+        Case("bare 40-char hex in a credential context", p1_files, by="src/bare_with_context.ts::hex-secret"),
+        Case("128-char bare hex run (beyond the old {30,63} cap)", p1_files, by="src/very_long_hex.ts::hex-secret"),
+        Case("40/64-char digests with no credential context stay quiet", p1_files,
+             expect="clean", by="src/quiet_digest.ts"),
+        # 2026-11-07 安全加固 F-01：注解的豁免权归仓库配置，不归被扫描内容。
+        Case("an inline allow annotation outside the allowlist does not hide a real token",
+             hidden_real, by="src/hidden.ts::provider-token"),
+        Case("a selfcheck-declared fixture path still honours the annotation",
+             declared_fixture, expect="clean", by="src/fixture.ts"),
+    ]
 
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/config.example.ts",
-                      "const key = 'sk-example-placeholder-000000000000'\n")
-        report = scan(sandbox.path, machine_roots=[])
-        check.quiet("a placeholder inside a sample-suffixed file stays quiet",
-                    any("config.example.ts" in f.path for f in report.findings))
+    def check_fn(sandbox):
+        root = sandbox.path
+        annotation_paths = None
+        if (root / "src" / "clean.ts").exists():
+            annotation_paths = {"src/clean.ts"}
+        elif (root / "src" / "fixture.ts").exists():
+            annotation_paths = {"src/fixture.ts"}
+        outside = root / "outside"
+        machine_roots = [(outside, 0)] if outside.is_dir() else []
+        return signals(scan(root, machine_roots=machine_roots, annotation_paths=annotation_paths))
 
-    # 第三面：机器本地明文凭据文件（2026-11-01）
-    with govlib.Sandbox() as sandbox:
-        outside = sandbox.path / "outside"
-        outside.mkdir(parents=True, exist_ok=True)
-        (outside / "creds.txt").write_text(
-            "token = github_pat_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8\n", encoding="utf-8")  # gov-credentials: allow
-        (outside / "notes.md").write_text(
-            "口令见受管库；此文件无凭据形态。\n", encoding="utf-8")
-        report = scan(sandbox.path, machine_roots=[(outside, 0)])
-        check.detects("a plaintext credential file outside the repository is reported",
-                      any(f.kind.startswith("machine-plaintext") for f in report.findings))
-        # `check.quiet(label, flagged)` 的第二参是「**确实报红了**」⇒ 这里传「notes.md 是否被误报」
-        check.quiet("a machine-local file without a credential shape stays quiet",
-                    any("notes.md" in f.path for f in report.findings
-                        if f.kind.startswith("machine-plaintext")))
-
-    with govlib.Sandbox() as sandbox:
-        outside = sandbox.path / "outside"
-        outside.mkdir(parents=True, exist_ok=True)
-        (outside / "creds.txt").write_text(
-            "token = <GITEE_TOKEN>\n", encoding="utf-8")
-        report = scan(sandbox.path, machine_roots=[(outside, 0)])
-        check.quiet("a placeholder value in a machine-local file is a sample, not a leak",
-                    any(f.kind.startswith("machine-plaintext") for f in report.findings))
-
-    # 2026-11-02: Gitee 裸 hex PAT 形态（审计发现的漏报，见 full-check-allin 报告 #1）
-    with govlib.Sandbox() as sandbox:
-        # 形态②：键名族此前不含 gitee_token，漏报
-        sandbox.write("src/gitee_config.ts",
-                      "const GITEE_TOKEN = 'a1b2c3d4e5f6789012345678901234'\n")  # gov-credentials: allow
-        # 形态①：纯裸 hex 单独成行，此前 PREFILTER 不命中，漏报
-        sandbox.write("src/raw_hex.ts",
-                      "a1b2c3d4e5f6789012345678901234\n")  # gov-credentials: allow
-        # 对照：40-char git SHA 不应被误报
-        sandbox.write("src/commit_sha.ts",
-                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n")
-        report = scan(sandbox.path, machine_roots=[])
-        blocked_kinds = {finding.kind for finding in report.findings}
-        blocked_paths = {finding.path for finding in report.findings}
-        check.detects("Gitee-style token assignment (GITEE_TOKEN = <hex>)",
-                      "assignment" in blocked_kinds and "src/gitee_config.ts" in blocked_paths)
-        check.detects("bare high-entropy hex on its own line",
-                      "hex-secret" in blocked_kinds and "src/raw_hex.ts" in blocked_paths)
-        check.quiet("a 40-char git SHA is not flagged as a secret",
-                    "src/commit_sha.ts" in blocked_paths)
-
-    # 2026-11-04 工程审查 P1：补齐审计复现的四类漏报形态，并守住 digest 白名单。
-    # 下面 3 行是故意构造的 hex 夹具（不是真密钥），行尾注解让 CI 的
-    # scripts/scan-secrets.sh 增量扫描跳过它们，避免 gitleaks 首跑误判。
-    with govlib.Sandbox() as sandbox:
-        hex40 = "a1b2c3d4e5f6789012345678901234567890abcd"  # gov-credentials: allow
-        hex64 = "d4c3b2a1" * 8
-        # 形态③：JSON 引号键（原 assignment 键名两端不接受引号 ⇒ 漏报）
-        sandbox.write("src/json_key.ts", f'const cfg = {{ "token": "{hex40}" }};\n')
-        # 形态④：URL query 参数（原 (?<![/&?]) 把 ?token= / &token= 整个排除 ⇒ 漏报）
-        sandbox.write("src/query.ts",
-                      f"const url = 'https://gitee.com/api/v5/user?access_token={hex40}';\n")
-        # 40/64 位 hex 带键名时由 assignment 拦截（裸串仍按 digest 放行）
-        sandbox.write("src/long_key.ts", f'const cfg = {{ "api_key": "{hex64}" }};\n')
-        # 裸 40 位 hex 但整行处于凭据语境 ⇒ 不能再按 git SHA 放行
-        # （用中文冒号，避免形成标准赋值形态而被 assignment 先行拦截）
-        sandbox.write("src/bare_with_context.ts", f"// 凭据 token 留档：{hex40}\n")
-        # 128 位裸 hex：原 {30,63} 上限导致整个匹配失配
-        sandbox.write("src/very_long_hex.ts", "c1d2e3f4a5b6" * 10 + "c1d2e3f4\n")
-        # 对照：无凭据语境的 40/64 位 digest 必须保持安静
-        sandbox.write("src/quiet_digest.ts",
-                      "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"  # gov-credentials: allow
-                      "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n")  # gov-credentials: allow
-        report = scan(sandbox.path, machine_roots=[])
-        blocked_kinds = {f.kind for f in report.findings}
-        blocked_paths = {f.path for f in report.findings}
-        check.detects("40-char hex behind a JSON quoted key",
-                      "assignment" in blocked_kinds and "src/json_key.ts" in blocked_paths)
-        check.detects("40-char hex in a URL query parameter",
-                      "assignment" in blocked_kinds and "src/query.ts" in blocked_paths)
-        check.detects("64-char hex behind a JSON quoted key",
-                      "assignment" in blocked_kinds and "src/long_key.ts" in blocked_paths)
-        check.detects("bare 40-char hex in a credential context",
-                      "hex-secret" in blocked_kinds and "src/bare_with_context.ts" in blocked_paths)
-        check.detects("128-char bare hex run (beyond the old {30,63} cap)",
-                      "hex-secret" in blocked_kinds and "src/very_long_hex.ts" in blocked_paths)
-        check.quiet("40/64-char digests with no credential context stay quiet",
-                    "src/quiet_digest.ts" in blocked_paths)
-
-    # 2026-11-07 安全加固 F-01：注解的豁免权归仓库配置，不归被扫描内容。
-    # 这两组用例是「外部贡献者追加一行注释掩盖真实 token」的最小复现。
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/hidden.ts",
-                      "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n")
-        report = scan(sandbox.path, machine_roots=[])
-        check.detects("an inline allow annotation outside the allowlist does not hide a real token",
-                      any(f.path == "src/hidden.ts" and f.kind == "provider-token"
-                          for f in report.findings))
-
-    with govlib.Sandbox() as sandbox:
-        sandbox.write("src/fixture.ts",
-                      "const key = 'ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  // gov-credentials: allow\n")
-        report = scan(sandbox.path, machine_roots=[],
-                      annotation_paths={"src/fixture.ts"})
-        check.quiet("a selfcheck-declared fixture path still honours the annotation",
-                    any(f.path == "src/fixture.ts" for f in report.findings))
-    return check.finish()
+    return run_cases(GATE, cases, check_fn)
 
 
 def main(argv: list[str]) -> int:

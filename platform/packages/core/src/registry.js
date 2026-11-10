@@ -28,16 +28,16 @@ export function pathCheckMode() {
   // 2026-11-10 换机可移植整改：此前固定 'exists' ⇒ 换机（无同级 repos/ 发布区）
   // 时 145 条清单全部报「path 不存在」，把形状校验淹掉。现在按「发布区是否真的存在」
   // 自动选：有发布区才要求路径存在，否则退到形状校验（absolute）。
-  try {
-    const root = REPOS_ROOT
-    if (fs.existsSync(root)) {
-      const hasRepo = fs.readdirSync(root).some((name) => {
-        try { return fs.statSync(path.join(root, name)).isDirectory() } catch { return false }
-      })
-      if (hasRepo) return 'exists'
-    }
-  } catch { /* 读不到发布区：按形状校验继续，不硬失败 */ }
-  return 'absolute'
+  //
+  // M-7（2026-11-10）：自动检测结果只依赖 REPOS_ROOT 目录 + env，与 entry 无关，
+  // 却被 validateEntry 逐条调用（145 条 × 137 仓 ≈ 2 万次 statSync）。按
+  // 「env + 发布区目录签名」memoize：签名变化（发布区增删仓库）自动失效，
+  // invalidateRegistryCache() 可显式清空。显式 env 分支仍即时返回，不入缓存。
+  const key = `${String(explicit || '')}|${reposRootSignature()}`
+  if (pathCheckCache && pathCheckCache.key === key) return pathCheckCache.mode
+  const mode = detectPathCheckMode()
+  pathCheckCache = { key, mode }
+  return mode
 }
 
 // ── path 去符盘（2026-10-26 三仓整合 + repos 约定）───────────────────────────
@@ -269,11 +269,93 @@ export function validateEntry(entry, ports) {
   return errors
 }
 
+// ── M-7 缓存基础设施（2026-11-10 深度审计）─────────────────────────────────
+// loadRegistry 在单次门户请求里被多个端点重复调用（6 处），每次全量
+// readFileSync + yaml.load 145 份清单。改为「签名命中即复用」：签名覆盖 dir 下
+// 每份 yaml 的 (文件名, mtimeMs, size)、ports.yaml 的 (mtimeMs, size)、
+// pathCheckMode 判定与发布区目录签名 —— 任一变化即重新解析，绝不返回陈旧结果。
+// 返回值每次深拷贝，调用方改动不会污染缓存（行为与「每次重解析」完全一致）。
+let pathCheckCache = null                 // { key, mode }（pathCheckMode 用）
+const registryCache = new Map()          // dir -> { sig, result }
+
+function reposRootSignature() {
+  try {
+    const st = fs.statSync(REPOS_ROOT)
+    return `${st.mtimeMs}:${st.size}`
+  } catch { return 'missing' }
+}
+
+function detectPathCheckMode() {
+  try {
+    const root = REPOS_ROOT
+    if (fs.existsSync(root)) {
+      const hasRepo = fs.readdirSync(root).some((name) => {
+        try { return fs.statSync(path.join(root, name)).isDirectory() } catch { return false }
+      })
+      if (hasRepo) return 'exists'
+    }
+  } catch { /* 读不到发布区：按形状校验继续，不硬失败 */ }
+  return 'absolute'
+}
+
+/** 显式失效入口（测试 / 文件批量变更后调用）：清空 pathCheckMode 与 loadRegistry 两级缓存。 */
+export function invalidateRegistryCache() {
+  pathCheckCache = null
+  registryCache.clear()
+}
+
+function portFileSignature() {
+  try {
+    const st = fs.statSync(PORTS_YAML)
+    return `${st.mtimeMs}:${st.size}`
+  } catch { return 'missing' }
+}
+
+function registrySignature(dir) {
+  const parts = [
+    `env:${String(process.env.PLATFORM_PATH_CHECK || '')}`,
+    `mode:${pathCheckMode()}`,
+    `root:${reposRootSignature()}`,
+    `ports:${portFileSignature()}`,
+  ]
+  let files = []
+  try {
+    files = fs.readdirSync(dir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml')).sort()
+  } catch (e) {
+    parts.push(`dir-unreadable:${e.message}`)
+    return parts.join('|')
+  }
+  for (const f of files) {
+    try {
+      const st = fs.statSync(path.join(dir, f))
+      parts.push(`${f}:${st.mtimeMs}:${st.size}`)
+    } catch {
+      parts.push(`${f}:missing`)
+    }
+  }
+  return parts.join('|')
+}
+
+function cloneRegistryResult(r) {
+  // structuredClone 保留 Map（ports）与 Date（YAML 时间戳），且不共享引用。
+  return structuredClone(r)
+}
+
 /**
  * 加载注册表目录（全部 *.yaml），返回 { entries, problems }。
  * 校验失败不阻塞加载：条目带 _valid=false，problems 供 --check fail-loud。
  */
 export function loadRegistry(dir) {
+  const sig = registrySignature(dir)
+  const hit = registryCache.get(dir)
+  if (hit && hit.sig === sig) return cloneRegistryResult(hit.result)
+  // 解析失败（如 ports.yaml 损坏）原样抛出，且不写缓存 —— 保持 fail-loud 语义不变。
+  const result = loadRegistryUncached(dir)
+  registryCache.set(dir, { sig, result })
+  return cloneRegistryResult(result)
+}
+
+function loadRegistryUncached(dir) {
   const ports = loadPorts()
   const entries = []
   const problems = []

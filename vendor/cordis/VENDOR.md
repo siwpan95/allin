@@ -110,3 +110,25 @@ v4.0.0 在 `import cordis` 时**硬依赖** `pyyaml`（`src/cordis/include.py` �
 - **说明**：以上为追加补记，上文「来源 / 许可证 / 借用范围 / 导入方式 / 文件清单」
   等历史结论性段落文字均未改写；仅「导入方式」第 1 项的 `.pth` 路径由他机绝对路径
   改为机器无关占位表述。
+
+## 补记（2026-11-10）：M-2 归档解压边界本地加固
+
+- **性质**：**本地安全补丁，不是上游源码同步**。上游锁源仍为 commit `a3d0c17`
+  （见上文「版本 / 提交锁定」与 `vendor/cordis.lock`）；本节只记录本仓对
+  `src/cordis/create.py` 的**唯一一处偏离**，便于下次同步上游时识别是否需要重新施加。
+- **改动范围**：仅 `vendor/cordis/src/cordis/create.py` 的 `download_template()`
+  tar / zip 两个解压分支；新增模块级 `_safe_extract_path(target, name)`。
+- **原因**：五维深度审计 M-2（`docs/记录/审计/深度审计报告_2026-11-10.md:329-335`）
+  认定上游代码在剥离归档第一层目录后直接 `target / parts[1]` 写盘，无 realpath
+  边界校验，构成 Zip Slip / Tar Slip（CWE-22）。归档来源可由 `-m/--mirror`、
+  `PIP_INDEX_URL`、`CORDIS_REGISTRY` 指定 ⇒ 镜像源可控；本仓虽无 `cordis create`
+  调用点（当前不可达），但保留潜在写入侧路径穿越不合理。
+- **补丁行为**：拒绝绝对路径 / 盘符 / UNC / `..` 遍历 / 反斜杠变体 / NUL，
+  并对 `target.resolve()` 与 `(target/name).resolve()` 做 `is_relative_to` 包含校验；
+  tar 的符号链接、硬链接、设备成员一律跳过而不物化到目标树。非法成员抛
+  `ValueError` 并带原成员名，绝不静默跳过。
+- **回归**：`tests/test_vendor_cordis_archive_boundary.py`（16 例，内存归档 + 假
+  `urlopen`，不联网、不依赖 `cordis` 包的 pyyaml/watchdog 硬依赖），覆盖恶意
+  tar/zip、合法 tar/zip、符号链接逃逸与符号链接成员。
+- **说明**：`create.py` 不在上文「借用范围」公开 API 清单内，本补丁不影响
+  `cordis.Context` 等被借用 API 的形态。

@@ -204,7 +204,8 @@ def scan(root: Path, registry_path: Path, profile: Path | None = None) -> Report
 
 def selfcheck() -> int:
     """Prove structural drift, missing markers, and machine paths are caught."""
-    check = govlib.SelfCheck(gate=GATE)
+    from selfcheck_fixtures import Case, run_cases, signals
+
     base = (
         "- insert:\n"
         "    - id: preset-allin\n"
@@ -237,100 +238,84 @@ def selfcheck() -> int:
                "          - id: agent-instructions\n"
                "            name: '@deepseek-ai/dsh-agent-instructions'\n")
 
-    def sandbox_with(preset_text: str) -> govlib.Sandbox:
-        box = govlib.Sandbox()
-        box.write("preset/allin/allin.patch.yml", preset_text)
-        box.write("docs/INDEX.md", "# index\n")
-        box.write("docs/规范/SPEC-001-铁律.md", "# spec\n")
-        box.write("docs/规范/SPEC-002-协作工作流程.md", "# spec\n")
-        box.write("docs/事实源/机器分区索引.md", "# facts\n")
-        box.write("tools/gate/governance/registry.json", json.dumps(registry))
-        box.write(SHIPPED, shipped)
-        return box
+    def preset_files(preset_text: str) -> dict[str, str]:
+        """A mountable in-repo preset, its referenced docs, the registry, and the shipped copy."""
+        return {
+            "preset/allin/allin.patch.yml": preset_text,
+            "docs/INDEX.md": "# index\n",
+            "docs/规范/SPEC-001-铁律.md": "# spec\n",
+            "docs/规范/SPEC-002-协作工作流程.md": "# spec\n",
+            "docs/事实源/机器分区索引.md": "# facts\n",
+            "tools/gate/governance/registry.json": json.dumps(registry),
+            SHIPPED: shipped,
+        }
 
-    with sandbox_with(base) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json")
-        check.quiet("a mountable preset that matches the shipped sequence", bool(report.findings))
+    name = "mine-bundle"
+    bundle_manifest = json.dumps({"name": name, "dsh": {"bundle": {"patch": "cordis.patch.yml"}}}) + "\n"
+    ok_patch = f"{BEGIN}ok{END}\n"
 
-    with sandbox_with(base.replace(END, "")) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json")
-        check.detects("a missing governance end marker",
-                      any(finding.kind == "markers" for finding in report.findings))
+    def profile_manifest(spec: str) -> str:
+        """A profile package.json that links a local bundle."""
+        return json.dumps({"name": "dsh-profile-web", "private": True,
+                           "dependencies": {name: spec},
+                           "dsh": {"profile": {"bundles": ["@deepseek-ai/dsh-base", name]}}}) + "\n"
 
-    with sandbox_with(base.replace("governance text", "governance text in D:\\\\work")) as sandbox:  # gov-python: allow
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json")
-        check.detects("a machine path inside the governance block",
-                      any(finding.kind == "machine-path" for finding in report.findings))
+    def profile_files(spec: str, patch: str | None) -> dict[str, str]:
+        """A preset plus a profile whose ``spec`` link may or may not resolve."""
+        files = preset_files(base)
+        files["profile/package.json"] = profile_manifest(spec)
+        files[f"profile/node_modules/{name}/package.json"] = bundle_manifest
+        if patch is not None:
+            files[f"profile/node_modules/{name}/cordis.patch.yml"] = patch
+        # The link target lives outside the index, exactly as the old direct-write did.
+        files[f"@elsewhere/{name}/package.json"] = bundle_manifest
+        return files
 
     drifted = base.replace("          - id: agent-instructions\n"
                            "            name: '@deepseek-ai/dsh-agent-instructions'\n", "")
-    with sandbox_with(drifted) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json")
-        check.detects("a plugin sequence that no longer matches the shipped preset",
-                      any(finding.kind == "capability-drift" for finding in report.findings))
 
-    with sandbox_with(base.replace("`g00-meta`", "`g99-ghost`")) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json")
-        check.detects("a persona naming an unregistered gate",
-                      any(finding.kind == "unknown-gate" for finding in report.findings))
+    cases = [
+        Case("a mountable preset that matches the shipped sequence", preset_files(base), expect="clean"),
+        Case("a missing governance end marker", preset_files(base.replace(END, "")), by="markers"),
+        Case("a machine path inside the governance block",
+             preset_files(base.replace("governance text", "governance text in D:\\\\work")),  # gov-python: allow
+             by="machine-path"),
+        Case("a plugin sequence that no longer matches the shipped preset", preset_files(drifted),
+             by="capability-drift"),
+        Case("a persona naming an unregistered gate",
+             preset_files(base.replace("`g00-meta`", "`g99-ghost`")), by="unknown-gate"),
+        Case("a profile whose local bundle resolves",
+             profile_files("link:../elsewhere", ok_patch), expect="clean"),
+        Case("a link target that a move removed",
+             profile_files("link:../removed-by-a-move", ok_patch), by="bundle-unresolved"),
+        Case("a local bundle that is not installed under the profile",
+             {**preset_files(base), "profile/package.json": json.dumps(
+                 {"name": "dsh-profile-web", "dependencies": {name: "link:../elsewhere"},
+                  "dsh": {"profile": {"bundles": [name]}}}) + "\n"},
+             by="bundle-unresolved"),
+        Case("a bundle whose declared patch is missing",
+             profile_files("link:../elsewhere", None), by="bundle-patch-missing"),
+        Case("a mounted patch with unpaired governance markers",
+             profile_files("link:../elsewhere", f"{BEGIN}no end marker here\n"), by="bundle-markers"),
+        Case("an absent profile is a counted skip, never a pass",
+             {**preset_files(base), "@.probe-absent-profile": ""}, by="skip~profile manifest absent"),
+    ]
 
-    # Profile probes: the failure mode of a moved repository is a dangling link outside it.
-    def profile_sandbox(spec: str, patch: str | None = None, name: str = "mine-bundle") -> govlib.Sandbox:
-        """A sandbox with a valid in-repo preset plus a profile that links a local bundle."""
-        box = sandbox_with(base)
-        source = box.path / "elsewhere" / name
-        source.mkdir(parents=True, exist_ok=True)
-        bundle_manifest = json.dumps({"name": name, "dsh": {"bundle": {"patch": "cordis.patch.yml"}}}) + "\n"
-        (source / "package.json").write_text(bundle_manifest, encoding="utf-8", newline="\n")
-        box.write(f"profile/node_modules/{name}/package.json", bundle_manifest)
-        if patch is not None:
-            (source / "cordis.patch.yml").write_text(patch, encoding="utf-8", newline="\n")
-            box.write(f"profile/node_modules/{name}/cordis.patch.yml", patch)
-        box.write("profile/package.json",
-                  json.dumps({"name": "dsh-profile-web", "private": True,
-                              "dependencies": {name: spec},
-                              "dsh": {"profile": {"bundles": ["@deepseek-ai/dsh-base", name]}}}) + "\n")
-        return box
+    def check_fn(sandbox):
+        root = sandbox.path
+        registry_path = root / "tools/gate/governance/registry.json"
+        # The absent-profile case marks itself so scan() probes a non-existent path;
+        # a real profile dir is detected from its manifest.  Everything else scans
+        # repository-only, exactly as the old per-case calls did.
+        if (root / ".probe-absent-profile").exists():
+            profile = root / "absent-profile"
+        elif (root / "profile" / "package.json").is_file():
+            profile = root / "profile"
+        else:
+            profile = None
+        return signals(scan(root, registry_path, profile=profile))
 
-    with profile_sandbox("link:../elsewhere", f"{BEGIN}ok{END}\n") as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json",
-                      profile=sandbox.path / "profile")
-        check.quiet("a profile whose local bundle resolves", bool(report.findings))
-
-    with profile_sandbox("link:../removed-by-a-move", f"{BEGIN}ok{END}\n") as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json",
-                      profile=sandbox.path / "profile")
-        check.detects("a link target that a move removed",
-                      any(finding.kind == "bundle-unresolved" for finding in report.findings))
-
-    with govlib.Sandbox() as sandbox:
-        box = sandbox_with(base)
-        box.write("profile/package.json",
-                  json.dumps({"name": "dsh-profile-web",
-                              "dependencies": {"mine-bundle": "link:../elsewhere"},
-                              "dsh": {"profile": {"bundles": ["mine-bundle"]}}}) + "\n")
-        report = scan(box.path, box.path / "tools/gate/governance/registry.json", profile=box.path / "profile")
-        check.detects("a local bundle that is not installed under the profile",
-                      any(finding.kind == "bundle-unresolved" for finding in report.findings))
-
-    with profile_sandbox("link:../elsewhere", None) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json",
-                      profile=sandbox.path / "profile")
-        check.detects("a bundle whose declared patch is missing",
-                      any(finding.kind == "bundle-patch-missing" for finding in report.findings))
-
-    with profile_sandbox("link:../elsewhere", f"{BEGIN}no end marker here\n") as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json",
-                      profile=sandbox.path / "profile")
-        check.detects("a mounted patch with unpaired governance markers",
-                      any(finding.kind == "bundle-markers" for finding in report.findings))
-
-    with sandbox_with(base) as sandbox:
-        report = scan(sandbox.path, sandbox.path / "tools/gate/governance/registry.json",
-                      profile=sandbox.path / "absent-profile")
-        check.detects("an absent profile is a counted skip, never a pass",
-                      any("profile manifest absent" in reason for reason in report.skipped))
-    return check.finish()
+    return run_cases(GATE, cases, check_fn)
 
 
 def main(argv: list[str]) -> int:

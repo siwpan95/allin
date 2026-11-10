@@ -27,16 +27,10 @@ ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "platform" / "registry" / "projects"
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
 
-
-def _yaml_load(path: Path) -> dict | None:
-    try:
-        import yaml  # 仅本生成器需要；门禁侧用无 yaml 的轻量对账，不依赖它
-    except ImportError:
-        return None
-    try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        return None
+# P2 #19：权威 YAML 读取收敛为 tools/facts/cli.py 唯一一份；本模块删除自写 _yaml_load。
+# 跨目录稳健：保证同目录 cli / exit_codes 可 import。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli import AuthUnavailable, yaml_load  # noqa: E402
 
 
 def collect(registry: Path = REGISTRY) -> tuple[list[dict], list[str]]:
@@ -47,9 +41,11 @@ def collect(registry: Path = REGISTRY) -> tuple[list[dict], list[str]]:
         return projects, [f"registry 目录不存在：{registry}"]
     for p in sorted(registry.glob("*.yaml")):
         stem = p.stem
-        doc = _yaml_load(p)
-        if doc is None:
-            warnings.append(f"{p.name}: 无法解析（缺 yaml 或语法错）")
+        # P2 #19：单个权威 YAML 在场但解析失败 → yaml_load 抛 AuthUnavailable
+        # （由 main 转非 0），不得再「记一条 warning + continue」把损坏吞掉。
+        # check_sync 是刻意 yaml-free 的轻量对账（只比 stem / source_file），不解析 YAML。
+        doc = yaml_load(p)
+        if doc is None:   # 理论兜底：glob 之后文件被删（TOCTOU）
             continue
         yid = doc.get("id")
         if yid and yid != stem:
@@ -143,7 +139,12 @@ def main(argv=None) -> int:
         print(f"projects-sync: {'clean' if rc == EXIT_OK else 'blocking'} (exit={rc})")
         return rc
     # 默认：收集并打印，按需 --write
-    projects, warnings = collect(a.registry)
+    try:
+        projects, warnings = collect(a.registry)
+    except AuthUnavailable as exc:
+        # P2 #19：registry 权威源在场但读不出来，绝不打印空投影后 exit 0（判绿）。
+        print(f"ENV ERROR: registry 权威源在场但无法解析，不得判绿：{a.registry} — {exc}", file=sys.stderr)
+        return EXIT_ENV
     for w in warnings:
         print(f"  WARN {w}")
     if a.write:

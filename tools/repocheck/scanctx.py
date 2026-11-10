@@ -41,24 +41,42 @@ def git_binary() -> str | None:
     return _GIT_BINARY
 
 
-def _run_git(args: list[str], cwd: Path) -> tuple[int, bytes]:
-    """执行只读 git 命令，返回 ``(returncode, stdout)``。失败一律 ``(-1, b"")``。"""
+def _git_subprocess(args: list[str], cwd: Path, timeout: int) -> tuple[int, bytes, str]:
+    """scanctx 里**唯一**的 ``subprocess.run`` git 调用点（P2 #18）。
+
+    ``Git`` 视图、:func:`run_git`（watchdog / repo_hygiene）都汇聚到这里，
+    共享同一份 timeout / env / stdin / CREATE_NO_WINDOW 口径。
+    返回 ``(returncode, stdout, err)``；``err`` 非空 = spawn/超时/无 git 等
+    执行期失败（此时 ``returncode`` 为 -1，不来自 git 本身）。
+    """
     exe = git_binary()
     if exe is None:
-        return -1, b""
+        return -1, b"", "git 可执行文件不可用（shutil.which('git') 为 None）"
     cmd = [exe, "-C", str(cwd), "-c", "core.quotepath=false", *args]
     try:
         proc = subprocess.run(
             cmd,
             capture_output=True,
             stdin=subprocess.DEVNULL,
-            timeout=_GIT_TIMEOUT,
+            timeout=timeout,
             env=_GIT_ENV,
             creationflags=_CREATE_NO_WINDOW,
         )
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError) as exc:
+        return -1, b"", str(exc)
+    return proc.returncode, proc.stdout, ""
+
+
+def _run_git(args: list[str], cwd: Path) -> tuple[int, bytes]:
+    """``Git`` 视图内部使用：返回 ``(returncode, stdout)``，失败一律 ``(-1, b"")``。
+
+    行为与改造前完全一致（10s / 失败 ``(-1, b"")``），仅把调用委托给
+    :func:`_git_subprocess` 以消除重复的 ``subprocess.run``。
+    """
+    rc, out, err = _git_subprocess(args, cwd, _GIT_TIMEOUT)
+    if err:
         return -1, b""
-    return proc.returncode, proc.stdout
+    return rc, out
 
 
 def _decode(raw: bytes) -> str:
@@ -74,6 +92,30 @@ def _decode(raw: bytes) -> str:
 # ---------------------------------------------------------------------------
 # git 只读封装
 # ---------------------------------------------------------------------------
+
+def run_git(repo, *args, timeout: int | None = None, text: bool = True) -> tuple[int, str | bytes]:
+    """仓内其它模块复用的**唯一**只读 git 调用入口（P2 #18 统一封装）。
+
+    与 ``Git`` 视图同源，全部经 :func:`_git_subprocess`，共享一份口径：
+      * 默认 10s 超时（:data:`_GIT_TIMEOUT`）；``timeout`` 可显式覆盖，供
+        fsck / ls-remote 等长操作按需放宽（理由写在调用处，仍走同一入口）；
+      * ``GIT_OPTIONAL_LOCKS=0`` / ``GIT_TERMINAL_PROMPT=0``（:data:`_GIT_ENV`）；
+      * ``stdin=DEVNULL`` / ``capture_output`` / Windows ``CREATE_NO_WINDOW``。
+
+    返回 ``(returncode, stdout)``：
+      * ``text=True``（默认）：stdout 为解码后的 ``str``；执行期失败 ``(128, 诊断字符串)``；
+      * ``text=False``：stdout 为原始 ``bytes``；执行期失败 ``(128, b"")``。
+
+    spawn/超时/git 缺失一律以 128 表达，git 自身非零退出码原样透传；不抛异常，
+    形态与 watchdog / repo_hygiene 旧自写 ``git()`` 闭包一致。
+    """
+    rc, out, err = _git_subprocess(
+        list(args), Path(repo), _GIT_TIMEOUT if timeout is None else timeout
+    )
+    if err:
+        return 128, (err if text else b"")
+    return rc, (_decode(out) if text else out)
+
 
 class Git:
     """针对单个项目目录的只读 git 视图（懒加载，不 spawn 直到被用到）。"""

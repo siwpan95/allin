@@ -173,4 +173,52 @@ test('GET /api/workshop/audit → 审计流水为数组', async () => {
   assert.ok(Array.isArray(r.json.audit), 'audit 应为数组')
 })
 
+// ── 2026-11-10 深度审计 M-7 回归：/api/workshop 并发 checkUpdate ─────────────
+// 构造两个「全新 id」订阅项：它们从未进过 workshopCache（60s TTL），必然走
+// checkUpdate，从而同时观测「并发峰值」与「单条失败不拖垮整体」。
+// 直接写 workshop.json 建立订阅态（subscribe 端点还要 git clone，与本次验证无关）。
+test('M-7 回归：/api/workshop 并发 checkUpdate，单条失败不拖垮整体', async () => {
+  const stateFile = path.join(tmp, 'data', 'workshop.json')
+  let state
+  try { state = JSON.parse(fs.readFileSync(stateFile, 'utf8')) } catch { state = { subscriptions: {} } }
+  for (const [id, repo] of [['ws-par-ok', 'local/par-ok'], ['ws-par-fail', 'local/par-fail']]) {
+    fs.writeFileSync(path.join(regDir, `${id}.yaml`), [
+      `id: ${id}`, `name: ${id}`, 'category: tool', 'version: 1.0.0',
+      `path: repos/${id}`, 'launch:', '  command: echo placeholder',
+      'publish:', `  repo: ${repo}`, '  branch: master',
+    ].join('\n'), 'utf8')
+    state.subscriptions[id] = {
+      version: '1.0.0', commit: 'a'.repeat(40), history: [],
+      subscribedAt: new Date().toISOString(),
+    }
+  }
+  fs.writeFileSync(stateFile, JSON.stringify(state, null, 2), 'utf8')
+
+  const prevFetch = globalThis.fetch
+  let active = 0
+  let peak = 0
+  globalThis.fetch = async (url) => {
+    active += 1
+    peak = Math.max(peak, active)
+    await new Promise((r) => setTimeout(r, 120))
+    active -= 1
+    // 失败项返回 HTTP 错误 ⇒ fetchBranchCommitStatus → checkUpdate 带 checkError 降级
+    if (String(url).includes('par-fail')) return { ok: false, status: 503, json: async () => ({}) }
+    return { ok: true, json: async () => ({ commit: { sha: FAKE_SHA } }) }
+  }
+  try {
+    const r = await getJson('/api/workshop')
+    assert.equal(r.status, 200, '单条订阅失败不得让整个接口 500')
+    const ok = r.json.catalog.find((i) => i.id === 'ws-par-ok')
+    const bad = r.json.catalog.find((i) => i.id === 'ws-par-fail')
+    assert.ok(ok && bad, '两个新订阅项都应出现在 catalog（registry 缓存对新增清单失效）')
+    assert.equal(ok.updateAvailable, true, '正常项应回填 updateAvailable')
+    assert.equal(bad.updateAvailable, false, '失败项不应伪装成「无更新」')
+    assert.ok(bad.checkError, '失败项应带 checkError（fail-loud），而不是拖垮整体')
+    assert.ok(peak >= 2, `checkUpdate 应并发执行（并发峰值 ${peak}；串行实现恒为 1）`)
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+})
+
 after(() => server.close())

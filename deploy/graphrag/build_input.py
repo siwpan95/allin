@@ -22,10 +22,16 @@ INCLUDE = ("docs/规范/", "docs/记录/", "architecture/adr/", "docs/README.md"
 EXCLUDE = ("docs/事实源/", "docs/md/", "docs/历史/", "docs/INDEX.md")
 SECRET = re.compile(r"sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|[0-9a-f]{32,}|api[_-]?key\s*[:=]\s*\S+", re.I)
 
+_ROOT = Path(__file__).resolve().parents[2]
+_TOOLS = _ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+import runtime_defaults as _rd  # noqa: E402
+
 
 def tracked(root: Path) -> list[str]:
     out = subprocess.run(["git", "-C", str(root), "-c", "core.quotePath=false", "ls-files", "-z"],
-                         capture_output=True, text=True, encoding="utf-8", timeout=60)
+                         capture_output=True, text=True, encoding="utf-8", timeout=_rd.timeout("subprocess_default"))
     return [x for x in out.stdout.split("\0") if x] if out.returncode == 0 else []
 
 

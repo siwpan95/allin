@@ -304,23 +304,31 @@ async function requestHandler(req, res) {
   if (p === '/api/workshop' && req.method === 'GET') {
     const { entries } = loadRegistry(REGISTRY)
     const base = listWorkshop(entries)
-    // 订阅项比对发布面最新提交（60s 缓存，避免前端 5s 刷新打满 gitee API）
-    for (const item of base.catalog) {
-      if (!item.subscribed) continue
+    // 订阅项比对发布面最新提交（60s 缓存，避免前端 5s 刷新打满 gitee API）。
+    // M-7：与 libraryPayload()(:166) 对齐改 Promise.all 并发——串行时总延迟 = Σ 各订阅延迟。
+    // 每条任务内部 try/catch 就地降级：checkUpdate 用 checkError 表达网络故障；未来若它
+    // 真抛异常，也只让该条带 checkError 降级，不让单条订阅把整个接口变成 500（与 H-1 同向）。
+    await Promise.all(base.catalog.map(async (item) => {
+      if (!item.subscribed) return
       const entry = entries.find(e => e.id === item.id)
       const cache = workshopCache.get(item.id)
       if (cache && Date.now() - cache.at < 60000) {
         item.updateAvailable = cache.updateAvailable
         item.pendingCommit = cache.pendingCommit
         item.checkError = cache.checkError || null
-        continue
+        return
       }
-      const ck = await checkUpdate(item.id, entry)
+      let ck
+      try {
+        ck = await checkUpdate(item.id, entry)
+      } catch (e) {
+        ck = { updateAvailable: false, latest: null, checkError: String((e && e.message) || e) }
+      }
       workshopCache.set(item.id, { at: Date.now(), updateAvailable: ck.updateAvailable, pendingCommit: ck.latest, checkError: ck.checkError || null })
       item.updateAvailable = ck.updateAvailable
       item.pendingCommit = ck.latest
       item.checkError = ck.checkError || null
-    }
+    }))
     return json(res, 200, base)
   }
   const subM = p.match(/^\/api\/workshop\/([a-z0-9-]+)\/(subscribe|unsubscribe|update|rollback)$/)

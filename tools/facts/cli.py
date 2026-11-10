@@ -40,6 +40,60 @@ MARKER = re.compile(r"<!-- FACTS-GENERATED:START sha256:([0-9a-f]{16}) -->")
 TABLES = ("machines", "volumes", "runtimes", "repos", "ports", "services", "facts", "doc_refs", "observation_runs")
 
 
+# ---------------------------------------------------------------------------
+# 权威 YAML 读取（P2 #19：tools/facts 下唯一一份；5 个 build_*.py 不再各写一套）
+# ---------------------------------------------------------------------------
+
+class AuthUnavailable(Exception):
+    """权威 YAML 在场但无法解析：缺 PyYAML / 语法错 / 顶层非 mapping / 读失败。
+
+    2026-11-10 深度审计 H-3（P1 #7）：此前各 ``build_*.py`` 的 ``_yaml_load``
+    用 ``except Exception: return None`` 把「语法错」与「文件不存在 / 缺 yaml」
+    混成同一个 ``None``，调用方据此降级为 ``SKIP / EXIT_OK`` —— 实测把
+    ``ports.yaml`` 写坏后 ``--check`` 仍是 ``rc=0``，权威源损坏被判绿。
+    P2 #19 收敛为本模块唯一一份实现，语义**绝不**退回静默 None。
+
+    ``kind`` 标注四态中的失败子类，供调用方输出可读诊断：
+    ``no_pyyaml`` / ``parse`` / ``shape``。
+    """
+
+    def __init__(self, message: str, kind: str = "parse") -> None:
+        super().__init__(message)
+        self.kind = kind
+
+
+def yaml_load(path: Path) -> dict | None:
+    """读权威 YAML —— tools/facts 下**唯一**一份读取实现（P2 #19）。
+
+    四种状态，语义显式、不吞错（单一异常形态，延续 build_ports.py 的 AuthUnavailable）：
+
+      * 文件不存在   → 返回 ``None``（权威源缺席，调用方决定是否 SKIP）；
+      * 缺 PyYAML    → 抛 ``AuthUnavailable(kind="no_pyyaml")``；
+      * 在场但解析失败 / 读失败 / 顶层非 mapping
+                      → 抛 ``AuthUnavailable(kind="parse" / "shape")``；
+      * 正常         → 返回 ``dict``（``yaml.safe_load(...) or {}``）。
+
+    **绝不**用 ``None`` 代表「在场但读不出来」——那正是 P1 #7 修掉的「损坏被判绿」。
+    在场却不可解析时，调用方必须显式报错 / 非 0，而非降级为 SKIP。
+    """
+    p = Path(path)
+    if not p.is_file():
+        return None
+    try:
+        import yaml
+    except ImportError as exc:
+        raise AuthUnavailable(f"PyYAML 未安装：{exc}", kind="no_pyyaml") from exc
+    try:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        raise AuthUnavailable(
+            f"YAML 解析失败：{type(exc).__name__}: {exc}", kind="parse"
+        ) from exc
+    if not isinstance(doc, dict):
+        raise AuthUnavailable(f"顶层不是 mapping：{type(doc).__name__}", kind="shape")
+    return doc
+
+
 class SchemaError(Exception):
     pass
 

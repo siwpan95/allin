@@ -46,6 +46,7 @@ from __future__ import annotations
 import io
 import os
 import re
+from functools import lru_cache
 
 # ---------------------------------------------------------------- 基础设施
 CN_CHARS = "零一二三四五六七八九十百"
@@ -104,6 +105,22 @@ def read_text(path: str) -> str:
         return f.read()
 
 
+def _heading_tokens_from_text(text: str) -> set[str]:
+    """`heading_tokens()` 的纯文本核心：同一份文本只解析一次（M-7）。"""
+    out: set[str] = set()
+    for line in text.splitlines():
+        m = re.match(r"^#{2,4}\s+(.*)$", line)
+        if m:
+            t = SECTION_TOKEN.match(m.group(1).strip())
+            if t:
+                out.add(t.group(1))
+            continue
+        b = BOLD_SECTION.match(line)
+        if b:
+            out.add(b.group(1))
+    return out
+
+
 def heading_tokens(path: str) -> set[str]:
     """文档的章节号集合。
 
@@ -116,18 +133,7 @@ def heading_tokens(path: str) -> set[str]:
     判据无法把它映射成一个章节号（这类目标一律跳过，见模块说明）。
     粗体行要求编号后紧跟分隔符（空白/标点），否则 `**137**` 这类数字会被误当节号。
     """
-    out: set[str] = set()
-    for line in read_text(path).splitlines():
-        m = re.match(r"^#{2,4}\s+(.*)$", line)
-        if m:
-            t = SECTION_TOKEN.match(m.group(1).strip())
-            if t:
-                out.add(t.group(1))
-            continue
-        b = BOLD_SECTION.match(line)
-        if b:
-            out.add(b.group(1))
-    return out
+    return _heading_tokens_from_text(read_text(path))
 
 
 def resolve_path(docs: str, root: str, src_rel: str, cand: str) -> str | None:
@@ -174,25 +180,44 @@ def tok_key(tok: str):
     return str(v) if v is not None else None
 
 
+@lru_cache(maxsize=128)
+def _numeric_tokens_from_text(text: str, with_list_items: bool) -> frozenset[str]:
+    """M-7：按**文本内容**缓存节号解析结果。
+
+    D13 在 INDEX 表格行循环里会对同一目标文档反复调 `numeric_token_set()`，
+    而 selfcheck 又会在同一路径上覆盖写入夹具。用内容而非 (path, mtime, size)
+    做键 ⇒ 夹具覆写后必然产生新键，不会因元数据粒度不足返回陈旧结果。
+    同一次 `numeric_token_set()` 也由原来的 3 次全文件读降为 1 次。
+    """
+    toks = _heading_tokens_from_text(text)
+    lines = text.splitlines()
+    if with_list_items and not any(re.match(r"^#{2,4}\s+[0-9]+(?:\.[0-9]+)*[ .、]", ln)
+                                   for ln in lines):
+        for ln in lines:
+            m = re.match(r"^(\d+)\.\s+\S", ln)
+            if m:
+                toks.add(m.group(1))
+    out: set[str] = set()
+    for t in toks:
+        k = tok_key(t)
+        if k is not None:
+            out.add(k)
+    return frozenset(out)
+
+
+def clear_numeric_token_cache() -> None:
+    """显式失效入口：供测试 / 批量文档重建后调用。"""
+    _numeric_tokens_from_text.cache_clear()
+
+
 def numeric_token_set(path: str, with_list_items: bool = False) -> set[str]:
     """文档的可解析节号集合（规范化键）。
 
     `with_list_items=True` 时额外计入编号列表项 —— 仅当该文档**全文无编号标题**时才计
     （SPEC-004 的 69 条调试铁律就是列表项；机器分区索引的列表项只是 §0 的子项、不算节号）。
+    返回新的可变 set，调用方可自由改动而不污染缓存。
     """
-    out: set[str] = set()
-    toks = heading_tokens(path)
-    if with_list_items and not any(re.match(r"^#{2,4}\s+[0-9]+(?:\.[0-9]+)*[ .、]", ln)
-                                   for ln in read_text(path).splitlines()):
-        for ln in read_text(path).splitlines():
-            m = re.match(r"^(\d+)\.\s+\S", ln)
-            if m:
-                toks.add(m.group(1))
-    for t in toks:
-        k = tok_key(t)
-        if k is not None:
-            out.add(k)
-    return out
+    return set(_numeric_tokens_from_text(read_text(path), bool(with_list_items)))
 
 
 def resolve_spec(docs: str, spec_id: str) -> str | None:

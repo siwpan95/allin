@@ -112,9 +112,36 @@ def _file_candidates(meta: dict, version: str) -> list:
     return [f for f in files if f.get("packagetype") in ("sdist", "bdist_wheel")]
 
 
+def _safe_extract_path(target: Path, name: str) -> Path:
+    """CWE-22 / Zip Slip: canonicalize-then-contain before any archive write.
+
+    Local hardening on top of the vendored upstream source (see VENDOR.md 补记).
+    Archive member names are untrusted: after stripping the top-level directory
+    they may still contain ``..``, absolute/drive/UNC prefixes or backslashes,
+    or resolve through a pre-existing symlink to a location outside ``target``.
+    Returns the resolved destination; raises ValueError on any escape attempt.
+    """
+    if not isinstance(name, str) or not name or "\x00" in name:
+        raise ValueError("archive member name is empty or contains NUL")
+    normalized = name.replace("\\", "/")
+    if normalized.startswith("/") or (len(normalized) >= 2 and normalized[1] == ":"):
+        raise ValueError(f"absolute/drive-qualified member name: {name!r}")
+    if ".." in normalized.split("/"):
+        raise ValueError(f"parent traversal in member name: {name!r}")
+    root = target.resolve()
+    dest = (root / normalized).resolve()
+    if not dest.is_relative_to(root):
+        raise ValueError(f"member escapes extraction root: {name!r} -> {dest}")
+    return dest
+
+
 def download_template(registry: str, meta: dict, version: str, target: Path) -> None:
     """Download the template distribution and extract it (strip the top-level
-    directory, like `tar --strip-components=1`)."""
+    directory, like `tar --strip-components=1`).
+
+    Every write goes through :func:`_safe_extract_path`; symlink/hardlink/device
+    tar members are skipped rather than materialised inside the target tree.
+    """
     candidates = _file_candidates(meta, version)
     candidate = next((f for f in candidates if f.get("packagetype") == "sdist"), None)
     if candidate is None and candidates:
@@ -134,13 +161,21 @@ def download_template(registry: str, meta: dict, version: str, target: Path) -> 
                 parts = member.name.split("/", 1)
                 if len(parts) < 2:
                     continue
-                member.name = parts[1]
+                name = parts[1]
+                try:
+                    dest = _safe_extract_path(target, name)
+                except ValueError as exc:
+                    raise ValueError(f"unsafe tar member {member.name!r}: {exc}") from exc
+                if member.issym() or member.islnk() or member.isdev():
+                    # 不把符号链接 / 硬链接 / 设备文件物化到目标树，避免二次逃逸。
+                    continue
+                member.name = name
                 if member.isdir():
-                    (target / member.name).mkdir(parents=True, exist_ok=True)
+                    dest.mkdir(parents=True, exist_ok=True)
                 elif member.isfile():
-                    (target / member.name).parent.mkdir(parents=True, exist_ok=True)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
                     with tar.extractfile(member) as source:
-                        (target / member.name).write_bytes(source.read())
+                        dest.write_bytes(source.read())
     else:
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             for info in archive.infolist():
@@ -150,8 +185,12 @@ def download_template(registry: str, meta: dict, version: str, target: Path) -> 
                 name = parts[1]
                 if ".dist-info/" in name:
                     continue
-                (target / name).parent.mkdir(parents=True, exist_ok=True)
-                (target / name).write_bytes(archive.read(info))
+                try:
+                    dest = _safe_extract_path(target, name)
+                except ValueError as exc:
+                    raise ValueError(f"unsafe zip member {info.filename!r}: {exc}") from exc
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(archive.read(info))
 
 
 def _replace_name(target: Path, name: str) -> None:

@@ -30,6 +30,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -118,21 +119,46 @@ def interpreter(project: Path) -> Path:
 
 
 def prepare(command: str, project: Path) -> list[str]:
-    """B602 方案 A：把命令拆成 argv 以 shell=False 安全执行，不再 shell=True。
+    """把命令拆成 argv 以 shell=False 安全执行，绝不请求任何 shell 解释。
 
     - python/pythonw → [解释器, *参数]；
-    - npm/node/*.bat → 显式 argv 调 cmd.exe（shell=False，保留 Windows 行为；
-      cmd /c 仍解释 && 等元字符，但属显式调用而非 shell=True）；
-    - 其余 → shlex.split（仓内 verify 命令统一用正斜杠，POSIX 分词安全）。
+    - node → shutil.which("node") 解析出的真实 node.exe，后接其余参数；
+    - npm → Windows 上常解析为 npm.cmd / npm.bat，shell=False 直接 Popen 会失败，
+      故改用 node 执行其同目录的 node_modules/npm/bin/npm-cli.js；若解析到的是
+      可直接执行的非批处理文件，则用解析出的路径；
+    - 其余（含 .bat）→ shlex.split + shutil.which() 把首 token 解析到真实
+      可执行文件；解析不到就保留原 token，启动失败由 run() 的 OSError 降级兜底。
+
+    任何分支都不返回 cmd.exe / shell=True，也不把整条字符串交给 shell 解释
+    （元字符 ; | && 只作为普通参数）。这也避免依赖「批处理文件可能被系统
+    shell 隐式解释」这一不可靠的 Windows 行为。
     """
     parts = command.split()
-    first = parts[0].lower() if parts else ""
+    if not parts:
+        return []
+    first = parts[0].lower()
     if first in ("python", "pythonw"):
         rest = command[len(parts[0]):].strip()
         return [str(interpreter(project)), *shlex.split(rest)]
-    if first in ("npm", "node") or first.endswith(".bat"):
-        return ["cmd", "/c", command]
-    return shlex.split(command)
+    argv = shlex.split(command)
+    if first == "node":
+        node = shutil.which("node")
+        return [node, *argv[1:]] if node else argv
+    if first == "npm":
+        npm = shutil.which("npm")
+        if npm:
+            npm_path = Path(npm)
+            cli = npm_path.parent / "node_modules" / "npm" / "bin" / "npm-cli.js"
+            node = shutil.which("node") or str(npm_path.parent / "node.exe")
+            if cli.is_file():
+                return [node, str(cli), *argv[1:]]
+            if npm_path.suffix.lower() not in (".cmd", ".bat"):
+                return [npm, *argv[1:]]
+        return argv
+    # 其余（含 .bat）：纯 argv、shell=False。which() 把首 token 解析到真实
+    # 可执行文件；解析不到保留原 token。绝不显式调用 cmd.exe。
+    resolved = shutil.which(argv[0])
+    return [resolved, *argv[1:]] if resolved else argv
 
 
 def headless_off(entry: dict) -> bool:
@@ -148,15 +174,18 @@ def _display_argv(argv: list[str]) -> str:
 
 def run(command: list[str], project: Path, timeout: float,
         env: dict[str, str] | None = None) -> tuple[int | None, str, float]:
-    """B602 方案 A：argv 列表 + shell=False。绝不再 shell=True。
+    """argv 列表 + shell=False，全程不请求任何 shell 解释。
 
-    `command` 恒为 argv 列表（由 prepare() 产出）；`cmd /c` 也走显式 argv，
-    不依赖 shell=True。元字符（; | && 等）不会被解释，注入被中性化。
+    `command` 恒为 argv 列表（由 prepare() 产出）；元字符（; | && 等）只作为
+    普通参数，绝不会被解释，注入被中性化。prepare() 对 npm/node 用 which()
+    解析真实可执行文件、必要时以 node 跑 npm-cli.js，不再借助 cmd.exe 包装。
 
     注意：shell=False 下，命令的可执行体不存在会由 `Popen` 直接抛 OSError
     （`shell=True` 时由 shell 吞掉、仅返回非 0）。这里把「启动失败」降级为
     (1, 错误信息)，让 verify() 走 T4 / import_check 兜底，而不是让整个
-    verifier 崩溃——与旧 shell=True 行为的失败语义保持一致。
+    verifier 崩溃——与旧 shell=True 行为的失败语义保持一致。超时清理里
+    taskkill 缺失（非 Windows / PATH 无此命令）也降级为 process.kill()，
+    不因清理子进程失败而让整个 verifier 崩掉。
     """
     started = time.time()
     try:
@@ -171,13 +200,29 @@ def run(command: list[str], project: Path, timeout: float,
         output, _ = process.communicate(timeout=timeout)
         code = process.returncode
     except subprocess.TimeoutExpired:
-        subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        fallback = ""
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        except OSError as e:
+            # taskkill 不存在（非 Windows / PATH 缺失）：清理失败不该把整个
+            # verifier 带崩。降级为 Python 级 kill，并把原因写进返回输出。
+            fallback = ("[verify_projects] taskkill 不可用，降级为 process.kill()："
+                        f"{type(e).__name__}: {e}")
+            try:
+                process.kill()
+            except OSError:
+                pass
+            try:
+                process.wait(timeout=5)
+            except Exception:  # noqa: BLE001 - wait 异常不掩盖主诊断
+                pass
         try:
             output = process.stdout.read() if process.stdout else ""
         except Exception:  # noqa: BLE001
             output = ""
         code = None
+        output = "\n".join(part for part in (output, fallback) if part)
     return code, (output or "").strip(), round(time.time() - started, 2)
 
 
@@ -313,12 +358,16 @@ def load_entry(path: Path) -> dict:
 def selftest() -> int:
     """B602 方案 A 自检：含非法元字符的命令必须被中性化（shell=False，不交予 shell 解释）。
 
-    不联网、不扫仓库、不改工作区。验证三件事：
+    不联网、不扫仓库、不改工作区。验证：
       ① prepare() 返回 list[str]（不再是 shell 字符串）；
       ② 合法命令在 shell=False 下仍正常执行（exit 0）；
-      ③ 含 `;` 注入的命令字符串，经 prepare()+run() 后绝不创建注入目标文件
-         （证明 shell 注入被中性化，这是 B602 整改的核心可证伪点）。
-    另验证 verify.commands 列表字段在 YAML 路径与回退路径下都能被正确解析。
+      ③ 含 `;` 注入的命令经 prepare()+run() 后绝不创建注入目标文件
+         （证明 shell 注入被中性化，这是 B602 整改的核心可证伪点）；
+      ④ verify.commands 列表字段在 YAML / 回退路径下都能解析；
+      ⑤ 启动失败降级为 code=1 而非让 verifier 崩溃；
+      ⑥ 深度审计 #15：prepare() 对含 ; | && 的输入产出纯 argv（不含任何 shell、
+         元字符只作普通参数）、对 npm/node 不再返回 cmd；taskkill 缺失时超时
+         清理降级为 process.kill() 且不抛异常。
     """
     import tempfile
     tmp = Path(tempfile.mkdtemp(prefix="allin-vp-selftest-"))
@@ -326,12 +375,12 @@ def selftest() -> int:
     py = str(SYSTEM_PYTHON)
     marker = tmp / "ALLIN_B602_PWNED"
 
-    def check(name: str, cond: bool) -> None:
+    def check(name: str, cond: bool, detail: str = "") -> None:
         nonlocal fails
         if cond:
             print(f"  [PASS] {name}")
         else:
-            print(f"  [FAIL] {name}")
+            print(f"  [FAIL] {name}" + (f"  <- {detail}" if detail else ""))
             fails += 1
 
     # ① prepare 返回 list[str]
@@ -368,6 +417,61 @@ def selftest() -> int:
     cmds2 = verify_commands_list(load_entry(p))
     check("④ 回退路径解析 commands 列表",
           len(cmds2) == 2 and all(c.startswith("python") for c in cmds2))
+
+    # ⑥ 深度审计 #15：元字符中性化、npm/node 不再走 cmd、taskkill 缺失降级
+    shell_names = {"cmd", "sh", "bash", "zsh", "pwsh", "powershell"}
+
+    def argv_is_safe(a) -> bool:
+        if not isinstance(a, list) or not a:
+            return False
+        head = Path(a[0]).stem.lower()
+        no_shell = head not in shell_names and not any(p.lower() == "/c" for p in a[1:])
+        metachar_plain = any(any(m in p for m in (";", "|", "&")) for p in a)
+        return no_shell and metachar_plain
+
+    for raw in ("echo a ; b", "echo a | b", "echo a && b", "node -e 1 ; whoami"):
+        argv = prepare(raw, tmp)
+        check("⑥ 元字符只作普通参数且不含 shell：%r" % raw, argv_is_safe(argv), repr(argv))
+
+    for raw in ("npm run build", "node -v"):
+        argv = prepare(raw, tmp)
+        head = Path(argv[0]).stem.lower() if argv else ""
+        check("⑥ npm/node 不再返回 cmd：%r" % raw,
+              head not in shell_names and not any(p.lower() == "/c" for p in argv[1:]),
+              repr(argv))
+
+    class _FakeTimedOut:
+        pid = 424242
+        stdout = None
+        returncode = None
+        def __init__(self):
+            self.killed = False
+            self.waited = False
+        def communicate(self, timeout=None):
+            raise subprocess.TimeoutExpired("fake", timeout)
+        def kill(self):
+            self.killed = True
+        def wait(self, timeout=None):
+            self.waited = True
+
+    fake = _FakeTimedOut()
+    saved_popen, saved_run = subprocess.Popen, subprocess.run
+
+    def _no_taskkill(*_a, **_k):
+        raise FileNotFoundError("taskkill not on PATH")
+
+    try:
+        subprocess.Popen = lambda *_a, **_k: fake
+        subprocess.run = _no_taskkill
+        rc, out, _ = run(["whatever"], tmp, 0.01)
+    except Exception as e:  # noqa: BLE001 - 抛异常本身即判失败
+        rc, out = "RAISED", "%s: %s" % (type(e).__name__, e)
+    finally:
+        subprocess.Popen, subprocess.run = saved_popen, saved_run
+    check("⑥ taskkill 缺失时超时清理降级不抛异常",
+          rc is None and "taskkill" in (out or "") and "process.kill" in (out or "")
+          and fake.killed and fake.waited,
+          "rc=%r out=%r killed=%r waited=%r" % (rc, out, fake.killed, fake.waited))
 
     # 清理（若注入竟成功创建了 marker，也一并清掉，避免污染）
     try:

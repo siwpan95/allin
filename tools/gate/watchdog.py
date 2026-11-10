@@ -58,6 +58,26 @@ import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
+
+# P2 #18：跨目录 import 稳健化 —— tools/ 下不是单一包，scanctx 在 tools/repocheck/。
+# 显式把该目录插入 sys.path 后按顶层模块名 import，与仓内 `from scanctx import ...` /
+# `import cli as F` 的既有写法一致；保证从任意 cwd 直接跑本脚本（含 --selftest）也能找到。
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "repocheck"))
+import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
+
+
+# ------------------------------------------------------------------ P2 #18 只读 git 单一入口
+# 原有 check_repo / check_sync / main-quick 共三份自写 git() 闭包 + 一份 ls-remote 裸调用，
+# 全部删除，统一委托 scanctx.run_git（默认 10s / GIT_OPTIONAL_LOCKS=0 / stdin=DEVNULL /
+# capture_output / 无黑窗）。确属长操作的，仍走同一入口、仅显式放宽 timeout，理由随调用写明：
+_GIT_FSCK_TIMEOUT = 300      # fsck 遍历全库对象，大仓实测可能 >10s（原实现 t=300）
+_GIT_LSREMOTE_TIMEOUT = 120  # ls-remote 走网络，受对端/网络延迟影响（原实现 timeout=120）
+
+
+def _git(repo, *args, timeout=None):
+    """watchdog 唯一的只读 git 薄包装：一律委托 scanctx.run_git。"""
+    return scanctx.run_git(repo, *args, timeout=timeout)
 
 
 def _workspace_root():
@@ -210,24 +230,20 @@ def check_repo(repo):
         return [Alert("W2", name, ".git/objects 不可读 —— 文件系统级损坏（指纹！）: {}".format(
             str(e)[:80]), "ERROR")], "BROKEN_OBJECTS"
 
-    def git(*args, t=120):
-        try:
-            p = subprocess.run(["git", "-C", repo] + list(args), capture_output=True, timeout=t)
-            return p.returncode, p.stdout.decode("utf-8", "replace")
-        except Exception as e:
-            return 128, str(e)
-
     # ⚠ 必须用 HEAD^{commit}：`rev-parse --verify HEAD` **只解析 ref 名**，
     # 不验证对象是否存在 —— 首版用 HEAD，导致「objects 全删」和「HEAD 写坏」
     # 两个破坏用例都被判成 OK（自检当场抓出）。
-    rc, out = git("rev-parse", "--verify", "HEAD^{commit}")
+    rc, out = _git(repo, "rev-parse", "--verify", "HEAD^{commit}")
     if rc != 0:
         low = out.lower()
         if "dubious ownership" in low:
             return a, "OWNERSHIP"
         return [Alert("W2", name, "HEAD 不可解为提交对象: {}".format(out.strip()[:90]), "ERROR")], "BAD_HEAD"
 
-    rc, out = git("fsck", "--no-progress", "--no-dangling", t=300)
+    # 长操作：fsck 遍历全库对象，大仓实测可能 >10s（原实现 t=300）。
+    # 仍走同一入口 _git → scanctx.run_git，仅显式放宽 timeout。
+    rc, out = _git(repo, "fsck", "--no-progress", "--no-dangling",
+                   timeout=_GIT_FSCK_TIMEOUT)
     if rc != 0:
         bad = [l for l in out.splitlines()
                if l.strip() and not l.startswith(("dangling", "notice", "Checking"))]
@@ -252,33 +268,28 @@ def iter_repos(root):
 def check_sync(repo):
     name = os.path.basename(repo.rstrip("\\/"))
 
-    def git(*args, t=120):
-        try:
-            p = subprocess.run(["git", "-C", repo] + list(args), capture_output=True, timeout=t)
-            return p.returncode, p.stdout.decode("utf-8", "replace")
-        except Exception as e:
-            return 128, str(e)
-
-    rc, out = git("rev-parse", "--verify", "HEAD^{commit}", t=60)
+    rc, out = _git(repo, "rev-parse", "--verify", "HEAD^{commit}")
     if rc != 0:
         return []          # W2 已报，不重复
     local = out.strip()
-    rc, br = git("rev-parse", "--abbrev-ref", "HEAD")
+    rc, br = _git(repo, "rev-parse", "--abbrev-ref", "HEAD")
     br = br.strip()
     if rc != 0 or br in ("HEAD", ""):
         return []
-    rc, url = git("config", "--get", "remote.origin.url")
+    rc, url = _git(repo, "config", "--get", "remote.origin.url")
     if rc != 0 or not url.strip():
         return []
-    # **只信 ls-remote**（MEMORY 调试铁律 13：陈旧的 remote-tracking ref 会造成假阳性）
-    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-    try:
-        p = subprocess.run(["git", "ls-remote", "origin", "refs/heads/" + br],
-                           cwd=repo, capture_output=True, timeout=120, env=env)
-        remote = p.stdout.decode("utf-8", "replace").split()
-        remote = remote[0].strip() if remote else ""
-    except Exception:
-        return [Alert("W3", name, "ls-remote 失败（网络/权限）—— 记为 SKIP", "INFO")]
+    # **只信 ls-remote**（MEMORY 调试铁律 13：陈旧的 remote-tracking ref 会造成假阳性）。
+    # 长操作：走网络、受对端延迟影响（原实现 timeout=120）；仍委托同一入口 _git，
+    # 仅显式放宽 timeout（理由见 _GIT_LSREMOTE_TIMEOUT 常量）。
+    rc, out = _git(repo, "ls-remote", "origin", "refs/heads/" + br,
+                   timeout=_GIT_LSREMOTE_TIMEOUT)
+    # scanctx.run_git 用 (128, 诊断串) 表达 spawn/超时失败；git 自身 128 时 stdout 为空
+    # → out 为 ""。二者据此区分，保留原「网络失败记 SKIP」口径，不把损坏误判成漂移。
+    if rc == 128 and out:
+        return [Alert("W3", name, "ls-remote 失败（网络/权限/超时）—— 记为 SKIP", "INFO")]
+    remote = out.split()
+    remote = remote[0].strip() if remote else ""
     if not remote:
         return [Alert("W3", name, "远端无分支 {} —— 本地有未推送分支".format(br), "WARN")]
     if remote != local:
@@ -383,7 +394,8 @@ def main():
     ap.add_argument("--no-sync", action="store_true", help="跳过 W3（离线时用）")
     ap.add_argument("--json", help="机读输出路径")
     ap.add_argument("--quiet", action="store_true", help="只输出告警")
-    ap.add_argument("--selfcheck", action="store_true")
+    ap.add_argument("--selfcheck", "--selftest", dest="selfcheck", action="store_true",
+                    help="注入破坏用例自测（--selftest 为 P2 #18 起的等价别名）")
     args = ap.parse_args()
 
     if args.selfcheck:
@@ -421,13 +433,7 @@ def main():
     stat = {}
     for r in repos:
         if args.quick:
-            def _g(*a, t=60):
-                try:
-                    p = subprocess.run(["git", "-C", r] + list(a), capture_output=True, timeout=t)
-                    return p.returncode, p.stdout.decode("utf-8", "replace")
-                except Exception as e:
-                    return 128, str(e)
-            rc, out = _g("rev-parse", "--verify", "HEAD^{commit}")
+            rc, out = _git(r, "rev-parse", "--verify", "HEAD^{commit}")
             if rc != 0:
                 if "dubious ownership" in out.lower():
                     st = "OWNERSHIP"

@@ -1,0 +1,13 @@
+{
+  "unit": "seconds",
+  "git_probe": 10,
+  "subprocess_default": 60,
+  "subprocess_long": 180,
+  "subprocess_build": 600,
+  "subprocess_archive_push": 3600,
+  "url_open": 60,
+  "network_probe": 15,
+  "subprocess_pip": 120,
+  "subprocess_ensurepip": 300,
+  "subprocess_install": 900
+}

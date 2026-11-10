@@ -31,13 +31,18 @@ CTX = ssl.create_default_context()
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(REPO_ROOT, "PORTFOLIO.md")
 
+_TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+import runtime_defaults as _rd  # noqa: E402
+
 
 def fetch_all():
     out, page = [], 1
     while page <= 5:
         url = "%s/users/%s/repos?type=all&sort=full_name&per_page=100&page=%d" % (API, OWNER, page)
         req = urllib.request.Request(url, headers={"User-Agent": "allin-portfolio-builder"})
-        with urllib.request.urlopen(req, timeout=60, context=CTX) as r:
+        with urllib.request.urlopen(req, timeout=_rd.timeout("url_open"), context=CTX) as r:
             batch = json.loads(r.read().decode("utf-8"))
         if not batch:
             break
