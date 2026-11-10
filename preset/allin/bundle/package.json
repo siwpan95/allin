@@ -1,10 +1,10 @@
 {
-  "name": "allin-agent-preset",
-  "version": "0.1.0",
-  "private": true,
-  "dsh": {
-    "bundle": {
-      "patch": "cordis.patch.yml"
-    }
-  }
+    "name":  "allin-agent-preset",
+    "version":  "0.1.0",
+    "private":  true,
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "cordis.patch.yml"
+                           }
+            }
 }

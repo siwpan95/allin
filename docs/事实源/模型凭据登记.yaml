@@ -1,0 +1,47 @@
+# 模型凭据登记表（机器可读、零明文）
+#
+# 铁律：本文件只记录「模型 → vault 条目名 → 回退优先级 → 预算档 → 末次验证时间」，
+# **绝不记录任何 API key 的值**；值由 dsvault / 环境变量在运行时解析。
+# 降级顺序与探活结果由本表 + 运行时健康状态共同决定（见 preset GOVERNANCE 段与
+# platform/apps/mcp/src/model_route.js 的决策纯函数）。
+#
+# 治理边界（2026-11-10）：远程 LLM 调用一律放在仓外编排层（DSH / WorkBuddy）执行，
+# 本仓只声明策略、记录凭据槽位、观测降级轨迹，**不引入 LLM 运行时**。本仓 MCP 工具面
+# 是**全确定性**的——即使所有远程模型不可达，25 个治理工具仍全可用，天然构成降级终点。
+
+models:
+  - id: deepseek-chat
+    vendor: deepseek
+    vault: deepseek_api_key            # dsvault 条目名，非值
+    tier: primary
+    priority: 1
+    budget: standard
+    last_verified: 2026-11-09
+  - id: deepseek-reasoner
+    vendor: deepseek
+    vault: deepseek_api_key
+    tier: fallback
+    priority: 2
+    budget: standard
+    last_verified: 2026-11-09
+  - id: local-ollama
+    vendor: ollama
+    vault: none
+    tier: offline
+    priority: 3
+    budget: zero
+    last_verified: 2026-11-09
+
+# 降级档位（由高可用性 → 低可用性）。当主模型被 429/5xx/超时/预算耗尽时，
+# 按 priority 升序切到下一个可用档位；全部远程不可达时落到 offline（本地 +
+# 本仓确定性 MCP 工具面 docs.search / facts.query / registry.* 等）。
+degradation_tiers:
+  - tier: online
+    when: 主模型可达且会话预算未耗尽
+    action: 正常调用主模型
+  - tier: fallback
+    when: 主模型 429/5xx/超时，或会话预算耗尽
+    action: 切到 priority 次高的 fallback 模型（同 vault 下的次优档）
+  - tier: offline
+    when: 全部远程模型不可达
+    action: 走本地 Ollama（若有）或本仓确定性 MCP 工具面（25 个工具仍全可用）

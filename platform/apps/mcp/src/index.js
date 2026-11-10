@@ -5,7 +5,7 @@
 // `@deepseek-ai/dsh-mcp-client` and every other MCP client can spawn directly.
 //
 // Design rules, none of them optional:
-//   * read-only by default -- twenty-one of the twenty-five tools only read;
+//   * read-only by default -- twenty-three of the twenty-seven tools only read;
 //   * the four write tools need an explicit `confirm: true`: record.append / memory.append
 //     draft inside `docs/` (a file dropped into `docs/` without an INDEX.md registration
 //     would trip the D1 contract on the very next gate run); memory.append only
@@ -28,6 +28,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AgentTrace, buildSpan, byteSize } from './agent-trace.js'
+import { decideRoute, DETERMINISTIC_FALLBACK_TASKS } from './model_route.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.join(__dirname, '..', '..', '..', '..')
@@ -238,6 +239,31 @@ const TOOLS = [
         category: { type: 'string' },
         limit: { type: 'number' },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'model.route',
+    tier: 'read',
+    description: '大模型 LLM 降级选择：返回当前模型降级档位决策（online/fallback/offline）与命中模型、原因、降级来源。本仓不引入 LLM 运行时，真实调用在仓外编排层；可传 preferTier=offline 做离线演练。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        preferTier: { type: 'string', enum: ['online', 'fallback', 'offline'], description: '显式指定档位（如离线演练）；缺省按健康/预算自动决策' },
+        health: { type: 'string', enum: ['ok', 'degraded'] },
+        budgetExceeded: { type: 'boolean' },
+        lastError: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'model.fallback-catalog',
+    tier: 'read',
+    description: '模型不可用时仍可完成的任务清单：本仓 MCP 工具面全确定性，天然构成降级终点。',
+    inputSchema: {
+      type: 'object',
+      properties: {},
       additionalProperties: false,
     },
   },
@@ -506,6 +532,30 @@ function callTool(name, args) {
       if (a.category) entries = entries.filter((e) => e.category === a.category)
       const limit = Math.min(a.limit || 20, 200)
       return { text: JSON.stringify({ total: entries.length, entries: entries.slice(0, limit) }, null, 2) }
+    }
+    case 'model.route': {
+      // 大模型 LLM 降级选择：纯决策，不发起任何模型调用（真实调用在仓外编排层）。
+      const route = decideRoute({
+        health: a.health && a.health !== 'ok' ? 'degraded' : 'ok',
+        budgetExceeded: Boolean(a.budgetExceeded),
+        lastError: a.lastError || null,
+        preferTier: a.preferTier || null,
+      })
+      return {
+        text: JSON.stringify({
+          ...route,
+          catalog: 'docs/事实源/模型凭据登记.yaml',
+          policy: "preset GOVERNANCE 段「模型降级处置顺序」",
+        }, null, 2),
+      }
+    }
+    case 'model.fallback-catalog': {
+      return {
+        text: JSON.stringify({
+          note: '本仓 MCP 工具面全确定性，模型不可用时以下任务仍全可用，天然构成降级终点',
+          tasks: DETERMINISTIC_FALLBACK_TASKS,
+        }, null, 2),
+      }
     }
     case 'registry.verify': {
       const args = ['--workers', '8']
@@ -1267,7 +1317,7 @@ if (argv.includes('--selftest')) {
   const msgs = captured.map((c) => JSON.parse(c.trim()))
   const textOf = (i) => msgs[i]?.result?.content?.[0]?.text || ''
   check('initialize 返回 protocolVersion', msgs[0]?.result?.protocolVersion === PROTOCOL)
-  check('tools/list 返回 25 个工具', msgs[1]?.result?.tools?.length === 25, `got ${msgs[1]?.result?.tools?.length}`)
+  check('tools/list 返回 27 个工具（25 原 + model.route / model.fallback-catalog）', msgs[1]?.result?.tools?.length === 27, `got ${msgs[1]?.result?.tools?.length}`)
   check('tools/list 含 tier 三级分级', msgs[1]?.result?.tools?.every((t) => t.tier), '部分工具缺 tier')
   check('写工具标记为 write-reversible', msgs[1]?.result?.tools
     ?.filter((t) => ['record.append', 'memory.append', 'registry.add', 'exceptions.add'].includes(t.name))
