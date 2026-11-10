@@ -67,6 +67,6 @@ if [ $APPLY -eq 1 ]; then
   echo "SYNC $BACKUP_NAME ..."; dolt backup sync "$BACKUP_NAME" && echo "  synced" || echo "  sync 失败"
 else
   echo "PUSH $REMOTE_NAME: dry-run（执行需 --apply，需网络）"
-  echo "SYNC $BACKUP_NAME: dry-run（执行需 --apply，写 E:/allin-dolt-backup）"
+  echo "SYNC $BACKUP_NAME: dry-run（执行需 --apply，写 \$DOLT_BACKUP_ROOT）"
 fi
 exit 0

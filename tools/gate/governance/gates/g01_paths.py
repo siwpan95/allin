@@ -41,6 +41,8 @@ SKIP_PREFIXES = (
     ".agents/notes/archived/",
     ".artifacts/",
     "apps/web/dist/",
+    "audit-fragments/",  # 2026-11-10：整改/审计证据日志（含历史命令输出里的绝对路径），非维护中源码，与 tools/tier_archive 同性质
+    "docs/记录/快照/",  # 2026-11-10：发布区/机器快照是历史数据卷（只增不改），内含当时机器路径非维护中源码
     "coverage/",
     "dist/",
     "lib/",
@@ -100,7 +102,13 @@ SYSTEM_PREFIXES_NT = ("c:\\program files", "c:\\program files (x86)", "c:\\progr
 
 #: Placeholders and annotations that make a sample line legitimate by construction.
 PLACEHOLDER_MARKERS = ("<", ">", "$", "%", "{{", "}}", "...", "…", "~")
-ANNOTATION_MARKERS = ("gov-paths: allow", "placeholder", "example", "sample", "已失效", "不存在", "占位", "仅示例")
+#: Annotation markers (anywhere on the line) that excuse a sample path. 2026-11-10:
+#: also honour the sibling-gate markers (gov-python / gov-credentials / repo-hygiene : allow)
+#: -- scan_hardcoded.ps1 already does; g01 formerly did not, so DSH self-test fixtures with
+#: ``# gov-python: allow`` were mis-flagged. Marker name differs, exemption intent does not.
+ANNOTATION_MARKERS = ("gov-paths: allow", "gov-python: allow", "gov-credentials: allow",
+                      "repo-hygiene: allow", "placeholder", "example", "sample", "已失效",
+                      "不存在", "占位", "仅示例")
 
 #: An escape tail such as ``\n`` or ``\t`` right after the separator is not a path.
 ESCAPE_TAIL = re.compile(r"^[nrtbfv0](?![A-Za-z0-9_./\\-])")
@@ -139,6 +147,32 @@ def is_generated(text: str) -> bool:
 def normalize(candidate: str) -> str:
     """Collapse doubled separators left by escaping, keeping the platform."""
     return re.sub(r"([\\/])\1+", r"\1", candidate)
+
+
+def machine_bound(candidate: str, platform: str) -> bool:
+    """Whether the path names a *specific machine, user, or non-system drive*.
+
+    ``in_system_prefix`` exempts OS-owned paths; the live-path exemption (below)
+    exempts paths that merely *exist* on this machine. Both let a path that only
+    works on the author's box pass the gate -- the portability blind spot P0-13
+    fixes. A path that names a concrete non-system drive letter, or a concrete
+    user home directory, is machine-bound and must block regardless of whether it
+    happens to exist here (the regexes in ``machine_bound`` are the detectors).
+    Annotation (``gov-paths: allow`` and sibling-gate markers) and the
+    other-platform filter still apply upstream, so legitimate samples stay exempt.
+    """
+    lowered = candidate.lower()
+    if platform == "nt":
+        m = re.match(r"^([a-z]):[\\/]", lowered)
+        if m and m.group(1) != "c":
+            return True
+        if re.match(r"^c:[\\/]users[\\/](?!public[\\/]|default[\\/])[^\\/]+[\\/]", lowered):
+            return True
+        return False
+    # POSIX: other-platform paths are already exempted by foreign_platform().
+    if re.match(r"^/home/(?!\.\./)[^/]+/", lowered):
+        return True
+    return False
 
 
 def foreign_platform(candidate: str, platform: str) -> bool:
@@ -219,9 +253,6 @@ def scan(root: Path, *, platform: str, include_docs: bool, deep: bool) -> Report
             if not deep:
                 report.exempt("deep existence check disabled")
                 continue
-            if not parent_missing(candidate):
-                report.exempt("live path on this machine")
-                continue
             if is_doc and not include_docs:
                 report.exempt("documentation (report-only)")
                 continue
@@ -236,6 +267,15 @@ def scan(root: Path, *, platform: str, include_docs: bool, deep: bool) -> Report
                 continue
             if classify_line(text, match.start()) == "comment":
                 report.exempt("comment line")
+                continue
+            # P0-13（2026-11-10）：机器绑定路径（非系统盘 / 具体用户 home）即使本机存在也 block
+            # —— 换台机器必然失效，不能因「本机恰好有」就放行（换机盲区）。文档/夹具/示例/注释
+            # 等类型豁免已在上方生效，所以此处只命中「维护中源码里的真实机器绑定路径」。
+            if not parent_missing(candidate):
+                if machine_bound(candidate, platform):
+                    report.block(kind, relative, line_number, line)
+                    continue
+                report.exempt("live path on this machine")
                 continue
             report.block(kind, relative, line_number, line)
     return report

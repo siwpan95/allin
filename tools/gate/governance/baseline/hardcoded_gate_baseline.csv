@@ -1,0 +1,2 @@
+"Repo","File","Line","Kind","Blocking","Reason","Root","Path","Identity","Snippet"
+"allin","tools/gate/governance/gates/g09_python_hygiene.py","163","CODE-有效","True","","C:\temp\draft","C:\temp\draft","allin|tools/gate/governance/gates/g09_python_hygiene.py|C:\temp\draft","""    return r'sample C:\\temp\\draft'\n"")"

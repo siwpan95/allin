@@ -360,9 +360,12 @@ if [ ! -d "$ROOT/platform/node_modules/@allin/core" ] || [ ! -d "$ROOT/website/n
   else
     # 默认降级：缺依赖记 SKIP（not a pass），不计入失败——「没有可跑的对象」
     # 不是「北极星不合格」。SKIP 已在汇总行显式可见（S3 同次闭环）。
+    # P0-10/11（2026-11-10）：此 not_applicable 项**不等同于「北极星已验证通过」**——
+    # 北极星由 gates.yml 的独立 e2e step（先 npm ci 装依赖再 npm run smoke:e2e）真实验证，
+    # 本批内只是「没有可跑对象」。汇总行应把它单列、且 CI 下打 ::warning::，防止误读为全绿。
     echo "==> npm run smoke:e2e"
     note_skip "smoke:e2e:skip(missing-node-deps)" \
-      "两侧 Node 依赖未安装（platform/node_modules/@allin/core 或 website/node_modules 缺失）：无可跑对象，非冒烟不合格"
+      "北极星三面冒烟：platform/website 依赖未装，本批内无可跑对象（非冒烟不合格）；CI 另有独立 e2e step（npm ci 装依赖后实跑）验证，本项记为环境不适用而非已通过"
     echo "    [SKIP] 装依赖后复跑：npm ci --prefix website && npm ci --prefix platform"
     echo "    [SKIP] 强约束环境可设 ALLIN_E2E_REQUIRE_DEPS=1 让缺依赖直接失败"
   fi
@@ -402,6 +405,22 @@ if command -v powershell.exe >/dev/null 2>&1; then
 else
   note_skip "restore-drill:skip(no-powershell)" \
     "当前平台无 PowerShell，无法跑备份恢复演练（Windows 专属，月度随 monthly-audit 跑）"
+fi
+
+# --- ⑤ 硬编码死根门禁（孤儿门禁接入跑批，P0-15 · 2026-11-10）---
+# scan_hardcoded.ps1 此前只被文档提及、未接任何自动化（连 pre-commit 都仅是注释里提到），
+# 属「门禁写了不跑 = 没有门禁」。它查「代码里指向盘上已失效根目录的绝对路径」，
+# 按基线棘轮只拦**新增**死路径，与 g01（存在性无关机器绑定）互补。
+# 基线落在受跟踪的 governance/baseline/（与 g01 同款），保证 CI 与本地同源；
+# Windows（pwsh / powershell）真跑，其余平台缺解释器记 not_applicable（≠ 通过）。
+SHC_BASELINE="$ROOT/tools/gate/governance/baseline/hardcoded_gate_baseline.csv"
+if command -v pwsh >/dev/null 2>&1; then
+  run pwsh -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Baseline "$SHC_BASELINE" -Quiet
+elif command -v powershell.exe >/dev/null 2>&1; then
+  run powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Baseline "$SHC_BASELINE" -Quiet
+else
+  note_skip "scan_hardcoded:skip(no-powershell)" \
+    "当前平台无 PowerShell，无法跑硬编码死根门禁（此前仅文档提及、未接自动化；Windows 专属）"
 fi
 
 if [ "${1:-}" = "--with-platform" ]; then
@@ -451,6 +470,12 @@ printf 'ALLIN_GATE_SUMMARY status=%s fail=%s skips=%s not_applicable=%s\n' \
 if [ "$NA_N" -gt 0 ]; then
   echo "环境不适用 ${NA_N} 项（不声称通过）："
   for s in "${not_applicable[@]}"; do echo "  - $s"; done
+  # P0-10/11（2026-11-10）：not_applicable 不等于「已验证通过」，避免 status=clean
+  # 被误读为全绿。在 CI 下打 ::warning:: 让 PR 检查显式看到「还有 N 项环境未检」。
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    printf '::warning::门禁批含 %s 项环境不适用（not_applicable，非已验证通过）：%s\n' \
+      "${NA_N}" "$(gh_escape "$(printf '%s; ' "${not_applicable[@]}")")"
+  fi
 fi
 
 if [ "$fail" -ne 0 ]; then
