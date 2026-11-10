@@ -326,6 +326,39 @@ def selfcheck() -> int:
         refreshed = scan(sandbox.path, platform="nt", include_docs=False, deep=True)
         check.detects("a new finding escapes the baseline", len(baseline.filter_new(refreshed.findings)) == 1)
 
+    # ── P0-13（2026-11-10）：机器绑定路径「存在性无关」阻断的自证 ──
+    # 上面的注入用例全是 dead path（父目录不存在），末尾兜底 block 就能抓住，
+    # 因此删掉 machine_bound 分支自检仍会全绿 —— 换机盲区等于没有测试保护。
+    # 这里分两层证明：① 判定表（纯函数）；② 把 parent_missing 打桩成「本机存在」，
+    # 验证机器绑定路径仍被 block、而普通存活路径仍走 live-path 豁免（防过度收紧）。
+    check.detects("machine_bound flags non-system drive",
+                  machine_bound("D:\\projects\\allin\\repo", "nt"))  # gov-python: allow —— 自检判定表夹具
+    check.detects("machine_bound flags concrete user home",
+                  machine_bound("C:\\Users\\someone\\repo", "nt"))  # gov-python: allow —— 自检判定表夹具
+    check.detects("machine_bound flags posix user home",
+                  machine_bound("/home/someone/repo", "posix"))  # gov-python: allow —— 自检判定表夹具
+    check.quiet("machine_bound ignores OS system prefixes",
+                machine_bound("C:\\Program Files\\Dolt\\bin", "nt"))  # gov-python: allow —— 自检判定表夹具
+    check.quiet("machine_bound ignores Public home",
+                machine_bound("C:\\Users\\Public\\repo", "nt"))  # gov-python: allow —— 自检判定表夹具
+    check.quiet("machine_bound ignores neutral posix paths",
+                machine_bound("/opt/dolt/bin", "posix"))  # gov-python: allow —— 自检判定表夹具
+
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("src/live_machine_bound.ts", "const root = 'D:\\\\live-on-this-box\\\\repo'\n")  # gov-python: allow —— 自检夹具
+        sandbox.write("src/live_plain.ts", "const root = 'C:\\\\allin-shared\\\\config.json'\n")  # gov-python: allow —— 自检夹具
+        original_parent_missing = parent_missing
+        try:
+            globals()["parent_missing"] = lambda candidate: False  # 模拟「本机存在」
+            live_report = scan(sandbox.path, platform="nt", include_docs=False, deep=True)
+        finally:
+            globals()["parent_missing"] = original_parent_missing
+        live_blocked = {finding.path for finding in live_report.findings}
+        check.detects("machine-bound path blocks even when it exists on this machine",
+                      "src/live_machine_bound.ts" in live_blocked)
+        check.quiet("ordinary live path still exempt (no over-blocking)",
+                    "src/live_plain.ts" in live_blocked)
+
     with govlib.Sandbox() as sandbox:
         sandbox.write("src/clean.ts", clean_source)
         clean_report = scan(sandbox.path, platform=sys.platform if sys.platform == "win32" else "linux", include_docs=False, deep=True)

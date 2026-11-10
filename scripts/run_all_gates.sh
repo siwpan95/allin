@@ -411,13 +411,13 @@ fi
 # scan_hardcoded.ps1 此前只被文档提及、未接任何自动化（连 pre-commit 都仅是注释里提到），
 # 属「门禁写了不跑 = 没有门禁」。它查「代码里指向盘上已失效根目录的绝对路径」，
 # 按基线棘轮只拦**新增**死路径，与 g01（存在性无关机器绑定）互补。
-# 基线落在受跟踪的 governance/baseline/（与 g01 同款），保证 CI 与本地同源；
-# Windows（pwsh / powershell）真跑，其余平台缺解释器记 not_applicable（≠ 通过）。
-SHC_BASELINE="$ROOT/tools/gate/governance/baseline/hardcoded_gate_baseline.csv"
+# 基线由脚本默认值**单一真相源**给出（受跟踪的 governance/baseline/，与 g01 同款）：
+# 手动跑 / 跑批 / CI 读同一份，换机不丢基线。Windows（pwsh / powershell）真跑，
+# 其余平台缺解释器记 not_applicable（≠ 通过）。
 if command -v pwsh >/dev/null 2>&1; then
-  run pwsh -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Baseline "$SHC_BASELINE" -Quiet
+  run pwsh -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Quiet
 elif command -v powershell.exe >/dev/null 2>&1; then
-  run powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Baseline "$SHC_BASELINE" -Quiet
+  run powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Quiet
 else
   note_skip "scan_hardcoded:skip(no-powershell)" \
     "当前平台无 PowerShell，无法跑硬编码死根门禁（此前仅文档提及、未接自动化；Windows 专属）"

@@ -29,7 +29,10 @@
   额外扫描的自定义根（可为非 git 目录）。
 
 .PARAMETER Baseline
-  基线 CSV（默认 <脚本目录>\audit\hardcoded_gate_baseline.csv，随仓走）。不存在时视为空基线。
+  基线 CSV（默认 <脚本目录>\governance\baseline\hardcoded_gate_baseline.csv，**受 git 跟踪、随仓走**）。
+  2026-11-10 P0-15：此前默认落在 gitignore 的 audit\，手动跑读空基线、与跑批（显式
+  -Baseline）结论不一致，换机后基线还会丢失导致全量判红。运行期明细 CSV 仍落 audit\（无需随仓）。
+  不存在时视为空基线。
 
 .PARAMETER WriteBaseline
   把本次全部阻断项写入基线文件（存量上线用），随后退出码恒为 0。
@@ -95,7 +98,11 @@ $ErrorActionPreference = 'Continue'
 # ── 去符盘默认（铁律 5，2026-09-26）：默认目标 = 脚本自身所在仓（tools/gate → 上两级 = 仓根，单目标）──
 if (-not $ReposRoot) { $Path = @($Path) + (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 $script:AuditDir = Join-Path $PSScriptRoot 'audit'
-if (-not $Baseline) { $Baseline = Join-Path $script:AuditDir 'hardcoded_gate_baseline.csv' }
+# 2026-11-10 P0-15 单一真相源：基线默认落在**受跟踪**的 governance/baseline/（与 g01 同款），
+# 不再落 gitignore 的 audit/。此前手动跑（无 -Baseline）读的是不随仓的空基线，
+# 与跑批（显式 -Baseline）结论不一致；换机后基线丢失更会全量判红。
+# 运行期明细 CSV（OutCsv）仍落 audit/，本就无需随仓。
+if (-not $Baseline) { $Baseline = Join-Path $PSScriptRoot 'governance\baseline\hardcoded_gate_baseline.csv' }
 
 $script:CodeExts = @('.py','.pyw','.js','.mjs','.cjs','.ts','.tsx','.jsx','.cpp','.cc','.cxx','.h','.hpp','.c','.cs','.go','.rs','.java','.kt','.php','.rb','.lua','.bat','.cmd','.ps1','.psm1','.sh','.bash','.zsh','.pl','.r','.m','.mm','.swift','.sql','.vb','.vbs','.iss','.spec','.gradle','.cmake','.mk')
 $script:SkipDirs = @('.git','node_modules','__pycache__','.venv','venv','env','dist','build','.next','.nuxt','target','out','.mypy_cache','.pytest_cache','.ruff_cache','.idea','.vs','.vscode')
@@ -413,8 +420,15 @@ if ($OutCsv) {
 }
 
 if ($WriteBaseline) {
-  New-Item -ItemType Directory -Force -Path $script:AuditDir -ErrorAction SilentlyContinue | Out-Null
+  # 按 $Baseline 的实际父目录建（默认已改到 governance/baseline/，不能只建 audit/）
+  $baselineDir = Split-Path -Parent $Baseline
+  if ($baselineDir -and -not (Test-Path $baselineDir)) { New-Item -ItemType Directory -Force -Path $baselineDir | Out-Null }
   $dead | Where-Object { $_.Blocking } | Export-Csv -LiteralPath $Baseline -NoTypeInformation -Encoding UTF8
+  # 归一化行尾为 LF、去掉 BOM：本仓 .gitattributes 是 `* text=auto eol=lf`，
+  # 而 Windows 上 Export-Csv 默认写 CRLF（5.1 还带 BOM）。不归一化的话每次
+  # -WriteBaseline 都会让工作树凭空多一个 M，换机/CI 的 diff 也不稳定。
+  $csvText = [System.IO.File]::ReadAllText($Baseline)
+  [System.IO.File]::WriteAllText($Baseline, ($csvText -replace "`r`n", "`n"), (New-Object System.Text.UTF8Encoding($false)))
   Write-Output ("基线已写入：{0}（阻断项 {1} 条）" -f $Baseline, $blocking.Count)
   if (-not $Quiet) { Write-Output ("明细：{0}" -f $OutCsv) }
   exit 0
