@@ -5,6 +5,7 @@
 > 架构与清单契约已上提到 [`../docs/规范/SPEC-203-allin-platform契约.md`](../docs/规范/SPEC-203-allin-platform契约.md)；
 > 历史版本锚点见本仓 tag `platform-v1.0.0`；决策理由见 [`../docs/记录/决策/`](../docs/记录/决策/)。
 > 许可：MIT（见 [LICENSE](LICENSE)）。
+> 常驻部署：[DEPLOY.md](DEPLOY.md)（交互式 / Windows 计划任务 / systemd，端口发现、健康检查、退出清理与一次本机验证性部署记录）。
 > 注：文中 `<PATH>` 为路径占位符，请替换为你本机实际的目录 / 可执行文件路径。
 
 > 立项：<PATH>（2026-08-25 用户拍板：Node+Cordis 栈 / 新建本仓 / 单机工坊+静态目录 / 首批 8 项目）。

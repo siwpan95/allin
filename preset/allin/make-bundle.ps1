@@ -77,12 +77,32 @@ $manifest = [ordered]@{
   version = '0.1.0'
   private = $true
   dsh     = [ordered]@{ bundle = [ordered]@{ patch = 'cordis.patch.yml' } }
-} | ConvertTo-Json -Depth 4
+}
+# S4（2026-11-11）：ConvertTo-Json 的缩进由 PowerShell 版本决定 —— 5.1 输出
+# 「4 空格 + 冒号对齐」、7.x 输出「2 空格」，于是同一份 bundle 在两台机器上
+# 跑一次就产生纯格式 diff（Q1）。这里改成固定格式模板，并用 "`n" 显式 LF
+# （对齐 .gitattributes 的 *.json eol=lf），字节输出与 PS 版本、OS 行尾解耦；
+# 所有值仍取自上面唯一的 $manifest 对象，不另写第二份事实源。
+$privateLiteral = 'false'
+if ($manifest.private) { $privateLiteral = 'true' }
+$jsonLines = @(
+  '{'
+  ('  "name": "{0}",' -f $manifest['name'])
+  ('  "version": "{0}",' -f $manifest['version'])
+  ('  "private": {0},' -f $privateLiteral)
+  '  "dsh": {'
+  '    "bundle": {'
+  ('      "patch": "{0}"' -f $manifest['dsh']['bundle']['patch'])
+  '    }'
+  '  }'
+  '}'
+)
+$manifestJson = ($jsonLines -join "`n")
 # ⚠ 2026-09-26 修：Set-Content -Encoding UTF8 在 PS 5.1 下写出**带 BOM** 的 JSON，
 #    dsh 校验 bundle 时 JSON.parse 对 BOM 直接抛 SyntaxError（"Unexpected token '﻿'"）。
 #    JSON/YAML 是给 Node/dsh 消费的，必须无 BOM（.ps1 才要求 BOM）。
 $pkgPath = Join-Path $BundleDir 'package.json'
-[IO.File]::WriteAllText($pkgPath, $manifest + "`n", (New-Object System.Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText($pkgPath, $manifestJson + "`n", (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host "bundle 已生成：$BundleDir" -ForegroundColor Green
 Write-Host ("  cordis.patch.yml = {0} B" -f (Get-Item $bundlePatch).Length)

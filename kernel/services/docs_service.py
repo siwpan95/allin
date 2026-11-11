@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -36,8 +37,30 @@ class DocsService(Service):
             # 「什么都没做」假绿。改为环境错误码。
             print('（make_doc_aliases.ps1 不存在）', file=sys.stderr)
             return 3
-        cmd = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script]
-        return subprocess.run(cmd, cwd=ROOT)
+        # S1（2026-11-11）：优先 PowerShell 7（pwsh），回落 Windows PowerShell 5.1。
+        # 用 shutil.which 探测 PATH，不硬编码解释器绝对路径（跨机可移植）。
+        shell = shutil.which('pwsh') or shutil.which('powershell') or 'powershell'
+        cmd = [shell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script]
+        # 只换解释器还不够：子进程直接继承 OS 控制台句柄时中文会乱码；而 pwsh 7
+        # 在 Windows 管道下**同样按系统 ANSI(cp936) 输出**（实测字节 b'\xb9\xe6\xb7\xb6'
+        # = 「规范」），不能按 shell 版本猜编码。这里捕获原始字节、自动探测：
+        # UTF-8 严格解码成功即用，失败回落系统 ANSI；再经 CLI 已强制 UTF-8 的
+        # sys.stdout 写出（与 _configure_stdio 同源），跨 pwsh/5.1/非 Windows 均成立。
+        proc = subprocess.run(cmd, cwd=ROOT, capture_output=True)
+
+        def _decode(raw: bytes) -> str:
+            if not raw:
+                return ''
+            try:
+                return raw.decode('utf-8')
+            except UnicodeDecodeError:
+                return raw.decode('mbcs' if os.name == 'nt' else 'utf-8', errors='replace')
+
+        if proc.stdout:
+            sys.stdout.write(_decode(proc.stdout))
+        if proc.stderr:
+            sys.stderr.write(_decode(proc.stderr))
+        return proc
 
     # ---- 文档枢纽索引契约门禁（SPEC-005，D1–D8）----
     def index(self):

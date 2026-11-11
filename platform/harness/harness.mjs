@@ -40,7 +40,19 @@ for (const c of MANIFEST.components) {
     register(c.id, {
       kind: 'probe', alive: () => true, ready: () => true,
       call: async () => {
-        const r = await fetch(probeTarget(c), { signal: AbortSignal.timeout(c.timeout ?? 5000) })
+        // S2（2026-11-11）：严格区分「门户离线」与「门户不健康」。
+        //  · 无 HTTP 响应（连接被拒 / 端口无监听 / 超时）⇒ 离线，informational，
+        //    返回 manifest 声明的 offlineValue，不进 errors、不计 failures。
+        //    spec.md 的 health 用例本来就写「离线不判失败」，旧实现把它报成
+        //    DIVERGENCE DETECTED，语义过重且把「门户没起」伪装成分歧。
+        //  · 有响应但非 200 / marker 缺失 ⇒ 不健康，throw ⇒ error ⇒ failures++。
+        //    这条路径绝不能被上面的离线分支吞掉，否则在线故障会恒绿。
+        let r
+        try {
+          r = await fetch(probeTarget(c), { signal: AbortSignal.timeout(c.timeout ?? 5000) })
+        } catch {
+          return c.offlineValue ?? 'OFFLINE'
+        }
         const body = await r.text()
         if (r.status !== 200) throw new Error('status ' + r.status)
         if (c.marker && !body.includes(c.marker)) throw new Error('marker missing: ' + c.marker)

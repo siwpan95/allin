@@ -26,7 +26,8 @@
       "target": "http://127.0.0.1:9000/",
       "timeout": 5000,
       "marker": "allin-platform",
-      "comment": "兜底探活地址（仅当 data/portal.port 缺失且未设 PLATFORM_PORTAL_URL 时命中）；门户默认 PORT=0 临时端口，实际地址走端口发现文件，不新增固定端口占用"
+      "offlineValue": "OFFLINE",
+      "comment": "兜底探活地址（仅当 data/portal.port 缺失且未设 PLATFORM_PORTAL_URL 时命中）；门户默认 PORT=0 临时端口，实际地址走端口发现文件，不新增固定端口占用。S2（2026-11-11）：无 HTTP 响应返回 offlineValue 表示门户离线（informational，不计失败）；有响应但非 200 / marker 缺失仍为不健康，必须计入 failures"
     }
   ]
 }

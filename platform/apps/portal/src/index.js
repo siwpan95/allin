@@ -454,15 +454,31 @@ server.keepAliveTimeout = 5_000
 server.listen(port, '127.0.0.1', () => {
   const actual = server.address().port
   boundPort = actual
-  // 端口发现（CLI/宿主用）：实际端口写入 data/portal.port，进程退出时删除；
-  // 被强杀时文件可能残留，消费方须以 /api/status 探活兜底。
+  // 端口发现（CLI/宿主用）：实际端口写入 data/portal.port，进程退出时删除。
+  // S3（2026-11-11）：此前只挂 'exit'，但**未注册 handler 的 SIGINT/SIGTERM 会直接
+  // 终止进程，'exit' 事件不触发**；强杀更不会 ⇒ 陈旧端口文件残留，harness 拿到
+  // 无监听的旧端口反复误报。修法两条：显式信号收尾 + 启动时清陈旧文件。
   const PORT_FILE = path.join(DATA_DIR, 'portal.port')
+  const cleanupPortFile = () => {
+    try { fs.rmSync(PORT_FILE, { force: true }) } catch { /* 已不在 */ }
+  }
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true })
+    // 本进程马上写入自己实际绑定的端口：先无条件清掉上一次残留，
+    // 保证 portFile 只要存在就对应一个活着的门户实例。
+    cleanupPortFile()
     // R-05 收敛（2026-11-10）：改原子写（temp+fsync+rename），不再裸 writeFileSync；
     // 此前直接 writeFileSync 违反 AGENTS.md 第 5 条 durable 语义（崩溃可能半截）。
     writeAtomically(PORT_FILE, String(actual))
-    process.on('exit', () => { try { fs.rmSync(PORT_FILE, { force: true }) } catch { /* 已不在 */ } })
+    process.on('exit', cleanupPortFile)
+    for (const sig of ['SIGINT', 'SIGTERM']) {
+      process.on(sig, () => {
+        cleanupPortFile()
+        try { server.close(() => process.exit(0)) } catch { process.exit(0) }
+        // 长连接让 close 迟迟不返回时也不留陈旧文件；unref 不阻止进程退出。
+        setTimeout(() => process.exit(0), 1000).unref()
+      })
+    }
   } catch (e) {
     console.error('[portal] 端口文件写入失败: ' + e.message)
   }
