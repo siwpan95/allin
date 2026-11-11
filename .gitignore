@@ -16,6 +16,13 @@ htmlcov/
 # ===== allin 统一调度内核的本地 venv（绝不入库；含 cordis/pyyaml/watchdog） =====
 .venv/
 
+# ===== Node 依赖目录（L-10，2026-11-11 深度审计收尾）=====
+# platform/ 与 website/ 已各有 .gitignore 兜底 node_modules/；根级再补一条，
+# 防未来新增的 JS 子项目（或仓根临时 npm init）误把依赖树入库。当前 `git ls-files`
+# 中 node_modules/ 已跟踪数为 0，加此规则不改变现有索引，只堵住新增依赖树被
+# git add 的口子（子目录规则仍在，属纵深防御非替代）。
+node_modules/
+
 # ===== Python 打包产物（2026-10-31 补：packages/allin-governance 引入后必需） =====
 # 起因：新增 packages/allin-governance 后，`pip wheel .` 会就地生成 build/ 与 *.egg-info/，
 # 而 g05-hygiene 把这两类判为「产物入库」直接阻断。忽略它们是**正确**的处置，

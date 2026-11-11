@@ -54,6 +54,13 @@ const MIME = {
   '.png': 'image/png',
 }
 
+// V-3（2026-11-10 深度审计）：把令牌拼进首页 <meta content="..."> 前必须做 HTML
+// 属性转义。/workshop/catalog 分支里的 esc 是块级 const、此处作用域外不可复用，
+// 故在模块级定义同一张转义表。令牌来源虽是管理员注入（非远程可控），但纵深防御
+// 不允许一个含引号的令牌把 meta 标签属性结构打破（CWE-116 输出编码）。
+const escapeHtmlAttr = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
 function json(res, status, body) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(body))
@@ -404,7 +411,7 @@ async function requestHandler(req, res) {
   }
   // 令牌只注入服务自身渲染的首页；禁止缓存，避免带令牌的 HTML 落进共享缓存。
   if (path.basename(abs) === 'index.html') {
-    const html = fs.readFileSync(abs, 'utf8').replace('__ALLIN_PORTAL_TOKEN__', gate.token)
+    const html = fs.readFileSync(abs, 'utf8').replace('__ALLIN_PORTAL_TOKEN__', escapeHtmlAttr(gate.token))
     res.setHeader('Content-Type', MIME['.html'])
     res.setHeader('Cache-Control', 'no-store')
     return res.end(html)

@@ -102,7 +102,11 @@ GATE_ORDER: tuple[str, ...] = (
 OPTIONAL_GATES: tuple[str, ...] = ("g18-exceptions",)
 
 #: 默认出厂清单 = 规范顺序里去掉可选件。
-#: 2026-10-31 在空仓库上把 20 道逐个跑过：这 14 道 exit 0 且不依赖第三方库。
+#: L-9 口径订正（2026-11-11 深度审计收尾）：GATE_ORDER 是**跨项目通用的 15 条**；
+#: 治理全套 20 道另含 g14/g15/g16/g17/g19 这 5 道 allin 专属门禁（见模块 docstring）。
+#: 2026-10-31 对治理全套 20 道逐个实测，本清单 15 条中除 g18-exceptions（需 PyYAML，
+#: 已列为可选）外的 14 条 exit 0 且零第三方依赖。原注释「把 20 道逐个跑过：这 14 道」
+#: 紧挨 GATE_ORDER（15 条）易被读成「GATE_ORDER=20」，故订正为明确的三个口径。
 GATE_IDS: tuple[str, ...] = tuple(g for g in GATE_ORDER if g not in OPTIONAL_GATES)
 
 #: 每道门禁的中文一句话判据。写进生成物，因为 registry.json 的 title 是英文、

@@ -62,6 +62,25 @@ BUDGET_MS = 60_000          # 门禁研究共识：单次检查应 < 60s，慢�
 # 而两次独立跑批之间通常远超这个间隔（实测同秒连跑也由 PID 后缀区分）。
 BATCH_GAP_SECONDS = 300
 
+# L-2（2026-11-10 深度审计收尾）：git 取 SHA 失败的占位值不是真实提交。污染 gate-runs.jsonl
+# commit 字段的是 `scripts/run_all_gates.sh:136` 的 HEAD_SHA（git rev-parse 失败 || echo unknown），
+# 而非原报告列的 monthly_audit.py / agent_regression.py / agent_parity.py —— 那三处各写自己的
+# JSONL，与本聚类无数据通道。legacy（无 batch）推断路径把这些占位当真实 commit 比较，会
+# ① 把跑批中瞬时取 SHA 失败的单行错误拆成新批；或 ② 把两次不同真实提交（都记 unknown）
+# 误粘成一批。归一化只在**消费侧**做，不改写既有 gate-runs.jsonl。
+_UNKNOWN_COMMIT_MARKERS = frozenset({"", "unknown", "sha-unknown"})
+
+
+def _norm_commit(value) -> str:
+    """聚类键归一化：git 取 SHA 失败的占位值 → 空串（表示"未知提交"）；真实值原样。
+
+    空串在 group_batches() 的 legacy 推断里被当作"无提交信息"：既不参与"同一 commit"
+    的相等性确认，也不单独触发拆批 —— 只按时间邻近归属，并以最近一个**真实** commit
+    作为跨占位行的分隔基准。
+    """
+    text = str(value or "").strip()
+    return "" if text.lower() in _UNKNOWN_COMMIT_MARKERS else text
+
 
 def read_lines(path: Path) -> list[str]:
     """Read UTF-8 lines, or an empty list when the file is absent."""
@@ -341,22 +360,30 @@ def group_batches(runs: list[dict]) -> list[tuple[str, list[dict], bool]]:
         ordered = sorted(
             legacy,
             key=lambda r: (_aware(parse_ts(str(r.get("ts", "")))) or epoch,
-                           str(r.get("commit", ""))),
+                           _norm_commit(r.get("commit"))),
         )
         cluster: list[dict] = []
         last_stamp: datetime | None = None
-        last_commit = ""
+        # 分隔基准只取**最近一个真实 commit**；占位（git 取 SHA 失败）不更新它、也不
+        # 单独触发拆批（否则一次跑批里某行瞬时取 SHA 失败会被错误切出去）。但遇到真实
+        # commit 时仍与最近真实基准比较：不同 ⇒ 拆批。这样 [A, unknown, B]（A≠B，间隔
+        # 都小于 gap）不会被 unknown 粘成一批 —— 这是「占位只用时间聚类」方案的漏洞。
+        last_real_commit = ""
         for run in ordered:
             stamp = _aware(parse_ts(str(run.get("ts", ""))))
-            commit = str(run.get("commit", ""))
+            commit = _norm_commit(run.get("commit"))
             gap = ((stamp - last_stamp).total_seconds()
                    if (stamp is not None and last_stamp is not None) else 0)
-            if cluster and (gap > BATCH_GAP_SECONDS or commit != last_commit):
+            # 只有"已见过真实基准"时才用 commit 差异拆批；首个真实 commit 到来前
+            # 的占位行无从判定归属，按时间邻近与其同批（间隔已受 gap 约束）。
+            commit_changed = bool(commit) and bool(last_real_commit) and commit != last_real_commit
+            if cluster and (gap > BATCH_GAP_SECONDS or commit_changed):
                 groups.append((f"legacy#{len(groups)}", cluster, True))
                 cluster = []
             cluster.append(run)
             last_stamp = stamp
-            last_commit = commit
+            if commit:
+                last_real_commit = commit
         if cluster:
             groups.append((f"legacy#{len(groups)}", cluster, True))
     return groups
@@ -594,6 +621,12 @@ def selfcheck() -> int:
          再注入一条普通真跑行 ⇒ skipped_runs 不变。
          把 load_runs 改回「丢弃 SKIP 行」或把 latency 改回吃 window 全量时
          本方向必红（SELFCHECK_FAILED / exit 3）。
+      ⑦ legacy commit 占位归一化（可证伪，L-2）：无 batch 的历史行里 git 取 SHA
+         失败的占位（"unknown"/""）必须被当"未知提交"处理，以**最近真实 commit**
+         为分隔基准 —— ① [真实A, unknown, 真实B]（A≠B，间隔小于 gap）仍拆两批
+         （错误实现「占位直接沿用上一 commit」会粘成一批）；② [真实A, unknown, 真实A]
+         聚成一批（错误实现「占位即拆批」会误切成两批）；③ 占位不覆盖真实基准。
+         把 _norm_commit 改回恒返回原值、或把基准改成"也跟随占位"时本方向必红。
     """
     print("== 治理度量 自测（跑批口径反假绿） ==")
     now = datetime(2026, 11, 4, 12, 0, tzinfo=timezone.utc)
@@ -757,6 +790,33 @@ def selfcheck() -> int:
         ok &= v6
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    # ⑦ legacy commit 占位归一化（L-2，**可证伪**）：两种反向错误必须同时被挡住。
+    #    用 60s 间隔（< BATCH_GAP_SECONDS=300）构造，确保结果只由 commit 维度决定。
+    t7 = datetime(2026, 10, 28, 9, 0, tzinfo=timezone.utc)
+
+    def _row7(offset_s: int, commit: object) -> dict:
+        stamp = (t7 + timedelta(seconds=offset_s)).isoformat().replace("+00:00", "Z")
+        return {"ts": stamp, "commit": commit, "label": f"l{offset_s}", "exit": 0, "ms": 10}
+
+    # ① A / unknown / B（A≠B）⇒ 仍须拆成两批。占位沿用上一真实值的错误实现会粘成一批。
+    ab_unknown = [_row7(0, "aaa1111"), _row7(60, "unknown"), _row7(120, "bbb2222")]
+    g7a = group_batches(ab_unknown)
+    e7a = len(g7a) == 2 and len(g7a[0][1]) == 2 and len(g7a[1][1]) == 1
+    # ② A / unknown / A ⇒ 聚成一批。占位即拆批的错误实现会误切成两批。
+    a_unknown_a = [_row7(0, "aaa1111"), _row7(60, "unknown"), _row7(120, "aaa1111")]
+    g7b = group_batches(a_unknown_a)
+    e7b = len(g7b) == 1 and len(g7b[0][1]) == 3
+    # ③ 占位不覆盖真实基准：unknown / A / unknown / B（A≠B）⇒ 两批，首个 unknown 归 A 批。
+    unk_ab = [_row7(0, "unknown"), _row7(60, "aaa1111"),
+              _row7(120, "sha-unknown"), _row7(180, "bbb2222")]
+    g7c = group_batches(unk_ab)
+    e7c = len(g7c) == 2 and len(g7c[0][1]) == 3 and len(g7c[1][1]) == 1
+
+    v7 = e7a and e7b and e7c
+    print("  ⑦ legacy commit 占位归一化（可证伪）:    %s  [异提交不粘=%s, 同提交不拆=%s, 占位不覆盖基准=%s]"
+          % ("✔" if v7 else "✘", e7a, e7b, e7c))
+    ok &= v7
 
     print("SELFCHECK_%s" % ("PASSED" if ok else "FAILED"))
     return 0 if ok else 3

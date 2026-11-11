@@ -275,6 +275,14 @@ run "$PY" tools/gate/agent_regression.py
 # 判据产物落 tools/gate/audit/g21-runs.jsonl（JSONL 逐行，audit/ 已被 .gitignore 覆盖）。
 # 放在 refresh-gov-block --check 之前：失败定位从「台账↔正文」到「正文↔副本」单向推进。
 run "$PY" tools/gate/agent_parity.py
+# P0 S-4 门禁化回归（2026-11-11 P3 季度复跑补线）：MCP 自有工具面的路径穿越回归
+# （docs.cite / repo.health 的 4 条越界载荷必须 isError + CWE-22）。此前 index.js
+# --selftest 只能手工跑（"写了不跑 = 没有回归"），而它是 S-4 严重级唯一护栏 ——
+# 季度复跑实测发现它从未进 run_all_gates.sh / CI，故接入主链。零三方依赖：node
+# 内置模块 + 仓内 js，子进程走 pythonBin()（PATH 上 python/python3，CI 的
+# setup-python 提供），与 agent 回归同组。selftest 仅写 tools/gate/audit/ 运行产物
+# （已被 .gitignore 的 /tools/gate/audit/* 覆盖），不改 docs/、不污染工作树。
+run node platform/apps/mcp/src/index.js --selftest
 # --- 结构化事实源离线地基（2026-11-09，用户按「离线可用优先」拍板 O1=B / O2=A / O3=A）---
 # 四条独立脚本，照 g21 模式接跑批；g00–g20 的 **20 道聚合口径不变**，
 # 且全部零第三方依赖、零服务依赖 —— 拔网 + 停三栈 + 删派生库时仍须全绿（离线北极星）。
