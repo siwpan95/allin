@@ -1386,8 +1386,18 @@ const argv = process.argv.slice(2)
 if (argv.includes('--selftest')) {
   // Scripted session: exactly what a client does, so the server can prove itself.
   let failures = 0
+  // 失败项标签单独收集，在**结尾**汇总打印（2026-11-12）。
+  // 为什么放结尾：`run_all_gates.sh` 的 run() 失败时只取命令尾部 `tail -n 12`，
+  // 而 tail 保留的是**最后** 12 行 ⇒ 汇总行落在窗口内，
+  // 「失败的是哪几项」不再被前面的 ok 行挤掉（此前只能看到总数 `SELFTEST FAILED (2)`，
+  // 不知道是哪两项 —— 诊断信息全丢）。
+  const failedLabels = []
   const check = (label, ok, detail = '') => {
-    if (!ok) { failures += 1; console.log(`FAIL ${label} ${detail}`) } else { console.log(`ok   ${label}`) }
+    if (!ok) {
+      failures += 1
+      failedLabels.push(detail ? `${label}（${detail}）` : label)
+      console.log(`FAIL ${label} ${detail}`)
+    } else { console.log(`ok   ${label}`) }
   }
   const captured = []
   // 自检期间把响应截获下来，不污染 stdout
@@ -1484,9 +1494,42 @@ if (argv.includes('--selftest')) {
   check('trace 带 trace_id/span_id',
     mine.every((s) => s.trace_id && s.span_id))
   check('trace 步数连续', mine.every((s, i) => s.span_index === i + 1))
-  check('策略拒绝标记为 rejected（不计失败）',
-    mine.filter((s) => s.error_kind === 'rejected').length === 6 + S4_EXTRA_CALLS,
-    `rejected=${mine.filter((s) => s.error_kind === 'rejected').length}`)
+  // ── 策略拒绝：按工具名逐项核对，不数总数（2026-11-12）────────────────
+  // 为什么不用总数：原判据是 `rejected 数 === 6 + S4_EXTRA_CALLS`（=10），
+  // 它把**环境性拒绝**也算进去了 —— `gate.history` 在**没有门禁留痕**的环境
+  // （干净克隆 / CI）会因「留痕为空」reject，于是总数 10 → 11 ⇒ 判红。
+  // 而同一批 selftest 里 `check('gate.history 返回留痕汇总', … || '留痕为空')`
+  // 又**明确容忍**该状态 ⇒ 两条判据互相矛盾：
+  // 一次运行里一个说「留痕为空可接受」、另一个说「拒绝数必须恰好 10」。
+  // 本机有留痕（tools/gate/audit/gate-runs.jsonl，跑过门禁）⇒ 恒绿；
+  // CI 干净克隆无留痕 ⇒ 恒红。**同一个代码，绿红取决于机器上跑没跑过门禁**。
+  //
+  // 改成**按工具名逐项核对**：只核对「用例设计上必然被策略拒绝」的那些调用；
+  // 环境性拒绝（gate.history 无留痕）不在期望表内、不参与判定。
+  // 顺带把判据**升级**为逐工具 —— 比总数更能发现「某个该拒的没拒」
+  // （总数对得上但分布错乱的情况，旧判据查不出来）。
+  const EXPECTED_REJECTED_BY_TOOL = {
+    'record.append': 1,   // 未确认即拒绝
+    'nope': 1,            // 未知工具
+    'memory.append': 2,   // 未确认即拒绝 + 非法 layer
+    'registry.add': 1,    // 未确认即拒绝
+    'exceptions.add': 1,  // 未确认即拒绝
+    'docs.cite': 2,       // S-4 回归：相对穿越 + 仓外绝对路径
+    'repo.health': 2,     // S-4 回归：相对穿越 + 仓外绝对路径
+  }
+  const rejectedByTool = {}
+  for (const s of mine) {
+    if (s.error_kind === 'rejected') {
+      const tool = s['gen_ai.tool.name']
+      rejectedByTool[tool] = (rejectedByTool[tool] || 0) + 1
+    }
+  }
+  const rejectMismatch = Object.entries(EXPECTED_REJECTED_BY_TOOL)
+    .filter(([tool, n]) => (rejectedByTool[tool] || 0) !== n)
+    .map(([tool, n]) => `${tool} 期望${n}实际${rejectedByTool[tool] || 0}`)
+  check('策略拒绝按工具逐项核对（环境性拒绝不计入）',
+    rejectMismatch.length === 0,
+    rejectMismatch.join('; '))
   check('trace 不含工具参数内容（只记元数据）',
     !mine.some((s) => JSON.stringify(s).includes('自检探针')))
 
@@ -1589,6 +1632,9 @@ if (argv.includes('--selftest')) {
   }
 
   console.log(failures === 0 ? 'SELFTEST OK' : `SELFTEST FAILED (${failures})`)
+  // 失败项汇总放在**最后一行**：`run_all_gates.sh` 失败时取命令尾部 tail -n 12，
+  // tail 保留最后 12 行 ⇒ 这一行一定在窗口内，「哪几项红」不再丢失。
+  if (failures) console.log(`失败项：${failedLabels.join(' | ')}`)
   process.exit(failures === 0 ? 0 : 1)
 }
 

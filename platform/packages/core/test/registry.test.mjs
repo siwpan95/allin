@@ -55,9 +55,19 @@ test('loadRegistry: 端口查表与必填字段 fail-loud', () => {
 // pathCheckMode() 现为惰性读取 env ⇒ 结果随 ambient 变。不钉住就会出现典型的「一边绿一边红」：
 // 本机默认 exists 全绿，CI/异机 `PLATFORM_PATH_CHECK=absolute npm test` 却整片失去前提。
 // （该缺陷 2026-09-24 专题记录已写明，README 却仍推荐这条异机命令 —— 本次一并修好。）
+//
+// 2026-11-12 修：本函数的实现与**它自己上面的注释**矛盾 ——
+// `withMode('exists', fn)` 走的是 `delete env` 分支（回到**自动检测**），
+// 而注释要求的是「显式钉住模式」。后果：
+//   · 本机有发布区 ⇒ 自动检测恰好得 'exists' ⇒ 断言看起来「钉住了」⇒ 绿；
+//   · CI / 干净克隆无发布区 ⇒ 自动检测得 'absolute' ⇒ 存在性断言**根本没跑**
+//     ⇒ 「path 不存在应报错」等 4 条断言在 CI 上恒红、在本机恒绿。
+// ⇒ 这正是注释警告的「一边绿一边红」，只是发生在**同一个函数内部**：
+//   钉住模式的工具自己没钉住。修法是让它**真的**设 env（absolute / exists 都设），
+//   不是放宽断言 —— 改完是「断言在指定模式下真的生效」。
 function withMode(mode, fn) {
   const saved = process.env.PLATFORM_PATH_CHECK
-  if (mode === 'absolute') process.env.PLATFORM_PATH_CHECK = 'absolute'
+  if (mode === 'absolute' || mode === 'exists') process.env.PLATFORM_PATH_CHECK = mode
   else delete process.env.PLATFORM_PATH_CHECK
   try {
     return fn()
@@ -288,7 +298,13 @@ test('M-7 回归：pathCheckMode 自动检测 memoize，逐 entry 不再重扫�
       `20 次调用只应扫发布区 ${expected} 次（实测 ${calls}）；未缓存且发布区存在时会扫 20 次`)
     invalidateRegistryCache()
     pathCheckMode()
-    assert.equal(calls, expected + 1, '显式失效后应重扫一次')
+    // 2026-11-12 修：`expected + 1` **无条件**假设「显式失效必重扫 1 次」，
+    // 但 expected 本身就是「单次自动检测的 readdirSync 次数」——
+    // 无发布区时 detect 走 `existsSync=false` 分支、压根不调 readdirSync（expected=0），
+    // 重扫也只能是 0 次 ⇒ `0 !== 1` 假红（CI 干净克隆恒红、本机有发布区恒绿）。
+    // 改成 `expected * 2`（检测两次 × 单次次数）：有发布区 1×2=2 与原判据 1+1=2
+    // **完全相同**（本机行为不变），无发布区 0×2=0 才与事实相符。
+    assert.equal(calls, expected * 2, '显式失效后应重扫一次（重扫次数 = 单次自动检测次数）')
   } finally {
     fs.readdirSync = origReaddir
     if (saved === undefined) delete process.env.PLATFORM_PATH_CHECK

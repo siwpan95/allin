@@ -97,10 +97,42 @@ else {
   Write-Log 'wal_checkpoint(TRUNCATE) 完成'
 }
 
+# 把路径规范化为**长名**（展开 8.3 短名别名），并剥掉 \\?\ 长路径前缀。
+# 为什么要：Windows 的 8.3 短名（C:\Users\RUNNER~1\...）与文件系统返回的长名
+#   （C:\Users\runneradmin\...）**指向同一目录但字符串不等** ⇒ 任何
+#   「A.StartsWith(B)」式的前缀比较在短名基准下必然失败。
+#   本机用户名（13122）无别名差异 ⇒ 恒绿；CI runner 的 TEMP 是短名 ⇒ 恒红。
+# Get-Item 对短名路径返回长名（实测），故用它统一形态；取不到则原样返回（不猜）。
+function Normalize-PathBase([string]$p) {
+  if (-not $p) { return $p }
+  $q = $p
+  if ($q.StartsWith('\\?\')) { $q = $q.Substring(4) }
+  try {
+    $item = Get-Item -LiteralPath $q -ErrorAction Stop
+    if ($item.FullName) { $q = $item.FullName }
+  } catch {
+    # 目标不存在（不该发生：调用点在建目录之后）⇒ 保持原值，由后续判据 fail-loud
+  }
+  if ($q.StartsWith('\\?\')) { $q = $q.Substring(4) }
+  return $q
+}
+
+
 # ---------- 2) robocopy /MIR（退出码 0-7=成功、>=8=失败） ----------
 $stamp = Get-Date -Format 'yyyy-MM-dd'
 $dest  = Join-Path $BackupRoot $stamp
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
+# 规范化 $dest 为**长名**（2026-11-12 修 CI 一边绿一边红）：
+#   CI runner 的 $env:TEMP 是 8.3 **短名**（C:\Users\RUNNER~1\...），
+#   而 Get-ChildItem 返回的 $_.FullName 是**长名**（实测：短名访问 → FullName 给长名）。
+#   ⇒ 后续 RelativeTo-Dest 的字符串前缀比较必然失败 ⇒ 抛「无法将文件归一到备份目录」，
+#     整个 restore drill 判红；本机用户名无 8.3 别名差异 ⇒ 恒绿。
+#   Get-Item 对短名路径返回长名（实测），故用它统一形态。
+#   规范化放在建目录之后（要先存在才能取），且**只此一处** ——
+#   $manifestPath / robocopy 目标 / RelativeTo-Dest 的基准全部由 $dest 派生，
+#   一处规范化即全链自洽（否则 $manifestPath 仍是短名，
+#   `Where-Object { $_.FullName -ne $manifestPath }` 会因形态不同而排除不掉 manifest 自身）。
+$dest = Normalize-PathBase $dest
 
 $ErrorActionPreference = 'Continue'
 # 两条 robocopy 共用同一 $excludeArgs（来自 exclusion-policy.ps1）：platform 与 website 同口径，
