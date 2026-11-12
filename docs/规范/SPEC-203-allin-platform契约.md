@@ -24,7 +24,9 @@ packages/core/ 内核 @allin/core —— registry（清单加载/校验/端口�
 registry/      数据面：projects/*.yaml（一项目一份）+ ports.yaml（env 缺失时的仓内默认）。
 harness/       离线黄金值门禁：manifest.json（组合即数据）→ port.mjs（JSON-lines 子进程
                端口）→ driver.mjs（适配器）→ harness.mjs（编排 + 众数共识/分歧 + 退出码绑定）。
-scripts/       check.mjs（无 GUI 审计）/ build_batch.mjs（批量打包）/ ensure-mirror.ps1（本地 npm 镜像）。
+scripts/       check.mjs（无 GUI 审计）/ build_batch.mjs（批量打包）/ ensure-mirror.ps1（本地 npm 镜像）/
+               check_repos.mjs（本机⇄远端锚点）/ discover_repos.mjs（采集层·扫描登记）/
+               publish_repos.mjs（执行层·远端写入编排，默认 dry-run + 逐项确认闸门）。
 data/          运行时状态（gitignored）：tasks.log / running.json / workshop.json / portal.port。
 ```
 
@@ -98,14 +100,54 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 - **仓内条目分流**：`path` 不以 `repos/` 开头的条目（如 `portal.yaml`）不进发行区差集，但其 `publish.repo` 仓名仍参与远端对账 —— 否则治理仓 `allin` 自身会被误报「远端有 / 未登记」。
 - **归档残留分类**：本地有 `.git`、远端已无该仓、README / 末次提交含归档声明 ⇒ 标 `retired_local`，不算待登记、不写条目、不删本地资产。
 
+### 远端写入编排与逐项确认闸门（2026-11-13 第三轮）
+
+> **触发**：全哥指出「自动写远端目前应该已经基本具备前置条件才对」。盘点结论：**七项技术前置条件确已齐备** ——
+> ① `discover_repos.mjs --json` 识别「已登记 / 远端不存在」候选；② `tools/gitee_release.py` 的
+> `create`（幂等 SKIP）/ `public` / `status`；③ `git credential fill` 令牌链（与
+> `kernel/services/tools_service.py` 同源，实测可用）；④ `check_repos.mjs` 远端锚点验收；
+> ⑤ `origin` 双 pushurl + `g04-push-evidence`；⑥ `SPEC-001` 铁律 4 的两步建仓 / 三件套 / 匿名复验纪律；
+> ⑦ `PLATFORM_GITEE_OWNER` 三处同源。**缺的不是能力，是铁律 3 的逐项确认闸门，以及当前组合零候选。**
+> 因此落地形态是「可执行编排器 + 四道闸门 + 演练」，不是无人值守自动建仓。
+
+`platform/scripts/publish_repos.mjs` 是**执行层**，与采集层 `discover_repos.mjs` 分离：
+复用三面对账的 `declared_missing_remote`（已登记 / 远端不存在 / 非墓碑）候选，
+生成五步写入计划 `create → origin → push → public → verify`；复用
+`tools/gitee_release.py` 的 `create` / `public` 子命令（**不重写 Gitee API**，规避已沉淀的
+PATCH 必带 `name`、406 需 JSON 正体等坑）；**不调用其 `remote` 子命令**（会无条件
+`git remote set-url` 覆盖本地 origin）—— 改为「无 origin 才 add / 已指向目标则跳过 /
+指向别处则拒绝覆盖」，实测既有 origin 未被改写。
+
+| 闸门 | 判据 | 依据 |
+| --- | --- | --- |
+| ① 逐项 | `--apply` 必须配 `--only <单个仓名>`；逗号 / 空格批量一律拒绝 | `SPEC-001` 铁律 3 |
+| ② 确认 | 必须显式 `--confirm`，不靠「没说不行」推断放行 | `SPEC-002` 执行（4）高风险不分档 |
+| ③ 在线 | 远端清单必须 `remote=ok`；离线 / 限流时禁写（避免建重复仓） | 离线北极星 |
+| ④ 令牌与资产 | 令牌取自 `GITEE_TOKEN` 或 `git credential fill`，绝不回显 / 落盘；本地 origin 指向别处拒绝覆盖 | `SPEC-003` 治理准则 / `SPEC-101` 推送流程 |
+
+- `--rehearse`：闸门全齐时**只核对前置件 + 打印命令链**（`executed=false`），用于实证「条件齐备」而不产生任何远端副作用；实测 `gitee_release_tool=true` / `local_git_worktree=true` / `token_available=true` / 五步命令链完整。
+- `--selfcheck`：离线覆盖计划生成、四道闸门、墓碑 / 盘符路径跳过、origin 资产保护，15 项能红能绿。
+- **默认 dry-run、不判红、不进 `run_all_gates.sh` 阻断链** —— 证据采集与门禁控制分离（见 `docs/记录/审计/组合做大做强战略研究_2026-10-31.md` 第 6.1 节）。
+- 首推遇 unrelated histories 按铁律 4 走 `merge --allow-unrelated-histories`，**绝不 `force push`**；收尾用匿名视角复验（`git ls-remote` + `GET /repos` 看 `private=false`），不只看建仓响应。
+- **候选前置**：未登记仓（`local_only` / `registration.generated`）先跑 `discover_repos.mjs --apply` 建立 registry 锚点，再生成远端写入计划 —— 不建「无锚点的远端仓」（否则 `check_repos.mjs` 仍判锚点错位）。
+
+**现值**：当前组合 `declared_missing_remote=0` ⇒ 远端写入候选 **0**，`--apply` 无对象。
+能力验收来自临时异组合（3 假仓，`REMOTE_WRITE_VERIFY bad=0`，21 项）与真实 CLI
+`--rehearse` 演练；远端 API 对演练仓返回 `Not Found Project`，**确认零远端写入**。
+真正执行需 `--apply --only <仓名> --confirm` 逐项放行 —— 这是 `SPEC-001` 铁律 3 的治理约束，
+不是技术缺口。
+
 ### 换发行仓 SOP
 
 1. 定新发行区根 → `PLATFORM_REPOS_ROOT`；定远端账号 → `PLATFORM_GITEE_OWNER`。
 2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；确认后 `--offline --apply` 扫描登记（默认 dry-run，先看 `registration.generated` / `needs_manual_review`）。
 3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `tools/facts/build_projects.py` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
 4. `node platform/scripts/check.mjs` / `check_repos.mjs` 对账；`npm run check:governance` 与 `scripts/run_all_gates.sh` 复跑。
-5. **异组合验收**：临时 `PLATFORM_REGISTRY` + 临时 `PLATFORM_REPOS_ROOT`（3 个假仓）跑同一套判据，要能绿（exit 0 / 零差集）也要能红（注入盘符 path 判红）。2026-11-13 实测 `ALT_REPO_VERIFY bad=0`。
-6. 交接卷记账，注明新组合的实例值，不覆盖旧组合历史。
+5. **（可选）远端写入**：仅当新组合含「已登记 / 远端不存在」的仓时才需要。先看
+   `node platform/scripts/publish_repos.mjs` 的 dry-run 计划，再 `--rehearse --only <仓> --confirm`
+   演练，最后逐项 `--apply --only <仓> --confirm`（铁律 3，不批量）。当前组合零候选，默认不执行。
+6. **异组合验收**：临时 `PLATFORM_REGISTRY` + 临时 `PLATFORM_REPOS_ROOT`（3 个假仓）跑同一套判据，要能绿（exit 0 / 零差集）也要能红（注入盘符 path 判红）。2026-11-13 实测 `ALT_REPO_VERIFY bad=0`、`REMOTE_WRITE_VERIFY bad=0`。
+7. 交接卷记账，注明新组合的实例值，不覆盖旧组合历史。
 
 ### 借鉴来源记账（铁律 4：来源 + 许可证 + 范围）
 
