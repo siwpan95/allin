@@ -254,7 +254,8 @@ is_environmental_skip "scan_hardcoded:skip(no-powershell)"; echo "env=$?"
 is_environmental_skip "scan_hardcoded:skip(real-miss)"; echo "real=$?"
 '''
     r = subprocess.run(["bash", "-c", snippet, "_", str(ROOT)],
-                       capture_output=True, text=True, timeout=30)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       timeout=30)
     assert r.returncode == 0, r.stderr
     assert "env=0" in r.stdout
     assert "real=1" in r.stdout

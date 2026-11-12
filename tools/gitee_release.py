@@ -509,7 +509,7 @@ def cmd_release(args, token):
         branch = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
                                 cwd=(getattr(args, "repo", None) or os.getcwd()),
                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                text=True).stdout.strip()
+                                text=True, encoding="utf-8", errors="replace").stdout.strip()
     data["target_commitish"] = branch or "master"
     st, d = api("POST", "%s/releases" % repo_path(args), token, data, timeout=120)
     if st in (200, 201):

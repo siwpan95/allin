@@ -74,7 +74,7 @@ def check(path: Path) -> list[tuple[str, int]]:
 def files_from_repo(repo: Path) -> list[Path]:
     out = subprocess.run(
         ["git", "-C", str(repo), "log", "--grep=paths)", "--name-only", "--pretty=format:"],
-        capture_output=True, text=True, errors="replace",
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     ).stdout
     files = {repo / f.strip() for f in out.splitlines() if f.strip().endswith(".py")}
     return sorted(p for p in files if p.is_file())

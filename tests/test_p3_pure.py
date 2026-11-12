@@ -45,8 +45,10 @@ def sha256util():
 
 
 def test_l4_selftest_passes():
+    # 子进程输出含 UTF-8 非 ASCII（✔ 等），不指定 encoding 时父进程按本机代码页
+    # （GBK/936）解码，reader 线程抛 UnicodeDecodeError 且 stdout 为 None（本机实测）。
     r = subprocess.run([sys.executable, str(ROOT / "tools/sha256util.py")],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "9 passed, 0 failed" in r.stdout
 
@@ -210,7 +212,7 @@ def test_l8_constant_asserts_guard_reorder():
 def test_l8_selfcheck_still_detects(tmp_path):
     """改动后仓库卫生 selfcheck 仍全绿（判据未失效）。"""
     r = subprocess.run([sys.executable, str(ROOT / "tools/repo_hygiene.py"), "--selfcheck"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stdout[-1200:] + r.stderr[-600:]
 
 

@@ -488,7 +488,9 @@ def selfcheck() -> int:
         finally:
             shutil.rmtree(probe, ignore_errors=True)
     if skip_aliases:
-        print("SELFCHECK note: Windows 无符号链接权限 ⇒ 夹具 D6 别名判据 SKIPPED (not a pass)")
+        # 用 ASCII 箭头而非 ⇒：GBK 控制台（Windows 默认代码页 936）下 print 非 GBK
+        # 字符会抛 UnicodeEncodeError，自检直接崩成 exit 1（本机实测）。
+        print("SELFCHECK note: Windows 无符号链接权限 -> 夹具 D6 别名判据 SKIPPED (not a pass)")
     for kind, desc, expect_clean in SELFCHECK_CASES:
         tmp = tempfile.mkdtemp(prefix="docsidx_")
         try:

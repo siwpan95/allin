@@ -424,7 +424,33 @@ def make_alias(alias_path: str, real_path: str) -> bool:
     return False
 
 
-def build_fixture(kind: str, base: str) -> str:
+def alias_capable() -> bool:
+    """夹具能否建出「可遍历」的 ASCII 别名。
+
+    D6 判据是 `os.path.samefile`，要求别名可被跟随。实测两类环境建不出：
+    ① Windows 非管理员且未开开发者模式 —— `os.symlink` 抛 OSError；
+    ② Windows 11 新版「不受信任装入点」防护 —— 非提权进程建的 junction 虽创建
+       成功，但 `os.path.exists` / `samefile` 抛 WinError 448（本机实测）。
+
+    两种情形下夹具别名都建不出来，干净用例会被 D6 误报成「别名缺失」。故先探测
+    能力，探测失败则夹具显式跳过 D6 并打印 note（不把环境限制伪装成绿灯）。
+    """
+    probe = tempfile.mkdtemp(prefix="docsidx_alias_probe_")
+    try:
+        real = os.path.join(probe, "real")
+        os.makedirs(real, exist_ok=True)
+        alias = os.path.join(probe, "link")
+        if not make_alias(alias, real):
+            return False
+        try:
+            return os.path.samefile(alias, real)
+        except OSError:
+            return False
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+def build_fixture(kind: str, base: str, skip_aliases: bool = False) -> str:
     docs = os.path.join(base, "docs")
     for sub in ("规范", "事实源", "记录/交接", "记录/审计"):
         os.makedirs(os.path.join(docs, sub), exist_ok=True)
@@ -499,25 +525,30 @@ def build_fixture(kind: str, base: str) -> str:
     with io.open(os.path.join(docs, "INDEX.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-    for alias, real in ALIASES.items():
-        ap, rp = os.path.join(docs, alias), os.path.join(docs, real)
-        if os.path.exists(ap):
-            continue
-        if not make_alias(ap, rp):
-            # 不得静默吞掉：别名建不出来 = 干净用例会被 D6 误判成不干净，
-            # 那正是「自检假阳性」的成因，必须响亮报出而不是默默带过。
-            print("WARN 夹具别名建不出来：docs/%s -> docs/%s（干净用例将因此误报）"
-                  % (alias, real))
+    if not skip_aliases:
+        for alias, real in ALIASES.items():
+            ap, rp = os.path.join(docs, alias), os.path.join(docs, real)
+            if os.path.exists(ap):
+                continue
+            if not make_alias(ap, rp):
+                # 不得静默吞掉：别名建不出来 = 干净用例会被 D6 误判成不干净，
+                # 那正是「自检假阳性」的成因，必须响亮报出而不是默默带过。
+                print("WARN 夹具别名建不出来：docs/%s -> docs/%s（干净用例将因此误报）"
+                      % (alias, real))
     return docs
 
 
 def selfcheck() -> int:
     caught = clean = misreports = 0
+    skip_aliases = not alias_capable()
+    if skip_aliases:
+        print("SELFCHECK note: 夹具别名不可遍历（无符号链接权限或装入点防护）"
+              " -> 夹具 D6 别名判据 SKIPPED (not a pass)")
     for kind, desc, expect_clean in SELFCHECK_CASES:
         tmp = tempfile.mkdtemp(prefix="docsidx_")
         try:
-            build_fixture(kind, tmp)
-            args = argparse.Namespace(root=tmp, quiet=True, no_aliases=False,
+            build_fixture(kind, tmp, skip_aliases=skip_aliases)
+            args = argparse.Namespace(root=tmp, quiet=True, no_aliases=skip_aliases,
                                       list_all=False, write_baseline=False)
             rep = run(tmp, args)
             ok = not rep.blocking

@@ -78,6 +78,17 @@ foreach ($real in $map.Keys) {
             try { $ok = ((Resolve-Path $target).Path -eq (Resolve-Path $realPath).Path) } catch { $ok = $false }
         }
         if ($ok) {
+            # 建了 ≠ 能用：Windows 11 新版「不受信任装入点」防护下，非提权进程建的
+            # junction 能 Query 出目标，却无法被遍历（WinError 448）—— 此时 D6
+            # （os.path.exists / os.path.samefile）判红，而本脚本若不实测遍历就会报
+            # OK，正是「假绿」。故这里必须真的枚举一次别名目录（2026-11-11 本机实测）。
+            $traversable = $true
+            try { $null = [System.IO.Directory]::GetFileSystemEntries($aliasPath) } catch { $traversable = $false }
+            if (-not $traversable) {
+                Write-Host ("UNTRUSTED     docs/{0} 目标正确但不可遍历（不受信任装入点）；请在管理员 PowerShell 重建" -f $alias) -ForegroundColor Red
+                $bad++
+                continue
+            }
             if (-not $Check) { Write-Host ("OK            docs/{0} -> docs/{1}" -f $alias, $real) -ForegroundColor Green }
             continue
         }
@@ -93,6 +104,13 @@ foreach ($real in $map.Keys) {
     }
 
     New-Item -ItemType Junction -Path $aliasPath -Target $realPath | Out-Null
+    $traversable = $true
+    try { $null = [System.IO.Directory]::GetFileSystemEntries($aliasPath) } catch { $traversable = $false }
+    if (-not $traversable) {
+        Write-Host ("UNTRUSTED     docs/{0} 已创建但不可遍历（不受信任装入点）；请在管理员 PowerShell 重建" -f $alias) -ForegroundColor Red
+        $bad++
+        continue
+    }
     Write-Host ("CREATED       docs/{0} -> docs/{1}" -f $alias, $real) -ForegroundColor Yellow
     $made++
 }
