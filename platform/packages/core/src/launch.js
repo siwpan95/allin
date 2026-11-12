@@ -341,9 +341,25 @@ export async function stopEntry(id, entry = null, options = {}) {
   const forced = usedGraceful && isRunning(id)
   if (!stopCmd || forced) {
     if (process.platform === 'win32') {
+      // spawnSync：taskkill /F 是同步强杀，返回时进程已死 ⇒ 契约成立。
       spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' })
     } else {
+      // 2026-11-12 修 POSIX 侧的「假停止」：kill(pid, SIGTERM) 只是**发信号**，
+      // 进程何时真正退出是异步的。原实现发完就返回 ok:true，
+      // 调用方（含 CI 的 stopEntry 回归测试）随即检查 pidAlive 仍为 true
+      // ⇒ Windows 侧同步强杀恒绿、Linux CI 恒红（annotation 实名 not ok 42）。
+      // 这是**产品没兑现契约**，不是测试太严：ok:true 必须意味着进程确已停止。
+      // 修法：轮询等到 pid 真的消失（settleMs 封顶），超时再 SIGKILL 兜底，
+      // 与 Windows 的同步强杀语义对齐；判据零放宽。
       try { process.kill(pid, 'SIGTERM') } catch { /* 已退出 */ }
+      const killDeadline = Date.now() + settleMs
+      while (Date.now() < killDeadline && pidAlive(pid)) await sleep(50)
+      if (pidAlive(pid)) {
+        try { process.kill(pid, 'SIGKILL') } catch { /* 已退出 */ }
+        // 再给一小段窗口让内核回收（僵尸态在 Node reap 子进程后消失）
+        const reapDeadline = Date.now() + Math.min(settleMs, 1000)
+        while (Date.now() < reapDeadline && pidAlive(pid)) await sleep(50)
+      }
     }
   }
   logTask({ project: id, action: usedGraceful ? (forced ? 'stop-force' : 'stop-graceful') : 'stop', pid, duration_ms: Date.now() - (startedAt || Date.now()), stop_command: stopCmd || undefined })

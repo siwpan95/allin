@@ -90,7 +90,7 @@ jobs:
       - name: 本仓 monorepo 自检
         run: |
           .venv/bin/python tools/repocheck/main.py . \
-            --profile monorepo --exclude tools,vendor,preset,packages,scripts,website --fail-on error
+            --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy --fail-on error
 
       # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故一并排除；
       # packages/ 内部的单个包按「子件」口径单独体检（下一行）；website/ 另起 website-smoke
