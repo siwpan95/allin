@@ -76,7 +76,7 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 | **实例层（整体替换 / 重建）** | `platform/registry/projects/*.yaml`、`facts/facts.json` 的 projects / tiering / tools / licenses 投影、`PORTFOLIO.md`、`docs/事实源/组合分级决策索引.md` 与 `组合分级后续路线.md` | 按新发行区重建；旧组合材料按「只增不改」归档，不作现值 |
 
 ⚠ 现有 **145 / 140 / 138** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
-📌 **口径补充（2026-11-13 实测）**：145 份 YAML 归并后只有 **140 个唯一仓名**（`musickit` 3 条，`foolproof-operation` / `magic-tower` / `private-radio-stations` 各 2 条）；组合分级的「140 决策对象」与这个「140 唯一仓名」**数值相同、语义无关**，不得当成一个数。
+📌 **口径补充（2026-11-13 二次实测，取代本轮首版）**：145 份 YAML 中 **1 条是仓内条目**（`portal.yaml`，`path: platform`，`publish.repo: siwpan/allin`）；其余 144 份发行区条目归并后 **139 个唯一发行仓名**（`musickit` 主仓 + `mixer` + `remix`、`foolproof-operation` 双入口、`magic-tower` / `magictowel`、`radio` / `video` ⇒ **一仓多条目是既有设计，不是重复登记**）。加上治理仓自身共 **140 个仓名** 参与远端对账。组合分级的「140 决策对象」又是另一套语义 —— 三处数值撞车，一律不得混用。扫描器同时输出 `entries` / `uniqueNames` / `internalEntries` 三个数。
 
 ### 发现参数（唯一来源）
 
@@ -91,14 +91,17 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 
 ### 发现与对账
 
-- `platform/scripts/discover_repos.mjs` 是**采集层**：输出本地发行区 / registry 声明 / 远端 owner 三方差集，支持 `--offline` / `--json` / `--draft` / `--strict` / `--selfcheck`。
+- `platform/scripts/discover_repos.mjs` 是**采集层 + 扫描登记器**：输出本地发行区 / registry 声明 / 远端 owner 三方差集，支持 `--offline` / `--json` / `--apply` / `--draft` / `--strict` / `--selfcheck`。
+- **扫描登记取代手抄（2026-11-13 第二轮）**：`--apply` 把候选仓写成**可直接通过 `validateEntry` 的完整条目** —— `id` / `path` 来自目录名，`name` 取 README 标题，`publish.repo` / `branch` 读 `git remote` 与 `HEAD`，`launch.command` 由仓内入口探测（`main.py` → `python main.py`、`package.json scripts.start` → `npm start`、`index.js` → `node index.js` 等）。默认 dry-run；只写新文件，**已存在的手抄条目一律跳过不覆盖**；二次执行幂等。
 - **默认只读、不写盘、不判红、不进 `run_all_gates.sh` 阻断链** —— 离线北极星 + 「证据采集与门禁控制分离」（见 `docs/记录/审计/组合做大做强战略研究_2026-10-31.md` 第 6.1 节）。`--strict` 仅供人工 / CI 显式选用。
-- `--draft` 生成的条目**缺 launch / stop / health**，直接入库会被 `validateEntry` 判红 —— 刻意不伪造「看起来能直接入库」的清单。
+- **探测不到启动入口就拒绝登记**：列入 `needs_manual_review`（`仅远端存在无本地目录` / `仓内无可判定启动入口`），不猜命令、不伪造可入库清单。`--draft` 保留为 `--apply` 的 dry-run 预览。
+- **仓内条目分流**：`path` 不以 `repos/` 开头的条目（如 `portal.yaml`）不进发行区差集，但其 `publish.repo` 仓名仍参与远端对账 —— 否则治理仓 `allin` 自身会被误报「远端有 / 未登记」。
+- **归档残留分类**：本地有 `.git`、远端已无该仓、README / 末次提交含归档声明 ⇒ 标 `retired_local`，不算待登记、不写条目、不删本地资产。
 
 ### 换发行仓 SOP
 
 1. 定新发行区根 → `PLATFORM_REPOS_ROOT`；定远端账号 → `PLATFORM_GITEE_OWNER`。
-2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；`--draft` 出待补登记草稿（人工复核）。
+2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；确认后 `--offline --apply` 扫描登记（默认 dry-run，先看 `registration.generated` / `needs_manual_review`）。
 3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `tools/facts/build_projects.py` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
 4. `node platform/scripts/check.mjs` / `check_repos.mjs` 对账；`npm run check:governance` 与 `scripts/run_all_gates.sh` 复跑。
 5. **异组合验收**：临时 `PLATFORM_REGISTRY` + 临时 `PLATFORM_REPOS_ROOT`（3 个假仓）跑同一套判据，要能绿（exit 0 / 零差集）也要能红（注入盘符 path 判红）。2026-11-13 实测 `ALT_REPO_VERIFY bad=0`。
@@ -113,3 +116,13 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 | Backstage GitHub Discovery | `https://backstage.io/docs/integrations/github/discovery/` | Apache-2.0 | 「discovery 优于手工登记」；`organization` / `catalogPath` / `filters.repository` / `schedule` 的参数形态 |
 | Argo CD SCM Provider Generator | `https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-SCM-Provider/` | Apache-2.0 | 从 SCM 组织自动发现仓的 generator 概念与过滤口径 |
 | Mend Renovate autodiscover | `https://docs.renovatebot.com/self-hosted-configuration/` | 未取用代码 → 不适用（仅公开文档概念） | `autodiscover` + `autodiscoverFilter` / `autodiscoverTopics`：「账号可访问集合 = 发现域」 |
+### 当前组合的对齐状态（2026-11-13 实测）
+
+`node platform/scripts/discover_repos.mjs --json`（联网）现值：
+`local=138` / `entries=145` / `uniqueNames=139` / `internalEntries=1` / `remote=138`；
+`local_only=0`、`remote_undeclared=0`、`declared_missing_remote=0`、
+`declared_missing_local=2`（`sin-virtue-game` 墓碑 + `write-agent` remote-only，**全部豁免，未豁免 0**）、
+`retired_local=1`（`calculator`：远端 404 + README 归档声明，交接卷第一百四十五节历史决策后的本地残留）、
+`registration.generated=0` / `needs_manual_review=0` ⇒ **当前组合完全对齐，无待登记项**。
+
+> 历史遗留处置口径：`calculator` 只做正确分类与留痕，**不删目录、不补条目、不推翻交接卷第一百四十五节「用户自行移除」的决策**；一仓多条目属既有设计，只澄清口径不合并条目；`PORTFOLIO.md` 属生成物，用参数化脚本刷新即可。

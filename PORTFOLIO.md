@@ -1,6 +1,6 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-02），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-13），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
@@ -89,7 +89,7 @@
 | [siwpan/music-prompt-generator](https://gitee.com/siwpan/music-prompt-generator.git) | — | 0 | 公开 | 音乐提示词生成器（自 music#master 拆分） |
 | [siwpan/music-prototypes](https://gitee.com/siwpan/music-prototypes.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/musickit](https://gitee.com/siwpan/musickit.git) | — | 0 | 公开 | phonk 混音工程：真实采样 + 本地混音引擎（24 位混音师签名链）+ 授权分层治理 |
-| [siwpan/ncmturnmp3](https://gitee.com/siwpan/ncmturnmp3.git) | — | 0 | 公开 | 加密音乐格式转换：ncm / qmc / kgm 等解密并转码 mp3 / flac / wav / ogg / m4a，纯本地运行 |
+| [siwpan/ncmturnmp3](https://gitee.com/siwpan/ncmturnmp3.git) | — | 1 | 公开 | 加密音乐格式转换：ncm / qmc / kgm 等解密并转码 mp3 / flac / wav / ogg / m4a，纯本地运行 |
 | [siwpan/niulai](https://gitee.com/siwpan/niulai.git) | — | 0 | 公开 | 《牛来》双引擎复刻：world3d(3dworld) 渲染演出 + allin_engine 逻辑智能，86 分钟同人学习性复刻（不商用） |
 | [siwpan/novel](https://gitee.com/siwpan/novel.git) | — | 0 | 公开 | 双引擎程序化中文小说生成系统：ASP 模板流 × Save the Cat! 15 节拍因果流，长篇可生成 |
 | [siwpan/novel-down](https://gitee.com/siwpan/novel-down.git) | — | 0 | 公开 | novel-down · 规则驱动的网络小说离线阅读工具（仅免费章节）：目录归一化 / base64 正文还原 / 六层免费拦截 / TXT·MD·EPUB3·单文件HTML 导出 |
