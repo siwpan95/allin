@@ -206,6 +206,23 @@ test('S-2 回归：path 的 .. / 绝对路径一律被拒，执行层 resolvePat
   for (const p of ['..', '../allin', 'repos/../../etc']) {
     assert.throws(() => resolvePath(p), (e) => e.code === 'PATH_ESCAPE', `resolvePath 必须拒绝：${p}`)
   }
+  // 2026-11-13 发行仓可替换性回归：旧实现 resolvePath('repos/x') 固定按
+  // WORKSPACE_ROOT 拼，PLATFORM_REPOS_ROOT 只影响 REPOS_ROOT 导出 ⇒ 换发行仓后
+  // 校验/启动仍指向默认区，145 条清单全量误报「path 不存在」。
+  const custom = fs.mkdtempSync(path.join(os.tmpdir(), 'alt-repos-root-'))
+  const prev = process.env.PLATFORM_REPOS_ROOT
+  try {
+    process.env.PLATFORM_REPOS_ROOT = custom
+    assert.equal(resolvePath('repos/alpha'), path.resolve(custom, 'alpha'))
+    assert.equal(resolvePath('repos'), path.resolve(custom))
+    assert.ok(!resolvePath('platform').startsWith(path.resolve(custom)))
+  } finally {
+    if (prev === undefined) delete process.env.PLATFORM_REPOS_ROOT
+    else process.env.PLATFORM_REPOS_ROOT = prev
+    fs.rmSync(custom, { recursive: true, force: true })
+  }
+  // env 未设时回到默认发布区（与历史行为一致，零回归）
+  assert.equal(resolvePath('repos/alpha'), path.resolve(REPOS_ROOT, 'alpha'))
 })
 
 test('S-2 回归：validateEntry 对含 .. 的 path 报红（原实现零报错）', () => {

@@ -6,10 +6,14 @@
 但**生成脚本此前从未入库**（2026-09-28 实测：仓内与历史里都找不到）。本脚本补上这个落点。
 
 用法：
-    python build_portfolio.py            # 干跑，打印统计与前三行
-    python build_portfolio.py --apply    # 写 <仓根>/PORTFOLIO.md
+    python build_portfolio.py                         # 干跑，打印统计与前三行
+    python build_portfolio.py --apply                 # 写 <仓根>/PORTFOLIO.md
+    python build_portfolio.py --owner <Gitee 账号>    # 换发行仓所有者
+    PLATFORM_GITEE_OWNER=<账号> python build_portfolio.py
 
 口径：
+  · owner 默认 `siwpan`；与 `platform/scripts/check_repos.mjs` / `discover_repos.mjs`
+    共用 `PLATFORM_GITEE_OWNER`（2026-11-13：换机 / 换发行仓时不再各写一份账号）
   · 只读公开 API（匿名即可，**不需要令牌**；也因此不要在脚本里放任何凭据）
   · 简介列按铁律 5 机械去符盘（`X:\\` → `/`），远端原文可能仍含盘符
   · 分页取全量（单页上限 100）
@@ -26,7 +30,7 @@ import urllib.request
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 API = "https://gitee.com/api/v5"
-OWNER = "siwpan"
+DEFAULT_OWNER = "siwpan"
 CTX = ssl.create_default_context()
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(REPO_ROOT, "PORTFOLIO.md")
@@ -37,10 +41,20 @@ if _TOOLS_DIR not in sys.path:
 import runtime_defaults as _rd  # noqa: E402
 
 
-def fetch_all():
+def resolve_owner(argv):
+    """与 platform/scripts/check_repos.mjs 同源：CLI > env > 默认。"""
+    for i, a in enumerate(argv):
+        if a == "--owner" and i + 1 < len(argv):
+            return argv[i + 1]
+        if a.startswith("--owner="):
+            return a.split("=", 1)[1]
+    return os.environ.get("PLATFORM_GITEE_OWNER") or DEFAULT_OWNER
+
+
+def fetch_all(owner):
     out, page = [], 1
     while page <= 5:
-        url = "%s/users/%s/repos?type=all&sort=full_name&per_page=100&page=%d" % (API, OWNER, page)
+        url = "%s/users/%s/repos?type=all&sort=full_name&per_page=100&page=%d" % (API, owner, page)
         req = urllib.request.Request(url, headers={"User-Agent": "allin-portfolio-builder"})
         with urllib.request.urlopen(req, timeout=_rd.timeout("url_open"), context=CTX) as r:
             batch = json.loads(r.read().decode("utf-8"))
@@ -62,8 +76,9 @@ def de_drive(s):
 
 def main():
     apply_ = "--apply" in sys.argv
+    owner = resolve_owner(sys.argv)
     try:
-        repos = fetch_all()
+        repos = fetch_all(owner)
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
         print("ENV ERROR: 取远端仓清单失败：%s" % e)
         print("  （Gitee 匿名 API 有限流；隔一段时间重试，或不要在限流窗口内跑）")
@@ -75,7 +90,7 @@ def main():
     today = __import__("datetime").date.today().isoformat()
 
     L = []
-    L.append("# Gitee 项目组合索引（%s）" % OWNER)
+    L.append("# Gitee 项目组合索引（%s）" % owner)
     L.append("")
     L.append("> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成"
              "（生成于 %s），是**索引**而非源码镜像。" % today)
@@ -97,7 +112,7 @@ def main():
         desc = (r.get("description") or "").replace("|", "\\|").strip()
         desc = de_drive(desc)
         L.append("| [%s/%s](https://gitee.com/%s/%s.git) | %s | %s | %s | %s |"
-                 % (OWNER, name, OWNER, name, lang, star, vis, desc))
+                 % (owner, name, owner, name, lang, star, vis, desc))
     L.append("")
     text = "\n".join(L) + "\n"
 
@@ -106,7 +121,7 @@ def main():
             f.write(text)
         print("已写入 %s（%d 仓 / 公开 %d / 私有 %d）" % (OUT, len(repos), pub, priv))
     else:
-        print("干跑：共 %d 仓（公开 %d / 私有 %d）" % (len(repos), pub, priv))
+        print("干跑：owner=%s 共 %d 仓（公开 %d / 私有 %d）" % (owner, len(repos), pub, priv))
         for line in L[:12]:
             print("  " + line)
         print("  （干跑；加 --apply 落盘）")

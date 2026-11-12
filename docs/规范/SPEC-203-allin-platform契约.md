@@ -1,7 +1,7 @@
 # SPEC-203 · allin-platform 契约（架构地图 + 清单规范）
 
 > **编号** SPEC-203 ｜ **效力** 准则（结构约定，可被 registry 校验引用）｜ **状态** 生效
-> **生效** 2026-10-26 ｜ **最后修订** 2026-10-28 ｜ **适用面** `platform/` 全部代码与 `platform/registry/` 数据面
+> **生效** 2026-10-26 ｜ **最后修订** 2026-11-13 ｜ **适用面** `platform/` 全部代码与 `platform/registry/` 数据面
 > **承载体** `platform/scripts/check.mjs`（注册表审计）、`platform/harness/`（黄金值门禁 exit 0）
 > **引用格式** SPEC-203 §关键不变量
 > **迁移记账** 本文由原独立仓 `siwpan/allin-platform` 的架构文档 `architecture.md` 就地升级而来（2026-10-26 三仓整合）；
@@ -62,3 +62,54 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 
 - **`port` 必查 ports.yaml**：未登记的端口拒绝登记（唯一的端口事实源是 `PLATFORM_PORTS` 指向的外部端口分配表，仓内副本仅作回退）。
 - **`path` 去盘符**：一律写相对于仓库根的 POSIX 相对路径（如 `repos/xxx`），**禁止盘符**（见 SPEC-006 机器与路径约定）——绝对路径在本机会漂移到失效盘符，属 repocheck 规则 7 的检查对象。
+
+## 发行仓可替换性契约（2026-11-13）
+
+> **触发**：全哥提出「repos 是发行仓，内容可以是任何项目；换机部署 allin 后需要治理的发行仓内容甚至可能完全不一样」。
+> **结论**：本仓此前只解决「同一套发行仓 × 多机不同检出集」，未解决「清单本身可替换」。本节把边界写死。
+
+### 模式层 / 实例层
+
+| 层 | 内容 | 换发行仓时 |
+| --- | --- | --- |
+| **模式层（不动）** | `docs/规范/`（SPEC-001 / 002 / 005 / 006 / 105 / 203）、`tools/gate/` 判据、`platform/packages/core/` 与 `platform/scripts/` 的校验逻辑、`scripts/run_all_gates.sh` | 原样保留 |
+| **实例层（整体替换 / 重建）** | `platform/registry/projects/*.yaml`、`facts/facts.json` 的 projects / tiering / tools / licenses 投影、`PORTFOLIO.md`、`docs/事实源/组合分级决策索引.md` 与 `组合分级后续路线.md` | 按新发行区重建；旧组合材料按「只增不改」归档，不作现值 |
+
+⚠ 现有 **145 / 140 / 138** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
+📌 **口径补充（2026-11-13 实测）**：145 份 YAML 归并后只有 **140 个唯一仓名**（`musickit` 3 条，`foolproof-operation` / `magic-tower` / `private-radio-stations` 各 2 条）；组合分级的「140 决策对象」与这个「140 唯一仓名」**数值相同、语义无关**，不得当成一个数。
+
+### 发现参数（唯一来源）
+
+| 参数 | 含义 | 默认 | 消费方 |
+| --- | --- | --- | --- |
+| `PLATFORM_REPOS_ROOT` | 发行区根 | `<allin 同级>/repos` | `registry.js` 的 `reposRoot()` → `resolvePath()` / `isPathContained()` / `pathCheckMode()`；`discover_repos.mjs` |
+| `PLATFORM_REGISTRY` | 注册表目录 | `platform/registry/projects` | `check.mjs` / `check_repos.mjs` / `discover_repos.mjs` |
+| `PLATFORM_GITEE_OWNER` | 远端账号 | `siwpan` | `check_repos.mjs` / `discover_repos.mjs` / `tools/build_portfolio.py`（2026-11-13 起同源） |
+| `PLATFORM_REPOS_OFFLINE` | 离线只做本机面 | 未设 | `check_repos.mjs` / `discover_repos.mjs` |
+
+**2026-11-13 修复**：`resolvePath('repos/...')` 此前固定按 `WORKSPACE_ROOT` 拼接，`PLATFORM_REPOS_ROOT` 只影响 `REPOS_ROOT` 导出 ⇒ 换发行仓后校验 / 启动仍指向默认区，异组合验收 3 仓全量误报「path 不存在」。现改为统一走 `reposRoot()`；**env 未设时解析结果与旧实现逐字节相同**，回归用例并入 `registry.test.mjs` 的 S-2 用例（测试数保持 75）。
+
+### 发现与对账
+
+- `platform/scripts/discover_repos.mjs` 是**采集层**：输出本地发行区 / registry 声明 / 远端 owner 三方差集，支持 `--offline` / `--json` / `--draft` / `--strict` / `--selfcheck`。
+- **默认只读、不写盘、不判红、不进 `run_all_gates.sh` 阻断链** —— 离线北极星 + 「证据采集与门禁控制分离」（见 `docs/记录/审计/组合做大做强战略研究_2026-10-31.md` 第 6.1 节）。`--strict` 仅供人工 / CI 显式选用。
+- `--draft` 生成的条目**缺 launch / stop / health**，直接入库会被 `validateEntry` 判红 —— 刻意不伪造「看起来能直接入库」的清单。
+
+### 换发行仓 SOP
+
+1. 定新发行区根 → `PLATFORM_REPOS_ROOT`；定远端账号 → `PLATFORM_GITEE_OWNER`。
+2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；`--draft` 出待补登记草稿（人工复核）。
+3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `tools/facts/build_projects.py` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
+4. `node platform/scripts/check.mjs` / `check_repos.mjs` 对账；`npm run check:governance` 与 `scripts/run_all_gates.sh` 复跑。
+5. **异组合验收**：临时 `PLATFORM_REGISTRY` + 临时 `PLATFORM_REPOS_ROOT`（3 个假仓）跑同一套判据，要能绿（exit 0 / 零差集）也要能红（注入盘符 path 判红）。2026-11-13 实测 `ALT_REPO_VERIFY bad=0`。
+6. 交接卷记账，注明新组合的实例值，不覆盖旧组合历史。
+
+### 借鉴来源记账（铁律 4：来源 + 许可证 + 范围）
+
+仅参考**公开文档中的概念**，未复制任何代码 / 配置片段 / 引入依赖，因此不触发对应项目的代码许可义务。
+
+| 来源 | 官方文档 | 许可证 | 借鉴范围 |
+| --- | --- | --- | --- |
+| Backstage GitHub Discovery | `https://backstage.io/docs/integrations/github/discovery/` | Apache-2.0 | 「discovery 优于手工登记」；`organization` / `catalogPath` / `filters.repository` / `schedule` 的参数形态 |
+| Argo CD SCM Provider Generator | `https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-SCM-Provider/` | Apache-2.0 | 从 SCM 组织自动发现仓的 generator 概念与过滤口径 |
+| Mend Renovate autodiscover | `https://docs.renovatebot.com/self-hosted-configuration/` | 未取用代码 → 不适用（仅公开文档概念） | `autodiscover` + `autodiscoverFilter` / `autodiscoverTopics`：「账号可访问集合 = 发现域」 |

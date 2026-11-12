@@ -50,7 +50,15 @@ export function pathCheckMode() {
 // （约定：`allin/` 与 `repos/` 并立，见仓根 README「三仓整合」待办）。
 // 工作区根 = 治理仓的上一级（allin/ 与 repos/ 在此并立）；发布区根 = 其下的 repos/。
 const WORKSPACE_ROOT = path.join(ALLIN_ROOT, '..')
-export const REPOS_ROOT = process.env.PLATFORM_REPOS_ROOT || path.join(WORKSPACE_ROOT, 'repos')
+const DEFAULT_REPOS_ROOT = path.join(WORKSPACE_ROOT, 'repos')
+// 2026-11-13（发行仓可替换性）：发布区根统一走这一个函数，动态读 env。
+// 此前 REPOS_ROOT 支持 PLATFORM_REPOS_ROOT，但 resolvePath() 固定用
+// WORKSPACE_ROOT + 'repos/...' 拼接 ⇒ 换发行仓后校验/启动仍指向默认区，
+// 145 条清单全量误报「path 不存在」。env 未设时结果与旧实现逐字节相同。
+function reposRoot() {
+  return process.env.PLATFORM_REPOS_ROOT || DEFAULT_REPOS_ROOT
+}
+export const REPOS_ROOT = reposRoot()
 
 // C-03（2026-11-08 深度审核 P1 · 2026-11-10 收尾）：registry 解析唯一入口。
 // loadRegistry / validateEntry / loadPorts / resolvePath / commandProblems 全部集中于此；
@@ -151,7 +159,7 @@ export function isPathContained(p) {
   const s = p.trim().replace(/\\/g, '/')
   if (RX_DOT_SEGMENT.test(s)) return false
   const abs = path.resolve(p)
-  const bases = [path.resolve(ALLIN_ROOT), path.resolve(WORKSPACE_ROOT), path.resolve(REPOS_ROOT)]
+  const bases = [path.resolve(ALLIN_ROOT), path.resolve(WORKSPACE_ROOT), path.resolve(reposRoot())]
   return bases.some((base) => abs === base || abs.startsWith(base + path.sep))
 }
 
@@ -160,7 +168,7 @@ export function isPathContained(p) {
  * 都必须走这里，避免各模块各自拼接后各自漂移。
  * 解析规则（先明确、后执行，不含「找不到就瞎试」的隐式魔法）：
  *   - 绝对路径 → 原样返回（仍被准入校验拦截：盘符一律不许写进清单）
- *   - `repos/...`  → 工作区根（allin 的上一级）之下，即 `<工作区根>/repos/<仓名>`
+ *   - `repos/...`  → 发布区根（PLATFORM_REPOS_ROOT，缺省 `<工作区根>/repos`）之下
  *   - 其它相对值  → 治理仓根 ALLIN_ROOT 之下（仓内条目，如平台自身的 `platform`）
  */
 export function resolvePath(p) {
@@ -173,9 +181,12 @@ export function resolvePath(p) {
     err.code = 'PATH_ESCAPE'
     throw err
   }
-  return (p === 'repos' || p.startsWith('repos/'))
-    ? path.resolve(WORKSPACE_ROOT, p)
-    : path.resolve(ALLIN_ROOT, p)
+  if (p === 'repos' || p.startsWith('repos/')) {
+    // 显式换发行仓时剥掉 'repos/' 前缀再拼自定义根；缺省路径与原实现等价。
+    const rel = p.slice('repos/'.length)
+    return path.resolve(reposRoot(), rel || '.')
+  }
+  return path.resolve(ALLIN_ROOT, p)
 }
 
 export function loadPorts(portsPath = PORTS_YAML) {
