@@ -22,6 +22,39 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def _bash_is_usable() -> tuple[bool, str]:
+    """`bash 在 PATH` ≠ `bash 能用`（2026-11-12 修 CI 一边绿一边红）。
+
+    CI Windows runner 实测：`subprocess.run(["bash", "-c", snippet])` 返回
+    rc=1 / stderr 为空 / stdout 混进 **UTF-16 编码的系统提示**（形如「…to install.」），
+    而本机同一 snippet 三种路径形态全部 rc=0。
+    根因：Actions 的 `shell: bash` 用**绝对路径**的 Git Bash，但 pytest 进程按
+    **PATH** 找 `bash`，可能解析到 `C:\\Windows\\System32\\bash.exe`
+    —— 那是 WSL 启动器 shim，没装发行版时只打印提示并退出 1，根本没执行脚本。
+    原判据 `@pytest.mark.skipif(shutil.which("bash") is None)` 只判「存在」，
+    判不到「是不是真 POSIX shell」⇒ 本机有 Git Bash 恒绿、CI 恒红。
+
+    这里做**能力探测**（跑一个最小 POSIX 片段并核对输出），不适用时如实给出理由，
+    不是放宽判据 —— 可用的 bash 上，真实语义测试照常全跑。
+    """
+    if shutil.which("bash") is None:
+        return False, "bash 不在 PATH"
+    try:
+        r = subprocess.run(["bash", "-c", 'printf "%s" POSIX_OK'],
+                           capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=15)
+    except Exception as exc:  # noqa: BLE001 - 环境探测，任何失败都只降级为 skip
+        return False, f"bash 调用失败：{exc}"
+    if r.returncode != 0 or (r.stdout or "").strip() != "POSIX_OK":
+        return False, ("PATH 上的 bash 不是可用 POSIX shell"
+                       f"（rc={r.returncode}, stdout={(r.stdout or '')[:80]!r}）；"
+                       "多为 Windows 的 WSL 启动器 shim，而非 Git Bash")
+    return True, ""
+
+
+_BASH_USABLE, _BASH_REASON = _bash_is_usable()
+
+
 def _load(name: str, relpath: str):
     spec = importlib.util.spec_from_file_location(name, ROOT / relpath)
     mod = importlib.util.module_from_spec(spec)
@@ -241,7 +274,7 @@ def test_benign_skip_patterns_register_scan_hardcoded():
     assert "分类口径" in src
 
 
-@pytest.mark.skipif(shutil.which("bash") is None, reason="bash 不在 PATH，跳过 shell 语义实测")
+@pytest.mark.skipif(not _BASH_USABLE, reason=_BASH_REASON or "bash 不可用")
 def test_is_environmental_skip_real_bash_semantics():
     """抽取真实数组 + 函数来源执行（不跑整份门禁）：环境标签 0 / 真实 SKIP 1。"""
     snippet = r'''

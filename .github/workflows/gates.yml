@@ -277,7 +277,25 @@ jobs:
         run: npm ci --prefix platform
 
       - name: platform 集成/接口测试（node --test）
-        run: npm --prefix platform test
+        run: |
+          set -o pipefail
+          npm --prefix platform test 2>&1 | tee /tmp/platform-test.log
+
+      # 2026-11-12 补诊断：Actions 的 job 日志匿名 403（需 repo admin），
+      # 但 **check-run annotation 匿名可读**。此前 node --test 失败时
+      # annotation 只有「exit code 1」，拿不到「哪几项 not ok」⇒
+      # 与 run_all_gates.sh 的 annotation 机制同一纪律：把失败项实名送进公开通道。
+      - name: 失败项摘要（写入匿名可读的 annotation）
+        if: failure()
+        run: |
+          if [ -f /tmp/platform-test.log ]; then
+            grep -E '^not ok ' /tmp/platform-test.log | head -20 | while IFS= read -r line; do
+              clean=$(printf '%s' "$line" | tr -d '\r' | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+              echo "::error::$clean"
+            done
+            echo "---- 测试尾部 ----"
+            tail -n 25 /tmp/platform-test.log
+          fi
 
   # 2026-11-08 审查闭环 S7：Python SAST / 依赖审计从「只有配置」变成「CI 真跑 + 结果可消费」。
   # 规则 28（tools/repocheck/rules_ci.py）只查配置存在，恒 ok，与是否真跑无关；

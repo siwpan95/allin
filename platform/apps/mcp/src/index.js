@@ -1428,9 +1428,17 @@ if (argv.includes('--selftest')) {
   handle({ id: 23, method: 'tools/call', params: { name: 'registry.add', arguments: { id: 'x', name: 'x', category: 'x' } } })
   handle({ id: 24, method: 'tools/call', params: { name: 'exceptions.add', arguments: { id: 'EX-999', kind: 'known-gap', gate: 'g17-registry', status: 'open' } } })
   // 2026-11-10 深度审计 S-4 回归：路径穿越必须被拒（CWE-22 canonicalize-then-contain）。
+  // 2026-11-12 修 Linux 一边绿一边红：原载荷写死 **Windows 绝对路径** `C:/Windows/...`，
+  // 在 Linux 上 `path.isAbsolute('C:/...')` 返回 false ⇒ 被当作相对路径
+  // `path.resolve(REPO, 'C:/Windows/...')` 拼进**仓内** ⇒ 越界判据根本没触发，
+  // 两条「仓外绝对路径 被拒」在 CI 恒红、本机恒绿（CI annotation 实名证实）。
+  // 正解：从当前文件系统的根构造一个**跨平台一定是绝对路径、且一定在允许根之外**的探针
+  // （Linux `/`、Windows `<盘符>\`），不写死任何盘符或 OS 专属目录。
+  const OUTSIDE_ROOT = path.parse(REPO).root
+  const OUTSIDE_ABS = path.join(OUTSIDE_ROOT, 'allin-cwe22-outside-probe', 'secret.txt')
   handle({ id: 25, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: '../../../../Windows/System32/drivers/etc/hosts#L1' } } })
-  handle({ id: 26, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: 'C:/Windows/System32/drivers/etc/hosts#L1' } } })
-  handle({ id: 27, method: 'tools/call', params: { name: 'repo.health', arguments: { path: 'C:/Windows' } } })
+  handle({ id: 26, method: 'tools/call', params: { name: 'docs.cite', arguments: { citation: `${OUTSIDE_ABS}#L1` } } })
+  handle({ id: 27, method: 'tools/call', params: { name: 'repo.health', arguments: { path: path.dirname(OUTSIDE_ABS) } } })
   handle({ id: 28, method: 'tools/call', params: { name: 'repo.health', arguments: { path: '../../..' } } })
   process.stdout.write = origWrite
   const msgs = captured.map((c) => JSON.parse(c.trim()))
