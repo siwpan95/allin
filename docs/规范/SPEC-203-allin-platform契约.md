@@ -126,6 +126,11 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
   漂移 + coverage + sha256 指纹）。指纹**只取纯本地字段**，联网派生计数不进指纹 ⇒ 远端抖动不会假红。
   初版把 `branch_verdicts` 算进指纹，实测 403 时 142→0 造成假红，已修（交接卷第一百六十四节留痕）。
 - `--verify-snapshot` 重扫比对指纹：登记被改动 / 快照被篡改都判红（exit 1）。
+- **基线棘轮（2026-11-13 同批订正）**：快照是**已核准的干净基线**，扫描器无权自动改写。
+  `--snapshot` 发现本地机器字段指纹与已落盘快照不同 ⇒ **默认拒绝覆盖**、判非零退出码，
+  须人工核实后加 `--accept-baseline-change` 显式接受。初版会自动覆盖，实测注入
+  `branch` 漂移后 `repos:scan` 把错误值写成新基线、`repos:verify` 随即报 OK ——
+  等于把缺陷洗白。内容一致时沿用旧 `generated_at`、不写盘（幂等，工作树零 diff）。
 - 一键命令：`npm run repos:scan`（`--audit --strict --snapshot`）/ `npm run repos:verify`。
 - 仍**不接 `run_all_gates.sh` 阻断链**：证据采集与门禁控制分离（离线北极星）。
 

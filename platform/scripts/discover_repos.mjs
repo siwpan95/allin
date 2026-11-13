@@ -448,12 +448,21 @@ function selfcheck() {
   ], false)
   if (broken.drift.some((d) => d.field === 'path')) console.log('[OK] path 首段漂移能判红')
   else { bad++; console.log('[BAD] path 首段漂移漏判') }
-  const fp1 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS,
-    drift: [], counts: { local: 1 }, rows: [{ name: 'a', entries: 1, machine: {}, git_remote: '', declared: 'registered' }] })
-  const fp2 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS,
-    drift: [], counts: { local: 1 }, rows: [{ name: 'a', entries: 1, machine: {}, git_remote: '', declared: 'registered' }] })
+  const rowA = [{ name: 'a', entries: 1, machine: { 'publish.branch': ['main'] }, git_remote: 'x/a', declared: 'registered' }]
+  const rowB = [{ name: 'a', entries: 1, machine: { 'publish.branch': ['master'] }, git_remote: 'x/a', declared: 'registered' }]
+  const fp1 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS, rows: rowA })
+  const fp2 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS, rows: rowA })
+  const fp3 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS, rows: rowB })
   if (fp1 === fp2) console.log('[OK] 快照指纹可复现')
   else { bad++; console.log('[BAD] 快照指纹不稳定') }
+  // 基线棘轮：登记被改动 ⇒ 指纹必须变，否则 --snapshot 会把缺陷洗白。
+  if (fp1 !== fp3) console.log('[OK] 登记改动能改变指纹（基线不可自动洗白）')
+  else { bad++; console.log('[BAD] 登记改动未反映到指纹') }
+  // 联网派生字段不得进指纹（远端 403 时 branch_verdicts 142→0 不该假红）。
+  const fp4 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS,
+    rows: rowA, drift: [{ name: 'a', field: 'publish.branch' }], counts: { branch_verdicts: 142 } })
+  if (fp1 === fp4) console.log('[OK] 联网派生字段不进指纹')
+  else { bad++; console.log('[BAD] 联网派生字段污染了指纹') }
   console.log(bad ? `SELFCHECK FAIL (${bad})` : 'SELFCHECK OK')
   return bad ? 1 : 0
 }
@@ -588,7 +597,6 @@ if (AUDIT || SNAPSHOT || VERIFY_SNAPSHOT) {
 
 if (SNAPSHOT && audit) {
   const payload = {
-    generated_at: new Date().toISOString(),
     owner: OWNER,
     repo_root: path.relative(path.resolve(__dirname, '..', '..'), REPOS_ROOT).replace(/\\/g, '/'),
     machine: os.hostname(),
@@ -611,8 +619,38 @@ if (SNAPSHOT && audit) {
     policy: audit.policy,
   }
   payload.fingerprint = snapshotFingerprint(payload)
-  fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(payload, null, 2) + '\n', 'utf8')
-  audit.snapshot = { path: path.relative(path.resolve(__dirname, '..', '..'), SNAPSHOT_PATH).replace(/\\/g, '/'), fingerprint: payload.fingerprint }
+  // 基线棘轮：快照是**已核准的干净基线**，扫描器无权自动改写它。
+  // 2026-11-13 实测事故：注入 branch 漂移后 repos:scan 把错误值写成新基线，
+  // repos:verify 随即报 OK —— 等于把缺陷洗白。故：
+  //   ① 远端不可用 / 分支判据未运行时，也不能靠「drift=0」自动放行新基线；
+  //   ② 本地机器字段指纹与已落盘快照不同 ⇒ 登记确实被改动 ⇒ 默认拒绝覆盖，
+  //      要求人工显式 --accept-baseline-change（改动经复核后才成为新基线）。
+  //   ③ 只有内容逐字节一致时才幂等沿用旧时点，避免 generated_at 制造无意义 diff。
+  let previous = null
+  if (fs.existsSync(SNAPSHOT_PATH)) {
+    try { previous = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8')) } catch { /* 损坏则重写 */ }
+  }
+  const previousFp = previous ? snapshotFingerprint(previous) : null
+  const baselineChanged = !!previous && previousFp !== payload.fingerprint
+  const accept = flag('--accept-baseline-change')
+  const blocked = !!previous && baselineChanged && !accept
+  const relPath = path.relative(path.resolve(__dirname, '..', '..'), SNAPSHOT_PATH).replace(/\\/g, '/')
+  if (blocked) {
+    audit.snapshot = {
+      path: relPath, fingerprint: payload.fingerprint, written: false, blocked: true,
+      reason: '本地机器字段与已核准快照不一致：登记被改动。拒绝自动覆盖基线；'
+        + '核实后用 --accept-baseline-change 显式接受，或还原登记后重跑。',
+      saved_fingerprint: previousFp,
+    }
+  } else if (previous && !baselineChanged) {
+    // 内容一致 ⇒ 沿用旧时点、不写盘（幂等，工作树保持干净）。
+    audit.snapshot = { path: relPath, fingerprint: payload.fingerprint, written: false, unchanged: true }
+  } else {
+    payload.generated_at = new Date().toISOString()
+    fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify({ generated_at: payload.generated_at, ...payload }, null, 2) + '\n', 'utf8')
+    audit.snapshot = { path: relPath, fingerprint: payload.fingerprint, written: true,
+      accepted_baseline_change: baselineChanged && accept }
+  }
 }
 
 if (VERIFY_SNAPSHOT) {
@@ -687,8 +725,11 @@ if (flag('--draft')) {
 }
 
 // 默认只报告不判红；--strict 供人工 / CI 显式选用（不接进 run_all_gates.sh）。
-// --audit --strict 把机器字段漂移计入；--verify-snapshot 不一致必须判红（快照核对是判据）。
+// --audit --strict 把机器字段漂移 + 基线被改动计入；--verify-snapshot 不一致必须判红。
+// 基线被改动时 --snapshot 拒绝写盘（不洗白），但仍要给出非零退出码，否则
+// 「扫描通过」会掩盖「登记与已核准基线不一致」这件事。
+const baselineBlocked = !!(audit?.snapshot?.blocked)
 const diffs = localOnly.length + missingRemote.length + remoteUndeclared.length +
-  (audit ? audit.drift.length : 0)
+  (audit ? audit.drift.length : 0) + (baselineBlocked ? 1 : 0)
 const snapshotBroken = report.snapshot_verify && !report.snapshot_verify.ok
-process.exit((flag('--strict') && diffs > 0) || snapshotBroken ? 1 : 0)
+process.exit((flag('--strict') && diffs > 0) || snapshotBroken || (baselineBlocked && flag('--snapshot')) ? 1 : 0)
