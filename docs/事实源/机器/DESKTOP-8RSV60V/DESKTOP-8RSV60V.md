@@ -1,5 +1,27 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-13（**@`DESKTOP-8RSV60V` 发行区实例值登记 —— 全量扫描登记 + 实例层重建 + 异组合验收** ——
+>   用户原话「在本机实现扫描登记」（此处「本机」= @`DESKTOP-8RSV60V`），随后放行三步走。
+>   **对齐前提**：@`DESKTOP-8RSV60V` 的 `G:\allin` 两轮 `git pull --ff-only` 快进
+>   `617cc0f → 8e36761 → 8cbb10d`，三处 SHA 逐字符相等、0/0、工作树干净；
+>   第二笔拉入 @`SIWPAN` 的第一百六十四节「全量扫描登记 + 快照」能力。
+>   **发行区实例值（2026-11-13 现场实测，每行单事实）**：
+>   `G:\repos` 含 `.git` 的目录 **137** 个。
+>   registry 条目 **145** 份（唯一仓名 **139** + 仓内条目 **1**）。
+>   远端 Gitee owner `siwpan` 仓数 **138**（16:5x 三面对账 `remote=ok`；17:2x 审计时匿名 API 403 限流）。
+>   三面对账 `local_only=0` / `remote_undeclared=0` / `declared_missing_remote=0` / `retired_local=0`。
+>   `declared_missing_local=2`（`happy-childrens-day` / `sin-virtue-game`）为墓碑 / remote-only 豁免，`unexcused=0`。
+>   `--offline --apply` 扫描登记：`generated=0` / `needs_manual_review=0` / `written=0` ⇒ 当前组合零候选。
+>   `--audit --json` 全量扫描：`137 仓 / 137 已登记 / 0 未登记 / 144 条目 / 137 含人工字段 / 70 入口不可探测 / drift=0`。
+>   人工保留层分布：`manual 133` / `verify 96` / `note 47` / `version 137` / `category 137` / `name 137` / `gameplay 43`。
+>   分支判据 `branch_check_applicable=false`（远端 403 ⇒ **SKIP ≠ 通过，不算全绿**）。
+>   **实例层**：`build_projects.py --check/--write` 与 `build_tiering.py --check/--write` 均 clean / 幂等，
+>   `git diff` 内容为空；`PORTFOLIO.md` 已是 2026-11-13 生成的 138 仓版本，
+>   `--apply` 因 Gitee 匿名 API 403 未重跑（待远端恢复），不伪造生成结果。
+>   **分层纪律**：@`DESKTOP-8RSV60V` 不覆盖 `platform/registry/scan-snapshot.json`
+>   （该路径在脚本内写死、承载 @`SIWPAN` 的 138 仓快照，铁律 6 机器事实各归各机）。
+>   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第一百六十五节（三步走验收总账）。
+>
 > **时点** 2026-11-06（**@`DESKTOP-8RSV60V` 分区文件夹化自迁 + 迁移前全量复测** ——
 >   **迁移**：`git mv` 自家分区文件入同名文件夹（**R100 保留历史**）⇒
 >   `机器/DESKTOP-8RSV60V.md` → `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md`；
