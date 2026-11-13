@@ -1,6 +1,6 @@
 ﻿id: gan
 name: GAN 生成
-category: ai
+category: media
 version: 1.0.0
 path: repos/gan
 manual: true

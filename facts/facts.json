@@ -321,7 +321,7 @@
     {
       "project_id": "3dworld-demos",
       "name": "3dworld 演示程序集",
-      "category": "game",
+      "category": "engine",
       "version": "1.0.0",
       "path": "repos/3dworld-demos",
       "publish_repo": "siwpan/3dworld-demos",
@@ -330,7 +330,7 @@
     {
       "project_id": "3dworld-globe",
       "name": "3dworld 交互地球仪",
-      "category": "media",
+      "category": "engine",
       "version": "0.1.0",
       "path": "repos/3dworld-globe",
       "publish_repo": "siwpan/3dworld-globe",
@@ -510,7 +510,7 @@
     {
       "project_id": "cordis-snake",
       "name": "Cordis 贪吃蛇（一切皆插件）",
-      "category": "game",
+      "category": "engine",
       "version": "1.0.0",
       "path": "repos/cordis-snake",
       "publish_repo": "siwpan/cordis-snake",
@@ -528,7 +528,7 @@
     {
       "project_id": "cordis-text-game",
       "name": "Cordis 文字冒险（迷雾地窖）",
-      "category": "game",
+      "category": "engine",
       "version": "0.1.0",
       "path": "repos/cordis-text-game",
       "publish_repo": "siwpan/cordis-text-game",
@@ -609,7 +609,7 @@
     {
       "project_id": "dict-scene-engine",
       "name": "字典场景引擎（文字冒险）",
-      "category": "game",
+      "category": "engine",
       "version": "0.2.0",
       "path": "repos/dict-scene-engine",
       "publish_repo": "siwpan/dict-scene-engine",
@@ -636,7 +636,7 @@
     {
       "project_id": "dsh-release-archiver",
       "name": "DSH 发布源码归档流水线",
-      "category": "tool",
+      "category": "automation",
       "version": "1.1.1",
       "path": "repos/dsh-release-archiver",
       "publish_repo": null,
@@ -717,7 +717,7 @@
     {
       "project_id": "gan",
       "name": "GAN 生成",
-      "category": "ai",
+      "category": "media",
       "version": "1.0.0",
       "path": "repos/gan",
       "publish_repo": "siwpan/gan",
@@ -807,7 +807,7 @@
     {
       "project_id": "lab",
       "name": "国际象棋多语言移植实验场",
-      "category": "game",
+      "category": "prototype",
       "version": "1.0.0",
       "path": "repos/lab",
       "publish_repo": "siwpan/lab",
@@ -1032,7 +1032,7 @@
     {
       "project_id": "musickit",
       "name": "音色工程（采样整理 + remix 混音）",
-      "category": "media",
+      "category": "music",
       "version": "1.0.0",
       "path": "repos/musickit",
       "publish_repo": "siwpan/musickit",
@@ -1077,7 +1077,7 @@
     {
       "project_id": "novel-reader",
       "name": "综网终端 · 地狱之下平台（视觉小说版）",
-      "category": "game",
+      "category": "content",
       "version": "1.0.0",
       "path": "repos/novel-reader",
       "publish_repo": "siwpan/novel-reader",
@@ -1176,7 +1176,7 @@
     {
       "project_id": "players-unified",
       "name": "播放器统一宿主（三端合并）",
-      "category": "media",
+      "category": "player",
       "version": "0.8.0",
       "path": "repos/players-unified",
       "publish_repo": "siwpan/players-unified",
@@ -1185,7 +1185,7 @@
     {
       "project_id": "pluginplayer",
       "name": "PluginPlayer（插件版播放器）",
-      "category": "media",
+      "category": "player",
       "version": "1.0.0",
       "path": "repos/pluginplayer",
       "publish_repo": "siwpan/pluginplayer",
@@ -1230,7 +1230,7 @@
     {
       "project_id": "procedural-video",
       "name": "程序化视频",
-      "category": "ai",
+      "category": "media",
       "version": "1.0.0",
       "path": "repos/procedural-video",
       "publish_repo": "siwpan/procedural-video",
@@ -1293,7 +1293,7 @@
     {
       "project_id": "radio",
       "name": "电台",
-      "category": "media",
+      "category": "music",
       "version": "4.0.0",
       "path": "repos/private-radio-stations",
       "publish_repo": "siwpan/private-radio-stations",
@@ -1392,7 +1392,7 @@
     {
       "project_id": "sin-virtue-cordis-host",
       "name": "七宗罪VS七美德·Cordis 宿主原型",
-      "category": "game",
+      "category": "prototype",
       "version": "0.1.0",
       "path": "repos/sin-virtue-cordis-host",
       "publish_repo": "siwpan/sin-virtue-cordis-host",
@@ -1401,7 +1401,7 @@
     {
       "project_id": "sin-virtue-game",
       "name": "七宗罪VS七美德·互动叙事测试原型",
-      "category": "game",
+      "category": "prototype",
       "version": "1.0.0",
       "path": "repos/sin-virtue-game",
       "publish_repo": "siwpan/sin-virtue-game",
@@ -1509,7 +1509,7 @@
     {
       "project_id": "video-generator",
       "name": "随机视频生成器",
-      "category": "ai",
+      "category": "media",
       "version": "1.0.0",
       "path": "repos/video-generator",
       "publish_repo": "siwpan/video-generator",
@@ -1554,7 +1554,7 @@
     {
       "project_id": "weiqi-lab",
       "name": "围棋多语言引擎实验场",
-      "category": "game",
+      "category": "prototype",
       "version": "1.0.0",
       "path": "repos/weiqi_lab",
       "publish_repo": "siwpan/weiqi_lab",
@@ -1590,7 +1590,7 @@
     {
       "project_id": "write",
       "name": "网文创作与素材工作区",
-      "category": "tool",
+      "category": "content",
       "version": "1.0.0",
       "path": "repos/write",
       "publish_repo": "siwpan/write",
@@ -1807,7 +1807,7 @@
     },
     {
       "repo": "write",
-      "tier": "②精选旗舰",
+      "tier": "①核心推进",
       "domain": "小说/网文",
       "source_file": "docs/事实源/tiering.yaml"
     },

@@ -212,10 +212,10 @@ tiering:
 - repo: write
   seq: 31
   domain: 小说/网文
-  tier: ②精选旗舰
-  action: 网文正文/设定/素材创作工作区 ＋ 仓级工具链（tools/：Cordis 编排的审校与校验流水线，入口 npm run check）；受控文件 1298 / 工作区 54MB（2026-11-13 实测），保留
+  tier: ①核心推进
+  action: 网文正文/设定/素材创作工作区 ＋ 仓级工具链（tools/：Cordis 编排的审校与校验流水线，入口 npm run check）；受控文件 1298 / 工作区 54MB（2026-11-13 实测），持续投入
   archive_target: ''
-  note: 创作工作区 ＋ 仓级工具链
+  note: 创作工作区 ＋ 仓级工具链；2026-11-13 由 ②精选旗舰 升 ①核心推进（用户定）
 - repo: write-agent
   seq: 32
   domain: 小说/网文

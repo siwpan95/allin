@@ -1,6 +1,6 @@
 id: 3dworld-demos
 name: 3dworld 演示程序集
-category: game
+category: engine
 version: 1.0.0
 path: repos/3dworld-demos
 manual: true

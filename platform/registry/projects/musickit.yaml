@@ -1,6 +1,6 @@
 id: musickit
 name: 音色工程（采样整理 + remix 混音）
-category: media
+category: music
 version: 1.0.0
 path: repos/musickit
 manual: true

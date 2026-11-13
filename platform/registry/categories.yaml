@@ -1,0 +1,91 @@
+# registry 分类词表（机器可读权威版 · v2 · 2026-11-13）
+#
+# 人类可读孪生：docs/事实源/registry分类词表.md（改一处须同步另一处）
+#
+# 本文件是 platform/registry/projects/*.yaml 的 `category` 字段的**受控枚举**。
+# 词表形状借鉴（来源 + 许可 + 借用范围见 docs/事实源/registry分类词表.md §4）：
+#   · Wikipedia《List of software categories》（CC BY-SA 4.0）——「应用／系统／编程工具」三分与细类命名
+#   · GitHub Topics 官方体系 —— 主题级标签口径（Game Development / Machine learning / Automation / …）
+# 本组合的粒度以仓内权威判断为准：docs/事实源/tiering.yaml 的 `domain` 字段（140 条逐仓领域判断）。
+#
+# 判据：一条目归哪一类，看**它是什么**（类型），不看它服务于什么场景（用途）——
+#       同一场景的不同形态可以分属不同类（生成器 vs 成品内容 vs 引擎宿主）。
+version: 2
+updated: 2026-11-13
+
+categories:
+  - id: game
+    label: 游戏作品
+    scope: 可玩成品 —— 单机/跑团应用/棋类/放置挂机/视觉小说平台
+    anchor: Wikipedia: Video games ｜ GitHub Topics: Game Development
+
+  - id: engine
+    label: 引擎/框架
+    scope: 引擎、内核、底层框架、插件宿主与引擎演示集
+    anchor: Wikipedia: Programming tools · Libraries ｜ GitHub Topics: Game engine, Library
+
+  - id: ai
+    label: AI/大模型
+    scope: 生成式与 Agent 栈 —— 文本生成、叙事引擎、创作智能体
+    anchor: Wikipedia: AI software ｜ GitHub Topics: Machine learning, LLM
+
+  - id: content
+    label: 内容/创作
+    scope: **内容资产与创作工作区** —— 正文、设定、素材、写作工作区、视觉小说阅读端
+    anchor: Wikipedia: Content management ｜ awesome-repositories: Content Management & Publishing
+
+  - id: media
+    label: 视频/图像/特效
+    scope: 图像与视频的处理、生成、渲染与视觉小工具
+    anchor: Wikipedia: Multimedia software · Graphics software ｜ GitHub Topics: Data visualization
+
+  - id: music
+    label: 音乐/音频
+    scope: 音频合成、混音、采样、音色工程与电台
+    anchor: Wikipedia: Music software
+
+  - id: player
+    label: 播放器
+    scope: 媒体运行时与播放器宿主（多端统一宿主、插件版播放器、本地/每日/音乐播放器）
+    anchor: Wikipedia: Application software · Multimedia software
+
+  - id: crawler
+    label: 爬虫/采集
+    scope: 抓取、下载、站点采集与素材抓取
+    anchor: Wikipedia: Data acquisition ｜ GitHub Topics: Browser Automation & Scraping
+
+  - id: tool
+    label: 开发者/系统工具
+    scope: 通用工具与库 —— 打包器、测试器、文档工具、图形小工具等
+    anchor: Wikipedia: Computer programming tools ｜ GitHub Topics: CLI, Utilities
+
+  - id: automation
+    label: 工具链/自动化
+    scope: 流水线、发布归档、扫描登记、批量调度与定时任务
+    anchor: Wikipedia: Build automation ｜ GitHub Topics: Automation, DevOps & CI/CD
+
+  - id: platform
+    label: 平台/集成
+    scope: 集成平台、门户、按需启动的统一入口
+    anchor: Wikipedia: Middleware
+
+  - id: prototype
+    label: 原型/学习/实验
+    scope: 原型仓、多语言移植验证场、实验性作品与已退役的叙事原型
+    anchor: 仓内判断：tiering 领域「原型/学习/杂项」「多语言引擎移植验证」
+
+  - id: unclassified
+    label: 未分类
+    scope: **机器自动发现、尚未人工定类**的条目（platform/scripts/discover_repos.mjs 的自动产出）
+    anchor: 仓内判断：discover_repos.mjs 的默认占位值
+
+# 已知耦合（改词表时必须一并看）
+couplings:
+  - field: category
+    consumer: platform/scripts/build_batch.mjs
+    rule: "缺省批量打包范围 = category == 'tool'（B 级可打包交付）"
+    note: >-
+      2026-11-13 重分类后该范围由 47 → 45，但**实际打包行为不变**：
+      离开范围的 write（launch=explorer .）与 dsh-release-archiver（launch=bash scripts/run.sh）
+      本就没有 Python 入口，脚本的 entryScript() 判不出入口 ⇒ 从未进入打包产物。
+      若后续要把 player/media/music 里的 Python GUI 仓也纳入打包，须先解耦本耦合。

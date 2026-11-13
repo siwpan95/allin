@@ -1,6 +1,6 @@
 id: players-unified
 name: 播放器统一宿主（三端合并）
-category: media
+category: player
 version: 0.8.0
 path: repos/players-unified
 launch:

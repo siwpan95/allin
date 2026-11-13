@@ -1,6 +1,6 @@
 id: dict-scene-engine
 name: 字典场景引擎（文字冒险）
-category: game
+category: engine
 gameplay: [text]
 version: 0.2.0
 path: repos/dict-scene-engine

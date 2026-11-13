@@ -1,6 +1,6 @@
 id: dsh-release-archiver
 name: DSH 发布源码归档流水线
-category: tool
+category: automation
 version: 1.1.1
 path: repos/dsh-release-archiver
 status: active

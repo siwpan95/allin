@@ -1,6 +1,6 @@
 id: radio
 name: 电台
-category: media
+category: music
 version: 4.0.0
 path: repos/private-radio-stations
 port: 8000

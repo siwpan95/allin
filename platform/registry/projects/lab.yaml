@@ -1,6 +1,6 @@
 id: lab
 name: 国际象棋多语言移植实验场
-category: game
+category: prototype
 gameplay: [chess]
 version: 1.0.0
 path: repos/lab

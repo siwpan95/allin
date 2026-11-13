@@ -1,6 +1,6 @@
 id: novel-reader
 name: 综网终端 · 地狱之下平台（视觉小说版）
-category: game
+category: content
 gameplay: [visual-novel]
 version: 1.0.0
 path: repos/novel-reader

@@ -1,6 +1,6 @@
 id: cordis-text-game
 name: Cordis 文字冒险（迷雾地窖）
-category: game
+category: engine
 version: 0.1.0
 path: repos/cordis-text-game
 manual: true

@@ -1,6 +1,6 @@
 id: weiqi-lab
 name: 围棋多语言引擎实验场
-category: game
+category: prototype
 gameplay: [go]
 version: 1.0.0
 path: repos/weiqi_lab

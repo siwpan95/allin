@@ -1,6 +1,6 @@
 ﻿id: cordis-snake
 name: Cordis 贪吃蛇（一切皆插件）
-category: game
+category: engine
 gameplay: [snake]
 version: 1.0.0
 path: repos/cordis-snake

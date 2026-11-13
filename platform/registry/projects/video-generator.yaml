@@ -1,6 +1,6 @@
 id: video-generator
 name: 随机视频生成器
-category: ai
+category: media
 version: 1.0.0
 path: repos/video-generator
 manual: true

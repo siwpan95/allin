@@ -1,6 +1,6 @@
 id: 3dworld-globe
 name: 3dworld 交互地球仪
-category: media
+category: engine
 version: 0.1.0
 path: repos/3dworld-globe
 manual: true

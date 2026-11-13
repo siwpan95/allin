@@ -1,6 +1,6 @@
 id: write
 name: 网文创作与素材工作区
-category: tool
+category: content
 version: 1.0.0
 path: repos/write
 manual: true

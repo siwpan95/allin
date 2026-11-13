@@ -1,6 +1,6 @@
 id: pluginplayer
 name: PluginPlayer（插件版播放器）
-category: media
+category: player
 version: 1.0.0
 path: repos/pluginplayer
 manual: true
