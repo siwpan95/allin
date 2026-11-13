@@ -17,8 +17,14 @@ It also audits the audit inventory itself (2026-11-10 deep audit H-7):
 * every ``gates/gXX_*.py`` on disk must be declared in ``registry.json`` — the
   registry is the aggregator's only list, so an undeclared gate script is never
   run ("a gate that is written but not wired is no gate at all");
-* numbering holes must be declared. ``g02`` is a documented historical hole;
-  any new hole has to be added to ``KNOWN_NUMBERING_GAPS`` explicitly.
+* numbering holes must be explainable. ``g02`` is a documented historical hole
+  (built into ``KNOWN_NUMBERING_GAPS``); any other hole must be declared in the
+  registry's ``declared_numbering_gaps`` as ``{"number": N, "reason": "..."}``.
+  Declarations are themselves audited: the number must really be a hole, the
+  reason must be non-trivial, and duplicates are rejected. This lets a shipped
+  subset (allin-governance init's 14-gate scaffold) state its omissions as data
+  instead of widening a global whitelist — 2026-11-13, closing the CI red where
+  the scaffold failed its own meta gate on undeclared g14..g19.
 
 Exit codes follow the governance vocabulary: 0 clean, 1 blocking finding,
 2 usage error, 3 environment error.
@@ -60,6 +66,15 @@ GATE_ID_RE = re.compile(r"^g(\d{2})-")
 #: 编号缺口白名单：g02 是本仓既有设计缺口（registry.json 与 docs/INDEX.md 均
 #: 明确登记「编号缺 g02」），不是遗漏。新增缺号必须在此显式声明，否则一律判红。
 KNOWN_NUMBERING_GAPS = frozenset({2})
+
+#: 声明式缺口（2026-11-13）：出厂子集（allin-governance init 的骨架）只带
+#: 14 道门禁，g14~g19 是治理中枢专属/可选件，不随通用套装出厂 —— 编号必然
+#: 出现缺口，但这是**设计**不是遗漏。让 registry 顶层用带理由的
+#: ``declared_numbering_gaps`` 显式声明，比把 14~19 塞进全局白名单更严：
+#: 每条声明必须真的是当前缺口、理由非空、编号不重复，否则照样判红。
+#: 主仓 registry 不带该字段 ⇒ 行为与改动前逐字节一致（零回归）。
+DECLARED_GAPS_KEY = "declared_numbering_gaps"
+MIN_GAP_REASON_CHARS = 12
 
 
 def run_gate_script(python: str, script: Path, args: list[str], root: Path) -> tuple[int, str]:
@@ -129,8 +144,53 @@ def check_gate_inventory(root: Path, registry_path: Path, identifiers: set[str],
                          f"该脚本不会被聚合器执行（门禁写了不跑 = 没有门禁）")
 
 
-def check_numbering(identifiers: list[str], registry_path: Path, root: Path,
-                     report: Report) -> None:
+def declared_numbering_gaps(registry: dict, gaps: list[int], registry_path: Path,
+                            root: Path, report: Report) -> set[int]:
+    """校验 registry 顶层的 ``declared_numbering_gaps`` 并返回**有效**声明编号。
+
+    判据比全局白名单更严，四条缺一即判红（不放宽门禁）：
+      ① 字段必须是数组，元素是对象；
+      ② ``number`` 必须是 0~99 的整数、不得重复；
+      ③ 声明的编号必须**真的是当前缺口**（防止拿过期声明当橡皮图章）；
+      ④ ``reason`` 必须是非空字符串且不少于 ``MIN_GAP_REASON_CHARS`` 字符。
+    """
+    raw = registry.get(DECLARED_GAPS_KEY)
+    if raw is None:
+        return set()
+    rel = _rel(registry_path, root)
+    if not isinstance(raw, list):
+        report.block("registry", rel, 0, f"{DECLARED_GAPS_KEY} 必须是数组")
+        return set()
+    valid: set[int] = set()
+    seen: set[int] = set()
+    for index, item in enumerate(raw):
+        label = f"{DECLARED_GAPS_KEY}[{index}]"
+        if not isinstance(item, dict):
+            report.block("registry", rel, 0, f"{label} 必须是对象（含 number / reason）")
+            continue
+        number = item.get("number")
+        if isinstance(number, bool) or not isinstance(number, int) or not 0 <= number <= 99:
+            report.block("registry", rel, 0, f"{label}.number 必须是 0~99 的整数")
+            continue
+        if number in seen:
+            report.block("registry", rel, 0, f"{label} 重复声明 g{number:02d}")
+            continue
+        seen.add(number)
+        reason = item.get("reason")
+        if not isinstance(reason, str) or len(reason.strip()) < MIN_GAP_REASON_CHARS:
+            report.block("registry", rel, 0,
+                         f"{label} 缺少可核查理由（reason 至少 {MIN_GAP_REASON_CHARS} 字符）")
+            continue
+        if number not in gaps:
+            report.block("registry", rel, 0,
+                         f"{label} 声明 g{number:02d} 并非当前编号缺口（声明不得覆盖已有门禁/过期）")
+            continue
+        valid.add(number)
+    return valid
+
+
+def check_numbering(identifiers: list[str], registry: dict, registry_path: Path,
+                    root: Path, report: Report) -> None:
     """H-7：编号缺口必须可解释；重复编号同样判红。
 
     自检沙箱夹具用的是 ``ok`` / ``bad`` 这类非 gNN- 形式的 id，没有编号可判，
@@ -146,12 +206,15 @@ def check_numbering(identifiers: list[str], registry_path: Path, root: Path,
                      f"门禁编号重复：{', '.join(f'g{n:02d}' for n in duplicates)}")
     present = set(nums)
     gaps = [n for n in range(0, max(present) + 1) if n not in present]
-    unexpected = [n for n in gaps if n not in KNOWN_NUMBERING_GAPS]
+    declared = declared_numbering_gaps(registry, gaps, registry_path, root, report)
+    allowed = KNOWN_NUMBERING_GAPS | declared
+    unexpected = [n for n in gaps if n not in allowed]
     if unexpected:
-        allowed = ', '.join(f"g{n:02d}" for n in sorted(KNOWN_NUMBERING_GAPS)) or '（无）'
+        builtin = ', '.join(f"g{n:02d}" for n in sorted(KNOWN_NUMBERING_GAPS)) or '（无）'
         report.block("registry", _rel(registry_path, root), 0,
                      f"门禁编号出现未声明缺口：{', '.join(f'g{n:02d}' for n in unexpected)}；"
-                     f"白名单仅允许 {allowed}（新增缺口须改 KNOWN_NUMBERING_GAPS 并说明理由）")
+                     f"内置白名单 {builtin}；其余须在 {DECLARED_GAPS_KEY} 逐条声明并给出理由"
+                     f"（声明必须是真缺口、理由不少于 {MIN_GAP_REASON_CHARS} 字符）")
 
 
 def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> Report:
@@ -172,7 +235,7 @@ def inspect(root: Path, registry_path: Path, rules_path: Path, python: str) -> R
     # H-7：先审「审计清单本身」——未登记的门禁脚本 / 未声明的编号缺口，
     # 再逐条审 registry 里登记过的门禁。
     check_gate_inventory(root, registry_path, set(identifiers), report)
-    check_numbering(identifiers, registry_path, root, report)
+    check_numbering(identifiers, registry, registry_path, root, report)
     for missing in untracked_support(root, registry_path, tracked):
         report.block("untracked-support", missing, 0,
                      f"{missing}: present on disk but absent from the git index (an ignore rule can hide it)")
@@ -412,6 +475,46 @@ def selfcheck() -> int:
                          sandbox.path / "governance/RULES.md", sys.executable)
         check.quiet("the whitelisted g02 numbering hole",
                     any("未声明缺口" in finding.text for finding in report.findings))
+
+    # 声明式编号缺口（2026-11-13）：出厂子集只有 14 道门禁，g14~g19 是
+    # 治理中枢专属件、不随包出厂。判据允许它们在 registry 里逐条声明，
+    # 但声明本身必须能被核查 —— 下面四组分别证明「合法声明放行」与
+    # 「缺理由 / 声明非缺口 / 重复声明」三种伪造都必须判红。
+    def declared_gap_sandbox(entries: list[dict]) -> Report:
+        with govlib.Sandbox() as sandbox:
+            sandbox.write("governance/gates/ok_gate.py", good_gate)
+            sandbox.write("governance/RULES.md", "# Rules\n\n| g00-a | r1 |\n| g02-c | r2 |\n")
+            sandbox.write("governance/registry.json", json.dumps({
+                "version": 1,
+                DECLARED_GAPS_KEY: entries,
+                "gates": [
+                    {"id": "g00-a", "title": "a", "script": "governance/gates/ok_gate.py",
+                     "tier": "P0", "rules": ["r1"], "platforms": ["nt", "posix"],
+                     "requires": ["python"], "selfcheck": True},
+                    {"id": "g02-c", "title": "c", "script": "governance/gates/ok_gate.py",
+                     "tier": "P0", "rules": ["r2"], "platforms": ["nt", "posix"],
+                     "requires": ["python"], "selfcheck": True},
+                ],
+            }, indent=2) + "\n")
+            return inspect(sandbox.path, sandbox.path / "governance/registry.json",
+                           sandbox.path / "governance/RULES.md", sys.executable)
+
+    valid_reason = "g01 属治理中枢专属门禁，不随通用治理套装出厂"
+    legal = declared_gap_sandbox([{"number": 1, "reason": valid_reason}])
+    check.quiet("a declared numbering gap with a verifiable reason",
+                any("未声明缺口" in finding.text for finding in legal.findings))
+    no_reason = declared_gap_sandbox([{"number": 1, "reason": "略"}])
+    check.detects("a declared gap without a verifiable reason",
+                  any("缺少可核查理由" in finding.text for finding in no_reason.findings))
+    not_a_gap = declared_gap_sandbox([{"number": 0, "reason": valid_reason}])
+    check.detects("a declaration that is not an actual gap",
+                  any("并非当前编号缺口" in finding.text for finding in not_a_gap.findings))
+    duplicated = declared_gap_sandbox([
+        {"number": 1, "reason": valid_reason},
+        {"number": 1, "reason": valid_reason},
+    ])
+    check.detects("a duplicated gap declaration",
+                  any("重复声明" in finding.text for finding in duplicated.findings))
     return check.finish()
 
 

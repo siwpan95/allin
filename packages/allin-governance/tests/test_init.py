@@ -254,6 +254,69 @@ def test_scaffold_credentials_gate_is_green(tmp_path: Path) -> None:
     assert not report.findings, report.render()
 
 
+# ── 2026-11-13 CI 双平台恒红回归（骨架 = 治理全套的子集）────────────────────
+# 前两条是「资产齐不齐」，第三条才是真正的判据：**在骨架自己的目录里**
+# 用子进程跑骨架自带的 g00-meta。此前 test_scaffold_credentials_gate_is_green
+# 直接 import 仓内模块，借了仓内 runtime/ 的 sys.path，骨架缺文件它照样绿 ——
+# 测试和被测对象不在同一个隔离环境，等于没测。
+
+def test_scaffold_ships_all_runtime_support_modules(tmp_path: Path) -> None:
+    """骨架必须自带 runtime/*.py 全量：g03 自检会 import selfcheck_fixtures。
+
+    2026-11-13 实名事故：init 只拷 govlib.py，骨架 `g03 --selfcheck`
+    ModuleNotFoundError ⇒ g00-meta 判「self-check printed no SELFCHECK summary」。
+    """
+    assert _run(tmp_path) == 0
+    shipped = {p.name for p in (tmp_path / "tools/gate/governance/runtime").glob("*.py")}
+    source = {p.name for p in (init_module.suite_dir() / "runtime").glob("*.py")}
+    assert source, "找不到上游 runtime 目录（测试无法自证）"
+    assert source <= shipped, f"骨架漏拷 runtime 模块：{sorted(source - shipped)}"
+    assert "selfcheck_fixtures.py" in shipped
+
+
+def test_registry_declares_subset_numbering_gaps(tmp_path: Path) -> None:
+    """出厂 14 道是 20 道治理全套的子集 ⇒ 缺口必须逐条带理由声明。"""
+    assert _run(tmp_path) == 0
+    payload = json.loads(
+        (tmp_path / "tools/gate/governance/registry.json").read_text(encoding="utf-8")
+    )
+    shipped = {int(gid[1:3]) for gid in
+               (entry["id"] for entry in payload["gates"]) if gid.startswith("g")}
+    gaps = {n for n in range(0, max(shipped) + 1) if n not in shipped}
+    declarations = payload.get("declared_numbering_gaps", [])
+    declared = {item["number"] for item in declarations}
+    # g02 是 g00-meta 的内置历史白名单，不需要声明。
+    assert gaps - {2} == declared, f"缺口声明与实际不符：{sorted(gaps - {2} - declared)}"
+    for item in declarations:
+        assert isinstance(item.get("reason"), str) and len(item["reason"].strip()) >= 12
+        assert item["number"] in gaps, "声明了并非缺口的编号"
+
+
+def test_scaffold_meta_gate_is_green_in_isolation(tmp_path: Path) -> None:
+    """CI 等价判据：子进程在骨架目录跑骨架自带 g00-meta，必须 exit 0。
+
+    这是 2026-11-13 CI Linux/Windows 双红的直接复现：不借仓内 sys.path、
+    不 import 仓内模块。g00-meta 会逐道跑骨架门禁的 --selfcheck，
+    任何 runtime 漏拷 / 编号缺口未声明都会在这里判红。
+    """
+    assert _run(tmp_path) == 0
+    suite = tmp_path / "tools/gate/governance"
+    script = suite / "gates" / "g00_meta.py"
+    result = subprocess.run(
+        [sys.executable, str(script),
+         "--root", str(tmp_path),
+         "--registry", str(suite / "registry.json"),
+         "--rules", str(suite / "RULES.md")],
+        cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=180,
+    )
+    assert result.returncode == 0, (
+        f"骨架 g00-meta 判红（exit {result.returncode}）：\n"
+        f"{result.stdout}\n{result.stderr}"
+    )
+    assert "SELFCHECK" not in result.stdout or "printed no SELFCHECK" not in result.stdout
+
+
 def test_init_never_embeds_full_annotation_literal() -> None:
     """策略实现文件不是已登记夹具，完整注解字面量会让 CI 增量扫描 fail closed。
 

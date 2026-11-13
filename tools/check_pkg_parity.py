@@ -56,6 +56,13 @@ REPO_ONLY_OK = {
     "CONTRIBUTING.md", "SECURITY.md", "SKILL.md", "pyproject.toml",
     "repocheck-dbg.spec", "repocheck.spec",
     "requirements-dev.txt", "requirements.txt",
+    # 2026-09-23 硬编码路径门禁的历史基线（存量已清零）。位于
+    # tools/gate/governance/baseline/ 但**没有任何门禁运行时读它**：
+    # govlib.Baseline 只认 <gate_id>.txt，g18 读的是 tools/gate/audit/ 下另一份 csv。
+    # 它是仓内历史资产、刻意不随通用治理套装分发，却会被 collect() 扫进仓内侧
+    # ⇒ parity 误报「映射漏收」。此前 CI 的 parity step 排在 init 端到端之后、
+    # 因前序失败长期被 skipped，故一直未暴露；init 转绿后必然判红（2026-11-13 实测）。
+    "hardcoded_gate_baseline.csv",
 }
 
 

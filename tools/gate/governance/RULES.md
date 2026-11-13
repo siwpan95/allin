@@ -30,6 +30,7 @@
 | 契约完整 | `--help` 必须列出 `--selfcheck`、`--quiet`、`--baseline`、`--no-baseline`、`--write-baseline`、`--list-all` | 门禁要能**列出来、单独跑、自检**、能被基线棘轮管理 |
 | 自证有效 | `--selfcheck` 退出 0，且输出末行含 `SELFCHECK {"caught":N,"clean":M,"misreports":K}`，要求 `N≥1`、`M≥1`、`K==0` | 「打印了」不等于「抓到了」；只能单独跑才过的自检是缺陷 |
 | 规则可溯 | 门禁 id 出现在本文件（RULES.md） | 规则必须能找到执行它的那条门禁 |
+| 缺口可解释 | 编号缺口除内置白名单 `g02` 外，须在 `registry.json` 顶层 `declared_numbering_gaps` 逐条声明 `number` + 非空 `reason`（≥12 字符）；声明必须是真缺口、不得重复、不得覆盖已有门禁，否则判红 | 2026-11-13：出厂子集（`allin-governance init` 的 14 道骨架）天然缺 `g14`~`g19`，把缺口变成带理由的**数据声明**，比放宽全局白名单更严；此前骨架一 `init` 就被自己的 `g00-meta` 判红，CI 双平台恒红 |
 
 **退出码词汇（全部门禁统一）**：`0` 干净 · `1` 基线之外的新阻断 · `2` 用法错误 · `3` 环境错误（缺解释器、缺 git 工作树等）。
 **SKIP 不是通过**：门禁跑不了的能力（如非 Windows 上的盘健康检查）必须打印 `SKIPPED (not a pass)` 并计数。

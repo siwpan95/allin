@@ -60,6 +60,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -263,9 +264,14 @@ def rules_markdown(version: str, generated_at: str, gate_ids: tuple[str, ...]) -
 | 契约完整 | `--help` 必须列出 `--selfcheck` `--quiet` `--baseline` `--no-baseline` `--write-baseline` `--list-all` |
 | 自证有效 | `--selfcheck` 退出 0，末行含 `SELFCHECK {{"caught":N,"clean":M,"misreports":K}}`，要求 `N≥1`、`M≥1`、`K==0` |
 | 规则可溯 | 门禁 id 出现在本文件 |
+| 缺口可解释 | 编号缺口除内置白名单 `g02` 外，必须在 `registry.json` 顶层的 `declared_numbering_gaps` 逐条声明 `number` + 非空 `reason`；声明必须真是缺口、不得重复，否则 `g00-meta` 判红 |
 
 **退出码词汇（全部门禁统一）**：`0` 干净 · `1` 基线之外的新阻断 · `2` 用法错误 ·
 `3` 环境错误（缺解释器、缺 git 工作树等）。
+
+> 本套装是治理全套的**子集**：`g14`~`g19` 判的是 `allin` 中枢专属载体，
+> 不随通用套装出厂，编号缺口已随 `declared_numbering_gaps` 带理由声明。
+> 「未声明」不是「允许」—— 门禁不会因为你是子集就放松编号判据。
 
 **SKIP 不是通过。** 跑不了的判据必须打印 `SKIPPED (not a pass)` 并计数，
 不得静默返回 0 —— 这是这套系统里最容易被破坏、也最值钱的一条。
@@ -470,13 +476,42 @@ def _registry_subset(source: Path, gate_ids: tuple[str, ...]) -> dict:
         )
     order = {gid: index for index, gid in enumerate(gate_ids)}
     gates.sort(key=lambda entry: order[str(entry["id"])])
+
+    # 2026-11-13：出厂的是**治理全套的子集**，g14~g19 属中枢专属/可选件，
+    # 不随通用套装出厂。g00-meta 要求「编号缺口必须可解释」，此前只认硬编码
+    # 白名单 g02 ⇒ 骨架一 init 就 13/14 判红（CI 双平台恒红，实名
+    # 「门禁编号出现未声明缺口：g14..g19」）。这里把缺口变成**带理由的显式声明**：
+    # 每条 reason 写明对应门禁 id 与不出厂原因，g00-meta 会逐条核验
+    # 「确实是缺口 / 理由够长 / 不重复 / 不覆盖已有门禁」，比白名单更严。
+    # g02 是 g00-meta 的内置历史白名单，声明它反而多余，故跳过。
+    number_of = lambda ident: int(m.group(1)) if (m := re.match(r"^g(\d{2})-", str(ident))) else None
+    all_numbers = {n for entry in raw.get("gates", [])
+                   if isinstance(entry, dict) and (n := number_of(entry.get("id"))) is not None}
+    shipped_numbers = {n for gid in gate_ids if (n := number_of(gid)) is not None}
+    highest = max(all_numbers) if all_numbers else max(shipped_numbers, default=0)
+    declared_gaps = []
+    for number in range(0, highest + 1):
+        if number in shipped_numbers or number == 2:
+            continue
+        prefix = f"g{number:02d}-"
+        owner = next((str(entry.get("id")) for entry in raw.get("gates", [])
+                      if isinstance(entry, dict) and str(entry.get("id", "")).startswith(prefix)),
+                     f"g{number:02d}")
+        declared_gaps.append({
+            "number": number,
+            "reason": (f"{owner} 判的是治理中枢专属载体或需额外依赖，"
+                       f"不随 allin-governance 通用套装出厂；本仓按子集编号，非遗漏"),
+        })
+
     return {
         "version": raw.get("version", 1),
         "comment": (
             "Registry of the governance gates shipped by allin-governance. "
             "g00-meta reads this file and refuses to pass when an entry is incomplete, "
-            "when a gate cannot prove itself, or when a gate is missing from RULES.md."
+            "when a gate cannot prove itself, or when a gate is missing from RULES.md. "
+            "declared_numbering_gaps records the numbers intentionally omitted from this subset."
         ),
+        "declared_numbering_gaps": declared_gaps,
         "gates": gates,
     }
 
@@ -694,7 +729,15 @@ def build_plan(target: Path, *, force: bool, with_git: bool, license_id: str | N
     esm = suite / "package.json"
     if esm.is_file():
         plan.copy(f"{root}/package.json", esm, force=force)
-    plan.copy(f"{root}/runtime/govlib.py", suite / "runtime" / "govlib.py", force=force)
+    # 2026-11-13：此前手抄只拷 govlib.py，漏了门禁自检实际 import 的
+    # runtime/selfcheck_fixtures.py（g03 / g14 用）与 docs_contract.py（g15 用）。
+    # 骨架里 `g03 --selfcheck` 直接 ModuleNotFoundError ⇒ g00-meta 判
+    # 「self-check printed no SELFCHECK summary」⇒ CI 双平台恒红。
+    # 改为扫描 runtime/*.py 全量出厂：新增 runtime 支持模块不会再靠人记得补。
+    # 判据侧 untracked_support 要求这些文件进 git index，_git add -A 会覆盖。
+    runtime_dir = suite / "runtime"
+    for module in sorted(runtime_dir.glob("*.py")):
+        plan.copy(f"{root}/runtime/{module.name}", module, force=force)
     for gate_id in gate_ids:
         name = _gate_script_name(gate_id)
         plan.copy(f"{root}/gates/{name}", suite / "gates" / name, force=force)
