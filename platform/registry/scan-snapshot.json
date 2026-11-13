@@ -1,0 +1,4354 @@
+{
+  "generated_at": "2026-11-13T09:15:51.446Z",
+  "owner": "siwpan",
+  "repo_root": "../repos",
+  "machine": "siwpan",
+  "remote": "error: HTTP 403",
+  "machine_fields": [
+    "id",
+    "path",
+    "publish.repo",
+    "publish.branch"
+  ],
+  "human_owned_fields": [
+    "name",
+    "category",
+    "version",
+    "manual",
+    "verify",
+    "gameplay",
+    "note",
+    "status",
+    "order",
+    "port",
+    "stop",
+    "health",
+    "checkout"
+  ],
+  "counts": {
+    "scanned_local_repos": 138,
+    "registered": 137,
+    "unregistered": 1,
+    "entries_audited": 144,
+    "human_owned_entries": 137,
+    "launch_probe_undetectable": 68,
+    "branch_verdicts": 0,
+    "branch_check_applicable": false,
+    "branch_check_skipped_reason": "远端清单不可得 ⇒ 分支判据未运行（SKIP ≠ 通过，不算全绿）",
+    "drift": 0
+  },
+  "coverage": {
+    "local_machine_fields": "138/138 仓（纯本地，不依赖网络）",
+    "human_owned_inventory": "137 仓的人工字段清单已登记",
+    "branch_verdicts": "未运行：远端清单不可得 ⇒ 分支判据未运行（SKIP ≠ 通过，不算全绿）",
+    "note": "远端不可用时本快照仍可用于本机机器字段核对；分支判据缺失不算通过，待远端恢复后重跑 --snapshot 补齐。"
+  },
+  "human_field_counts": {
+    "category": 137,
+    "manual": 133,
+    "name": 137,
+    "note": 47,
+    "version": 137,
+    "verify": 96,
+    "gameplay": 44,
+    "order": 7,
+    "status": 7,
+    "port": 3,
+    "health": 1,
+    "stop": 1
+  },
+  "branch_verdicts": [],
+  "drift": [],
+  "rows": [
+    {
+      "name": "3dworld",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "3dworld"
+        ],
+        "path": [
+          "repos/3dworld"
+        ],
+        "publish.repo": [
+          "siwpan/3dworld"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/3dworld",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "3dworld-demos",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "3dworld-demos"
+        ],
+        "path": [
+          "repos/3dworld-demos"
+        ],
+        "publish.repo": [
+          "siwpan/3dworld-demos"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/3dworld-demos",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "3dworld-globe",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "3dworld-globe"
+        ],
+        "path": [
+          "repos/3dworld-globe"
+        ],
+        "publish.repo": [
+          "siwpan/3dworld-globe"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/3dworld-globe",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "adventurelog",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "adventurelog"
+        ],
+        "path": [
+          "repos/adventurelog"
+        ],
+        "publish.repo": [
+          "siwpan/adventurelog"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/adventurelog",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "an-engine",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "allin-engine"
+        ],
+        "path": [
+          "repos/an-engine"
+        ],
+        "publish.repo": [
+          "siwpan/an-engine"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/an-engine",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "arcade",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "arcade"
+        ],
+        "path": [
+          "repos/arcade"
+        ],
+        "publish.repo": [
+          "siwpan/arcade"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/arcade",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "art_video_gen",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "art-video-gen"
+        ],
+        "path": [
+          "repos/art_video_gen"
+        ],
+        "publish.repo": [
+          "siwpan/art_video_gen"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/art_video_gen",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "ashen-beacon",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "ashen-beacon"
+        ],
+        "path": [
+          "repos/ashen-beacon"
+        ],
+        "publish.repo": [
+          "siwpan/ashen-beacon"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/ashen-beacon",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "audio-pipeline",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "audio-pipeline"
+        ],
+        "path": [
+          "repos/audio-pipeline"
+        ],
+        "publish.repo": [
+          "siwpan/audio-pipeline"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/audio-pipeline",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "audio-separator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "audio-separator"
+        ],
+        "path": [
+          "repos/audio-separator"
+        ],
+        "publish.repo": [
+          "siwpan/audio-separator"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "name",
+        "port",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/audio-separator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "audiotool",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "audiotool"
+        ],
+        "path": [
+          "repos/audiotool"
+        ],
+        "publish.repo": [
+          "siwpan/audiotool"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/audiotool",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "auto_clicker",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "auto-clicker"
+        ],
+        "path": [
+          "repos/auto_clicker"
+        ],
+        "publish.repo": [
+          "siwpan/auto_clicker"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/auto_clicker",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "backroom",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "backroom"
+        ],
+        "path": [
+          "repos/backroom"
+        ],
+        "publish.repo": [
+          "siwpan/backroom"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/backroom",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "bee",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "bee"
+        ],
+        "path": [
+          "repos/bee"
+        ],
+        "publish.repo": [
+          "siwpan/bee"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/bee",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "bilibili-helper-py",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "bilibili-helper"
+        ],
+        "path": [
+          "repos/bilibili-helper-py"
+        ],
+        "publish.repo": [
+          "siwpan/bilibili-helper-py"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/bilibili-helper-py",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "bloodmusic",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "bloodmusic"
+        ],
+        "path": [
+          "repos/bloodmusic"
+        ],
+        "publish.repo": [
+          "siwpan/bloodmusic"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/bloodmusic",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "board-replay",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "board-replay"
+        ],
+        "path": [
+          "repos/board-replay"
+        ],
+        "publish.repo": [
+          "siwpan/board-replay"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/board-replay",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "calculator",
+      "entries": 0,
+      "machine": {
+        "id": [],
+        "path": [],
+        "publish.repo": [],
+        "publish.branch": []
+      },
+      "human_owned": [],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/calculator",
+      "local_head": "master",
+      "declared": "unregistered"
+    },
+    {
+      "name": "captcha-demo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "captcha-demo"
+        ],
+        "path": [
+          "repos/captcha-demo"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/captcha-demo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "cellular_automaton",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "cellular"
+        ],
+        "path": [
+          "repos/cellular_automaton"
+        ],
+        "publish.repo": [
+          "siwpan/cellular_automaton"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/cellular_automaton",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "cordis-py",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "cordis-py"
+        ],
+        "path": [
+          "repos/cordis-py"
+        ],
+        "publish.repo": [
+          "siwpan/cordis-py"
+        ],
+        "publish.branch": [
+          "p1-core-engine"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/cordis-py",
+      "local_head": "p1-core-engine",
+      "declared": "registered"
+    },
+    {
+      "name": "cordis-snake",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "cordis-snake"
+        ],
+        "path": [
+          "repos/cordis-snake"
+        ],
+        "publish.repo": [
+          "siwpan/cordis-snake"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/cordis-snake",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "cordis-table-app",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "cordis-table-app"
+        ],
+        "path": [
+          "repos/cordis-table-app"
+        ],
+        "publish.repo": [
+          "siwpan/cordis-table-app"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/cordis-table-app",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "cordis-text-game",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "cordis-text-game"
+        ],
+        "path": [
+          "repos/cordis-text-game"
+        ],
+        "publish.repo": [
+          "siwpan/cordis-text-game"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/cordis-text-game",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "crawl-hub",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "crawl-hub"
+        ],
+        "path": [
+          "repos/crawl-hub"
+        ],
+        "publish.repo": [
+          "siwpan/crawl-hub"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/crawl-hub",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "csmusic",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "csmusic"
+        ],
+        "path": [
+          "repos/csmusic"
+        ],
+        "publish.repo": [
+          "siwpan/csmusic"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/csmusic",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "d20-table-link",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "d20-table-link"
+        ],
+        "path": [
+          "repos/d20-table-link"
+        ],
+        "publish.repo": [
+          "siwpan/d20-table-link"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/d20-table-link",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "daily_player",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "daily-player"
+        ],
+        "path": [
+          "repos/daily_player"
+        ],
+        "publish.repo": [
+          "siwpan/daily_player"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/daily_player",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "darksouls",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "darksouls"
+        ],
+        "path": [
+          "repos/darksouls"
+        ],
+        "publish.repo": [
+          "siwpan/darksouls"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/darksouls",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "ddd2",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "ddd2"
+        ],
+        "path": [
+          "repos/ddd2"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/ddd2",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dev-toolkit",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dev-toolkit"
+        ],
+        "path": [
+          "repos/dev-toolkit"
+        ],
+        "publish.repo": [
+          "siwpan/dev-toolkit"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/dev-toolkit",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "diablo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "diablo"
+        ],
+        "path": [
+          "repos/diablo"
+        ],
+        "publish.repo": [
+          "siwpan/diablo"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/diablo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dict-scene-engine",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dict-scene-engine"
+        ],
+        "path": [
+          "repos/dict-scene-engine"
+        ],
+        "publish.repo": [
+          "siwpan/dict-scene-engine"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/dict-scene-engine",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "drawpic",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "drawpic"
+        ],
+        "path": [
+          "repos/drawpic"
+        ],
+        "publish.repo": [
+          "siwpan/drawpic"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/drawpic",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dse-core",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dse-core"
+        ],
+        "path": [
+          "repos/dse-core"
+        ],
+        "publish.repo": [
+          "siwpan/dse-core"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/dse-core",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dsh-release-archiver",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dsh-release-archiver"
+        ],
+        "path": [
+          "repos/dsh-release-archiver"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/dsh-release-archiver",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dungeon",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dungeon"
+        ],
+        "path": [
+          "repos/dungeon"
+        ],
+        "publish.repo": [
+          "siwpan/dungeon"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/dungeon",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "dwarf-scrolls",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "dwarf-scrolls"
+        ],
+        "path": [
+          "repos/dwarf-scrolls"
+        ],
+        "publish.repo": [
+          "siwpan/dwarf-scrolls"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/dwarf-scrolls",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "fish",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "fish"
+        ],
+        "path": [
+          "repos/fish"
+        ],
+        "publish.repo": [
+          "siwpan/fish"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/fish",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "fonts",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "fonts"
+        ],
+        "path": [
+          "repos/fonts"
+        ],
+        "publish.repo": [
+          "siwpan/fonts"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "run.bat",
+        "basis": "run.bat"
+      },
+      "git_remote": "siwpan/fonts",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "foolproof-operation",
+      "entries": 2,
+      "machine": {
+        "id": [
+          "foolproof-operation-cli",
+          "foolproof-operation"
+        ],
+        "path": [
+          "repos/foolproof-operation",
+          "repos/foolproof-operation"
+        ],
+        "publish.repo": [
+          "siwpan/foolproof-operation",
+          "siwpan/foolproof-operation"
+        ],
+        "publish.branch": [
+          "master",
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/foolproof-operation",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "game-prototypes",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "game-prototypes"
+        ],
+        "path": [
+          "repos/game-prototypes"
+        ],
+        "publish.repo": [
+          "siwpan/game-prototypes"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/game-prototypes",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "gan",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "gan"
+        ],
+        "path": [
+          "repos/gan"
+        ],
+        "publish.repo": [
+          "siwpan/gan"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/gan",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "god-hand-",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "twelve-labors"
+        ],
+        "path": [
+          "repos/god-hand-"
+        ],
+        "publish.repo": [
+          "siwpan/god-hand-"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/god-hand-",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "haha",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "haha"
+        ],
+        "path": [
+          "repos/haha"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/haha",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "happy-childrens-day",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "happy-childrens-day"
+        ],
+        "path": [
+          "repos/happy-childrens-day"
+        ],
+        "publish.repo": [
+          "siwpan/happy-childrens-day"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/happy-childrens-day",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "hell-below",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "hell-below"
+        ],
+        "path": [
+          "repos/hell-below"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/hell-below",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "hushi_twrj",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "hushi-twrj"
+        ],
+        "path": [
+          "repos/hushi_twrj"
+        ],
+        "publish.repo": [
+          "siwpan/hushi_twrj"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/hushi_twrj",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "idle",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "idle"
+        ],
+        "path": [
+          "repos/Idle"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/Idle",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "image-scraper",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "image-scraper"
+        ],
+        "path": [
+          "repos/image-scraper"
+        ],
+        "publish.repo": [
+          "siwpan/image-scraper"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/image-scraper",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "imgproc",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "imgproc"
+        ],
+        "path": [
+          "repos/imgproc"
+        ],
+        "publish.repo": [
+          "siwpan/imgproc"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/imgproc",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "jotunnslayer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "jotunnslayer"
+        ],
+        "path": [
+          "repos/jotunnslayer"
+        ],
+        "publish.repo": [
+          "siwpan/jotunnslayer"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/jotunnslayer",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "kard",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "kard"
+        ],
+        "path": [
+          "repos/kard"
+        ],
+        "publish.repo": [
+          "siwpan/kard"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/kard",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "lab",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "lab"
+        ],
+        "path": [
+          "repos/lab"
+        ],
+        "publish.repo": [
+          "siwpan/lab"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/lab",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "legend",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "txtlegend"
+        ],
+        "path": [
+          "repos/legend"
+        ],
+        "publish.repo": [
+          "siwpan/legend"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/legend",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "life-reset-simulator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "life-reset"
+        ],
+        "path": [
+          "repos/life-reset-simulator"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/life-reset-simulator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "ling-train",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "ling-train"
+        ],
+        "path": [
+          "repos/ling-train"
+        ],
+        "publish.repo": [
+          "siwpan/ling-train"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/ling-train",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "localplayer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "localplayer"
+        ],
+        "path": [
+          "repos/localplayer"
+        ],
+        "publish.repo": [
+          "siwpan/localplayer"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/localplayer",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "loly",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "loly"
+        ],
+        "path": [
+          "repos/loly"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/loly",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "lonely-desert-road",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "endless-highway"
+        ],
+        "path": [
+          "repos/lonely-desert-road"
+        ],
+        "publish.repo": [
+          "siwpan/lonely-desert-road"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/lonely-desert-road",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "maga",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "maga"
+        ],
+        "path": [
+          "repos/maga"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/maga",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "magic-tower",
+      "entries": 2,
+      "machine": {
+        "id": [
+          "magic-tower",
+          "magictowel"
+        ],
+        "path": [
+          "repos/magic-tower",
+          "repos/magic-tower"
+        ],
+        "publish.repo": [
+          "siwpan/magic-tower",
+          "siwpan/magic-tower"
+        ],
+        "publish.branch": [
+          "master",
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/magic-tower",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "mahjong",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mahjong"
+        ],
+        "path": [
+          "repos/mahjong"
+        ],
+        "publish.repo": [
+          "siwpan/mahjong"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/mahjong",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "markdown",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "markdown"
+        ],
+        "path": [
+          "repos/markdown"
+        ],
+        "publish.repo": [
+          "siwpan/markdown"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/markdown",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "math",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "math"
+        ],
+        "path": [
+          "repos/math"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/math",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "mathematical-formula-renderer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mathematical-formula-renderer"
+        ],
+        "path": [
+          "repos/mathematical-formula-renderer"
+        ],
+        "publish.repo": [
+          "siwpan/mathematical-formula-renderer"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/mathematical-formula-renderer",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "mc-clone",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mcclone"
+        ],
+        "path": [
+          "repos/mc-clone"
+        ],
+        "publish.repo": [
+          "siwpan/mc-clone"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/mc-clone",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "mcclone3d",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mcclone3d"
+        ],
+        "path": [
+          "repos/mcclone3d"
+        ],
+        "publish.repo": [
+          "siwpan/mcclone3d"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/mcclone3d",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "media-prototypes",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "media-prototypes"
+        ],
+        "path": [
+          "repos/media-prototypes"
+        ],
+        "publish.repo": [
+          "siwpan/media-prototypes"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/media-prototypes",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "media-tools",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "media-tools"
+        ],
+        "path": [
+          "repos/media-tools"
+        ],
+        "publish.repo": [
+          "siwpan/media-tools"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/media-tools",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "midi",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "midi"
+        ],
+        "path": [
+          "repos/midi"
+        ],
+        "publish.repo": [
+          "siwpan/midi"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/midi",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "midjourney_video",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "midjourney-video"
+        ],
+        "path": [
+          "repos/midjourney_video"
+        ],
+        "publish.repo": [
+          "siwpan/midjourney_video"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/midjourney_video",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "mirsolo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mirsolo"
+        ],
+        "path": [
+          "repos/mirsolo"
+        ],
+        "publish.repo": [
+          "siwpan/mirsolo"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/mirsolo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "moba_battle_platform",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "moba-battle"
+        ],
+        "path": [
+          "repos/moba_battle_platform"
+        ],
+        "publish.repo": [
+          "siwpan/moba_battle_platform"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/moba_battle_platform",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "mp",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "mp"
+        ],
+        "path": [
+          "repos/mp"
+        ],
+        "publish.repo": [
+          "siwpan/mp"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/mp",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "music-player",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "music-player"
+        ],
+        "path": [
+          "repos/music-player"
+        ],
+        "publish.repo": [
+          "siwpan/music-player"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/music-player",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "music-prompt-generator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "music-prompt"
+        ],
+        "path": [
+          "repos/music-prompt-generator"
+        ],
+        "publish.repo": [
+          "siwpan/music-prompt-generator"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/music-prompt-generator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "music-prototypes",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "music-prototypes"
+        ],
+        "path": [
+          "repos/music-prototypes"
+        ],
+        "publish.repo": [
+          "siwpan/music-prototypes"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "status",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/music-prototypes",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "musickit",
+      "entries": 3,
+      "machine": {
+        "id": [
+          "mixer",
+          "musickit",
+          "remix"
+        ],
+        "path": [
+          "repos/musickit/remix",
+          "repos/musickit",
+          "repos/musickit/remix"
+        ],
+        "publish.repo": [
+          "siwpan/musickit",
+          "siwpan/musickit",
+          "siwpan/musickit"
+        ],
+        "publish.branch": [
+          "master",
+          "master",
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "port",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/musickit",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "ncmturnmp3",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "ncmturnmp3"
+        ],
+        "path": [
+          "repos/ncmturnmp3"
+        ],
+        "publish.repo": [
+          "siwpan/ncmturnmp3"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/ncmturnmp3",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "niulai",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "niulai"
+        ],
+        "path": [
+          "repos/niulai"
+        ],
+        "publish.repo": [
+          "siwpan/niulai"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/niulai",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "novel",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "novel"
+        ],
+        "path": [
+          "repos/novel"
+        ],
+        "publish.repo": [
+          "siwpan/novel"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/novel",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "novel-down",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "novel-down"
+        ],
+        "path": [
+          "repos/novel-down"
+        ],
+        "publish.repo": [
+          "siwpan/novel-down"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/novel-down",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "novel-generator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "novel-generator"
+        ],
+        "path": [
+          "repos/novel-generator"
+        ],
+        "publish.repo": [
+          "siwpan/novel-generator"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/novel-generator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "novel-reader",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "novel-reader"
+        ],
+        "path": [
+          "repos/novel-reader"
+        ],
+        "publish.repo": [
+          "siwpan/novel-reader"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/novel-reader",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "novel-run",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "novel-run"
+        ],
+        "path": [
+          "repos/novel-run"
+        ],
+        "publish.repo": [
+          "siwpan/novel-run"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/novel-run",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "ollama_generator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "ollama-generator"
+        ],
+        "path": [
+          "repos/ollama_generator"
+        ],
+        "publish.repo": [
+          "siwpan/ollama_generator"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/ollama_generator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "particlefx",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "particle"
+        ],
+        "path": [
+          "repos/particlefx"
+        ],
+        "publish.repo": [
+          "siwpan/particlefx"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/particlefx",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "pdf",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pdf"
+        ],
+        "path": [
+          "repos/pdf"
+        ],
+        "publish.repo": [
+          "siwpan/pdf"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/pdf",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "peasy-ai",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "peasy-ai"
+        ],
+        "path": [
+          "repos/peasy-ai"
+        ],
+        "publish.repo": [
+          "siwpan/peasy-ai"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/peasy-ai",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "photo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "photo"
+        ],
+        "path": [
+          "repos/photo"
+        ],
+        "publish.repo": [
+          "siwpan/photo"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/photo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "photovideo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "photovideo"
+        ],
+        "path": [
+          "repos/photovideo"
+        ],
+        "publish.repo": [
+          "siwpan/photovideo"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/photovideo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "player",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "player"
+        ],
+        "path": [
+          "repos/player"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/player",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "players-unified",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "players-unified"
+        ],
+        "path": [
+          "repos/players-unified"
+        ],
+        "publish.repo": [
+          "siwpan/players-unified"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/players-unified",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "pluginplayer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pluginplayer"
+        ],
+        "path": [
+          "repos/pluginplayer"
+        ],
+        "publish.repo": [
+          "siwpan/pluginplayer"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "run.bat",
+        "basis": "run.bat"
+      },
+      "git_remote": "siwpan/pluginplayer",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "pomodmer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pomodmer"
+        ],
+        "path": [
+          "repos/Pomodmer"
+        ],
+        "publish.repo": [
+          "siwpan/pomodmer"
+        ],
+        "publish.branch": [
+          "main"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/pomodmer",
+      "local_head": "main",
+      "declared": "registered"
+    },
+    {
+      "name": "pq-multiverse",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pq-multiverse"
+        ],
+        "path": [
+          "repos/pq-multiverse"
+        ],
+        "publish.repo": [
+          "siwpan/pq-multiverse"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/pq-multiverse",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "print",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "print"
+        ],
+        "path": [
+          "repos/print"
+        ],
+        "publish.repo": [
+          "siwpan/print"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/print",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "private-radio-stations",
+      "entries": 2,
+      "machine": {
+        "id": [
+          "radio",
+          "video"
+        ],
+        "path": [
+          "repos/private-radio-stations",
+          "repos/private-radio-stations"
+        ],
+        "publish.repo": [
+          "siwpan/private-radio-stations",
+          "siwpan/private-radio-stations"
+        ],
+        "publish.branch": [
+          "3.0",
+          "archived-video"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "health",
+        "name",
+        "port",
+        "stop",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/private-radio-stations",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "procedural-video",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "procedural-video"
+        ],
+        "path": [
+          "repos/procedural-video"
+        ],
+        "publish.repo": [
+          "siwpan/procedural-video"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/procedural-video",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "project-root",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "project-root"
+        ],
+        "path": [
+          "repos/project-root"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/project-root",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "py_test_runner",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "py-test-runner"
+        ],
+        "path": [
+          "repos/py_test_runner"
+        ],
+        "publish.repo": [
+          "siwpan/py_test_runner"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/py_test_runner",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "pyinstaller",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pyinstaller"
+        ],
+        "path": [
+          "repos/pyinstaller"
+        ],
+        "publish.repo": [
+          "siwpan/pyinstaller"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/pyinstaller",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "pywallpaper",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "pywallpaper"
+        ],
+        "path": [
+          "repos/pywallpaper"
+        ],
+        "publish.repo": [
+          "siwpan/pywallpaper"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/pywallpaper",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "radio_special_instruments",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "radio-special-instruments"
+        ],
+        "path": [
+          "repos/radio_special_instruments"
+        ],
+        "publish.repo": [
+          "siwpan/radio_special_instruments"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/radio_special_instruments",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "random-dungeon-",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "random-dungeon"
+        ],
+        "path": [
+          "repos/random-dungeon-"
+        ],
+        "publish.repo": [
+          "siwpan/random-dungeon-"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/random-dungeon-",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "remix",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "remixaudio"
+        ],
+        "path": [
+          "repos/remix"
+        ],
+        "publish.repo": [
+          "siwpan/remix"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/remix",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "renamer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "renamer"
+        ],
+        "path": [
+          "repos/renamer"
+        ],
+        "publish.repo": [
+          "siwpan/renamer"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/renamer",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "roleplayer",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "roleplayer"
+        ],
+        "path": [
+          "repos/RolePlayer"
+        ],
+        "publish.repo": [
+          "siwpan/roleplayer"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/roleplayer",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "running-group-simulator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "paotuan"
+        ],
+        "path": [
+          "repos/running-group-simulator"
+        ],
+        "publish.repo": [
+          "siwpan/running-group-simulator"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/running-group-simulator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "russia",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "russia"
+        ],
+        "path": [
+          "repos/russia"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/russia",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "sandbox",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "sandbox"
+        ],
+        "path": [
+          "repos/sandbox"
+        ],
+        "publish.repo": [
+          "siwpan/sandbox"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/sandbox",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "santi-teleprompter",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "santi-teleprompter"
+        ],
+        "path": [
+          "repos/santi-teleprompter"
+        ],
+        "publish.repo": [
+          "siwpan/santi-teleprompter"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/santi-teleprompter",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "sfx-download",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "sfx"
+        ],
+        "path": [
+          "repos/sfx-download"
+        ],
+        "publish.repo": [
+          "siwpan/sfx-download"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/sfx-download",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "shikonghuaban",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "shikonghuaban"
+        ],
+        "path": [
+          "repos/shikonghuaban"
+        ],
+        "publish.repo": [
+          "siwpan/shikonghuaban"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/shikonghuaban",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "sign-in-simulator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "qiandao"
+        ],
+        "path": [
+          "repos/sign-in-simulator"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/sign-in-simulator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "sin-virtue-cordis-host",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "sin-virtue-cordis-host"
+        ],
+        "path": [
+          "repos/sin-virtue-cordis-host"
+        ],
+        "publish.repo": [
+          "siwpan/sin-virtue-cordis-host"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/sin-virtue-cordis-host",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "smile",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "smile"
+        ],
+        "path": [
+          "repos/smile"
+        ],
+        "publish.repo": [
+          "siwpan/smile"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/smile",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "stay",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "stay"
+        ],
+        "path": [
+          "repos/stay"
+        ],
+        "publish.repo": [
+          "siwpan/stay"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/stay",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "subtitle",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "subtitle"
+        ],
+        "path": [
+          "repos/subtitle"
+        ],
+        "publish.repo": [
+          "siwpan/subtitle"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/subtitle",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "superengine",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "superengine"
+        ],
+        "path": [
+          "repos/superengine"
+        ],
+        "publish.repo": [
+          "siwpan/superengine"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/superengine",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "table-hanging-machine",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "table-hanging-machine"
+        ],
+        "path": [
+          "repos/table-hanging-machine"
+        ],
+        "publish.repo": [
+          "siwpan/table-hanging-machine"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "order",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/table-hanging-machine",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "tavern-rogue",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "tavern-rogue"
+        ],
+        "path": [
+          "repos/tavern-rogue"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/tavern-rogue",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "test",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "test"
+        ],
+        "path": [
+          "repos/test"
+        ],
+        "publish.repo": [
+          "siwpan/test"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/test",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "text-adventure",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "text-adventure"
+        ],
+        "path": [
+          "repos/text-adventure"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "npm start",
+        "basis": "package.json scripts.start"
+      },
+      "git_remote": "siwpan/text-adventure",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "text-fps",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "text-fps"
+        ],
+        "path": [
+          "repos/text-fps"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/text-fps",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "under-withered-limbs",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "carimara"
+        ],
+        "path": [
+          "repos/under-withered-limbs"
+        ],
+        "publish.repo": [
+          "siwpan/under-withered-limbs"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/under-withered-limbs",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "video-generator",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "video-generator"
+        ],
+        "path": [
+          "repos/video-generator"
+        ],
+        "publish.repo": [
+          "siwpan/video-generator"
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/video-generator",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "wav_music_gen",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "wav-music-gen"
+        ],
+        "path": [
+          "repos/wav_music_gen"
+        ],
+        "publish.repo": [
+          "siwpan/wav_music_gen"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/wav_music_gen",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "wave4",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "wave4"
+        ],
+        "path": [
+          "repos/wave4"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/wave4",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "webcopier",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "webcopier"
+        ],
+        "path": [
+          "repos/webcopier"
+        ],
+        "publish.repo": [
+          "siwpan/webcopier"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/webcopier",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "weiqi_lab",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "weiqi-lab"
+        ],
+        "path": [
+          "repos/weiqi_lab"
+        ],
+        "publish.repo": [
+          "siwpan/weiqi_lab"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "gameplay",
+        "manual",
+        "name",
+        "note",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/weiqi_lab",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "weor",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "weor"
+        ],
+        "path": [
+          "repos/weor"
+        ],
+        "publish.repo": [
+          "siwpan/weor"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/weor",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "worldbuilder",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "worldbuilder"
+        ],
+        "path": [
+          "repos/worldbuilder"
+        ],
+        "publish.repo": [
+          "siwpan/worldbuilder"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/worldbuilder",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "write",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "write"
+        ],
+        "path": [
+          "repos/write"
+        ],
+        "publish.repo": [
+          "siwpan/write"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "note",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/write",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "yasuo",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "yasuo"
+        ],
+        "path": [
+          "repos/yasuo"
+        ],
+        "publish.repo": [
+          "siwpan/yasuo"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": null,
+      "git_remote": "siwpan/yasuo",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "yuanbao",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "yuanbao"
+        ],
+        "path": [
+          "repos/yuanbao"
+        ],
+        "publish.repo": [
+          "siwpan/yuanbao"
+        ],
+        "publish.branch": [
+          "master"
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/yuanbao",
+      "local_head": "master",
+      "declared": "registered"
+    },
+    {
+      "name": "zhuangtaiji",
+      "entries": 1,
+      "machine": {
+        "id": [
+          "zhuangtaiji"
+        ],
+        "path": [
+          "repos/zhuangtaiji"
+        ],
+        "publish.repo": [
+          ""
+        ],
+        "publish.branch": [
+          ""
+        ]
+      },
+      "human_owned": [
+        "category",
+        "manual",
+        "name",
+        "verify",
+        "version"
+      ],
+      "launch_probe": {
+        "command": "python main.py",
+        "basis": "main.py"
+      },
+      "git_remote": "siwpan/zhuangtaiji",
+      "local_head": "master",
+      "declared": "registered"
+    }
+  ],
+  "policy": {
+    "machine": "机器字段与扫描值不一致 ⇒ 记 drift（--strict 可判红）",
+    "human": "人工语义字段只登记清单，绝不比对 / 覆盖 / 重新生成",
+    "branch": "publish.branch 判据 = 远端是否存在该分支；非默认但存在 ⇒ 有意发布分支，不算漂移",
+    "implicit": "未登记 branch 时 workshop.js 隐式回退 master，按隐式值对账"
+  },
+  "fingerprint": "fc094c4f63d4733297fe83d6286f674238432d9556fffa3c692b5db495edfe48"
+}

@@ -15,4 +15,6 @@ verify:
   command: python main.py --smoke 3
 publish:
   repo: siwpan/3dworld-globe
-  branch: master
+  # 2026-11-13 本机全量扫描登记订正：远端仅 main 分支（原登记 master 已不存在）。
+  # workshop.js 用本字段 clone/fetch 发布分支，master 会导致拉取失败。
+  branch: main

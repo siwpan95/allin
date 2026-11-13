@@ -10,7 +10,8 @@ launch:
 publish:
   # 2026-10-26 补登记：此前 repos/（仓库区，盘符随机器） 下有本仓但未进 registry（全量核对 136 个 git 仓时发现）
   repo: siwpan/pomodmer
-  branch: master
+  # 2026-11-13 本机全量扫描登记订正：远端仅 main 分支（原登记 master 已不存在）。
+  branch: main
 verify:
   # 2026-10-26 补：`npm run verify` 是完整测试套件（含 SSE 推送，跑不完 12 秒），
   # 改为子代理写的无头自检（0.1s，退出 0）。

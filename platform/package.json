@@ -14,6 +14,8 @@
     "allin": "node apps/cli/src/index.js",
     "check": "node scripts/check.mjs",
     "check:repos": "node scripts/check_repos.mjs",
+    "repos:scan": "node scripts/discover_repos.mjs --audit --strict --snapshot",
+    "repos:verify": "node scripts/discover_repos.mjs --audit --verify-snapshot",
     "test": "node --test packages/core/test/*.test.mjs apps/portal/test/*.test.mjs apps/cli/test/*.test.mjs test/*.test.mjs",
     "harness": "node harness/harness.mjs"
   },

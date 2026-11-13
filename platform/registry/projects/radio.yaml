@@ -15,4 +15,6 @@ health:
   url: http://localhost:8000/api/status
 publish:
   repo: siwpan/private-radio-stations
+  # 有意发布非默认分支：远端默认 master，但 3.0 分支确实存在（2026-11-13 扫描核实）。
+  # workshop.js 按本字段 clone/fetch，勿改成 default_branch。
   branch: "3.0"

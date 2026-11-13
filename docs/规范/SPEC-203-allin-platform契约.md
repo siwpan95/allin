@@ -100,6 +100,41 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 - **仓内条目分流**：`path` 不以 `repos/` 开头的条目（如 `portal.yaml`）不进发行区差集，但其 `publish.repo` 仓名仍参与远端对账 —— 否则治理仓 `allin` 自身会被误报「远端有 / 未登记」。
 - **归档残留分类**：本地有 `.git`、远端已无该仓、README / 末次提交含归档声明 ⇒ 标 `retired_local`，不算待登记、不写条目、不删本地资产。
 
+### 本机全量扫描登记（2026-11-13 第四轮，`--audit`）
+
+> **触发**：全哥「在本机实现扫描登记」。此前 `--apply` 只扫**差集**（有 `local_only` 才动手），
+> 本机 145 份手抄条目从未被扫描碰过，实战证据来自临时异组合而非本机发行区。
+> 本节把扫描登记从「补新仓」推进到「跑满本机、逐仓对账、落盘可复核快照」。
+
+**分层契约（不可越界）**：本机实测 138 仓 / 145 条目，其中 **133 份 `manual`、96 份 `verify`、
+47 份 `note`、44 份 `gameplay`** 属扫描推不出的人工语义 ⇒ 它们是**不可覆盖的保留层**：
+`--audit` 只登记字段清单，绝不比对、绝不改写、绝不重新生成。`--apply` 的
+「只写新文件、已存在条目一律跳过」语义保持不动。
+
+| 层 | 字段 | 扫描行为 |
+| --- | --- | --- |
+| 机器可判定 | `id` / `path` / `publish.repo` / `publish.branch` | 与扫描值不一致 ⇒ 记 `drift`，`--strict` 判红 |
+| 人工保留 | `name` / `category` / `version` / `manual` / `verify` / `gameplay` / `note` / `status` / `order` / `port` / `stop` / `health` / `checkout` | 只登记清单，不比对不覆盖 |
+| 参考 | `launch.command` 入口探测 | 68 仓探测不到标准入口 ⇒ 保留手抄值，不猜、不判红 |
+
+- **`publish.branch` 判据 = 该分支在远端存在**，不是「等于本机 HEAD」：`workshop.js` 拿它当发布分支 clone/fetch。
+  `radio` / `video` 有意发布私电台仓的 `3.0` / `archived-video` 分支（远端确实存在、默认分支是 `master`），
+  判为 `non_default_publish_branch`，**不算漂移**。未登记 `branch` 时按 `workshop.js` 的隐式回退 `master` 对账。
+- 远端清单不可得（限流 / 断网）⇒ `branch_check_applicable=false` 并写明 `SKIP ≠ 通过`，
+  **不把未运行的判据算成全绿**；此时本机机器字段仍完整可核对。
+- **快照**：`--snapshot` 落盘 `platform/registry/scan-snapshot.json`（138 行扫描视角 + 人工字段清单 +
+  漂移 + coverage + sha256 指纹）。指纹**只取纯本地字段**，联网派生计数不进指纹 ⇒ 远端抖动不会假红。
+  初版把 `branch_verdicts` 算进指纹，实测 403 时 142→0 造成假红，已修（交接卷第一百六十四节留痕）。
+- `--verify-snapshot` 重扫比对指纹：登记被改动 / 快照被篡改都判红（exit 1）。
+- 一键命令：`npm run repos:scan`（`--audit --strict --snapshot`）/ `npm run repos:verify`。
+- 仍**不接 `run_all_gates.sh` 阻断链**：证据采集与门禁控制分离（离线北极星）。
+
+**本机首跑结果**：138 仓全量扫描，抓到 3 处 `publish.branch` 真漂移并订正 ——
+`3dworld-globe` / `pomodmer` 登记 `master` 而远端仅 `main`，`moba-battle` 未登记 `branch`
+（隐式 `master`，远端默认 `main`）。`private-radio-stations` 的 `3.0` / `archived-video`
+保留并加注释说明是有意的发布分支。修复后 `drift=0`、快照指纹稳定、注入漂移能判红、还原能转绿。
+
+
 ### 远端写入编排与逐项确认闸门（2026-11-13 第三轮）
 
 > **触发**：全哥指出「自动写远端目前应该已经基本具备前置条件才对」。盘点结论：**七项技术前置条件确已齐备** ——
@@ -141,6 +176,8 @@ PATCH 必带 `name`、406 需 JSON 正体等坑）；**不调用其 `remote` 子
 
 1. 定新发行区根 → `PLATFORM_REPOS_ROOT`；定远端账号 → `PLATFORM_GITEE_OWNER`。
 2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；确认后 `--offline --apply` 扫描登记（默认 dry-run，先看 `registration.generated` / `needs_manual_review`）。
+   已有条目用 `npm run repos:scan` 做全量对账（跑满本机、只判机器字段、人工字段保留），
+   `npm run repos:verify` 核对快照；两者不覆盖手抄条目。
 3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `tools/facts/build_projects.py` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
 4. `node platform/scripts/check.mjs` / `check_repos.mjs` 对账；`npm run check:governance` 与 `scripts/run_all_gates.sh` 复跑。
 5. **（可选）远端写入**：仅当新组合含「已登记 / 远端不存在」的仓时才需要。先看

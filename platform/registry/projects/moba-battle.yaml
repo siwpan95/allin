@@ -9,6 +9,9 @@ launch:
   command: python main.py
 publish:
   repo: siwpan/moba_battle_platform
+  # 2026-11-13 本机全量扫描登记补齐：此前未登记 branch，workshop.js 会隐式回退
+  # master，而远端默认分支是 main（仅 main）。显式登记才不会让发布拉取落空。
+  branch: main
 verify:
   # 2026-10-26 补：无头自检（子代理编写，verify_projects.py 复核退出 0）
   command: python selfcheck.py

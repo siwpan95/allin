@@ -18,15 +18,27 @@
 //   node scripts/discover_repos.mjs --apply         # 扫描登记：把候选写成 registry YAML
 //   node scripts/discover_repos.mjs --draft         # --apply 的 dry-run 预览（兼容旧用法）
 //   node scripts/discover_repos.mjs --strict        # 存在差异时 exit 1（供人工 / CI 选用）
-//   node scripts/discover_repos.mjs --selfcheck     # 集合 / 探测 / 分类自检（能红能绿）
+//   node scripts/discover_repos.mjs --audit         # 本机全量扫描登记：跑满发行区，逐仓对账
+//   node scripts/discover_repos.mjs --audit --snapshot  # 并落盘扫描快照（platform/registry/scan-snapshot.json）
+//   node scripts/discover_repos.mjs --verify-snapshot   # 拿已落盘快照复跑对账，漂移即判红
+//   node scripts/discover_repos.mjs --selfcheck     # 集合 / 探测 / 分类 / 审计自检（能红能绿）
 //
 // 纪律：默认不写盘、默认不判红；联网采集不进门禁阻断链 —— 离线北极星 +
 // 「证据采集与门禁控制分离」（见 docs/记录/审计/组合做大做强战略研究_2026-10-31.md 第 6.1 节）。
 // --apply 只写「新文件」，已存在的手抄条目一律跳过，绝不覆盖。
 // 探测不到启动入口的仓不生成条目，列入 needs_manual_review —— 不伪造可直接入库的清单。
+//
+// --audit（2026-11-13 本机落地）：三面对账只答「有没有仓没登记」，答不了
+// 「已登记的 145 份还与本机实况一致吗」。本机 138 仓里 131 份带 manual:true、
+// 93 份带 verify —— 这些是扫描推不出的人工语义，必须作为**不可覆盖的保留层**。
+// 因此审计只判机器可判定字段（id / path / publish.repo / publish.branch），
+// 人工字段只登记清单、不比对、不改写。publish.branch 的判据是
+// 「该分支在远端存在」而非「等于本机 HEAD」——workshop.js 拿它当发布分支去
+// clone/fetch，radio / video 两条条目有意发布 3.0 / archived-video 分支。
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { loadRegistry, REPOS_ROOT, isTombstone, skipLocalExistence } from '@allin/core'
@@ -38,8 +50,22 @@ const REGISTRY = process.env.PLATFORM_REGISTRY || path.join(__dirname, '..', 're
 const OWNER = process.env.PLATFORM_GITEE_OWNER || 'siwpan'
 const OFFLINE = flag('--offline') || process.env.PLATFORM_REPOS_OFFLINE === '1'
 const APPLY = flag('--apply')
+const AUDIT = flag('--audit')
+const SNAPSHOT = flag('--snapshot')
+const VERIFY_SNAPSHOT = flag('--verify-snapshot')
+const SNAPSHOT_PATH = path.join(__dirname, '..', 'registry', 'scan-snapshot.json')
 const API = 'https://gitee.com/api/v5'
 const RETIRED_RX = /已归档|归档声明|不再维护|已退役|retired|archived/i
+
+// 人工语义字段：扫描推不出（项目中文名、人工验收命令、玩法说明、状态…）。
+// 审计只登记「有哪些」，绝不拿扫描值比对或改写 —— 138 份 manual / 93 份 verify
+// 是历次实测沉淀，不是可以重新生成的模板。
+const HUMAN_OWNED_FIELDS = [
+  'name', 'category', 'version', 'manual', 'verify', 'gameplay',
+  'note', 'status', 'order', 'port', 'stop', 'health', 'checkout',
+]
+// 机器可判定字段：扫描能拿到唯一客观值，不一致即漂移。
+const MACHINE_FIELDS = ['id', 'path', 'publish.repo', 'publish.branch']
 
 const diffSets = (a, b) => [...a].filter((x) => !b.has(x)).sort()
 
@@ -70,6 +96,44 @@ async function remoteRepos(owner) {
     if (batch.length < 100) break
   }
   return out
+}
+
+/** 远端 owner 的「仓名 → 默认分支」索引；列表接口一次拿全，避免逐仓限流。 */
+async function remoteBranchIndex(owner) {
+  const out = new Map()
+  for (let page = 1; page <= 5; page++) {
+    const url = `${API}/users/${owner}/repos?type=all&sort=full_name&per_page=100&page=${page}`
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'allin-repos-audit' },
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const batch = await res.json()
+    if (!Array.isArray(batch) || batch.length === 0) break
+    for (const r of batch) out.set(String(r.path).toLowerCase(), String(r.default_branch || 'master'))
+    if (batch.length < 100) break
+  }
+  return out
+}
+
+/** 只对「登记分支 ≠ 默认分支」的少数条目精确查分支列表，带缓存。 */
+const branchCache = new Map()
+async function remoteBranches(repo) {
+  if (branchCache.has(repo)) return branchCache.get(repo)
+  try {
+    const res = await fetch(`${API}/repos/${repo}/branches?per_page=100`, {
+      headers: { 'User-Agent': 'allin-repos-audit' },
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!res.ok) { branchCache.set(repo, null); return null }
+    const batch = await res.json()
+    const names = Array.isArray(batch) ? new Set(batch.map((b) => String(b.name))) : null
+    branchCache.set(repo, names)
+    return names
+  } catch {
+    branchCache.set(repo, null)
+    return null
+  }
 }
 
 /** 只有 path 落在发行区的条目才参与三面对账；仓内条目（如 platform）单列。 */
@@ -193,6 +257,141 @@ function buildEntryYaml(name, localSet, remoteSet) {
   ].join('\n')
 }
 
+/**
+ * 本机全量扫描登记的分层对账（纯函数部分）：只判机器字段，人工字段只登记。
+ * 返回每个仓的扫描视角 + 漂移清单 + 保留层清单，供 --audit / --snapshot 使用。
+ */
+function auditRows(local, entries, remoteAvailable) {
+  const rows = []
+  const drift = []
+  const humanOwned = []
+  const byRepo = new Map()
+  for (const e of entries) {
+    if (!isIssuanceEntry(e)) continue
+    const p = String(e.path || '')
+    const first = p.replace(/^repos\//, '').split('/')[0].toLowerCase()
+    if (!byRepo.has(first)) byRepo.set(first, [])
+    byRepo.get(first).push(e)
+  }
+  for (const name of [...local].sort()) {
+    const dir = path.join(REPOS_ROOT, name)
+    const es = byRepo.get(name) || []
+    const gi = gitInfo(dir)
+    const launch = detectLaunch(dir)
+    const human = new Set()
+    for (const e of es) {
+      for (const k of HUMAN_OWNED_FIELDS) if (e[k] !== undefined) human.add(k)
+    }
+    const machine = {
+      id: es.map((e) => String(e.id || '')),
+      path: es.map((e) => String(e.path || '')),
+      'publish.repo': es.map((e) => String(e.publish?.repo || '')),
+      'publish.branch': es.map((e) => String(e.publish?.branch || '')),
+    }
+    rows.push({
+      name,
+      entries: es.length,
+      machine,
+      human_owned: [...human].sort(),
+      launch_probe: launch ? { command: launch.command, basis: launch.basis } : null,
+      git_remote: gi.repo,
+      local_head: gi.branch,
+      declared: !es.length ? 'unregistered' : 'registered',
+    })
+    if (!es.length) continue
+    // 机器字段②：publish.repo 必须与 git remote 同源（无 remote 时不判，避免误报）。
+    if (gi.repo) {
+      for (const e of es) {
+        const declared = String(e.publish?.repo || '')
+        if (declared && declared.toLowerCase() !== gi.repo.toLowerCase()) {
+          drift.push({ name, field: 'publish.repo', declared, observed: gi.repo, reason: '登记仓名与 git remote 不符' })
+        }
+      }
+    }
+    // 机器字段③：publish.branch 必须是远端存在的分支（异步补判，见 auditBranches）。
+    if (remoteAvailable) {
+      for (const e of es) {
+        const repo = String(e.publish?.repo || '')
+        const declared = String(e.publish?.branch || '')
+        // 缺省时 workshop.js 回退 master，按隐式 master 对账。
+        const effective = declared || 'master'
+        humanOwned.push({ name, id: String(e.id || ''), repo, branch: effective, implicit: !declared })
+      }
+    }
+  }
+  // 机器字段①（全局反向检查）：每条发行区条目的 path 首段必须对应一个本机目录。
+  // 不能放在上面「按本地仓分组」的循环里 —— 那样 path 写错的条目会被分到
+  // 错误名字的组，本机仓反而显示「未登记」，漂移永远抓不到（判据写了不跑）。
+  // 墓碑 / checkout:remote-only 由 @allin/core 同源豁免，不算缺陷。
+  for (const e of entries) {
+    if (!isIssuanceEntry(e)) continue
+    if (isTombstone(e) || skipLocalExistence(e)) continue
+    const p = String(e.path || '')
+    const first = p.replace(/^repos\//, '').split('/')[0].toLowerCase()
+    if (!first || local.has(first)) continue
+    drift.push({
+      name: first, field: 'path', declared: p,
+      observed: `本机发行区无 repos/${first}`,
+      id: String(e.id || ''), reason: 'path 首段指向不存在的本机目录（非墓碑 / 非 remote-only）',
+    })
+  }
+  return { rows, drift, humanOwned, byRepo }
+}
+
+/** 分支存在性补判：先比 default_branch，仅对不等项精确查 branches（带缓存）。 */
+async function auditBranches(drift, humanOwned, defaults, remoteAvailable) {
+  const verdicts = []
+  if (!remoteAvailable) return verdicts
+  for (const item of humanOwned) {
+    const repoName = String(item.repo).split('/').pop()?.toLowerCase()
+    if (!repoName || !defaults.has(repoName)) {
+      verdicts.push({ ...item, verdict: 'skipped', reason: '远端无该仓' })
+      continue
+    }
+    const def = defaults.get(repoName)
+    if (item.branch === def) {
+      verdicts.push({ ...item, verdict: 'default_branch' })
+      continue
+    }
+    const names = await remoteBranches(item.repo)
+    if (names === null) {
+      verdicts.push({ ...item, verdict: 'unverifiable', reason: '分支列表不可得（不判红也不算通过）' })
+      continue
+    }
+    if (names.has(item.branch)) {
+      verdicts.push({ ...item, verdict: 'non_default_publish_branch', reason: '有意发布非默认分支，远端确实存在' })
+      continue
+    }
+    verdicts.push({ ...item, verdict: 'missing', default_branch: def })
+    drift.push({
+      name: item.name, field: 'publish.branch', declared: item.branch,
+      observed: `远端默认 ${def}`, default_branch: def,
+      reason: item.implicit ? '未登记 branch，workshop.js 隐式回退 master，远端无该分支' : '登记的发布分支在远端不存在',
+      id: item.id, repo: item.repo,
+    })
+  }
+  return verdicts
+}
+
+/**
+ * 快照指纹：只取**纯本地可判定**的机器字段，保证断网 / 远端限流时复跑可比。
+ * 2026-11-13 实测教训：初版把 counts.branch_verdicts / drift（联网派生）算进指纹，
+ * 远端 API 一抖 142→0 就假红「登记被改动」—— 把易变字段当不变量，等于给
+ * 快照核对装了个随机报警器。联网派生结果仍写进快照作证据，但不进指纹。
+ */
+function snapshotFingerprint(payload) {
+  const stable = {
+    owner: payload.owner,
+    repo_root: payload.repo_root,
+    machine_fields: payload.machine_fields,
+    rows: payload.rows.map((r) => ({
+      name: r.name, entries: r.entries, machine: r.machine,
+      git_remote: r.git_remote, declared: r.declared,
+    })),
+  }
+  return crypto.createHash('sha256').update(JSON.stringify(stable)).digest('hex')
+}
+
 function selfcheck() {
   const local = new Set(['alpha', 'beta'])
   const declared = new Set(['alpha', 'gamma'])
@@ -228,6 +427,33 @@ function selfcheck() {
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true })
   }
+  // 全量审计：人工字段只登记不比对；机器字段漂移必须判出；指纹稳定可比。
+  const entries = [
+    { id: 'alpha', path: 'repos/alpha', manual: true, verify: { command: 'x' },
+      publish: { repo: 'owner/alpha', branch: 'master' } },
+    { id: 'alpha-extra', path: 'repos/alpha/remix', publish: { repo: 'owner/alpha', branch: 'main' } },
+  ]
+  const audit = auditRows(new Set(['alpha', 'beta']), entries, false)
+  const alpha = audit.rows.find((r) => r.name === 'alpha')
+  const beta = audit.rows.find((r) => r.name === 'beta')
+  if (alpha?.human_owned.includes('manual') && alpha?.human_owned.includes('verify')) {
+    console.log('[OK] 人工字段仅登记、不参与比对')
+  } else { bad++; console.log('[BAD] 人工字段被当作机器字段') }
+  if (beta?.declared === 'unregistered') console.log('[OK] 未登记仓进入扫描视角')
+  else { bad++; console.log('[BAD] 未登记仓未被扫描覆盖') }
+  if (audit.drift.length === 0) console.log('[OK] 一致条目不误判漂移')
+  else { bad++; console.log('[BAD] 一致条目被误判：' + JSON.stringify(audit.drift)) }
+  const broken = auditRows(new Set(['alpha']), [
+    { id: 'alpha', path: 'repos/WRONG', publish: { repo: 'owner/other' } },
+  ], false)
+  if (broken.drift.some((d) => d.field === 'path')) console.log('[OK] path 首段漂移能判红')
+  else { bad++; console.log('[BAD] path 首段漂移漏判') }
+  const fp1 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS,
+    drift: [], counts: { local: 1 }, rows: [{ name: 'a', entries: 1, machine: {}, git_remote: '', declared: 'registered' }] })
+  const fp2 = snapshotFingerprint({ owner: 'x', repo_root: 'r', machine_fields: MACHINE_FIELDS,
+    drift: [], counts: { local: 1 }, rows: [{ name: 'a', entries: 1, machine: {}, git_remote: '', declared: 'registered' }] })
+  if (fp1 === fp2) console.log('[OK] 快照指纹可复现')
+  else { bad++; console.log('[BAD] 快照指纹不稳定') }
   console.log(bad ? `SELFCHECK FAIL (${bad})` : 'SELFCHECK OK')
   return bad ? 1 : 0
 }
@@ -316,6 +542,102 @@ const report = {
   },
 }
 
+// ── --audit：本机全量扫描登记（跑满发行区，不只扫差集）────────────────────
+let audit = null
+if (AUDIT || SNAPSHOT || VERIFY_SNAPSHOT) {
+  const { entries } = loadRegistry(REGISTRY)
+  let defaults = new Map()
+  if (remoteAvailable) {
+    try { defaults = await remoteBranchIndex(OWNER) } catch { /* 索引不可得 ⇒ 分支判 unverifiable */ }
+  }
+  const scanned = auditRows(local, entries, remoteAvailable)
+  const verdicts = await auditBranches(scanned.drift, scanned.humanOwned, defaults, remoteAvailable)
+  const humanFieldCounts = {}
+  for (const r of scanned.rows) {
+    for (const k of r.human_owned) humanFieldCounts[k] = (humanFieldCounts[k] || 0) + 1
+  }
+  audit = {
+    mode: 'full-scan',
+    machine_fields: MACHINE_FIELDS,
+    human_owned_fields: HUMAN_OWNED_FIELDS,
+    policy: {
+      machine: '机器字段与扫描值不一致 ⇒ 记 drift（--strict 可判红）',
+      human: '人工语义字段只登记清单，绝不比对 / 覆盖 / 重新生成',
+      branch: 'publish.branch 判据 = 远端是否存在该分支；非默认但存在 ⇒ 有意发布分支，不算漂移',
+      implicit: '未登记 branch 时 workshop.js 隐式回退 master，按隐式值对账',
+    },
+    counts: {
+      scanned_local_repos: scanned.rows.length,
+      registered: scanned.rows.filter((r) => r.declared === 'registered').length,
+      unregistered: scanned.rows.filter((r) => r.declared === 'unregistered').length,
+      entries_audited: entries.filter(isIssuanceEntry).length,
+      human_owned_entries: scanned.rows.filter((r) => r.human_owned.length).length,
+      launch_probe_undetectable: scanned.rows.filter((r) => r.declared === 'registered' && !r.launch_probe).length,
+      branch_verdicts: verdicts.length,
+      branch_check_applicable: remoteAvailable,
+      branch_check_skipped_reason: remoteAvailable ? null : '远端清单不可得 ⇒ 分支判据未运行（SKIP ≠ 通过，不算全绿）',
+      drift: scanned.drift.length,
+    },
+    human_field_counts: humanFieldCounts,
+    branch_verdicts: verdicts.filter((v) => v.verdict !== 'default_branch'),
+    drift: scanned.drift.sort((a, b) => (a.name + a.field).localeCompare(b.name + b.field)),
+    rows: scanned.rows,
+  }
+  report.audit = audit
+}
+
+if (SNAPSHOT && audit) {
+  const payload = {
+    generated_at: new Date().toISOString(),
+    owner: OWNER,
+    repo_root: path.relative(path.resolve(__dirname, '..', '..'), REPOS_ROOT).replace(/\\/g, '/'),
+    machine: os.hostname(),
+    remote: report.remote,
+    machine_fields: MACHINE_FIELDS,
+    human_owned_fields: HUMAN_OWNED_FIELDS,
+    counts: audit.counts,
+    coverage: {
+      local_machine_fields: `${audit.counts.scanned_local_repos}/${audit.counts.scanned_local_repos} 仓（纯本地，不依赖网络）`,
+      human_owned_inventory: `${audit.counts.human_owned_entries} 仓的人工字段清单已登记`,
+      branch_verdicts: audit.counts.branch_check_applicable
+        ? `${audit.counts.branch_verdicts} 条分支判据已运行`
+        : `未运行：${audit.counts.branch_check_skipped_reason}`,
+      note: '远端不可用时本快照仍可用于本机机器字段核对；分支判据缺失不算通过，待远端恢复后重跑 --snapshot 补齐。',
+    },
+    human_field_counts: audit.human_field_counts,
+    branch_verdicts: audit.branch_verdicts,
+    drift: audit.drift,
+    rows: audit.rows,
+    policy: audit.policy,
+  }
+  payload.fingerprint = snapshotFingerprint(payload)
+  fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(payload, null, 2) + '\n', 'utf8')
+  audit.snapshot = { path: path.relative(path.resolve(__dirname, '..', '..'), SNAPSHOT_PATH).replace(/\\/g, '/'), fingerprint: payload.fingerprint }
+}
+
+if (VERIFY_SNAPSHOT) {
+  if (!fs.existsSync(SNAPSHOT_PATH)) {
+    report.snapshot_verify = { ok: false, reason: '快照不存在，先跑 --audit --snapshot' }
+  } else {
+    const saved = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'))
+    const fresh = snapshotFingerprint(saved)
+    const current = audit ? snapshotFingerprint({
+      owner: OWNER,
+      repo_root: saved.repo_root,
+      machine_fields: MACHINE_FIELDS,
+      rows: audit.rows,
+    }) : null
+    report.snapshot_verify = {
+      ok: fresh === saved.fingerprint && (current === null || current === saved.fingerprint),
+      saved_fingerprint: saved.fingerprint,
+      recomputed_from_saved: fresh,
+      recomputed_from_current_scan: current,
+      reason: fresh !== saved.fingerprint ? '快照文件被改动（指纹不符）'
+        : current !== null && current !== saved.fingerprint ? '本机实况与快照不一致（登记被改动，需重扫）' : '一致',
+    }
+  }
+}
+
 if (flag('--json')) {
   console.log(JSON.stringify(report, null, 2))
 } else {
@@ -338,6 +660,25 @@ if (flag('--json')) {
   console.log(`-- 扫描登记：可生成 ${generated.length} 条 / 需人工 ${needsManual.length} 条` +
     (APPLY ? ` / 已写入 ${written} 条 / 跳过已存在 ${skipped} 条` : '（dry-run，加 --apply 写盘）'))
   for (const n of needsManual) console.log(`   需人工 ${n.name}: ${n.reason}`)
+  if (audit) {
+    console.log(`-- 全量扫描登记（跑满本机 ${audit.counts.scanned_local_repos} 仓）--`)
+    console.log(`   已登记 ${audit.counts.registered} / 未登记 ${audit.counts.unregistered} / ` +
+      `审计条目 ${audit.counts.entries_audited} / 含人工字段 ${audit.counts.human_owned_entries}`)
+    console.log(`   人工字段分布: ` + Object.entries(audit.human_field_counts)
+      .sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(', '))
+    console.log(`   入口探测不到（保留人工 launch.command）: ${audit.counts.launch_probe_undetectable}`)
+    console.log(`   机器字段漂移: ${audit.counts.drift}`)
+    for (const d of audit.drift) {
+      console.log(`     [DRIFT] ${d.name}/${d.field}: 登记=${d.declared} 实况=${d.observed} — ${d.reason}`)
+    }
+    for (const v of audit.branch_verdicts) {
+      console.log(`     [分支] ${v.id || v.name} ${v.branch} ⇒ ${v.verdict}${v.reason ? '（' + v.reason + '）' : ''}`)
+    }
+    if (audit.snapshot) console.log(`   快照: ${audit.snapshot.path}  fingerprint=${audit.snapshot.fingerprint.slice(0, 16)}…`)
+  }
+  if (report.snapshot_verify) {
+    console.log(`-- 快照复验: ${report.snapshot_verify.ok ? 'OK' : 'FAIL'} — ${report.snapshot_verify.reason}`)
+  }
 }
 
 if (flag('--draft')) {
@@ -346,5 +687,8 @@ if (flag('--draft')) {
 }
 
 // 默认只报告不判红；--strict 供人工 / CI 显式选用（不接进 run_all_gates.sh）。
-const diffs = localOnly.length + missingRemote.length + remoteUndeclared.length
-process.exit(flag('--strict') && diffs > 0 ? 1 : 0)
+// --audit --strict 把机器字段漂移计入；--verify-snapshot 不一致必须判红（快照核对是判据）。
+const diffs = localOnly.length + missingRemote.length + remoteUndeclared.length +
+  (audit ? audit.drift.length : 0)
+const snapshotBroken = report.snapshot_verify && !report.snapshot_verify.ok
+process.exit((flag('--strict') && diffs > 0) || snapshotBroken ? 1 : 0)
