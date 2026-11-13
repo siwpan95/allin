@@ -1,12 +1,31 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-13（**@`DESKTOP-8RSV60V` 用 `piano` 验证扫描登记 + 新仓正式入库闭环** ——
+>   用户原话「piano 已转移到 repos，需要用 piano 项目验证 allin 的扫描登记」，随后放行「完整推进含建仓推送」。
+>   **发行区实例值（19:40 现场实测，每行单事实）**：
+>   `repos/piano` 由 `<工作区>/local/piano` 迁入并 `git init -b main`（本地首提交 `6f5b124`，20 文件，三件套 README/LICENSE/.gitignore 齐备）。
+>   发行区含 `.git` 目录 **138**。
+>   registry 条目 **146**。
+>   新增登记文件 `platform/registry/projects/piano.yaml`。
+>   远端 Gitee owner `siwpan` 仓数 **139**（带令牌分页实测，含 `piano`；匿名 API 本机 403 限流）。
+>   `--offline --apply`：`generated=[piano] / written=1 / skipped=0`。
+>   `--offline --audit --strict --json`：**138 仓 / 138 已登记 / 0 未登记 / 145 条审计 / drift=0**，exit 0。
+>   `branch_check_applicable=false` ⇒ **SKIP ≠ 通过，不算全绿**。
+>   `check.mjs` exit 0；`build_projects.py --write` WROTE **146**、`--check` clean、二次 `--write` 幂等（`facts.json` 仅 +9 行 piano 项）。
+>   `build_tiering.py --check` 用仓内 `.venv`（PyYAML 6.0.3）clean ⇒ 组合分级未变，不伪造分级变更。
+>   **远端复核三路**：带令牌 API `private=False / public=True / default_branch=main`；匿名仓库页面 HTTP 200；
+>   `git ls-remote` 与本地 HEAD 同为短 SHA `6f5b124` ⇒ IN_SYNC。
+>   **分层纪律**：@`DESKTOP-8RSV60V` 仍不覆盖 `platform/registry/scan-snapshot.json`（承载 @`SIWPAN` 的 138 仓基线）；
+>   `--verify-snapshot` exit 1 属跨机实例差异（saved `fc094c4f…` ≠ current `2c7329aef…`），非登记漂移；全程未跑 `--snapshot`。
+>   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第一百六十六节（验证 / 判据订正 / 建仓推送 / 登记投影 / 边界）。
+>
 > **时点** 2026-11-13（**@`DESKTOP-8RSV60V` 发行区实例值登记 —— 全量扫描登记 + 实例层重建 + 异组合验收** ——
 >   用户原话「在本机实现扫描登记」（此处「本机」= @`DESKTOP-8RSV60V`），随后放行三步走。
 >   **对齐前提**：@`DESKTOP-8RSV60V` 的 `G:\allin` 两轮 `git pull --ff-only` 快进
 >   `617cc0f → 8e36761 → 8cbb10d`，三处 SHA 逐字符相等、0/0、工作树干净；
 >   第二笔拉入 @`SIWPAN` 的第一百六十四节「全量扫描登记 + 快照」能力。
 >   **发行区实例值（2026-11-13 现场实测，每行单事实）**：
->   `G:\repos` 含 `.git` 的目录 **137** 个。
+>   `G:\repos` 含 `.git` 的目录：本时点实测值 137（16:5x 时点快照；现值见本文件最新时点块）。
 >   registry 条目 **145** 份（唯一仓名 **139** + 仓内条目 **1**）。
 >   远端 Gitee owner `siwpan` 仓数 **138**（16:5x 三面对账 `remote=ok`；17:2x 审计时匿名 API 403 限流）。
 >   三面对账 `local_only=0` / `remote_undeclared=0` / `declared_missing_remote=0` / `retired_local=0`。

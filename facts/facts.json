@@ -1165,6 +1165,15 @@
       "source_file": "platform/registry/projects/photovideo.yaml"
     },
     {
+      "project_id": "piano",
+      "name": "web-audio-synth · 单文件合成器 + 四轨音游",
+      "category": "unclassified",
+      "version": "0.0.0",
+      "path": "repos/piano",
+      "publish_repo": "siwpan/piano",
+      "source_file": "platform/registry/projects/piano.yaml"
+    },
+    {
       "project_id": "player",
       "name": "WMP 可视化模拟器",
       "category": "tool",

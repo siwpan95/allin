@@ -132,6 +132,7 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
   `branch` 漂移后 `repos:scan` 把错误值写成新基线、`repos:verify` 随即报 OK ——
   等于把缺陷洗白。内容一致时沿用旧 `generated_at`、不写盘（幂等，工作树零 diff）。
 - 一键命令：`npm run repos:scan`（`--audit --strict --snapshot`）/ `npm run repos:verify`。
+- **归档残留判据（2026-11-13 第一百六十六节）**：`retiredReason()` 只认 README 前 25 行头部声明区的归档声明，或正文中「本仓/本仓库/本项目 + 紧跟归档词」的明确退役句；「某依赖包已归档」「依赖已归档，但本仓仍在维护」不再误判本仓退役。改动后 `--selfcheck` 与真实区 145 条清单零误伤，异组合交能红能绿证据。入口探测保持「不猜命令」纪律，未随本批放宽。
 - 仍**不接 `run_all_gates.sh` 阻断链**：证据采集与门禁控制分离（离线北极星）。
 
 **本机首跑结果**：138 仓全量扫描，抓到 3 处 `publish.branch` 真漂移并订正 ——

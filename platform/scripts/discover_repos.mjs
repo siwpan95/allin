@@ -56,6 +56,10 @@ const VERIFY_SNAPSHOT = flag('--verify-snapshot')
 const SNAPSHOT_PATH = path.join(__dirname, '..', 'registry', 'scan-snapshot.json')
 const API = 'https://gitee.com/api/v5'
 const RETIRED_RX = /已归档|归档声明|不再维护|已退役|retired|archived/i
+// 2026-11-13（piano 验证发现的误判）：README 正文里「某依赖包已归档」不是本仓退役声明。
+// 归档残留只认两类证据：① README 前 25 行头部声明区的独立声明；
+// ② 正文中明确带「本仓/本仓库/本项目」主语的退役句。避免把依赖状态误判成仓库状态。
+const RETIRED_SELF_RX = /(?:本仓|本仓库|本项目|此仓|此仓库|该仓|该仓库|本库)[^。；\n]{0,12}(?:已归档|已退役|不再维护|已不再维护|archived|retired)/i
 
 // 人工语义字段：扫描推不出（项目中文名、人工验收命令、玩法说明、状态…）。
 // 审计只登记「有哪些」，绝不拿扫描值比对或改写 —— 138 份 manual / 93 份 verify
@@ -173,16 +177,22 @@ function declaredRepos(dir) {
 /** 归档残留：远端已无该仓（或离线）+ README / 最后一次提交含归档声明。 */
 function retiredReason(dir, name, remoteAvailable) {
   if (remoteAvailable && remoteHas(name)) return null
-  const readme = ['README.md', 'README.en.md', 'README.zh.md']
+  const texts = ['README.md', 'README.en.md', 'README.zh.md']
     .map((f) => path.join(dir, f))
     .filter((f) => fs.existsSync(f))
-    .map((f) => { try { return fs.readFileSync(f, 'utf8').slice(0, 4000) } catch { return '' } })
-    .join('\n')
+    .map((f) => { try { return fs.readFileSync(f, 'utf8') } catch { return '' } })
   let head = ''
   try {
     head = spawnSync('git', ['-C', dir, 'log', '-1', '--format=%s'], { encoding: 'utf8' }).stdout || ''
   } catch { /* 非 git 仓不算归档残留 */ }
-  if (RETIRED_RX.test(readme)) return 'README 含归档/退役声明'
+  for (const text of texts) {
+    const lines = text.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      if (!RETIRED_RX.test(lines[i])) continue
+      if (i < 25) return `README 头部含归档/退役声明（第 ${i + 1} 行）`
+      if (RETIRED_SELF_RX.test(lines[i])) return `README 正文明确声明本仓归档/退役（第 ${i + 1} 行）`
+    }
+  }
   if (RETIRED_RX.test(head)) return `末次提交含归档声明：${head.trim().slice(0, 80)}`
   return null
 }
