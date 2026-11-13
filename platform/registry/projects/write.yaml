@@ -4,13 +4,18 @@ category: tool
 version: 1.0.0
 path: repos/write
 manual: true
-note: 纯文本创作工作区（多部连载网文的正文/设定/素材），无构建链路，launch 为打开目录
+note: 创作工作区（多部连载网文的正文/设定/素材）＋仓级工具链（tools/：Cordis 编排的审校与校验流水线，入口 npm run check）；launch 为打开目录
 launch:
   command: explorer .
 verify:
-  # 2026-10-26 分类：内容仓（多部连载网文正文/设定/素材），没有可执行入口；
-  # 验证脚本无从谈起，按「非可运行项目」入册，而不是硬凑一个假自检。
-  skip: 内容仓：纯文本创作工作区，无可运行入口
+  # 2026-11-13 订正：2026-10-26 记为「内容仓·无可运行入口」—— 该判断已被事实推翻。
+  # 本仓已建仓根工具链（tools/：Cordis 编排 + Python 检查内核），有真实可运行的自检入口：
+  #   npm run check    3 检查器（模板包自检／文档审校／结构一致性），ERROR 0 为放行线
+  #   npm run doctor   环境自检（解释器/依赖可达性）
+  #   npm run manifest 模板包 SHA256 校验（按 git blob 字节，跨平台可复现）
+  # 前置条件：三方依赖（cordis 等）不入库，需先 npm install；另需本机 Python（内核零三方依赖）。
+  # 本仓此前是全 registry 唯一带 verify.skip 的条目，本轮起改为真实 verify。
+  command: npm run check
 publish:
   # 2026-10-26 建仓并纳入治理：原非 git 仓（README 曾写"local/（本地发布区，盘符随机器） 为未发布区"），
   # 已建仓发布并迁至 repos/（仓库区，盘符随机器）
