@@ -144,7 +144,7 @@
 | [siwpan/weiqi_lab](https://gitee.com/siwpan/weiqi_lab.git) | — | 0 | 公开 | ������������������������������ JS ���� + Markov/CNN ������������MIT�� |
 | [siwpan/weor](https://gitee.com/siwpan/weor.git) | — | 0 | 公开 | weor（自 ai-collection 拆分） |
 | [siwpan/worldbuilder](https://gitee.com/siwpan/worldbuilder.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
-| [siwpan/write](https://gitee.com/siwpan/write.git) | — | 0 | 公开 | 网文创作与素材工作区（多部连载网文正文/设定/素材）｜/repos/write |
+| [siwpan/write](https://gitee.com/siwpan/write.git) | — | 0 | 公开 | 网文创作与素材工作区：多部连载网文的正文/设定/素材 ＋ 通用模板包 ＋ 仓级工具链（审校与校验流水线，npm run check） |
 | [siwpan/write-agent](https://gitee.com/siwpan/write-agent.git) | — | 0 | 公开 | 智能小说创作 Agent：大纲/章节生成、多轮润色、续写改写风格切换、剧情走向调整、基于工作区素材的知识库问答（逐条标注依据）。Python FastAPI + 原生前端，OpenAI 兼容接口，MIT 开源。 |
 | [siwpan/yasuo](https://gitee.com/siwpan/yasuo.git) | — | 0 | 公开 | 文件加密与压缩工具：AES-256-GCM / CBC + zlib / lzma / bz2，GUI 与 CLI 双入口 |
 | [siwpan/yuanbao](https://gitee.com/siwpan/yuanbao.git) | — | 0 | 公开 | 细胞工厂（自 media-collection 拆分） |
