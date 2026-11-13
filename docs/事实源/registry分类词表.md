@@ -87,7 +87,8 @@
 `platform/scripts/build_batch.mjs` 的缺省批量打包范围 ＝ `category == 'tool'`：
 
 - 本轮重分类后该范围由 **47 → 45**，但**实际打包行为不变** ——
-  离开范围的 `write`（`launch.command: explorer .`）与 `dsh-release-archiver`（`bash scripts/run.sh`）
+  离开范围的 `write`（`launch.command: explorer .`）与 `dsh-release-archiver`（`bash dsh-release-archiver/scripts/run.sh`，
+  路径属**该仓自身**，详见 `platform/registry/projects/dsh-release-archiver.yaml` 的 `launch.command`）
   **本就没有 Python 入口**，脚本的 `entryScript()` 判不出入口 ⇒ 从未产出过包。
   （实测 `platform/release/` 目录为空。）
 - 若后续要把 `player` / `media` / `music` 里的 Python GUI 仓也纳入打包，**须先解耦**：
