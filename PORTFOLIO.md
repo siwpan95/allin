@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-13），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-14），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 138 个仓库**（公开 138 · 私有 0）。
+**共 139 个仓库**（公开 139 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -102,6 +102,7 @@
 | [siwpan/peasy-ai](https://gitee.com/siwpan/peasy-ai.git) | — | 0 | 公开 | 零硬编码、配置驱动的通用 AI 对话框架：AI 核心 + 叙事引擎 + TRPG 训练场（PyPI: peasy-ai） |
 | [siwpan/photo](https://gitee.com/siwpan/photo.git) | — | 0 | 公开 | 图片爬虫（自 media-collection 拆分） |
 | [siwpan/photovideo](https://gitee.com/siwpan/photovideo.git) | — | 0 | 公开 | 图片转视频：6 种动效模式（网格拼贴 / 长图滚动 / 淡入淡出 / KenBurns 推镜等） |
+| [siwpan/piano](https://gitee.com/siwpan/piano.git) | — | 0 | 公开 | 单文件 Web Audio 合成器 + 四轨下落式音游（构建期 Python 工具链） |
 | [siwpan/player](https://gitee.com/siwpan/player.git) | — | 0 | 公开 | ??????(/local ???? 1,2026-08-27) |
 | [siwpan/players-unified](https://gitee.com/siwpan/players-unified.git) | — | 0 | 公开 | 本地三个播放器(daily_player/localplayer/PluginPlayer)的整合规划 meta 仓库 |
 | [siwpan/pluginplayer](https://gitee.com/siwpan/pluginplayer.git) | — | 0 | 公开 | 插件版 Windows 播放器：FFmpeg 9 + SDL3 重写内核，C ABI 插件宿主（事件总线 / 帧处理链 / JSON-RPC 控制通道 / 完整性清单） |
