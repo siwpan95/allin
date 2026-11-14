@@ -10,13 +10,18 @@ launch:
 verify:
   # 2026-11-13 订正：2026-10-26 记为「内容仓·无可运行入口」—— 该判断已被事实推翻。
   # 本仓已建仓根工具链（tools/：Cordis 编排 + Python 检查内核），有真实可运行的自检入口：
-  #   npm run check    5 检查器（模板包自检／文档审校／结构一致性／PKM 连接层／三端同步），ERROR 0 为放行线
+  #   npm run check    6 检查器（模板包自检／文档审校／结构一致性／PKM 连接层／三端同步／治理规则可执行化），
+  #                   放行判据＝条件集合（error==0 ∧ requiredCheckers ∧ capabilitiesAvailable），非单一 error==0
   #   npm run doctor   环境自检（解释器/依赖可达性）
   #   npm run manifest 模板包 SHA256 校验（按 git blob 字节，跨平台可复现）
   #   npm run pkm      PKM 索引器（build/search/links/graph/doctor），零三方依赖
   # 2026-11-14 更新：远端新增 PKM 知识连接层（12 笔）＋ 两个检查器（pkm／sync）；
   # 廓者未名夜同日纳入 doc-review 视角（tools/projects/kz.json ＋ cordis.yml id=kz）
   # ⇒ 审校面覆盖 3 个项目（wushuang／huaxi／kz）。
+  # 2026-11-14 二次更新：远端再增 rules 检查器（治理规则可执行化 ＋ 放行判据 ＋ 检索打分）⇒ 检查器 5→6；
+  # 放行判据由单一 error==0 改为**条件集合**（另报降级项，不因网络抖动阻断本地检查）。
+  # 本机同日修：metrics 事实源改用入库资产 PKM/graph.json（原用派生缓存 index.json ⇒ 干净克隆必崩）；
+  # 补配 GitHub 镜像远端（SSH，HTTPS 会卡在凭据上）。
   # 前置条件：三方依赖（cordis 等）不入库，需先 npm install；另需本机 Python（内核零三方依赖）。
   # 本仓此前是全 registry 唯一带 verify.skip 的条目，本轮起改为真实 verify。
   command: npm run check
