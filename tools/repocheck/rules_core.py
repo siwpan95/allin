@@ -67,6 +67,7 @@ DIST_IMPORT_ALIASES: dict[str, frozenset[str]] = {
     "bloodmusic": frozenset({"bloodmusic"}),
     "python_vlc": frozenset({"vlc"}),          # python-vlc → import vlc
     "pyinstaller": frozenset({"PyInstaller"}), # 声明小写，import 保留大小写
+    "pyexecjs": frozenset({"execjs"}),         # PyExecJS → import execjs
 }
 
 #: 依赖声明文件的候选名（出现在项目根即算）。
@@ -219,6 +220,10 @@ def _declared_dependency_bases(ctx: "ProjectContext") -> set[str]:
     PEP 503 规范化：``-`` / ``_`` / ``.`` 视作同一分隔符并转小写，
     故 ``dse-core`` → ``dse_core``。distribution name 与 import name
     不一致的少数情况（如 PyYAML → yaml）仍由全局白名单兜底。
+
+    除标准依赖声明外，还识别 ``# r6-local: name1, name2`` 注释，用于
+    声明运行时经 sys.path 注入、仓内无静态包目录的本地模块（聚合仓子项目、
+    兄弟仓源码注入）。这是逐仓显式声明的真实依赖事实，不是全局放行。
     """
     import re
 
@@ -229,6 +234,23 @@ def _declared_dependency_bases(ctx: "ProjectContext") -> set[str]:
         return re.sub(r"[-_.]+", "_", spec).lower() if spec else ""
 
     specs: list[str] = []
+    # 本地模块声明：运行时经 sys.path 注入、仓内无静态包目录的模块名
+    # （聚合仓子项目、兄弟仓源码注入等）。语法：
+    #   # r6-local: core, save, shared
+    # 这不是全局白名单——只在该仓 requirements 里显式声明时才放行，
+    # 且声明的是「本仓确实 import 并靠注入解析」的真实依赖关系，可审计。
+    for rel in ctx.files:
+        if "/" in rel or not rel.lower().startswith("requirements") or not rel.lower().endswith(".txt"):
+            continue
+        for line in (ctx.text(rel) or "").splitlines():
+            if "#" not in line:
+                continue
+            comment = line.split("#", 1)[1].strip()
+            if comment.lower().startswith("r6-local:"):
+                for tok in comment.split(":", 1)[1].split(","):
+                    tok = tok.strip()
+                    if tok and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", tok):
+                        specs.append(tok)
     text = ctx.text("pyproject.toml")
     if text:
         try:

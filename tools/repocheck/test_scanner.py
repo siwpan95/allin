@@ -302,6 +302,24 @@ def test_libreoffice_uno_is_common_third_party(tmp_path):
     assert st[6] == "pass", f"uno 宿主模块不应误报，实际 {st[6]}"
 
 
+def test_r6_local_module_declaration(tmp_path):
+    """# r6-local: 声明运行时注入的本地模块（仓内无静态包目录）。"""
+    files = good()
+    files["requirements.txt"] = "# r6-local: core, save\n"
+    files["app.py"] = "from core import engine\nimport save\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"r6-local 声明应放行本地模块，实际 {st[6]}"
+
+
+def test_r6_local_module_is_not_global(tmp_path):
+    """反例：未在 r6-local 声明的本地模块仍必须报红。"""
+    files = good()
+    files["requirements.txt"] = "# r6-local: core\n"
+    files["app.py"] = "import orphan_internal_module\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "fail", f"未声明的本地模块应报红，实际 {st[6]}"
+
+
 def test_dist_import_alias_is_not_global_whitelist(tmp_path):
     """反例：没声明 PyMuPDF 时 import fitz 仍必须报红，映射不是全局白名单。"""
     files = good()
