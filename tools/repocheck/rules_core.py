@@ -29,6 +29,9 @@ COMMON_THIRD_PARTY = frozenset({
     "rich", "click", "tqdm", "loguru", "colorama", "redis", "pymongo",
     "jinja2", "werkzeug", "pydantic", "httpx", "playwright", "kivy",
     "tomllib", "typing_extensions", "setuptools", "packaging",
+    # LibreOffice 宿主自带的 UNO 桥（import uno / com.sun.star.*），随
+    # LibreOffice 的 python 分发、不经项目 pip 声明；补 pip 名会引入假依赖。
+    "uno",
     # repocheck 自身的可选依赖：在规则函数体内条件导入，不该被算成断裂风险
     "license_expression", "detect_secrets", "markdown_it", "requirements_parser",
 })
@@ -61,6 +64,9 @@ DIST_IMPORT_ALIASES: dict[str, frozenset[str]] = {
     "audioop_lts": frozenset({"audioop_lts", "audioop"}),
     "moviepy": frozenset({"moviepy"}),
     "dse_core": frozenset({"dse_core"}),
+    "bloodmusic": frozenset({"bloodmusic"}),
+    "python_vlc": frozenset({"vlc"}),          # python-vlc → import vlc
+    "pyinstaller": frozenset({"PyInstaller"}), # 声明小写，import 保留大小写
 }
 
 #: 依赖声明文件的候选名（出现在项目根即算）。

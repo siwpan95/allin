@@ -280,6 +280,28 @@ def test_dist_import_alias_matrix(tmp_path):
         assert st[6] == "pass", f"声明 {dep} 应放行 import {imp}，实际 {st[6]}"
 
 
+def test_dist_import_alias_p12_batch(tmp_path):
+    """P12 实战补充别名：python-vlc→vlc / pyinstaller→PyInstaller(大小写)。"""
+    cases = (
+        ("python-vlc>=3.0", "vlc"),
+        ("pyinstaller>=6.0", "PyInstaller"),
+    )
+    for dep, imp in cases:
+        files = good()
+        files["requirements.txt"] = f"{dep}\n"
+        files["app.py"] = f"import {imp}\n"
+        st = status_map(run_on(tmp_path, files))
+        assert st[6] == "pass", f"声明 {dep} 应放行 import {imp}，实际 {st[6]}"
+
+
+def test_libreoffice_uno_is_common_third_party(tmp_path):
+    """uno 是 LibreOffice 宿主自带模块（非 pip 包），不该报 import 断裂。"""
+    files = good()
+    files["app.py"] = "import uno\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"uno 宿主模块不应误报，实际 {st[6]}"
+
+
 def test_dist_import_alias_is_not_global_whitelist(tmp_path):
     """反例：没声明 PyMuPDF 时 import fitz 仍必须报红，映射不是全局白名单。"""
     files = good()
