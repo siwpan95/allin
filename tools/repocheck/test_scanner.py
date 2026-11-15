@@ -105,6 +105,38 @@ def test_discover_depth(tmp_path):
     assert [Path(p).name for p in scanner.discover_projects(base, max_py_depth=4)] == ["deep"]
 
 
+def test_discover_depth_uses_path_level_not_walk_index(tmp_path):
+    """回归（2026-11-15 实战校验）：os.walk 的 enumerate 序号不是目录层级。
+
+    单链目录 a/b/c 里序号恰好等于层级，旧的 test_discover_depth 因此看不出
+    差别。这里造多个**兄弟**子目录、把 .py 只放在字典序最后一个：真实层级
+    仍为 1，却不该因为「它是第 6 个 yield」而被跳过。
+    """
+    base = tmp_path / "root"
+    proj = base / "many_siblings"
+    for name in ("content", "docs", "exports", "saves", "tests", "tools"):
+        (proj / name).mkdir(parents=True)
+    (proj / "tools" / "cli.py").write_text("x = 1\n", encoding="utf-8")
+
+    assert scanner._is_project(proj, scanner._merge_exclude(None), 2) is True
+    assert [Path(p).name for p in scanner.discover_projects(
+        base, max_py_depth=2)] == ["many_siblings"]
+
+
+def test_discover_depth_not_relaxed_by_sibling_fix(tmp_path):
+    """修复不得放宽深度上限：多个兄弟目录下的第 3 层 .py 仍应被拒绝。"""
+    base = tmp_path / "root"
+    proj = base / "many"
+    for name in ("a", "b", "c", "d", "e", "f"):
+        deep = proj / name / "l1" / "l2"
+        deep.mkdir(parents=True)
+        (deep / "x.py").write_text("x = 1\n", encoding="utf-8")
+
+    assert scanner.discover_projects(base, max_py_depth=2) == []
+    assert [Path(p).name for p in scanner.discover_projects(
+        base, max_py_depth=3)] == ["many"]
+
+
 # ---------------------------------------------------------------------------
 # 规则 1-8：核心
 # ---------------------------------------------------------------------------

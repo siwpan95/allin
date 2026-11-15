@@ -160,7 +160,14 @@ def _is_project(directory: Path, exclude: frozenset[str], max_py_depth: int) -> 
         if (directory / marker).exists():
             return True
 
-    for depth, (_dirpath, dirnames, filenames) in enumerate(os.walk(directory)):
+    # os.walk 按目录**逐个** yield，enumerate 给的是「第几个 yield」而不是
+    # 「第几层」。存在多个兄弟目录时序号会远大于真实层级：旧实现因此把第
+    # max_py_depth+2 个起的子目录一律跳过 .py 检查，使「.py 只放在靠后
+    # 子目录（如 tools/、tests/）」且无 .git / 无 marker 的仓被整个漏检。
+    # 深度必须由路径层级算出（2026-11-15 实战校验发现，见回归用例）。
+    base = Path(directory).resolve()
+    for dirpath, dirnames, filenames in os.walk(base):
+        depth = len(Path(dirpath).relative_to(base).parts)
         dirnames[:] = [d for d in dirnames if d not in exclude]
         if depth > max_py_depth:
             # 超过深度限制：既不下钻，也不检查本层文件
