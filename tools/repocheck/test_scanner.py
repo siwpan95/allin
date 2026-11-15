@@ -197,6 +197,37 @@ def test_broken_import(tmp_path):
     assert "totally_missing_mod_xyz" in details(run)[6]
 
 
+def test_declared_dependency_is_not_broken(tmp_path):
+    """回归（2026-11-15 实战校验）：清单已声明的包不该被静态白名单误报。"""
+    files = good()
+    files["pyproject.toml"] = (
+        '[project]\nname = "demo"\nversion = "1.0.0"\n'
+        'dependencies = ["dse-core>=0.6.0,<0.7"]\n')
+    files["app.py"] = "import dse_core\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"已声明依赖应放行，实际 {st[6]}"
+
+
+def test_undeclared_import_still_fails_with_manifest(tmp_path):
+    """不能因为有了依赖声明就一刀切放过：未声明模块仍必须报红。"""
+    files = good()
+    files["pyproject.toml"] = (
+        '[project]\nname = "demo"\nversion = "1.0.0"\n'
+        'dependencies = ["requests>=2.0"]\n')
+    files["app.py"] = "import totally_missing_mod_xyz\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "fail"
+
+
+def test_requirements_txt_declares_dependency(tmp_path):
+    """requirements.txt 同样是合法事实源；PEP 503 规范化 - → _。"""
+    files = good()
+    files["requirements.txt"] = "some-private-engine==1.2.3\n"
+    files["app.py"] = "import some_private_engine\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"requirements 声明应放行，实际 {st[6]}"
+
+
 def test_package_self_import_is_not_broken(tmp_path):
     """项目根本身是包时（根有 __init__.py），`from <目录名> import x` 不该误报。"""
     files = good()

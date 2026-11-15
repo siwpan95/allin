@@ -155,6 +155,59 @@ def _internal_module_bases(ctx: "ProjectContext") -> set[str]:
     return bases
 
 
+def _declared_dependency_bases(ctx: "ProjectContext") -> set[str]:
+    """项目自己声明的第三方依赖，规范化成可能的 import 顶层名。
+
+    规则 6 原本只认一张全局白名单 ``COMMON_THIRD_PARTY``，于是任何
+    「白名单外、但已在 pyproject.toml / requirements*.txt 里声明」的包
+    都会被误报成 import 断裂。白名单是全局知识，不该为单个项目增补；
+    正确的事实源是项目自己的依赖声明（2026-11-15 实战校验发现）。
+
+    PEP 503 规范化：``-`` / ``_`` / ``.`` 视作同一分隔符并转小写，
+    故 ``dse-core`` → ``dse_core``。distribution name 与 import name
+    不一致的少数情况（如 PyYAML → yaml）仍由全局白名单兜底。
+    """
+    import re
+
+    def normalize(spec: str) -> str:
+        spec = spec.split(";", 1)[0]             # 丢掉环境标记
+        spec = re.sub(r"\[[^\]]*\]", "", spec)   # 丢掉 extras
+        spec = re.split(r"[<>=!~ \t(@]", spec, maxsplit=1)[0].strip()
+        return re.sub(r"[-_.]+", "_", spec).lower() if spec else ""
+
+    specs: list[str] = []
+    text = ctx.text("pyproject.toml")
+    if text:
+        try:
+            import tomllib
+            data = tomllib.loads(text)
+        except Exception:  # noqa: BLE001 - 清单不可读时不猜，交给白名单
+            data = {}
+        project = data.get("project") or {}
+        deps = list(project.get("dependencies") or [])
+        for group in (project.get("optional-dependencies") or {}).values():
+            deps.extend(group or [])
+        poetry = ((data.get("tool") or {}).get("poetry") or {}).get("dependencies") or {}
+        if isinstance(poetry, dict):
+            deps.extend(poetry.keys())
+        specs.extend(str(d) for d in deps)
+
+    for rel in ctx.files:
+        if "/" in rel:
+            continue
+        low = rel.lower()
+        if not (low.startswith("requirements") and low.endswith(".txt")):
+            continue
+        body = ctx.text(rel)
+        if body:
+            for line in body.splitlines():
+                spec = line.split("#", 1)[0].strip()
+                if spec and not spec.startswith("-"):
+                    specs.append(spec)
+
+    return {n for n in (normalize(s) for s in specs) if n}
+
+
 def _scan_imports(ctx: "ProjectContext") -> tuple[dict[str, set[str]], bool]:
     """AST 扫描 .py 的 import，返回 ``({顶层模块: {完整模块名}}, 是否被截断)``。
 
@@ -201,11 +254,13 @@ def _check_broken_imports(ctx: "ProjectContext") -> CheckResult:
         return result.with_degraded(hint) if limited else result
 
     internal = _internal_module_bases(ctx)
+    declared = _declared_dependency_bases(ctx)
     risky = sorted(
         base for base in imported
         if base not in STDLIB_MODULES
         and base not in internal
         and base not in COMMON_THIRD_PARTY
+        and base not in declared
     )
     if not risky:
         result = CheckResult.ok()
