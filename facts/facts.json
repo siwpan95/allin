@@ -1417,6 +1417,15 @@
       "source_file": "platform/registry/projects/sin-virtue-game.yaml"
     },
     {
+      "project_id": "skyrim-lifeline",
+      "name": "霜语 · Frostwords（上古卷轴同人纯文字生存叙事）",
+      "category": "game",
+      "version": "0.1.0",
+      "path": "repos/skyrim-lifeline",
+      "publish_repo": "siwpan/skyrim-lifeline",
+      "source_file": "platform/registry/projects/skyrim-lifeline.yaml"
+    },
+    {
       "project_id": "smile",
       "name": "签到+表情包生成器",
       "category": "tool",

@@ -236,6 +236,79 @@ def test_package_self_import_is_not_broken(tmp_path):
     assert st[6] == "pass"
 
 
+def test_editable_local_dependency_is_not_broken(tmp_path):
+    """`-e ../sibling-repo` 是合法本地依赖声明，import 名不该误报。"""
+    files = good()
+    files["requirements.txt"] = "-e ../world3d\n"
+    files["app.py"] = "import world3d\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"可编辑安装声明应放行，实际 {st[6]}"
+
+
+def test_editable_local_dependency_not_global(tmp_path):
+    """反例：只声明了一个本地仓，另一个未声明的本地名仍报红。"""
+    files = good()
+    files["requirements.txt"] = "-e ../world3d\n"
+    files["app.py"] = "import bloodmusic\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "fail"
+
+
+def test_dist_import_alias_only_when_declared(tmp_path):
+    """2026-11-15 实战校验：声明 pygame-ce 后 import pygame 不该误报。"""
+    files = good()
+    files["pyproject.toml"] = (
+        '[project]\nname = "demo"\nversion = "1.0.0"\n'
+        'dependencies = ["pygame-ce>=2.0"]\n')
+    files["app.py"] = "import pygame\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"已声明 pygame-ce 应放行 import pygame，实际 {st[6]}"
+
+
+def test_dist_import_alias_matrix(tmp_path):
+    """其余精确别名：PyMuPDF→fitz / pycryptodome→Crypto / pillow→PIL。"""
+    cases = (
+        ("PyMuPDF>=1.23", "fitz"),
+        ("pycryptodome>=3.0", "Crypto"),
+        ("pillow>=10.0", "PIL"),
+    )
+    for dep, imp in cases:
+        files = good()
+        files["requirements.txt"] = f"{dep}\n"
+        files["app.py"] = f"import {imp}\n"
+        st = status_map(run_on(tmp_path, files))
+        assert st[6] == "pass", f"声明 {dep} 应放行 import {imp}，实际 {st[6]}"
+
+
+def test_dist_import_alias_is_not_global_whitelist(tmp_path):
+    """反例：没声明 PyMuPDF 时 import fitz 仍必须报红，映射不是全局白名单。"""
+    files = good()
+    files["pyproject.toml"] = (
+        '[project]\nname = "demo"\nversion = "1.0.0"\n'
+        'dependencies = ["requests>=2.0"]\n')
+    files["app.py"] = "import fitz\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "fail", f"未声明别名 distribution 应报红，实际 {st[6]}"
+
+
+def test_namespace_package_dir_is_internal(tmp_path):
+    """PEP 420：一级目录含 .py 但无 __init__.py，仍属项目内部模块。"""
+    files = good()
+    files["engine/core.py"] = "VALUE = 1\n"
+    files["app.py"] = "from engine import core\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"namespace 目录不应误报，实际 {st[6]}"
+
+
+def test_namespace_package_dir_still_missing_import_fails(tmp_path):
+    """反例：namespace 识别不能把根本不存在的模块也放行。"""
+    files = good()
+    files["engine/core.py"] = "VALUE = 1\n"
+    files["app.py"] = "import never_exists_mod_xyz\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "fail"
+
+
 def test_stale_repo_path(tmp_path):
     files = good()
     files["start.bat"] = "cd D:\\allin\\tools\n"

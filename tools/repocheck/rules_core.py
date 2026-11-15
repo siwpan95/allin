@@ -33,6 +33,28 @@ COMMON_THIRD_PARTY = frozenset({
     "license_expression", "detect_secrets", "markdown_it", "requirements_parser",
 })
 
+#: distribution name → 真实 import 名的**精确**映射（2026-11-15 实战校验）。
+#: 只在项目自己声明了该 distribution 时展开，绝不并入 COMMON_THIRD_PARTY：
+#: 全局白名单会让「装了别的包却 import fitz」这种真缺口也判绿。
+#: key 用 PEP 503 规范化形式（-_. 视作 _ 且小写），value 保留 import 名的大小写。
+DIST_IMPORT_ALIASES: dict[str, frozenset[str]] = {
+    "pygame_ce": frozenset({"pygame"}),
+    "pymupdf": frozenset({"fitz"}),
+    "pycryptodome": frozenset({"Crypto", "Cryptodome"}),
+    "pywin32": frozenset({"win32com", "pythoncom", "win32api", "win32con", "com"}),
+    "audioop_lts": frozenset({"audioop"}),
+    "readability_lxml": frozenset({"readability"}),
+    "pyopengl": frozenset({"OpenGL"}),
+    "pyzmq": frozenset({"zmq"}),
+    "pillow": frozenset({"PIL"}),
+    "pyyaml": frozenset({"yaml"}),
+    "opencv_python": frozenset({"cv2"}),
+    "beautifulsoup4": frozenset({"bs4"}),
+    "scikit_learn": frozenset({"sklearn"}),
+    "cx_freeze": frozenset({"cx_Freeze"}),
+    "fonttools": frozenset({"fontTools"}),
+}
+
 #: 依赖声明文件的候选名（出现在项目根即算）。
 DEP_MARKERS = ("requirements.txt", "pyproject.toml", "package.json", "Cargo.toml")
 
@@ -141,10 +163,15 @@ def _check_license(ctx: "ProjectContext") -> CheckResult:
 def _internal_module_bases(ctx: "ProjectContext") -> set[str]:
     """项目内「可被 import 的顶层模块名」。
 
-    统计三类：所有 .py 文件的文件名、含 ``__init__.py`` 的目录名、以及
+    统计四类：所有 .py 文件的文件名、含 ``__init__.py`` 的目录名、
     **项目根本身是包**时（根下有 ``__init__.py``）的目录名 —— 后者对应
     ``my_pkg/__init__.py`` + ``my_pkg/tests/test_x.py`` 里
-    ``from my_pkg import x`` 的常见布局，漏掉会稳定误报。
+    ``from my_pkg import x`` 的常见布局；以及 PEP 420 namespace package
+    —— 一级目录含 .py 但无 ``__init__.py`` 时 Python 3 仍可 import 它。
+
+    namespace 那类是 2026-11-15 实战校验发现的误报源：多个仓的
+    ``core/`` / ``engines/`` / ``rendering/`` 内部目录没有 ``__init__.py``，
+    被稳定误报成 import 断裂。只认一级目录，避免把子目录名误当顶层包。
     """
     bases = {p.rsplit("/", 1)[-1][:-3] for p in ctx.py_files}
     for rel_dir in ctx.dirs:
@@ -152,6 +179,11 @@ def _internal_module_bases(ctx: "ProjectContext") -> set[str]:
             bases.add(rel_dir.rsplit("/", 1)[-1])
     if "__init__.py" in ctx.file_set:
         bases.add(ctx.root.name)
+    for rel_dir in ctx.dirs:
+        if not rel_dir or "/" in rel_dir:
+            continue
+        if any(p.startswith(f"{rel_dir}/") and p.endswith(".py") for p in ctx.py_files):
+            bases.add(rel_dir)
     return bases
 
 
@@ -202,10 +234,27 @@ def _declared_dependency_bases(ctx: "ProjectContext") -> set[str]:
         if body:
             for line in body.splitlines():
                 spec = line.split("#", 1)[0].strip()
-                if spec and not spec.startswith("-"):
-                    specs.append(spec)
+                if not spec:
+                    continue
+                if spec.startswith("-e ") or spec.startswith("--editable "):
+                    # 本地可编辑安装（工作区兄弟仓）：-e ../world3d → world3d。
+                    # 这是合法的依赖声明事实源，不是白名单；未声明的本地仓仍报红。
+                    target = spec.split(None, 1)[1].strip().rstrip("/\\")
+                    leaf = target.replace("\\", "/").rsplit("/", 1)[-1]
+                    if leaf and leaf not in (".", ".."):
+                        specs.append(leaf)
+                    continue
+                if spec.startswith("-"):
+                    continue
+                specs.append(spec)
 
-    return {n for n in (normalize(s) for s in specs) if n}
+    declared = {n for n in (normalize(s) for s in specs) if n}
+    # PEP 503 规范化名与 import 名不一致的包，只在本项目确实声明了该
+    # distribution 时才展开对应 import 名（如 pygame-ce → pygame、
+    # PyMuPDF → fitz）。未声明的包不会因这张表被放行。
+    for dist in tuple(declared):
+        declared.update(DIST_IMPORT_ALIASES.get(dist, ()))
+    return declared
 
 
 def _scan_imports(ctx: "ProjectContext") -> tuple[dict[str, set[str]], bool]:
