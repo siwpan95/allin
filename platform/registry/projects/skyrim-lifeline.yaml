@@ -1,0 +1,28 @@
+id: skyrim-lifeline
+name: 霜语 · Frostwords（上古卷轴同人纯文字生存叙事）
+category: game
+version: 0.1.0
+path: repos/skyrim-lifeline
+status: active
+manual: true
+note: >-
+  2026-11-15 建项：基于 PyPI `dse-core` 0.6.0 的纯 YAML 内容包游戏，
+  Lifeline 式「远端建议 / 主角可能不听 / 等待与回退」机制映射到 dse-core
+  原生五种 mode（normal / battle / dialogue / trade / diary）。
+  109 场景 / 8 结局；四层门禁 = 静态 check + 真实引擎 fuzz 采样 +
+  e2e 回放 + 结局覆盖门；另有 `frostwords export-run` 完整流程导出 CLI
+  与 Windows .cmd 垫片。本仓同时是 allin `tools/repocheck` 的实战校验样本：
+  由它暴露了发现层假阴性（`enumerate(os.walk())` 误当目录层级）与规则 6
+  「已声明依赖被静态白名单误报」两处缺陷，修复均已回写 allin。
+  远端 `gitee.com/siwpan/skyrim-lifeline`（public，MIT）。
+  剧情数值仍属骨架阶段，未做平衡；完整可玩入口是 `dse play`，
+  `dse export-html` 只支持 normal 模式。
+launch:
+  command: python tools/frostwords_cli.py play
+publish:
+  repo: siwpan/skyrim-lifeline
+  branch: master
+verify:
+  # 无头静态门禁（快，默认 12s 超时内可完成）；完整随机 fuzz + e2e 回放
+  # 见 tools/verify.py 与 .github/workflows/verify.yml，不放在组合体检里跑。
+  command: python -m dse_core.cli check --root .
