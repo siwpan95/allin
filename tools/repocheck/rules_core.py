@@ -53,6 +53,14 @@ DIST_IMPORT_ALIASES: dict[str, frozenset[str]] = {
     "scikit_learn": frozenset({"sklearn"}),
     "cx_freeze": frozenset({"cx_Freeze"}),
     "fonttools": frozenset({"fontTools"}),
+    # 2026-11-15 实战校验补充：distribution 名与 import 名不一致的正式发行包。
+    # 3dworld（包名不能以数字开头）、allin-engine（旧名 alloy）、
+    # audioop-lts（py3.13 标准库回移）、moviepy 等，仓里已正确声明发行名。
+    "3dworld": frozenset({"world3d"}),
+    "allin_engine": frozenset({"allin_engine", "alloy"}),
+    "audioop_lts": frozenset({"audioop_lts", "audioop"}),
+    "moviepy": frozenset({"moviepy"}),
+    "dse_core": frozenset({"dse_core"}),
 }
 
 #: 依赖声明文件的候选名（出现在项目根即算）。
@@ -184,6 +192,13 @@ def _internal_module_bases(ctx: "ProjectContext") -> set[str]:
             continue
         if any(p.startswith(f"{rel_dir}/") and p.endswith(".py") for p in ctx.py_files):
             bases.add(rel_dir)
+    # src-layout / lib-layout：src/<pkg>/ 下的 <pkg> 是合法顶层 import 名。
+    # 只认确实含 .py 的包目录，不做全局通用名（core/ui）放行。
+    for rel_dir in ctx.dirs:
+        parts = rel_dir.split("/")
+        if len(parts) >= 2 and parts[0] in ("src", "lib") and parts[1]:
+            if any(p.startswith(f"{rel_dir}/") and p.endswith(".py") for p in ctx.py_files):
+                bases.add(parts[1])
     return bases
 
 

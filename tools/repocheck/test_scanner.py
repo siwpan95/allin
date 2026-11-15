@@ -291,6 +291,25 @@ def test_dist_import_alias_is_not_global_whitelist(tmp_path):
     assert st[6] == "fail", f"未声明别名 distribution 应报红，实际 {st[6]}"
 
 
+def test_src_layout_package_is_internal(tmp_path):
+    """src/<pkg>/ 标准布局：<pkg> 是合法顶层 import，不该误报。"""
+    files = good()
+    files["src/mypkg/__init__.py"] = ""
+    files["src/mypkg/core.py"] = "VALUE = 1\n"
+    files["app.py"] = "from mypkg import core\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"src-layout 包应放行，实际 {st[6]}"
+
+
+def test_digit_prefixed_dist_alias(tmp_path):
+    """distribution 名以数字开头（3dworld）、import 名去掉数字（world3d）。"""
+    files = good()
+    files["requirements.txt"] = "3dworld>=0.5\n"
+    files["app.py"] = "from world3d.engine import app\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[6] == "pass", f"3dworld 声明应放行 import world3d，实际 {st[6]}"
+
+
 def test_namespace_package_dir_is_internal(tmp_path):
     """PEP 420：一级目录含 .py 但无 __init__.py，仍属项目内部模块。"""
     files = good()
