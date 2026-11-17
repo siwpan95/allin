@@ -54,7 +54,7 @@ python tools/gitee_release.py --token "<HEX>" whoami
 #   → [OK] login=siwpan ...
 
 # 1. 打 tag（语义化版本，如 v1.2.0）—— 必须先有 tag 才能建 release
-git tag -a v1.2.0 -m "v1.2.0" && git push -f origin v1.2.0
+git tag -a v1.2.0 -m "v1.2.0" && git push origin v1.2.0
 
 # 2. 建 release（API，见 §2 参数与坑）
 python tools/gitee_release.py --token "<HEX>" \
@@ -70,6 +70,9 @@ python tools/gitee_release.py --token "<HEX>" public
 
 > 旧写法 `--token-file "$HOME/.git-credentials"` 在本机**必失败**（该文件不存在，凭据在 Windows 凭据管理器里）；
 > 台账里的 `****` 一律替换成 `--token "<HEX>"` 或先 `export GITEE_TOKEN=<HEX>`（再省掉 `--token`）。
+> **⚠ 发布点不可改写（调试铁律 70，2026-11-17）**：tag 用普通 `git push origin <tag>` 推送；
+> 发布后发现需修正一律**递增新 tag**（`v1.2.0` → `v1.2.1`）重发，**禁止 `git push -f` 改写已发布的 tag 或删后同名重建** ——
+> 旧 tag 已被用户 clone / 附件 SHA-256 / 发行说明 commit 号锚定，改写会使这些集体失配。本节与 §5 的示例已据此从 `-f` 订正。
 
 **写权限确认用分支探针**（不要 `--dry-run`，本地最新时它根本不走鉴权，会误判）：
 `git branch -f __probe master` → push 该分支 → `push --delete __probe` → `git ls-remote --heads` 确认远端只剩 master。
@@ -142,7 +145,7 @@ export GITEE_TOKEN=<HEX>          # 或不入环境，直接给 --token <HEX>
 
 # —— 发版（幂等，中断可重跑）——
 python tools/gitee_release.py whoami
-git tag -a v1.2.0 -m "v1.2.0" && git push -f origin v1.2.0
+git tag -a v1.2.0 -m "v1.2.0" && git push origin v1.2.0
 python tools/gitee_release.py release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
 python tools/gitee_release.py attach  --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
 

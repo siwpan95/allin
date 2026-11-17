@@ -26,7 +26,8 @@
 
 - **主分支唯一且受保护**：只允许一个 `master`；开发在本地 fork 后提 PR 合入，**禁止强制推送 master**。
   - allin 现状：单人维护，但约定 **master 受保护**——日常提交走 fast-forward / PR，不 `--force` master；
-    仅推 tag 可用 `git push -f origin <tag>`（见发版指南 `tools/gitee_release.py` 的 `release` 子命令，已自动探测分支）。
+    推 tag 用普通 `git push origin <tag>`；**发布点不可改写**——发布后发现需修正一律**递增新 tag**（如 `v1.2.0` → `v1.2.1`）重发，
+    **禁止 `git push -f` 改写已推送的 tag**（调试铁律 70 / SPEC-102）。
 - **每发布版本必须打 tag**：标签含「名 + 描述」（如 `v1.2.0` + 变更摘要）；release 必须基于已推送的 tag。
 - **Fork + PR 合入流程**（多协作者场景）：fork → 分支开发 → PR → 代码审查 → 合入；各社区另有「代码合入要求」细则。
 
