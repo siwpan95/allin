@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -67,29 +70,49 @@ def build(root: Path, out: Path) -> dict:
             "skipped_secret": skipped_secret, "out": str(out)}
 
 
+def _rmtree_writable(root: Path) -> None:
+    """Remove a temp work tree even when git made .git/objects read-only (Windows)."""
+    if not root.exists():
+        return
+
+    def _make_writable(func, path, _exc_info):
+        try:
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        except OSError:
+            pass
+
+    shutil.rmtree(root, onerror=_make_writable)
+    if root.exists():
+        print(f"warning: selftest temp dir could not be removed: {root}", file=sys.stderr)
+
+
 def selftest() -> int:
     root = Path(tempfile.mkdtemp(prefix="allin-graphrag-input-"))
-    for rel, body in [
-        ("docs/规范/SPEC-005.md", "# 文档契约\n"),
-        ("docs/记录/交接/2026-11.md", "# 交接卷\n"),
-        ("docs/事实源/机器分区索引.md", "# 事实源 138 仓\n"),
-        ("docs/事实源/_structured/facts.json", '{"x":1}\n'),
-        ("docs/md/历史/旧.md", "# 冻结\n"),
-        ("docs/规范/有密钥.md", "api_key = EXAMPLE_ONLY_NO_TOKEN\n"),
-    ]:
-        p = root / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(body, encoding="utf-8")
-    subprocess.run(["git", "init", "-q", str(root)], capture_output=True)
-    subprocess.run(["git", "-C", str(root), "add", "-A"], capture_output=True)
-    out = root / "input"
-    r = build(root, out)
-    names = sorted(p.name for p in out.glob("*.txt"))
-    ok = (r["written"] == 2 and r["skipped_secret"] == 1 and r["skipped_excluded"] == 3
-          and not any("事实源" in n or "_structured" in n for n in names))
-    print(json.dumps({**r, "files": names, "selftest": "PASS" if ok else "FAIL"},
-                     ensure_ascii=False, indent=2))
-    return 0 if ok else 1
+    try:
+        for rel, body in [
+            ("docs/规范/SPEC-005.md", "# 文档契约\n"),
+            ("docs/记录/交接/2026-11.md", "# 交接卷\n"),
+            ("docs/事实源/机器分区索引.md", "# 事实源 138 仓\n"),
+            ("docs/事实源/_structured/facts.json", '{"x":1}\n'),
+            ("docs/md/历史/旧.md", "# 冻结\n"),
+            ("docs/规范/有密钥.md", "api_key = EXAMPLE_ONLY_NO_TOKEN\n"),
+        ]:
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(body, encoding="utf-8")
+        subprocess.run(["git", "init", "-q", str(root)], capture_output=True)
+        subprocess.run(["git", "-C", str(root), "add", "-A"], capture_output=True)
+        out = root / "input"
+        r = build(root, out)
+        names = sorted(p.name for p in out.glob("*.txt"))
+        ok = (r["written"] == 2 and r["skipped_secret"] == 1 and r["skipped_excluded"] == 3
+              and not any("事实源" in n or "_structured" in n for n in names))
+        print(json.dumps({**r, "files": names, "selftest": "PASS" if ok else "FAIL"},
+                         ensure_ascii=False, indent=2))
+        return 0 if ok else 1
+    finally:
+        _rmtree_writable(root)
 
 
 def main(argv=None) -> int:

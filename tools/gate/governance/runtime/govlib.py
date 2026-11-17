@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -391,7 +392,25 @@ class Sandbox:
             run_git(["add", "--", relative], self.path)
 
     def close(self) -> None:
-        shutil.rmtree(self.path, ignore_errors=True)
+        # `git init` writes .git/objects as read-only on Windows. A bare
+        # `rmtree(..., ignore_errors=True)` swallowed WinError 5 and leaked one
+        # work tree per self-check (21k+ dirs in %TEMP%). Clear the read-only
+        # bit on the way down, then verify the directory is actually gone.
+        if not self.path.exists():
+            return
+
+        def _make_writable(func, path, _exc_info):
+            try:
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+            except OSError:
+                pass
+
+        shutil.rmtree(self.path, onerror=_make_writable)
+        if self.path.exists():
+            # Never drop a cleanup failure silently: that is how the leak hid.
+            print(f"warning: selfcheck sandbox could not be removed: {self.path}",
+                  file=sys.stderr)
 
     def __enter__(self) -> "Sandbox":
         return self
