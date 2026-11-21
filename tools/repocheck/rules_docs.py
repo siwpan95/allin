@@ -44,12 +44,27 @@ _LICENSE_SIGNATURES: tuple[tuple[str, tuple[str, ...]], ...] = (
                       "neither the name")),
     ("BSD-2-Clause", ("redistribution and use in source and binary forms",
                       "this list of conditions and the following disclaimer")),
+    #: MIT-0 必须排在 MIT 之前：两者开头都是同一段授予条款，区别在于 MIT-0
+    #: 删掉了「须保留版权声明」那段。只看授予条款会把 MIT-0 认成 MIT
+    #: （实测 stay / docx-converter 的 LICENSE 首行就是 "MIT No Attribution"）。
+    ("MIT-0", ("mit no attribution",)),
     ("MIT", ("permission is hereby granted, free of charge",)),
     ("ISC", ("permission to use, copy, modify, and/or distribute this software",)),
     ("Unlicense", ("this is free and unencumbered software released into the public domain",)),
     ("CC0-1.0", ("creative commons legal code", "cc0")),
     ("WTFPL", ("do what the fuck you want to public license",)),
 )
+
+#: 标题型许可 —— 判据必须落在文件**开头的标题区**。
+#: 实测（2026-11-22）pluginplayer：GPL v3 全文第 13 条标题是
+#: 「Use with the GNU Affero General Public License.」，全文子串匹配让 AGPL 的签名
+#: `("gnu affero general public license", "version 3")` 命中，于是任何 GPL-3.0
+#: 的 LICENSE 都会被判成 AGPL-3.0。LGPL 同理（GPL v3 正文也提到 Lesser）。
+_TITLE_SCOPED_LICENSES = ("AGPL-3.0", "LGPL-3.0", "LGPL-2.1", "GPL-3.0", "GPL-2.0",
+                          "Apache-2.0", "MPL-2.0")
+
+#: 标题区长度：够覆盖「标题 + 版本行 + 版权行」，又不至于伸进正文交叉引用。
+_TITLE_SCOPE_CHARS = 500
 
 #: 关键词 → SPDX（用于 README 章节与清单字段这类短文本）。
 #: 顺序敏感：泛化词（mit / isc）必须排在最后，且用词边界避免误配。
@@ -85,10 +100,17 @@ def normalize_spdx(value: str) -> str:
 
 
 def identify_license(text: str) -> str | None:
-    """从 LICENSE 全文识别 SPDX 标识；识别不出返回 ``None``。"""
+    """从 LICENSE 全文识别 SPDX 标识；识别不出返回 ``None``。
+
+    标题型许可（GPL / LGPL / AGPL / Apache / MPL）只在**文件开头**匹配：
+    它们的正文会互相引用（GPL v3 第 13 条提到 Affero、末尾提到 Lesser），
+    全文匹配必然串味。MIT / BSD / ISC 这类签名本就在正文，仍走全文。
+    """
     normalized = " ".join(text.split()).lower()
+    head = normalized[:_TITLE_SCOPE_CHARS]
     for spdx, required in _LICENSE_SIGNATURES:
-        if all(fragment in normalized for fragment in required):
+        scope = head if spdx in _TITLE_SCOPED_LICENSES else normalized
+        if all(fragment in scope for fragment in required):
             return spdx
     return None
 
@@ -404,7 +426,19 @@ def _readme_license_line(ctx: "ProjectContext") -> str | None:
                 continue
         if not re.search(r"许可|licen[cs]e", stripped, re.I):
             continue
-        # 同样排除第三方/vendor 语境（见 _readme_license_section 的同款理由）。
+        # 强信号优先：`许可：X` / `License: X` / `许可 [X](LICENSE)` 是**本仓自身**
+        # 的声明形态，即便类型是 GPL 也不能按「第三方语汇」排除。
+        # 实测 pluginplayer 第 11 行 `> 许可：[GPL-3.0-or-later](LICENSE)（原因见…）`
+        # —— GPL 项目自报 GPL，却被排除词里的 `GPL` 吃掉，反判「缺 README 声明」。
+        strong = re.search(
+            r"(?:许可|licen[cs]e)\s*[:：]?\s*\[?\s*([^\s,，)）\]·|]+)", stripped, re.I)
+        if strong:
+            found = _keyword_spdx(strong.group(1))
+            if found:
+                return found
+        # 排除第三方/vendor 语境（见 _readme_license_section 的同款理由）。
+        # 只在没有上条强信号时才生效 —— 否则「依赖 GPL 库」与「本项目是 GPL」
+        # 无法区分，前者该排除、后者该认。
         if re.search(
             r"第三方|vendor|依赖|兼容|不兼容|以 ?太 ?坊|GPL|AGPL|LGPL|upstream|上游",
             stripped, re.I,
