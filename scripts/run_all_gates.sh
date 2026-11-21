@@ -97,6 +97,10 @@ skips=()
 # 也**不得**把真实失败/真实缺失塞进白名单 —— 那是把 SKIP 当 pass 的反向偷渡。
 BENIGN_SKIP_PATTERNS=(
   'repo_hygiene:skip('
+  # 发布区治理门禁：CI 上无同级 repos/ 是**环境不适用**，与 repo_hygiene 同款。
+  # 2026-11-21 首接时漏登此标签 ⇒ CI 把它当「真实性 SKIP」判 exit 2，
+  # 全量门禁本地绿但 CI 红 —— 与首次接 scan_hardcoded 时踩的是同一坑。
+  'publish_area_gate:skip('
   'smoke:e2e:skip(missing-node-deps'
   'restore-drill:skip(no-powershell'
   'scan_hardcoded:skip(no-powershell'
