@@ -27,4 +27,7 @@ contextBridge.exposeInMainWorld('allin', {
 
   /** 停止项目（走 @allin/core.stopEntry，含终止梯） */
   stop: (projectId) => ipcRenderer.invoke('project:stop', projectId),
+
+  /** 任务日志尾部（读 @allin/core 的 tasks.log，只读） */
+  logs: (projectId, lines = 60) => ipcRenderer.invoke('logs:tail', { projectId, lines }),
 })

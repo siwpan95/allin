@@ -8,8 +8,9 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { BaseWindow, WebContentsView, ipcMain } = require('electron')
 import path from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds } from '@allin/core'
+import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds, DATA_DIR } from '@allin/core'
 import { locateCli, hasInfoSubcommand, runCli, failureSummary } from '@allin/cli-bus'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -162,6 +163,25 @@ export function registerLifecycleIpc() {
       return { ok: r.ok !== false, reason: r.reason, id: projectId }
     } catch (e) {
       return { ok: false, reason: e.code || 'stop-failed', message: e.message }
+    }
+  })
+
+  // 任务日志：只读 @allin/core 写的 tasks.log（JSONL），不在 console 侧另记一份
+  ipcMain.handle('logs:tail', (_evt, { projectId, lines = 60 } = {}) => {
+    const logFile = path.join(DATA_DIR, 'tasks.log')
+    if (!existsSync(logFile)) {
+      return { ok: true, entries: [], missing: true, path: logFile }
+    }
+    try {
+      const entries = readFileSync(logFile, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => { try { return JSON.parse(l) } catch { return null } })
+        .filter(Boolean)
+        .filter((r) => !projectId || r.project === projectId)
+      return { ok: true, entries: entries.slice(-lines), path: logFile }
+    } catch (e) {
+      return { ok: false, message: e.message, path: logFile }
     }
   })
 }

@@ -12,7 +12,8 @@
   "scripts": {
     "start": "electron .",
     "check": "node scripts/check.mjs",
-    "smoke": "electron scripts/smoke.mjs"
+    "smoke": "electron scripts/smoke.mjs",
+    "verify:lifecycle": "node scripts/verify-lifecycle.mjs"
   },
   "dependencies": {
     "@allin/cli-bus": "*",

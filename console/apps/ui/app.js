@@ -116,6 +116,7 @@ function renderDetail() {
       <button class="primary" id="btn-info" ${it.hasInfo ? '' : 'disabled'}>跑 info（JSON）</button>
       <button id="btn-version" ${it.hasInfo ? '' : 'disabled'}>version</button>
       <button id="btn-selfcheck" ${it.hasInfo ? '' : 'disabled'}>selfcheck</button>
+      <button id="btn-logs">日志</button>
     </div>
     <div id="out"></div>
   `
@@ -125,6 +126,46 @@ function renderDetail() {
   $('btn-info')?.addEventListener('click', () => runAndShow('info'))
   $('btn-version')?.addEventListener('click', () => runAndShow('version'))
   $('btn-selfcheck')?.addEventListener('click', () => runAndShow('selfcheck'))
+  $('btn-logs')?.addEventListener('click', () => showLogs())
+}
+
+/** 展示 tasks.log 里该项目的最近记录（只读，来自 @allin/core） */
+async function showLogs() {
+  const it = state.selected
+  if (!it || state.busy) return
+  setStatus(`读取 ${it.id} 的任务日志 …`)
+  try {
+    const r = await window.allin.logs(it.id, 60)
+    const out = $('out')
+    if (!out) return
+    if (!r.ok) {
+      out.innerHTML = `<div class="out-head"><span class="dot bad"></span><span>日志读取失败</span></div>
+        <pre class="out">${esc(r.message || '')}</pre>`
+      return
+    }
+    if (!r.entries.length) {
+      out.innerHTML = `<div class="out-head"><span class="dot"></span><span>暂无日志</span></div>
+        <pre class="out">${esc(r.missing
+          ? `tasks.log 尚未生成（${r.path}）\n启动或停止过项目后才会产生记录。`
+          : '该项目还没有启停记录。')}</pre>`
+      return
+    }
+    const text = r.entries.map((e) => {
+      const t = (e.ts || '').replace('T', ' ').slice(0, 19)
+      const parts = [t, (e.action || '?').padEnd(6), `seq=${e.seq ?? '-'}`]
+      if (e.exit_code !== undefined) parts.push(`exit=${e.exit_code}`)
+      if (e.duration_ms !== undefined) parts.push(`${e.duration_ms}ms`)
+      if (e.error) parts.push(`error=${e.error}`)
+      if (e.command) parts.push(`cmd=${e.command}`)
+      return parts.join('  ')
+    }).join('\n')
+    out.innerHTML = `<div class="out-head"><span class="dot ok"></span>
+      <span>任务日志 · ${r.entries.length} 条 · ${esc(r.path)}</span></div>
+      <pre class="out">${esc(text)}</pre>`
+    setStatus(`${it.id} · 日志 ${r.entries.length} 条`)
+  } catch (e) {
+    setStatus(`日志异常：${e}`)
+  }
 }
 
 function renderOutput({ subcommand, result }) {

@@ -54,16 +54,29 @@ scripts/smoke.mjs       冒烟（Electron 里跑，带截图与断言）
 data/                   运行时产物（gitignored）
 ```
 
-## 状态（P0，2026-11-22）
+## 状态
 
-| 项 | 实测 |
-|---|---|
-| registry 条目 | 148 |
-| 实现 `info` 子命令 | **31**（另有 6 仓有 cli.py 但无 info，属早期形态） |
-| 冒烟 | PASS（列表渲染 / `captcha-demo` 的 info 返回纯 JSON / 截图非空） |
-| 契约审计 | PASS |
+| 阶段 | 内容 | 实测 |
+|---|---|---|
+| P0 | 148 项目列表 / 搜索 / 调 `info` 看 JSON | PASS |
+| P1 | 启停（走 `@allin/core`，共享 pid 表与终止梯）/ 运行态轮询 / 任务日志 | PASS |
 
-**P1 待做**：启停（`launch`/`stop` 走 `@allin/core`）、日志流、Web 服务标签页。
+**接入覆盖**：registry 148 条；实现 `info` 子命令 **31** 个；有 `cli.py` 但无 `info`
+6 个（B0′ 批次待补）。
+
+**P2 待做**：cordis-js 插件宿主（命令 / 面板 / 钩子三个扩展点）。
+**P3 待做**：治理面板（门禁留痕、registry 审计、端口占用、kernel 状态桥接）。
+
+## 验证命令
+
+```bash
+npm run check             # 契约审计：结构 / 安全三件套 / registry / 接入覆盖
+npm run smoke             # 冒烟：渲染 + 调 info + 截图（无副作用，不启动项目）
+npm run verify:lifecycle  # 真启停一次（默认 adventurelog，会真的执行它的 launch 命令）
+```
+
+`verify:lifecycle` 会往 `platform/data/tasks.log` 写记录并真实拉起进程 —— 只在需要
+核对启停链路时手动跑。
 
 ## 许可
 
