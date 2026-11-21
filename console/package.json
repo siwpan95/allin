@@ -1,0 +1,27 @@
+{
+  "name": "allin-console",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "allin-console —— 治理控制台（浏览器形态）。148 项目登记/启停/CLI 总线的桌面操作面；不做 Chromium 内核分支（见 SPEC-205）",
+  "license": "MIT",
+  "main": "apps/shell/main.js",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "check": "node scripts/check.mjs",
+    "smoke": "electron scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@allin/cli-bus": "*",
+    "@allin/core": "file:../platform/packages/core"
+  },
+  "devDependencies": {
+    "electron": "^45.3.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@allin/cli-bus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "allin-console 的 CLI 总线：定位项目 CLI → 调用 → 解析 JSON → 归一化错误（SPEC-205 §C1）",
+  "license": "MIT",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  }
+}

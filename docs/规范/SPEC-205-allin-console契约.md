@@ -29,7 +29,7 @@
 | 前提 | 现状 | 证据 |
 |---|---|---|
 | 项目已机器可读地登记 | 148 份 `platform/registry/projects/*.yaml`，含 path / launch / verify / publish | `platform/scripts/check.mjs` 审计通过 |
-| 项目已有统一 CLI 雏形 | **33 仓**已实现 `info` / `version` / `selfcheck` / `launch` 四子命令 | `repos/*/cli.py` |
+| 项目已有统一 CLI 雏形 | **31 仓**实现了 `info` 子命令且返回纯 JSON（另有 6 仓有 cli.py 但无 info） | `repos/*/cli.py` · `npm run smoke` 可复算 |
 | 平台内核已是 Node | registry 加载 / 子进程启停 / 端口查表 / 探活全在 `@allin/core` | SPEC-203 |
 
 第二条是本次最关键的地基：**CLI 是 console 与项目之间唯一的总线**，不引入第二套 RPC。
@@ -44,7 +44,7 @@ console/                          控制台（本 SPEC 管辖）
 │                                 零 Node 权限，只经 preload 白名单通信
 ├── packages/cli-bus/             CLI 总线：定位项目 CLI → 调用 → 解析 JSON → 归一化错误
 ├── packages/cordis-js/           JS 版 cordis 插件宿主（重写，见 §C2）
-├── scripts/check.mjs             契约审计（本节所有不变量 → exit code）
+├── console/scripts/check.mjs     契约审计（本节所有不变量 → exit code）
 └── data/                         运行时状态（gitignored）
 
 复用（不复制）：
@@ -78,20 +78,28 @@ console/                          控制台（本 SPEC 管辖）
 
 | 子命令 | 语义 | 输出 | 退出码 |
 |---|---|---|---|
-| `info --json` | 项目自述：id / 版本 / 入口 / 是否 Web / 端口 / 分类 | **纯 JSON 到 stdout** | 0 |
+| `info` | 项目自述：name / version / entry / selfcheck / requirements / root | **纯 JSON 到 stdout**（无参数，默认即 JSON） | 0 |
 | `version` | 打印版本号（单行） | 文本 | 0 |
 | `selfcheck` | 无头自检（不弹窗、不需显示器） | 文本 + 可选 `--json` | 0=通过 / 1=失败 |
 | `launch` | 启动项目入口；`--port N` 可指定端口 | 启动即返回或前台运行 | 0 |
 | `stop`（可选） | 优雅停止 | 文本 | 0 |
 | `logs --tail N`（可选） | 输出最近 N 行日志 | 文本/JSONL | 0 |
 
+> **2026-11-22 P0 实测订正**：初版本文把 `info` 写成 `info --json`，是**凭空发明参数**——
+> 既有 31 个项目的 `info` 本来就默认输出 JSON，加 `--json` 会直接触发 argparse
+> `unrecognized arguments`（实测 shikonghuaban / captcha-demo）。契约必须贴着既成事实，
+> 不能反过来要求 31 个仓改接口。console 侧已改为「`info` 无参数 + `expectJson` 显式选项」。
+
 ### 3.3 输出与退出码纪律（可机械判定的部分）
 
-1. **`info --json` 的 stdout 必须是可 `JSON.parse` 的单个对象**，不得夹带 banner、进度、颜色码。
+1. **`info` 的 stdout 必须是可 `JSON.parse` 的单个对象**，不得夹带 banner、进度、颜色码。
 2. 人类可读信息一律走 **stderr**。
 3. 退出码：`0` 成功 / `1` 业务失败 / `2` 用法错误。**禁止用其他码表示第三类语义**。
 4. 所有子命令必须能在 `--help` 之外**无交互**运行（console 不可能应答 stdin）。
 5. `selfcheck` 必须**不依赖显示器**（无头可跑）—— 否则无法在 CI 与 console 里使用。
+6. **"有 cli.py" ≠ "已接入"**：console 只把实现了 `info` 子命令的项目标为可调用。
+   实测 bloodmusic（`batch/preview/list/gui/pool`）与 audio-pipeline（`doctor/run/stage-*`）
+   都有 cli.py 却无 `info`，属早期 CLI 形态，需在 B 批次补 `info` 后才算接入。
 
 ### 3.4 与 registry 的关系
 
@@ -116,10 +124,14 @@ verify:
 
 | 批次 | 范围 | 判据 |
 |---|---|---|
-| B0（已完成） | 33 仓 | 已有 `cli.py` 四子命令 |
+| B0（已完成） | **31 仓**（2026-11-22 实测） | 有 `cli.py` 且实现 `info` 子命令，`info` 返回纯 JSON |
+| B0′（新增） | **6 仓** | 有 `cli.py` 但无 `info`（bloodmusic / audio-pipeline 等早期形态）→ 补 `info` 子命令 |
 | B1 | 11 个 Web 服务（`ports.yaml` active） | console 首批真正「能开标签页」的对象 |
 | B2 | 高频项目（`portfolio` 里有截图的） | 视觉演示价值高 |
 | B3 | 其余 CLI/GUI 项目 | 只做「启停 + 日志」，不做页面 |
+
+> 覆盖度实测口径：148 个登记项目中 **31 个有 `info`**（20.9%）。用 `npm run smoke` 可复算，
+> 判据是「`info` 的 stdout 以 `{` 开头」，不是「cli.py 存在」——后者会虚高 6 个。
 
 ## 4. §C2 cordis-js 插件契约
 
@@ -232,3 +244,12 @@ P0 结束即可验证「这条路成不成」；**P0 不通过则不进入 P1**�
 - 同日核实：148 个登记项目中 33 个已有 `cli.py` 统一入口，11 个有活跃 Web 端口。
 - 定位纠偏记账：初版讨论曾按「自研浏览器」框定，全哥 2026-11-22 明确「不是奔着浏览器去，repos 管理治理才是大头」，
   据此把产品定位收为**治理控制台**，并写入 §0 的反向判据。
+- 2026-11-22 P0 落地并实测纠偏三处（都是「写的时候想当然」）：
+  1. `info --json` → **`info`**：既有 31 仓的 `info` 默认输出 JSON，不接受 `--json`；本 SPEC 初版凭空发明了参数。
+  2. 「有 cli.py」→ **「有 info 子命令」**：bloodmusic / audio-pipeline 等 6 仓有 cli.py 但接口不同，
+     只按文件存在统计会把覆盖率虚报 6 个（37 vs 真实 31）。
+  3. 冒烟的 JSON 判据从「包含 `{`」收紧为「**以 `{` 开头**」：宽松判据会把「stdout 空、信息全在 stderr」
+     的失败项目误判为合规。
+- 2026-11-22 环境故障记账：本机宿主进程注入 `ELECTRON_RUN_AS_NODE=1`，导致 `electron.exe` 以纯 Node
+  模式启动（`--version` 输出 `v24.22.3` 而非 `v45.4.1`，GUI 静默退出）。启动 console 前必须清除该变量；
+  已写入 `console/README.md` 的「本机注意」。

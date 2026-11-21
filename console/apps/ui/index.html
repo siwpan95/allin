@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>allin console</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◈</span>
+      <span class="title">allin console</span>
+      <span class="tag">治理控制台</span>
+    </div>
+    <input id="search" class="search" type="search" placeholder="搜索 id / 名称 / 分类…" autocomplete="off">
+    <div class="stats" id="stats">加载中…</div>
+  </header>
+
+  <main class="layout">
+    <nav class="sidebar" id="list" aria-label="项目列表"></nav>
+
+    <section class="detail" id="detail">
+      <div class="empty">
+        <p class="empty-title">从左侧选一个项目</p>
+        <p class="empty-hint">P0 只做只读：列出登记项目 + 调 <code>cli.py info --json</code>。启停与日志在 P1。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status">就绪</span>
+    <span class="spacer"></span>
+    <span id="registry-note"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
