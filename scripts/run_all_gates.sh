@@ -363,6 +363,38 @@ run "$PY" tools/gate/check_ps1_bom.py
 #    明细台账见同目录 hygiene_debt_2026-11-01.json —— 刷新基线不等于债务消失，台账才是待办清单。
 #    发布区缺席时由 _run_repo_hygiene 降级为 skip（见其注释），避免把整批门禁拖红。
 _run_repo_hygiene
+# ③-b 发布区治理门禁（2026-11-21）：repocheck 的 30 条规则覆盖被管仓，
+#     与本仓 20 道门禁互补 —— 此前门禁只审 allin 自身（138 个被管仓零覆盖）。
+#     待裁决项记在 tools/gate/audit/publish_area_exemptions.csv，不冒充通过：
+#     汇总里单列 pending，全哥在场可用 --strict-pending 逐项裁决。
+#     发布区缺席时同样降级为 skip（与 _run_repo_hygiene 同款）。
+_run_publish_area_gate() {
+  local repos_root="${PROJECTS_ROOT:-}"
+  if [ -z "$repos_root" ] && [ -d "$ROOT/repos" ]; then
+    repos_root="$ROOT/repos"
+  fi
+  if [ -z "$repos_root" ] && [ -d "${ROOT%/*}/repos" ]; then
+    repos_root="${ROOT%/*}/repos"
+  fi
+  if [ -z "$repos_root" ] || [ ! -d "$repos_root" ]; then
+    echo "==> $PY tools/publish_area_gate.py (no-publish-area)"
+    note_skip "publish_area_gate:skip(no-publish-area)" \
+      "未检测到发布区（无同级 repos/ 且未设 \$PROJECTS_ROOT）：无被管仓可检"
+    return 0
+  fi
+  local has_repo=0
+  for d in "$repos_root"/*/; do
+    [ -d "${d}.git" ] && { has_repo=1; break; }
+  done
+  if [ "$has_repo" -eq 0 ]; then
+    echo "==> $PY tools/publish_area_gate.py (empty-publish-area)"
+    note_skip "publish_area_gate:skip(empty-publish-area)" \
+      "发布区下没有 git 仓：无被管仓可检"
+    return 0
+  fi
+  run "$PY" tools/publish_area_gate.py --repos-root "$repos_root"
+}
+_run_publish_area_gate
 # ④ 门禁双落点漂移自检：本工具把"两份必须一致"变成退出码（F1 收口动作）。
 #    实跑比对依赖外部工作副本（/tools/gate），CI 上不存在 ⇒ SKIPPED（不是通过）；
 #    故 CI 跑 --selfcheck 做工具自身逻辑回归（EOL 归一化 / 真漂移判红 / 缺对端 SKIP / 同目录守卫）。

@@ -370,7 +370,21 @@ def _check_broken_imports(ctx: "ProjectContext") -> CheckResult:
 # ---------------------------------------------------------------------------
 
 def _check_stale_paths(ctx: "ProjectContext") -> CheckResult:
-    """规则 7：代码/配置/文档里是否残留旧仓库根路径。"""
+    """规则 7：代码/配置/文档里是否残留旧仓库根路径。
+
+    2026-11-21 修订：原实现只要**字面出现旧仓根**就报红，连下面这类
+    **正确的治理留痕**也报：
+
+        # 原 <旧仓根> 已失效；现由环境变量 FAU_JSONL 指定
+        > （如「从 `<旧仓根>` 下多项目提炼」）—— 那是上游文本
+
+    这些是在**记录**去符盘这件事、警告后来者别照抄，抹掉反而丢治理痕迹。
+    新版按行判定：只有「看起来是可执行的死路径」才算残留；
+    说明性语境（含「已失效/原/历史/上游文本/去符盘」等标记）跳过。
+
+    与 ``tools/publish_area_stale_paths.py`` 的口径同源（同一套语境标记），
+    避免「清洗工具说已清干净、门禁还在报」。
+    """
     candidates = [p for p in ctx.files if p.endswith(STALE_SUFFIXES)]
     # 源码与脚本最可能夹带路径，排在文档前面（后面的会被上限截断）
     candidates.sort(key=lambda p: (0 if p.endswith(_STALE_CODE_SUFFIXES) else 1, p))
@@ -384,12 +398,39 @@ def _check_stale_paths(ctx: "ProjectContext") -> CheckResult:
         if text is None:
             continue
         scanned += 1
-        if _LEGACY_ROOT in text or _LEGACY_ROOT_WIN in text:
+        if _has_actionable_stale_path(text):
             hits.append(path)
 
     if not hits:
         return CheckResult.ok()
     return CheckResult.bad(", ".join(hits))
+
+
+#: 说明性语境标记 —— 命中即视为「治理留痕」而非「可执行死路径」。
+#: 与 tools/publish_area_stale_paths.py 同源。
+_STALE_EXPLANATION_MARKERS = (
+    "已失效", "失效", "不再是", "上游文本", "不要这样", "禁止", "反面教材",
+    "原 ", "旧 ", "历史", "曾", "已迁移", "已改为", "改由", "去符盘", "本地化",
+    "个项目中提炼", "项目中提炼", "下 100", "中提炼",
+    # 本工具刚写入的去符盘记账注释（含旧路径字面量，但已处理过）
+    "原 `cd <旧仓根> &&", "原路径指向旧仓根", "已改为仓内相对路径",
+)
+_STALE_COMMENT_PREFIXES = ("#", "//", "*", ">", "|", ";")
+
+
+def _has_actionable_stale_path(text: str) -> bool:
+    """文本里是否有「照着做会失败」的旧路径（而非说明性留痕）。"""
+    for line in text.splitlines():
+        if _LEGACY_ROOT not in line and _LEGACY_ROOT_WIN not in line:
+            continue
+        stripped = line.strip()
+        low = stripped.lower()
+        if any(marker in low for marker in _STALE_EXPLANATION_MARKERS):
+            continue
+        if stripped.startswith(_STALE_COMMENT_PREFIXES):
+            continue
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------

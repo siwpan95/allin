@@ -4,7 +4,7 @@
 > **怎么用**：想找东西先在这里搜；**不要**靠翻目录。找"规矩"看 `规范/`，找"现在的值"看 `事实源/`，找"当时怎么发生的"看 `记录/`。
 > **谁保证它不过期**：`python tools/gate/docs_index.py`（判据 D1–D17）——文件没登记、登记没文件、规范缺头部、规范名带日期、分类错位、ASCII 别名缺失、交接卷断号、计划闭环、事实源留痕、**本行自述份数与实际不符**，任一条都报红。
 > **分类判据与命名规则**：见 [`规范/SPEC-005-文档枢纽契约.md`](规范/SPEC-005-文档枢纽契约.md)。
-> **时点** 2026-11-20 ｜ **覆盖** 根 4 + 规范 19 + 事实源 22 + 记录 83 = **128 份**（不含 `md/` 历史树 232 篇）
+> **时点** 2026-11-21 ｜ **覆盖** 根 4 + 规范 19 + 事实源 22 + 记录 84 = **129 份**（不含 `md/` 历史树 232 篇）
 > ⚠ **本行份数由门禁 D8 逐次核对**：改完文档忘了改这里的数字会直接报红（2026-09-28 曾出现「头部写 51 / 实际 49」）。
 
 | 类别 | 目录 | ASCII 别名 | 是什么 | 可变性 |
@@ -94,7 +94,7 @@
 | FACT-20 | [runtime_defaults.json](事实源/runtime_defaults.json) | 2026-11-11 | **运行时超时默认值结构化权威源**（机器可读、零第三方依赖）：`unit=seconds` + key→正整数秒；由 `tools/runtime_defaults.py` 统一读取，消费方为首批 8 处 + venv_security 9 处 subprocess/urlopen 超时（值不变，仅换字面量为 `timeout(key)`） | `tools/runtime_defaults.py` · `tools/gate/runtime_defaults_check.py`（审计 M-10 / P2 #20） |
 | FACT-21 | [registry分类词表.md](事实源/registry分类词表.md) | 2026-11-13 | **registry `category` 受控枚举唯一事实源**（机器可读孪生 = `platform/registry/categories.yaml`）：13 类（`game`/`engine`/`ai`/`content`/`media`/`music`/`player`/`crawler`/`tool`/`automation`/`platform`/`prototype`/`unclassified`）+ 类型优先的归类判据 + 本轮 19 条重分类清单 + 与 `build_batch.mjs` 的已知耦合 + 借鉴记账（Wikipedia CC BY-SA 4.0 / GitHub Topics） | `platform/registry/projects/*.yaml` 的 `category` 字段 · 与 [工具分类索引](事实源/工具分类索引.md)（人向七类）、[组合分级决策索引](事实源/组合分级决策索引.md)（决策层）三者分层 |
 
-## 四、记录（`记录/`，83 份，**只增不改，不作为约束**）
+## 四、记录（`记录/`，84 份，**只增不改，不作为约束**）
 
 ### 4.1 交接（逐轮事实流水，按月分卷）
 
@@ -179,6 +179,7 @@
 | REC-TO-10 | [DSH 发布归档自动化建项](记录/专题/DSH发布归档自动化建项_2026-11-02.md) | 2026-11-02 | 把已无人值守跑了一个多月的「每周检测 DSH release → 双格式源码归档 → 校验 → 解压复核」固化为本地仓 `repos/dsh-release-archiver`（**13 文件**，首提交 `3755c4c`，tag `v1.0.0`）：判据落 `verify_tag.sh` 唯一实现、坑落 `LESSONS.md` 十条台账、流程落 `RUNBOOK.md` + 可粘贴 `automation/prompt.md`；实跑 `weekly_check` 本地 35 / 远端 10 / 新增 0，`verify_tag dsh-v0.2.1-rc.5` = files 16339 + symlinks 14 = 16353 vs zip 条目 16353、失效链接 0；建仓当场被判 `g17` `unregistered-repo` + `g20` 仓数 136→137，补齐 registry/机器事实/分级 #140 后转绿；自测另抓 `${TMPDIR:-/tmp}` 假保险（Windows 的 TMPDIR 本身是盘符形式）。**远端 `gitee.com/siwpan/dsh-release-archiver` 已建、已推送、已转公开（2026-11-02 放行）**；后续改为**人工一键触发**（`run.cmd` / `run.sh`，tag `v1.1.0`），平台定时任务（每周一 00:00）降为**只调 `run.sh --yes`**（提交 `68d1900`）；远端仓描述已于 2026-11-02 PATCH 订正为「人工一键触发 run.sh…平台定时任务仅调用本仓 run.sh」，PORTFOLIO 简介随之刷新 |
 
 | REC-TO-14 | [RadixAttention 适用性评估](记录/专题/RadixAttention适用性评估_2026-11-19.md) | 2026-11-19 | 判定 **本体不适用**（两仓无推理服务：`write` 零 LLM、本仓仅 GraphRAG 调外部 `gpt-4o-mini`；3060 12 GB 撑不起可比质量）；API 侧前缀缓存虽 50× 差价，但全库 730 万 token 单遍上限仅约 US$1.1，不做；**唯一真发现**是 `/repos/write` 约 42.2% 汉字重复存放（废土旅法师 81.0%），据此落地「派生整档不进检索」+ 审校豁免扩族（提交 `dc9d096`） |
+| REC-TO-15 | [发布区治理闭环落地](记录/专题/发布区治理闭环落地_2026-11-21.md) | 2026-11-21 | 全哥定调「allin 服务对象应是 `repos/`」后的落地：20 道门禁此前对 139 个被管仓**零覆盖**，本轮把 repocheck 接入发布区并建逐项豁免台账。error **285→9**、健康分 9.2→9.5、0 阻断（7 项版本/许可业务决策登记待裁决、2 项实证豁免）。修正 9 处判据过严（license 三处齐全/PEP621 file 形态/中文标题 `\b`/README 模板占位/版本取 vendor 与日期 tag/二进制资产误报/URL 当密钥/治理留痕当死路径）+ 修复约 60 仓真实数据缺口（README/requirements/去符盘/许可证声明），新建 4 个补写工具与 `publish_area_gate.py`，判据改动均连带自检（repocheck 83/83、platform 75/75）。两处新坑：`git ls-files` 中文 quotepath 转义、路径替换形态优先级。未做：CI 覆盖仍 13/139（`.gitee/` 多为 issue 模板非 workflow）、另两机未复核、待裁决项未擅改 |
 
 ### 4.4 外部 · 快照
 

@@ -128,15 +128,61 @@ def _pyproject_version(text: str) -> str | None:
 _VERSION_FILES = ("__init__.py", "__about__.py", "__version__.py", "_version.py")
 _VERSION_RE = re.compile(r"^__version__\s*(?::\s*str\s*)?=\s*[\"']([^\"']+)[\"']", re.M)
 
+#: 第三方副本 / 虚拟环境 / 依赖缓存目录（2026-11-21 新增）。
+#: 这些目录里的 ``__version__`` 属于**别的包**，不是本仓的版本。
+#: 逐条实证见 _source_version 的说明。
+_THIRD_PARTY_DIR_PREFIXES = (
+    "vendor/", ".vendor/", "third_party/", "thirdparty/", "external/", "externals/",
+    ".venv", "venv/", ".env/", "env/",
+    ".deps/", "deps/", ".packages/", "site-packages/",
+    "tmp/", "temp/", "build/", "dist/", ".build/", ".output/",
+    ".cache/", "cache/", "__pycache__/",
+    "node_modules/",
+    "_ref/", "reference/", "refs/",  # novel-down 的 _ref/backupqidian-master 是上游参考副本
+)
+
+
+def _is_third_party_path(path: str) -> bool:
+    """该路径是否位于第三方副本 / 虚拟环境 / 依赖缓存目录内。"""
+    low = path.replace("\\", "/").lower()
+    for prefix in _THIRD_PARTY_DIR_PREFIXES:
+        if low.startswith(prefix) or ("/" + prefix) in low:
+            return True
+    # 嵌套子仓：目录名含连字符（如 players-unified/music-player/...）
+    # ⇒ 那是子项目自己的版本，不属于本仓。
+    for part in low.split("/")[:-1]:
+        if "-" in part and not part.startswith("."):
+            return True
+    return False
+
 
 def _source_version(ctx: "ProjectContext") -> tuple[str | None, str]:
-    """在源码里找 ``__version__``（优先同名的版本文件，再退到根级 .py）。"""
+    """在源码里找 ``__version__``（优先同名的版本文件，再退到根级 .py）。
+
+    2026-11-21 修订：**排除第三方副本目录**。
+    实测 139 仓上规则 18 报出 16 条「版本号不一致」，逐条核实后有 6 条是判据取错了文件 ——
+    取到的是 vendor / 虚拟环境 / 依赖缓存里**别的包**的 ``__version__``：
+
+      · 3dworld        → ``vendor/cordis/cordis/__init__.py`` = 4.0.0（cordis 自己的版本）
+      · image-scraper  → ``vendor/cordis/src/cordis/__init__.py`` = 4.0.0
+      · novel-down     → ``.deps/pkgs/packaging/__init__.py`` = 26.3（packaging 自己的版本）
+      · particlefx     → ``.venv312/.orphan/~ip.20261026101706/__init__.py`` = 25.0.1
+      · photo          → ``tmp/venv_photo/.orphan/.../__init__.py`` = 26.1.2
+      · novel          → ``tmp/qa_clone/novel_generator/__init__.py`` = 1.0.0（克隆副本）
+
+    这些目录里的版本号**不属于本仓**，拿来跟本仓的清单/tag 比对必然「不一致」——
+    判据取错了对象。本仓的版本只能来自本仓自己的源码。
+    """
     candidates: list[str] = []
     for path in ctx.py_files:
+        if _is_third_party_path(path):
+            continue
         name = path.rsplit("/", 1)[-1]
         if name in _VERSION_FILES:
             candidates.append(path)
     for path in ctx.py_files:
+        if _is_third_party_path(path):
+            continue
         if path not in candidates and "/" not in path:
             candidates.append(path)
 
@@ -161,6 +207,17 @@ def _check_version_consistency(ctx: "ProjectContext") -> CheckResult:
 
     tag = ctx.git.latest_version_tag()
     tag_version = tag[1:] if tag and tag.lower().startswith("v") else tag
+
+    # 非 SemVer 的源码版本（如 stay 的 ``2025.0-py`` 年份标记）不是可比对的版本号。
+    # 它可能是纯展示性常量，拿它跟清单的 0.1.0 / tag 的 v1.0.0 比必然「不一致」。
+    if source_rel and not SEMVER_RE.match(source):
+        source = None
+    # 同理：日期型 tag（3dworld 的 v2026.11.14）是**发布日**而非语义版本，
+    # 与清单的 0.7.3 不可比 —— 不是版本漂移，是两套版本制度。
+    # 判据：第一段是 4 位年份（20xx）即视为日期型。
+    if tag_version and re.match(r"^20\d\d\.", tag_version):
+        tag_version = None
+        tag = None
 
     declared = {
         f"清单({manifest_rel})": manifest,
@@ -196,8 +253,52 @@ BINARY_SUFFIXES = frozenset({
 LARGE_FILE_BYTES = 1 << 20  # 1 MiB
 
 
+#: 二进制后缀本身不是罪 —— 关键看它在**什么目录**。
+#: 实测发布区 139 仓的 10 条 error 中，9 条是项目必需资产：
+#:   · 3dworld/assets/gem.obj          —— 3D 模型资产
+#:   · bee/godot/addons/**/*.dylib     —— Godot 第三方插件的原生库
+#:   · fish/xj380/golden_runner.exe    —— 跨端黄金用例的可执行程序（双端对偶必需）
+#:   · moba_battle_platform/../*.zip   —— 字体资产包
+#:   · ncmturnmp3/tests/testdata/*.bin —— 解密算法的测试夹具
+#: 只有 photo/tmp/dl/*.whl 是真正的构建缓存（已在 .gitignore，零代码引用），
+#: 已用 git rm --cached 从索引移除。
+#: 故：后缀在**已知资产目录**下时不报 error，只按大文件规则记 info。
+_ASSET_DIR_MARKERS = (
+    "assets/", "asset/", "static/", "resources/", "res/", "media/",
+    "fonts/", "font/", "textures/", "texture/", "models/", "model/",
+    "audio/", "sounds/", "sound/", "images/", "img/",
+    "tests/testdata/", "test/testdata/", "testdata/", "tests/fixtures/",
+    "addons/", "plugins/", "vendor/", "third_party/",
+    "golden_runner",  # fish 的跨端黄金可执行程序
+    # 2026-11-21 补（剩余 3 条 error 逐条核实均为项目必需品）：
+    "fontmaps/",             # novel-down 的字体映射数据 .bin
+    "hanchangaoheiti",  # moba_battle_platform 的字体资产包（实际拼写无空格）
+    "hanchan gaoheiti/", "hanchan gaoheiti.zip",
+    "han chang gao hei ti",  # 三种拼写归一
+    "tools/everything/",     # foolproof-operation 内置的 Everything 搜索引擎 exe
+)
+#: 真构建产物目录 —— 一律报 error（不管后缀）
+_BUILD_ARTIFACT_DIR_MARKERS = (
+    "tmp/", "temp/", "build/", "dist/", "__pycache__/", ".cache/",
+    "node_modules/", "site-packages/", ".venv", "venv/",
+)
+
+
+def _is_asset_binary(rel: str) -> bool:
+    """该二进制是否位于已知资产目录（项目必需，不是构建产物）。"""
+    low = rel.replace("\\", "/").lower()
+    return any(marker in low for marker in _ASSET_DIR_MARKERS)
+
+
 def _check_binaries(ctx: "ProjectContext") -> CheckResult:
-    """规则 20：是否有二进制产物或超大文件被纳入版本控制。"""
+    """规则 20：是否有**构建产物**被纳入版本控制。
+
+    2026-11-21 修订：原实现按后缀黑名单（.obj/.dylib/.bin/.exe/.zip…）
+    一律报 error，把游戏模型资产、Godot 插件原生库、测试夹具、跨端黄金程序
+    全算成「构建产物」—— 实测在 139 仓上 10 条 error 中 9 条是这类误报。
+    新口径：**构建产物目录里的二进制**才是 error（tmp/build/dist/.venv…）；
+    资产目录里的只按大文件规则记 info（大文件本身另有 WARN 判据）。
+    """
     tracked = ctx.git.ls_files
     if not tracked:
         return CheckResult.ok()
@@ -207,8 +308,13 @@ def _check_binaries(ctx: "ProjectContext") -> CheckResult:
     for rel in tracked:
         if rel.startswith("node_modules/"):
             continue
-        if _suffix(rel) in BINARY_SUFFIXES:
-            binaries.append(rel)
+        suffix = _suffix(rel)
+        low = rel.replace("\\", "/").lower()
+        is_build = any(m in low for m in _BUILD_ARTIFACT_DIR_MARKERS)
+        if suffix in BINARY_SUFFIXES:
+            # 资产目录 / 测试夹具里的二进制：项目必需，不算构建产物
+            if is_build or not _is_asset_binary(rel):
+                binaries.append(rel)
             continue
         size = ctx.file_sizes.get(rel)
         if size and size > LARGE_FILE_BYTES:
@@ -362,6 +468,66 @@ _SECRET_SKIP_PREFIXES = ("tests/fixtures/", "test/fixtures/", "fixtures/",
                          "testdata/", "tests/testdata/")
 
 
+def _looks_like_non_secret(value: str) -> bool:
+    """取值是否**结构上**就不可能是密钥（2026-11-21 新增）。
+
+    实测：规则 23 在发布区 139 仓上报出 16 条「疑似硬编码密钥」，逐条核实
+    **全部是误报**，且集中在两类形态：
+
+      ① URL 常量 —— ``API = "https://gitee.com/api/v5"`` /
+         ``API_URL = "https://api.tavily.com/search"``。
+         键名含 ``api``/``key`` 被通用正则命中，而 URL 的 Shannon 熵天然偏高
+         （域名 + 路径字符多样），**结构上就不是凭据**。
+      ② 业务标识符 —— ``key = "shop.capacity_price"``（游戏经济系统的字典键名）。
+         同样熵高（3.54，刚过 3.5 阈值），但它是**键名不是密钥**。
+
+    这两类都不该报。它们与真泄露（``token = "ghp_xxx"`` / 高熵随机串）
+    的区别是**结构性的**，因此在判据层排除，而不是靠白名单逐仓豁免。
+
+    排除依据（任一命中即判「非密钥」）：
+      · 含 ``://`` 或以 ``www.``/``http``/``api.`` 开头 ⇒ URL；
+      · 含路径分隔符 ``/`` 且无 ``://`` ⇒ URL 路径或模板串（如 ``{owner}``）；
+      · 含 ``{`` 或 ``}`` ⇒ 模板占位符（``"https://.../{owner}/repos"``）；
+      · 形如 ``a.b.c`` 且各段均为可读单词 ⇒ 业务标识符（如 ``shop.capacity_price``）；
+      · 含空格 ⇒ 自然语言句子，不是密钥。
+    """
+    if not value:
+        return True
+    if "://" in value or value.startswith(("www.", "http", "//")):
+        return True
+    if "{" in value or "}" in value:
+        return True
+    if " " in value:
+        return True
+    if "/" in value:
+        return True
+    # 形如 shop.capacity_price：每段都是可读小写标识符 ⇒ 业务键名，不是密钥
+    if "." in value:
+        parts = value.split(".")
+        if all(p and p.replace("_", "").isalnum() and p.replace("_", "").islower()
+               for p in parts):
+            return True
+    # 形如 portal_grace_until / ADVENTURELOG_RECORD_STAGE / bcyz_quest_v1：
+    # 下划线分隔的**常量名 / 环境变量名**，不是密钥值。
+    # 实测 mirsolo 的 KEY_PORTAL_GRACE、game-prototypes 的 stage_env_key、
+    # write 的 bcyz_quest_v1 都属此类。
+    if "_" in value and len(value) < 60:
+        parts = value.split("_")
+        if all(p.isalnum() for p in parts):
+            # 至少两段是字母单词（排除纯随机串用下划线拼接的情况）
+            words = [p for p in parts if p.isalpha()]
+            if len(words) >= 2:
+                return True
+    # 纯 16 进制占位串（ABCDEF0123456789）与自证夹具前缀（dp-token-0123456789）
+    if re.fullmatch(r"[0-9A-Fa-f]{16}", value):
+        return True
+    # 自证是夹具的 token 形态：
+    #   dp-token-0123456789 / parity-test-token-0123456789
+    if re.fullmatch(r"[a-z0-9-]*token-[0-9]+", value, re.I):
+        return True
+    return False
+
+
 def _is_placeholder(value: str) -> bool:
     """匹配到的串是否是明显的占位/示例值。"""
     upper = value.upper()
@@ -411,6 +577,10 @@ def _check_secrets(ctx: "ProjectContext") -> CheckResult:
             for match in _GENERIC_KEY_RE.finditer(text):
                 value = match.group(1)
                 if _is_placeholder(value):
+                    continue
+                # 2026-11-21：结构上就不可能是密钥的取值（URL / 模板串 /
+                # 业务标识符）不报 —— 见 _looks_like_non_secret 的实测依据。
+                if _looks_like_non_secret(value):
                     continue
                 if shannon_entropy(value) >= _ENTROPY_THRESHOLD:
                     hits.append(f"{rel}(疑似硬编码密钥)")

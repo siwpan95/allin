@@ -206,6 +206,30 @@ export const KNOWN_GAMEPLAY = [
   'visual-novel', 'sim', 'chess', 'go', 'text', 'shooting',
 ]
 
+// 允许承载 gameplay 标签的类目（2026-11-21 订正）。
+//
+// 为什么改：原判据是「category !== 'game' ⇒ 不应有 gameplay」（2026-10-26 随 platform v1.0.0 引入）。
+// 当时分类词表只有少数类目、且 `game` 是唯一的游戏类，该判据成立。
+// 2026-11-13 分类词表 v1→v2 扩到 13 类，新增 engine / prototype / content 后，
+// **判据没跟着更新** ⇒ 7 个条目的 gameplay 标签（snake/text/chess/visual-novel/go）
+// 全部被误判为「不应填写」，CI 自 2026-11-13 起连续 5 次红（回归起点 559eb31）。
+//
+// 为什么改判据而不是删数据：
+//   ① `gameplay` 与 `category` 是**正交的两个维度**——category 说「它是什么类型」，
+//      gameplay 说「它是什么玩法」。SPEC-203 §扫描登记契约把二者并列为**人工保留层**
+//      （`category` 与 `gameplay` 同在「只登记、不比对、不覆盖」那一列），本就独立。
+//   ② gameplay 是 portal 的**主筛选维度**（public/app.js 按 gameplay 过滤 + 出徽章），
+//      CLI 的模糊搜索也命中它 ⇒ 删数据 = 直接破坏前端功能。
+//   ③ 6 个 `game` 类条目反而没有 gameplay 标签 ⇒ 「有 gameplay ⇒ 必须是 game」本就不成立。
+//
+// 本表的语义：`gameplay` 只在「该条目本身承载可玩/可交互形态」时才有意义。
+//   · game      —— 可玩成品（主战场，38/44 条带标签）
+//   · engine    —— 引擎/插件宿主，其 demo/示例本身可玩（cordis-snake、dict-scene-engine）
+//   · prototype —— 原型/实验场，玩法是原型要验证的核心（lab/chess、weiqi-lab/go）
+//   · content   —— 可交互内容载体（novel-reader 的视觉小说平台）
+// 其余类目（tool/media/music/crawler/ai/...）承载的是能力或资产，不是玩法 ⇒ 不填。
+export const GAMEPLAY_ALLOWED_CATEGORIES = ['game', 'engine', 'prototype', 'content']
+
 // ── 墓碑条目（tombstone）豁免 path 存在性（2026-11-01 拍板）─────────────────
 // 为什么要有这条：`status: archived/retired` 的条目按治理流程**已经把工作树移出 repos/**
 // 归入仓外归档区（远端也多已删除），典型如 calculator（2026-10-29 收拢进 arcade，
@@ -267,8 +291,10 @@ export function validateEntry(entry, ports) {
         }
       }
     }
-    if (entry.category !== 'game') {
-      errors.push('非 game 类项目不应填写 gameplay 标签')
+    if (!GAMEPLAY_ALLOWED_CATEGORIES.includes(entry.category)) {
+      errors.push(
+        `category=${entry.category} 不承载玩法，不应填写 gameplay 标签` +
+        `（可填的类目：${GAMEPLAY_ALLOWED_CATEGORIES.join('/')}）`)
     }
   }
   if (entry.port !== undefined && entry.port !== null) {

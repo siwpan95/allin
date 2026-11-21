@@ -77,14 +77,27 @@ function withMode(mode, fn) {
   }
 }
 
-test('validateEntry: gameplay 受控枚举 fail-loud（非法标签/非 game 误标）', () => {
+test('validateEntry: gameplay 受控枚举 fail-loud（非法标签/不可承载玩法的类目误标）', () => {
   const ports = loadPorts()
   // 2026-11-08：命令形状也纳入 validateEntry，夹具必须用受控集合内的真实命令。
   const base = { id: 'x', name: 'x', category: 'game', version: '1', path: EXISTING_DIR, launch: { command: 'python main.py' } }
   const bad = validateEntry({ ...base, gameplay: ['survivor-割草'] }, ports)
   assert.ok(bad.some(e => e.includes('未登记')), '非法标签应报错')
+  // 2026-11-21 订正：判据从「category !== 'game' ⇒ 报���」改为
+  // 「category 不在 GAMEPLAY_ALLOWED_CATEGORIES ⇒ 报错」。
+  // 起因：分类词表 v1→v2（13 类）后，原判据把 engine/prototype/content 上
+  // 合法的 gameplay 标签全部误判为错（CI 自 559eb31 起连续 5 次红）。
+  // gameplay 与 category 是正交维度（SPEC-203 §扫描登记契约把二者并列为
+  // 人工保留层），且 gameplay 是 portal 的主筛选维度 ⇒ 改判据而非删数据。
+  // 改判据必须连带改自检（allin 铁律：判据与自检同批），本用例即该连带修订。
   const notGame = validateEntry({ ...base, category: 'tool', gameplay: ['idle'] }, ports)
-  assert.ok(notGame.some(e => e.includes('非 game')), '非 game 误标应报错')
+  assert.ok(notGame.some(e => e.includes('不承载玩法')),
+            'tool（不承载玩法）类目误标 gameplay 应报错')
+  // 回归护栏：可承载玩法的四类目仍须接受 gameplay 标签（否则本轮修复会反向失效）。
+  for (const cat of ['game', 'engine', 'prototype', 'content']) {
+    const ok = validateEntry({ ...base, category: cat, gameplay: ['idle'] }, ports)
+    assert.deepEqual(ok, [], `${cat} 类目带 gameplay 标签不应报错`)
+  }
   const good = validateEntry({ ...base, gameplay: ['idle', 'rpg'] }, ports)
   assert.deepEqual(good, [])
   const noPath = withMode('exists', () =>
