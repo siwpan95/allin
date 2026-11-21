@@ -13,11 +13,14 @@
     "start": "electron .",
     "check": "node scripts/check.mjs",
     "smoke": "electron scripts/smoke.mjs",
-    "verify:lifecycle": "node scripts/verify-lifecycle.mjs"
+    "verify:lifecycle": "node scripts/verify-lifecycle.mjs",
+    "verify:plugins": "node scripts/verify-plugins.mjs"
   },
   "dependencies": {
     "@allin/cli-bus": "*",
-    "@allin/core": "file:../platform/packages/core"
+    "@allin/core": "file:../platform/packages/core",
+    "@cordisjs/core": "^3.18.1",
+    "@allin/cordis-js": "*"
   },
   "devDependencies": {
     "electron": "^45.3.3"

@@ -60,12 +60,16 @@ data/                   运行时产物（gitignored）
 |---|---|---|
 | P0 | 148 项目列表 / 搜索 / 调 `info` 看 JSON | PASS |
 | P1 | 启停（走 `@allin/core`，共享 pid 表与终止梯）/ 运行态轮询 / 任务日志 | PASS |
+| P2 | cordis-js 插件宿主（command / panel / 钩子）+ 首批 2 个插件 | PASS |
 
 **接入覆盖**：registry 148 条；实现 `info` 子命令 **31** 个；有 `cli.py` 但无 `info`
 6 个（B0′ 批次待补）。
 
-**P2 待做**：cordis-js 插件宿主（命令 / 面板 / 钩子三个扩展点）。
-**P3 待做**：治理面板（门禁留痕、registry 审计、端口占用、kernel 状态桥接）。
+**内置插件**（`plugins/*.mjs`，改完重启即生效，无热加载）：
+- `port-health` —— 读 `ports.yaml` 的 active 项逐个探活
+- `gate-reds` —— 读 `gate-runs.jsonl` 最近一批，列未通过的门禁
+
+**P3 待做**：治理面板常驻视图（门禁 / registry / 端口放进主界面，而不是命令面板里点）。
 
 ## 验证命令
 

@@ -1,0 +1,15 @@
+{
+  "name": "@allin/cordis-js",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "allin-console 的 cordis 插件宿主（JS 版）。只开三个扩展点：command / panel / 生命周期钩子（SPEC-205 §C2）",
+  "license": "MIT-0",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "dependencies": {
+    "@cordisjs/core": "^3.18.1"
+  }
+}

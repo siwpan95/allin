@@ -115,12 +115,41 @@ app.whenReady().then(async () => {
     const size = statSync(OUT).size
     log(`截图    : ${OUT}（${size} 字节）`)
 
+    // —— 插件命令面板：打开 → 执行首个命令 → 截图 ——
+    const cmdCount = await wc.executeJavaScript(`
+      (async () => {
+        document.getElementById('btn-cmd')?.click();
+        await new Promise((r) => setTimeout(r, 700));
+        return document.querySelectorAll('.cmd-item').length;
+      })()
+    `, true)
+    log(`命令面板条目: ${cmdCount}`)
+
+    let cmdRan = false
+    if (cmdCount > 0) {
+      await wc.executeJavaScript(`
+        (() => { document.querySelector('.cmd-item')?.click(); })()
+      `, true)
+      for (let i = 0; i < 40; i += 1) {
+        const txt = await wc.executeJavaScript(
+          "document.getElementById('cmd-out')?.textContent || ''", true)
+        if (txt && !txt.includes('执行 ')) { cmdRan = true; log(`首个命令结果: ${txt.split('\\n')[0].slice(0, 90)}`); break }
+        await new Promise((r) => setTimeout(r, 250))
+      }
+      const cmdShot = OUT.replace(/\.png$/, '-cmd.png')
+      const img2 = await wc.capturePage()
+      writeFileSync(cmdShot, img2.toPNG())
+      log(`命令面板截图: ${cmdShot}（${statSync(cmdShot).size} 字节）`)
+    }
+
     const problems = []
     if (count <= 0) problems.push('未渲染出任何项目条目')
     if (!/\/\s*\d+/.test(stats)) problems.push(`统计栏未体现总数：${stats}`)
     if (size < 5000) problems.push(`截图过小（${size} 字节），疑似空白`)
     if (!picked) problems.push('前 8 个带 CLI 的项目里没有一个 info 返回纯 JSON')
     if (!runningOk) problems.push('runningIds 接口不可用（启停链路未接通）')
+    if (cmdCount === 0) problems.push('命令面板没有任何插件命令（cordis-js 宿主未生效）')
+    if (cmdCount > 0 && !cmdRan) problems.push('插件命令执行后没有结果回传')
 
     if (problems.length) {
       for (const p of problems) console.error(`[smoke] ✗ ${p}`)

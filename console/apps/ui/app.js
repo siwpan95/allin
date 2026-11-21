@@ -304,4 +304,68 @@ async function boot() {
 }
 
 searchEl.addEventListener('input', () => { applyFilter() })
+
+/* ---------------- 命令面板（插件注册的命令） ---------------- */
+
+const cmdOverlay = $('cmd-overlay')
+const cmdListEl = $('cmd-list')
+const cmdOutEl = $('cmd-out')
+
+async function openCmdPanel() {
+  cmdOverlay.hidden = false
+  cmdOutEl.hidden = true
+  cmdListEl.innerHTML = '<div class="cmd-empty">加载插件命令…</div>'
+  try {
+    const st = await window.allin.pluginState()
+    const cmds = st.commands || []
+    $('cmd-count').textContent = cmds.length ? cmds.length : ''
+    if (!cmds.length) {
+      cmdListEl.innerHTML = '<div class="cmd-empty">没有插件注册命令（plugins/ 目录为空或加载失败）</div>'
+      return
+    }
+    cmdListEl.innerHTML = ''
+    for (const c of cmds) {
+      const row = document.createElement('div')
+      row.className = 'cmd-item'
+      row.innerHTML = `<div class="cmd-title">${esc(c.title)}<span class="cmd-plugin">${esc(c.plugin)}</span></div>
+        <div class="cmd-desc">${esc(c.description || c.id)}</div>`
+      row.addEventListener('click', () => runCmd(c.id))
+      cmdListEl.appendChild(row)
+    }
+    if (st.errors?.length) {
+      const err = document.createElement('div')
+      err.className = 'cmd-empty'
+      err.textContent = `插件加载失败 ${st.errors.length} 个：` + st.errors.map((e) => e.plugin).join(', ')
+      cmdListEl.appendChild(err)
+    }
+  } catch (e) {
+    cmdListEl.innerHTML = `<div class="cmd-empty">读取插件状态失败：${esc(String(e))}</div>`
+  }
+}
+
+async function runCmd(id) {
+  cmdOutEl.hidden = false
+  cmdOutEl.textContent = `执行 ${id} …`
+  setStatus(`插件命令 ${id} …`)
+  try {
+    const r = await window.allin.runPluginCommand(id)
+    const head = r.ok ? `✓ ${r.summary || '完成'}` : `✗ ${r.summary || r.message || '失败'}`
+    const detail = r.detail ? '\n\n' + JSON.stringify(r.detail, null, 2) : ''
+    cmdOutEl.textContent = `${head}（${r.durationMs ?? 0} ms）${detail}`
+    setStatus(`${id} ${r.ok ? '完成' : '未通过'}（${r.durationMs ?? 0} ms）`)
+  } catch (e) {
+    cmdOutEl.textContent = `调用异常：${e}`
+    setStatus(`插件命令异常：${e}`)
+  }
+}
+
+$('btn-cmd')?.addEventListener('click', openCmdPanel)
+$('cmd-close')?.addEventListener('click', () => { cmdOverlay.hidden = true })
+cmdOverlay?.addEventListener('click', (e) => {
+  if (e.target === cmdOverlay) cmdOverlay.hidden = true
+})
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && cmdOverlay && !cmdOverlay.hidden) cmdOverlay.hidden = true
+})
+
 boot()

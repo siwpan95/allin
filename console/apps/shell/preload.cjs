@@ -30,4 +30,10 @@ contextBridge.exposeInMainWorld('allin', {
 
   /** 任务日志尾部（读 @allin/core 的 tasks.log，只读） */
   logs: (projectId, lines = 60) => ipcRenderer.invoke('logs:tail', { projectId, lines }),
+
+  /** 插件宿主状态：命令 / 面板 / 加载失败项 */
+  pluginState: () => ipcRenderer.invoke('plugins:state'),
+
+  /** 执行插件注册的命令 */
+  runPluginCommand: (commandId) => ipcRenderer.invoke('plugin:run', commandId),
 })

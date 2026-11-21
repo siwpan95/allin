@@ -15,6 +15,7 @@
       <span class="tag">治理控制台</span>
     </div>
     <input id="search" class="search" type="search" placeholder="搜索 id / 名称 / 分类…" autocomplete="off">
+    <button id="btn-cmd" class="cmd-btn" title="插件命令面板">命令 <span id="cmd-count"></span></button>
     <div class="stats" id="stats">加载中…</div>
   </header>
 
@@ -34,6 +35,18 @@
     <span class="spacer"></span>
     <span id="registry-note"></span>
   </footer>
+
+  <!-- 命令面板（插件注册的命令在此执行） -->
+  <div class="overlay" id="cmd-overlay" hidden>
+    <div class="cmd-panel">
+      <div class="cmd-head">
+        <span>命令面板</span>
+        <button id="cmd-close" class="ghost">关闭</button>
+      </div>
+      <div class="cmd-list" id="cmd-list"></div>
+      <pre class="out" id="cmd-out" hidden></pre>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

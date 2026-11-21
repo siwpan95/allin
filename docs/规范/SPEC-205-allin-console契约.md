@@ -148,17 +148,28 @@ verify:
 
 ### 4.2 插件形态
 
-`console/packages/cordis-js` 基于 `@cordisjs/core`，插件即 npm 包或本地目录，导出：
+`console/packages/cordis-js` 基于 **`@cordisjs/core` 3.18.1**（注意：JS 版是 3.x，
+`vendor/cordis` 的 Python 版是 4.0.0，两条版本线独立演进，不要按版本号强行对齐），
+插件即 npm 包或本地目录，导出：
 
 ```js
 export const name = 'allin-plugin-port-health'
-export const inject = ['console']     // 依赖声明，由宿主注入
 export function apply(ctx, config) {
   ctx.console.command({ id: 'port.health', title: '端口体检', run: async () => {...} })
-  ctx.console.panel({ id: 'port.health.panel', slot: 'sidebar', mount: (el) => {...} })
-  ctx.on('project:started', ({ id, pid }) => { /* ... */ })
+  ctx.console.panel({ id: 'port.health.panel', slot: 'sidebar', html: '...' })
+  ctx.console.on('project:started', ({ id, pid }) => { /* ... */ })
 }
 ```
+
+> **2026-11-22 P2 实测的两个坑（都已跳过，写在这里免得重犯）**：
+> 1. **不要给插件声明 `inject`**。cordis 的 `inject` 会挂起插件直到该服务被 `provide`；
+>    而宿主是把能力直接挂在 `ctx` 上（非 `Service`），一旦声明就永远等不到——
+>    表现为「插件加载成功但 `apply` 从不执行、注册 0 个命令」。
+> 2. Windows 下 `import()` 加载插件必须传 `pathToFileURL(...).href`，直接用绝对路径
+>    会报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`。
+
+宿主通过 `ctx.deps` 注入**受控依赖**（`core` / `runCli` / `readGateRuns`），
+插件拿不到 `electron` / `fs` / `child_process`。
 
 宿主暴露三个扩展点（**只此三个，不扩**）：
 
@@ -166,7 +177,7 @@ export function apply(ctx, config) {
 |---|---|---|
 | `console.command` | 命令面板里的可执行项 | 「全部项目 selfcheck」「清理孤儿进程」 |
 | `console.panel` | UI 插槽（sidebar / tab / statusbar） | 端口占用看板、门禁红项列表 |
-| `ctx.on(...)` | 生命周期钩子 | `project:started` / `project:exited` / `cli:error` |
+| `ctx.console.on(...)` | 生命周期钩子 | `project:started` / `project:stopped` / `project:exited` / `cli:error` |
 
 ### 4.3 约束
 
@@ -209,7 +220,7 @@ console 重启后状态自动恢复，不存在「两边各记一份」的分裂
 |---|---|---|---|
 | **P0 壳可跑** | BaseWindow + WebContentsView + 项目面板（读 registry）+ 命令面板骨架 | 启动后列出 **148** 个 id；点击任一项目执行 `cli.py info --json` 并原样显示 JSON | 1.5 周 |
 | **P1 CLI 总线** | cli-bus + 启停 + 日志流 + 失败回传 | 对 B1 的 11 个 Web 服务逐个 `launch`/`stop`，`running.json` 与 UI 状态一致；失败时 UI 显示 stderr 末 20 行 | 2 周 |
-| **P2 插件宿主** | cordis-js + 三个扩展点 + 首批 3 个插件（端口体检 / 门禁红项 / 孤儿进程清理） | 插件热加载生效；删掉插件目录后 console 正常启动 | 2 周 |
+| **P2 插件宿主** ✅ 2026-11-22 | cordis-js + 三个扩展点 + 首批 2 个插件（端口体检 / 门禁红项） | 命令面板列出命令并执行返回结果；删掉插件目录后 console 正常启动 | 2 周 |
 | **P3 治理面板** | 门禁留痕 / registry 审计 / 端口占用 / kernel 状态（桥接 Python） | 面板数值与 `allin_cli.py status --json` 一致 | 2 周 |
 | **P4 分发** | electron-builder 打包 + 自用安装包（暂不做自动更新） | 干净机器双击安装后可列 148 项目 | 1 周 |
 

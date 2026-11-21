@@ -8,14 +8,19 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { BaseWindow, WebContentsView, ipcMain } = require('electron')
 import path from 'node:path'
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds, DATA_DIR } from '@allin/core'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds, DATA_DIR, PLATFORM_ROOT, probePort, loadPorts } from '@allin/core'
+import { createHost } from '@allin/cordis-js'
 import { locateCli, hasInfoSubcommand, runCli, failureSummary } from '@allin/cli-bus'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const UI_INDEX = path.join(HERE, '..', 'ui', 'index.html')
 export const PRELOAD = path.join(HERE, 'preload.cjs')
+/** 内置插件目录（P2 首批自带；后续可从用户目录加载） */
+const PLUGIN_DIR = path.join(HERE, '..', '..', 'plugins')
+/** 门禁留痕：JSONL，一行一道门禁的一次运行 */
+const GATE_RUNS = path.join(PLATFORM_ROOT, '..', 'tools', 'gate', 'audit', 'gate-runs.jsonl')
 
 /** registry 目录由 @allin/core 的端口表位置反推，不写死盘符。 */
 export const REGISTRY_DIR = path.join(path.dirname(PORTS_YAML), 'projects')
@@ -83,6 +88,57 @@ function compact(entry) {
   }
 }
 
+/**
+ * 读门禁留痕并按 batch 分组（batch = 一次全量门禁跑）。
+ * 只读、纯解析 —— 不跑门禁、不改留痕。
+ */
+function readGateBatches() {
+  if (!existsSync(GATE_RUNS)) return []
+  const byBatch = new Map()
+  for (const line of readFileSync(GATE_RUNS, 'utf8').split('\n')) {
+    if (!line.trim()) continue
+    let row
+    try { row = JSON.parse(line) } catch { continue }
+    if (!row.batch) continue
+    if (!byBatch.has(row.batch)) {
+      byBatch.set(row.batch, { batch: row.batch, ts: row.ts, commit: row.commit, gates: [] })
+    }
+    byBatch.get(row.batch).gates.push({
+      label: row.label, exit: row.exit, ms: row.ms, skipped: Boolean(row.skipped),
+    })
+  }
+  return [...byBatch.values()].sort((a, b) => String(a.ts).localeCompare(String(b.ts)))
+}
+
+/** 插件宿主（懒加载：只有首次取命令时才读插件目录）。 */
+let host = null
+async function ensureHost() {
+  if (host) return host
+  host = createHost({
+    logger: (level, msg) => console.log(`[cordis-js][${level}] ${msg}`),
+    deps: {
+      core: { probePort, loadPorts, loadRegistry, REGISTRY_DIR },
+      readGateRuns: readGateBatches,
+      runCli,
+    },
+  })
+  // 加载内置插件：单个失败不阻断（宿主内部已 try/catch）
+  const files = existsSync(PLUGIN_DIR)
+    ? readdirSync(PLUGIN_DIR).filter((f) => f.endsWith('.mjs'))
+    : []
+  const mods = []
+  for (const f of files) {
+    try {
+      // Windows 下 import() 的绝对路径必须转 file:// URL
+      mods.push(await import(pathToFileURL(path.join(PLUGIN_DIR, f)).href))
+    } catch (e) {
+      host.errors.push({ plugin: f, error: e?.message || String(e) })
+    }
+  }
+  await host.load(mods)
+  return host
+}
+
 /** 注册 IPC。重复注册会抛错，故调用方须只调一次。 */
 export function registerIpc() {
   ipcMain.handle('projects:list', () => {
@@ -127,6 +183,36 @@ export function registerIpc() {
   })
 
   registerLifecycleIpc()
+  registerPluginIpc()
+}
+
+/** 插件相关的 IPC：列命令 / 跑命令 / 列面板 */
+function registerPluginIpc() {
+  ipcMain.handle('plugins:state', async () => {
+    const h = await ensureHost()
+    return {
+      commands: h.commands.map((c) => ({
+        id: c.id, title: c.title, description: c.description, plugin: c.plugin,
+      })),
+      panels: h.panels.map((p) => ({
+        id: p.id, slot: p.slot, title: p.title, html: p.html, plugin: p.plugin,
+      })),
+      errors: h.errors,
+    }
+  })
+
+  ipcMain.handle('plugin:run', async (_evt, commandId) => {
+    const h = await ensureHost()
+    const cmd = h.commands.find((c) => c.id === commandId)
+    if (!cmd) return { ok: false, message: `未知命令：${commandId}` }
+    const started = Date.now()
+    try {
+      const r = await cmd.run()
+      return { ...r, durationMs: Date.now() - started, commandId }
+    } catch (e) {
+      return { ok: false, message: e?.message || String(e), durationMs: Date.now() - started, commandId }
+    }
+  })
 }
 
 /** 冒烟脚本用：直接拿项目清单（不经 IPC）。 */
