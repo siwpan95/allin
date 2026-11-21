@@ -31,6 +31,19 @@ SEMVER_RE = re.compile(
     r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 
 
+def _semver_tuple(version: str) -> tuple[int, int, int]:
+    """把 SemVer 拆成可比较的三元组（忽略预发布/构建元数据）。
+
+    用于规则 18 判断「tag 比代码声明新」还是「tag 落后」——这两者的处置完全相反，
+    不能笼统报「不一致」。
+    """
+    core = version.split("+", 1)[0].split("-", 1)[0]
+    parts = core.split(".")
+    if len(parts) != 3:
+        raise ValueError(f"not a three-part version: {version!r}")
+    return tuple(int(p) for p in parts)  # type: ignore[return-value]
+
+
 # ---------------------------------------------------------------------------
 # 规则 17：CHANGELOG 落后最新 tag
 # ---------------------------------------------------------------------------
@@ -231,6 +244,27 @@ def _check_version_consistency(ctx: "ProjectContext") -> CheckResult:
 
     unique = set(present.values())
     if len(unique) > 1:
+        # 2026-11-21 修订：原实现「三处任一不同即 error」，把两类完全不同的事混为一谈：
+        #   ① 代码内两处声明冲突（清单 vs 源码）—— 真缺陷，用户看到哪个都对不上；
+        #   ② tag 落后于代码声明 —— **正常**：打了 tag 之后又改了代码并升了版本，
+        #      只是还没发布。实测发布区 6 条里 3 条属此类（tag 落后 HEAD 7~17 个提交）。
+        # 反向（tag 高于声明）才是真缺陷：已发布的版本，代码里还写着旧号。
+        decl = {k: v for k, v in present.items() if not k.startswith("git tag")}
+        if len(set(decl.values())) > 1:
+            return CheckResult.bad(
+                "代码内版本声明不一致：" + " / ".join(f"{k}={v}" for k, v in decl.items()))
+        if tag_version and decl:
+            declared_v = next(iter(decl.values()))
+            try:
+                if _semver_tuple(tag_version) > _semver_tuple(declared_v):
+                    return CheckResult.bad(
+                        f"已发布 tag v{tag_version} 高于代码声明 {declared_v}"
+                        f"（{manifest_rel or source_rel} 过时，须升到已发布版本）")
+            except ValueError:
+                pass
+            return CheckResult.bad(
+                f"tag v{tag_version} 落后于代码声明 {declared_v}：有未发布的工作（正常，不阻断）",
+                severity=Severity.INFO)
         detail = " / ".join(f"{k}={v}" for k, v in present.items())
         return CheckResult.bad("版本号不一致：" + detail)
 

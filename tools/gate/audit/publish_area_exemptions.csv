@@ -1,0 +1,10 @@
+﻿check,repo,path,reason,recorded_at,status
+release.version_mismatch,peasy-ai,pyproject.toml,版本线重置（非缺陷）：CHANGELOG 明文——「PyPI 首发（peasy-ai 1.0.0）不继承仓库内部版本号，仓库此前同时存在 3.2.0 与 2.2.0 两套值，首发时统一重置为 1.0.0，以 PyPI 发布序列为准」。tag v2.2.0（2026-10-15）属重置前旧线，当前声明 1.0.1（清单+源码一致）是新线权威。判据按版本号大小比较，无法识别版本线重置，故登记豁免。,2026-11-21,accepted-exemption
+security.hardcoded_secret,private-radio-stations,apps/video/src/live/yangshipin.py,第三方平台公开静态常量（CKEY_KEY/CKEY_IV/VDNX_SECRET/VSECRET），源码注释自述源自客户端 JS，非持有者本人密钥；ppsport.py 的 48 位 hex 同类。改动会破坏逆向对接且偏离上游。登记保留，不视为待修密钥。,2026-11-21,accepted-exemption
+release.version_mismatch,cordis-table-app,package.json,已修（2026-11-21）：清单 1.0.0 落后于已发布 tag v1.2.0（v1.0.0→v1.1.0→v1.2.0 同一版本线递增），已把 package.json 升到 1.2.0。,2026-11-21,resolved
+release.version_mismatch,music-player,pyproject.toml,已修（2026-11-21）：清单与源码同为 0.1.0 但已打 tag v1.0.0（首个正式版标记），已把清单与 __init__.py 同步升到 1.0.0。,2026-11-21,resolved
+release.version_mismatch,bloodmusic,__init__.py,判据已修正（2026-11-21）：tag v2.0.0 落后 HEAD 12 个提交，属「有新工作未发布」的正常情形，判据由 error 降为 info，不阻断。声明 2.1.2 保持不变。,2026-11-21,resolved
+release.version_mismatch,random-dungeon-,dungeon/__init__.py,判据已修正（2026-11-21）：tag v1.0.0 落后 HEAD 7 个提交，正常未发布工作，降为 info。声明 2.0.0 保持不变。,2026-11-21,resolved
+release.version_mismatch,worldbuilder,pyproject.toml,判据已修正（2026-11-21）：tag v1.0.0 落后 HEAD 17 个提交，正常未发布工作，降为 info。声明 1.0.1 保持不变。,2026-11-21,resolved
+license.inconsistent,sfx-download,README.md,判据已修正（2026-11-21）：README 头部第 8 行明写「许可：MIT-0（MIT No Attribution）（见 LICENSE）」，与 LICENSE 一致。原报 CC0-1.0 是因 `## 许可` 章节讲的是**被下载音频**的许可（含 CC0 字样），已加入「版权归/原作者/所下载/源网站」等语汇排除。,2026-11-21,resolved
+license.inconsistent,private-radio-stations,README.md,判据已修正（2026-11-21）：README 第 211 行是标准混合许可写法「整体 MIT；apps/video/src/live/（real-url）为 GPL-2.0，见各自 LICENSE」，与 LICENSE=MIT 不矛盾。根因是 _keyword_spdx 按词表顺序取（GPL 排在 MIT 前）而非按文本位置取，已改按位置。,2026-11-21,resolved

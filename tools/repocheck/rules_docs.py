@@ -94,18 +94,28 @@ def identify_license(text: str) -> str | None:
 
 
 def _keyword_spdx(text: str) -> str | None:
-    """在短文本里按关键词找 SPDX（带回退：装了 license-expression 就再校验一次）。"""
+    """在短文本里按关键词找 SPDX（带回退：装了 license-expression 就再校验一次）。
+
+    2026-11-21 修订：原实现按 ``_KEYWORD_TO_SPDX`` 的**词表顺序**取第一个命中，
+    于是「整体 MIT；apps/video/src/live/（real-url）为 GPL-2.0」这种**混合许可**
+    的标准写法被判成 GPL-2.0（GPL 在词表里排在 MIT 前面），与 LICENSE 文件=MIT
+    构成假阳性「声明不一致」。改为按**文本中最先出现的位置**取 —— 这类写法里
+    主体许可总在前面，子目录/依赖的许可在后面。
+
+    实测影响：private-radio-stations（LICENSE=MIT / package.json=MIT / README 被判 GPL）。
+    """
     low = text.lower()
-    found: str | None = None
+    best: tuple[int, str] | None = None
     for spdx, keys in _KEYWORD_TO_SPDX:
         for key in keys:
-            if re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", low):
-                found = spdx
-                break
-        if found:
-            break
-    if found is None:
+            m = re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", low)
+            if m and (best is None or m.start() < best[0]):
+                best = (m.start(), spdx)
+            if m:
+                break  # 该 SPDX 的任一别名首次命中即可，不必再试其它别名
+    if best is None:
         return None
+    found = best[1]
     if HAS_LICENSE_EXPRESSION:  # 可选依赖：只做规范化校验，失败也不改变结论
         try:
             from license_expression import Licensing  # type: ignore[import-not-found]
@@ -336,8 +346,13 @@ def _readme_license_section(ctx: "ProjectContext") -> str | None:
         return own
 
     # 第一段里出现第三方 / vendor / 兼容性语汇 ⇒ 这段讲的不是「本仓自身许可」，不取。
+    # 2026-11-21 补：还要排除「讲**内容/他人**许可」的语汇 —— 实测 sfx-download 的
+    # `## 许可` 章节说的是"所下载音频的版权归各源网站及原作者所有，请遵守对应许可
+    # （CC BY 需署名、CC0 可自由使用）"，这里 CC0 是**被下载音频**的许可，
+    # 与本仓 LICENSE=MIT-0 并不矛盾。原实现把它当成本仓声明 ⇒ 假阳性「声明不一致」。
     if re.search(
-        r"第三方|vendor|依赖|兼容|不兼容|以 ?太 ?坊|GPL|AGPL|LGPL|referenc|upstream|上游",
+        r"第三方|vendor|依赖|兼容|不兼容|以 ?太 ?坊|GPL|AGPL|LGPL|referenc|upstream|上游"
+        r"|版权归|原作者|所下载|被下载|源网站|下载内容|内容的许可|本程序下载",
         segment, re.I,
     ):
         return None

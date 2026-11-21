@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G:\allin 现状分析与愿景评估报告</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --ink:#1a1d21; --ink-2:#4a5058; --ink-3:#767d86;
+    --line:#e3e6ea; --line-2:#eef0f3;
+    --red:#c0392b; --red-bg:#fdf0ee; --green:#1e7d4d; --green-bg:#eef7f2;
+    --amber:#9a6b00; --amber-bg:#fdf6e8; --blue:#1f5c99; --blue-bg:#eef3f9;
+    --violet:#5b4b9e; --violet-bg:#f2f0f9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.72; font-size:15px;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:0 28px 80px}
+  header{padding:56px 0 36px; border-bottom:2px solid var(--ink); margin-bottom:40px}
+  .eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+  h1{font-size:34px; line-height:1.28; margin:14px 0 10px; letter-spacing:-.02em}
+  .sub{color:var(--ink-2); font-size:16px; margin:0}
+  .meta{margin-top:22px; font-size:13px; color:var(--ink-3); display:flex; gap:20px; flex-wrap:wrap}
+  .meta b{color:var(--ink-2); font-weight:600}
+
+  h2{font-size:23px; margin:52px 0 8px; padding-bottom:10px; border-bottom:1px solid var(--line); letter-spacing:-.01em}
+  h3{font-size:17px; margin:32px 0 10px}
+  h4{font-size:15px; margin:22px 0 8px; color:var(--ink-2)}
+  p{margin:12px 0}
+
+  .lede{background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--ink); padding:20px 24px; margin:22px 0; border-radius:3px}
+  .lede p{margin:0 0 10px} .lede p:last-child{margin:0}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:20px 24px; margin:20px 0}
+  .card h3{margin-top:0}
+
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:14px; background:var(--panel)}
+  th,td{padding:10px 13px; border:1px solid var(--line); text-align:left; vertical-align:top}
+  th{background:#f0f2f5; font-weight:600; font-size:13px; color:var(--ink-2)}
+  td.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+  code{background:#eef0f3; padding:1px 6px; border-radius:3px; font-size:12.5px;
+       font-family:"SF Mono",Consolas,"Liberation Mono",monospace; color:#33383f}
+  .mono{font-family:"SF Mono",Consolas,"Liberation Mono",monospace; font-size:12.5px}
+
+  .tag{display:inline-block; padding:1px 8px; border-radius:3px; font-size:11.5px; font-weight:600; white-space:nowrap}
+  .t-red{background:var(--red-bg); color:var(--red)}
+  .t-green{background:var(--green-bg); color:var(--green)}
+  .t-amber{background:var(--amber-bg); color:var(--amber)}
+  .t-blue{background:var(--blue-bg); color:var(--blue)}
+  .t-violet{background:var(--violet-bg); color:var(--violet)}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:16px 18px}
+  .stat .n{font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.2}
+  .stat .l{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .stat.ok .n{color:var(--green)} .stat.bad .n{color:var(--red)} .stat.warn .n{color:var(--amber)}
+
+  .flow{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:20px; margin:18px 0;
+        font-family:"SF Mono",Consolas,monospace; font-size:12.5px; line-height:1.95; overflow-x:auto; color:var(--ink-2)}
+  .flow b{color:var(--ink)}
+
+  ul,ol{margin:12px 0; padding-left:22px} li{margin:6px 0}
+  .note{font-size:13px; color:var(--ink-3); border-left:2px solid var(--line); padding-left:14px; margin:14px 0}
+  footer{margin-top:60px; padding-top:22px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">工作区现状评估 · 实地勘察</div>
+  <h1>G:\allin 现状、工作流、服务对象与未来愿景分析</h1>
+  <p class="sub">一个「制度 + 文档枢纽 + 执行器 + 数据面」四位一体的治理中枢，及其正在发生的内卷与外溢</p>
+  <div class="meta">
+    <span>勘察日期 <b>2026-11-21</b></span>
+    <span>基线提交 <b>0c6e7e1</b></span>
+    <span>勘察方式 <b>只读实测 + 文档互证</b></span>
+    <span>本机 <b>DESKTOP-KQABATS</b></span>
+  </div>
+</header>
+
+<div class="lede">
+  <p><b>一句话结论：</b>allin 已经是一套完整、严谨、可运行的治理工程；但它当前<b>正处在「自循环」的危险边缘</b>——机制质量与产出价值严重脱钩，近 30 天 2,400 余处改动里<b>零笔面向外部采用者</b>，同时唯一的对外验证通道（CI）已连续红灯 8 天。</p>
+  <p><b>最紧迫的一件事：</b>GitHub Actions 自 2026-11-13 起<b>连续 5 次全红</b>，根因是分类词表升级未同步 registry 数据，暴露出「20 道门禁全绿却漏检真实缺陷」的盲区。这直接推翻了方向修正文档中「CI 双平台绿 = 可复制性已有证据」的核心论据——<b>那个证据现在已不成立</b>。</p>
+</div>
+
+<h2>一、现状：规模与结构</h2>
+
+<div class="grid3">
+  <div class="stat ok"><div class="n">139</div><div class="l">Gitee 公开仓（PORTFOLIO 口径）</div></div>
+  <div class="stat ok"><div class="n">1091</div><div class="l">allin 受控文件</div></div>
+  <div class="stat bad"><div class="n">141</div><div class="l">Gitee 实测仓数（真相）</div></div>
+</div>
+
+<table>
+  <tr><th>层</th><th>位置</th><th>体量</th><th>职责</th></tr>
+  <tr><td><b>制度</b></td><td><code>docs/规范/</code></td><td>19 个 SPEC</td><td>铁律、协作流程、调试铁律 1–70、文档契约、引擎/平台契约</td></tr>
+  <tr><td><b>文档枢纽</b></td><td><code>docs/</code></td><td>381 文件</td><td>四分类（规范/事实源/记录/历史）+ INDEX.md 总目录（D1–D17 契约保真）</td></tr>
+  <tr><td><b>治理大脑</b></td><td><code>.workbuddy/skills/</code> ⇄ <code>preset/allin/</code></td><td>双形态</td><td>同一份治理事实的 WorkBuddy skill 与 DSH preset 两份注入形态，同源同步</td></tr>
+  <tr><td><b>执行面 A</b></td><td><code>kernel/</code> + <code>allin_cli.py</code></td><td>1,793 行 Python</td><td>Cordis 服务图，5 个服务（docs/platform/preset/tools/status）</td></tr>
+  <tr><td><b>执行面 B</b></td><td><code>platform/</code></td><td>7,489 行 JS</td><td>Steam 式集成平台，147 条 registry，portal 门户 + 工坊 + 探活</td></tr>
+  <tr><td><b>门禁</b></td><td><code>tools/gate/</code></td><td>20 道 / 6,510 行</td><td>g00–g20（缺 g02）+ repocheck 30 规则 + repo_hygiene H1–H8</td></tr>
+  <tr><td><b>数据面</b></td><td><code>facts/</code></td><td>85.9 KB</td><td>结构化事实唯一真身（JSON Schema 2020-12），NetBox/Dolt/GraphRAG 三栈派生</td></tr>
+  <tr><td><b>可安装产物</b></td><td><code>packages/allin-governance</code></td><td>PyPI 0.0.0a5</td><td><code>init</code> / <code>repocheck</code> / <code>verify</code> 三子命令，运行时零第三方依赖</td></tr>
+</table>
+
+<div class="grid2">
+  <div class="card">
+    <h3>代码量级（受控文件）</h3>
+    <table style="margin:0">
+      <tr><td>Python</td><td class="num">36,007</td><td class="num">36%</td></tr>
+      <tr><td>JS/MJS</td><td class="num">14,686</td><td class="num">15%</td></tr>
+      <tr><td>Markdown</td><td class="num">12,798</td><td class="num">13%</td></tr>
+      <tr><td>YAML</td><td class="num">7,438</td><td class="num">7%</td></tr>
+      <tr><td>PowerShell</td><td class="num">3,089</td><td class="num">3%</td></tr>
+    </table>
+    <p class="note">Python 占比最高——因为治理与体检器本身就是产品，这是一致性信号，不是负担信号。</p>
+  </div>
+  <div class="card">
+    <h3>产出节奏（git 实测）</h3>
+    <table style="margin:0">
+      <tr><td>2026-08</td><td class="num">9</td><td>起步</td></tr>
+      <tr><td>2026-09</td><td class="num">113</td><td>加速</td></tr>
+      <tr><td>2026-10</td><td class="num">181</td><td>—</td></tr>
+      <tr><td>2026-11</td><td class="num">240</td><td>峰值</td></tr>
+    </table>
+    <p class="note">近 90 天 543 笔提交，贡献者 <b>100% 为 siwpan 单人</b>。增速未减，外部采用为零。</p>
+  </div>
+</div>
+
+<h2>二、工作流：两条链路与一道监工</h2>
+
+<p>allin 的工作流不是单一流程，而是<b>两条正交链路 + 一套机械监工</b>的组合。这一点在 SPEC-107 的开篇写得很清楚：</p>
+
+<div class="flow">
+<b>协作节奏面</b>（SPEC-002：先问 → 计划 → review → 执行 → 复盘）
+  ├─ 在场模式：逐项确认，高风险动作（推送/建仓/删除/密钥/仓结构）逐项放行
+  └─ 自主模式：选推荐项并记账 · 攒着不推 · 不可逆不做
+<b>交付 substance 面</b>（SPEC-107：需求 → 拆分 → 开发 → 审查 → 测试 → 修复）
+  ├─ 阶段四强制机器实跑，问题必须带 file:line，无证据结论作废
+  ├─ 阶段三前置强制备份 + 10 项安全核验（"22 项"口径经核查无成文清单，未虚构）
+  └─ 阶段六输出闸门：交付前跑 D1–D12（"C1–C10"口径订正为 D1–D12）
+<b>机械监工</b>（tools/gate：20 道治理门禁 + D1–D17 文档契约 + 30 条 repocheck）
+  └─ 退出码词汇 0/1/2/3（干净/阻断/用法/环境），SKIP 如实计数，不冒充通过
+</div>
+
+<h3>机制的核心设计：门禁是事故的封印</h3>
+
+<p>每一条门禁都对应一类<b>真实发生过</b>的事故，而不是审美偏好。抽样验证：</p>
+
+<table>
+  <tr><th>门禁</th><th>封印的事故</th><th>判定方式</th></tr>
+  <tr><td><code>g01-paths</code></td><td>脚本里写死某台机器绝对路径 → 换机即坏</td><td>正则扫盘符字面量</td></tr>
+  <tr><td><code>g03-credentials</code></td><td>凭据写进仓库或 <code>.git/config</code> → 公开历史只能吊销重发</td><td>密钥模式 + 熵值判据</td></tr>
+  <tr><td><code>g08-deletion-evidence</code></td><td>删掉功能面却没记接任者 → radio 直播面整片消失</td><td>删除证据留证</td></tr>
+  <tr><td><code>g11-undef-names</code></td><td>改写脚本丢了 <code>import</code> → 编译通过、运行才炸</td><td>AST 静态扫描</td></tr>
+  <tr><td><code>g14-preset</code></td><td>preset 悄悄漂移 → 新会话<b>静默失去治理段</b>（仓内门禁全绿也发现不了）</td><td>profile 探针 + 挂载三层校验</td></tr>
+  <tr><td><code>g20-facts</code></td><td>9 处断言与磁盘不符，而 19 道门禁 exit 0 → 判据没覆盖</td><td>path-exists / count / self-identity 三类声明</td></tr>
+</table>
+
+<div class="card">
+  <h3>三个值得称道的机制设计</h3>
+  <ul>
+    <li><b>自检写进契约</b>：每道门禁必须用<b>真实破坏用例</b>（临时仓里真写一条死路径、真删一个字节）证明自己还能抓到缺陷，<code>--selfcheck</code> 要求 <code>caught≥1</code>、<code>misreports==0</code>。只有阳性测试的门禁会把假绿卖给所有人。</li>
+    <li><b>基线棘轮</b>：存量一次性冻结进 <code>baseline/</code>，此后<b>只拦新增</b>。门禁能「今天就绿」而不被绕过。</li>
+    <li><b>SKIP 不算通过</b>：服务缺席时门禁记 <code>SKIPPED (not a pass)</code> 并计数。全部跳过时退 <code>EXIT_ENV</code> 而非 0——「一个都没跑」≠「一个都没问题」。</li>
+  </ul>
+</div>
+
+<h2>三、实测发现：三处正在失守</h2>
+
+<div class="lede" style="border-left-color:var(--red)">
+  <p><b>这是本次勘察最重要的产出。</b>以下三项均为现场复测所得，非照抄文档：</p>
+</div>
+
+<h3>失守一：CI 连续红灯 8 天，回归点精确定位</h3>
+
+<table>
+  <tr><th>项</th><th>实测值</th></tr>
+  <tr><td>GitHub Actions 最近 5 次</td><td><span class="tag t-red">全部 failure</span> 2026-11-13 起</td></tr>
+  <tr><td>失败 job</td><td><code>平台集成/接口测试</code>（Linux）· <code>治理门禁 Windows</code>（smoke:e2e 步）</td></tr>
+  <tr><td>回归起点提交</td><td><code>559eb31</code> 分类词表 v1→v2（2026-11-13 19:36）—— 该提交前 CI 连续绿</td></tr>
+  <tr><td>本地门禁跑批</td><td><span class="tag t-green">全绿</span> <code>ALLIN_GATE_SUMMARY status=clean fail=0 skips=0</code>（实测 6m11s）</td></tr>
+  <tr><td>本地 smoke:e2e</td><td><span class="tag t-green">8/8 通过</span>（实测 00:45）</td></tr>
+</table>
+
+<p><b>根因链（已逐环验证）：</b></p>
+
+<div class="flow">
+<code>559eb31</code> 把 7 个 registry 条目的 category 从 game 改到 engine/prototype/content
+        ↓ （gameplay 标签未同步）
+<code>registry.js:271</code> 判据「非 game 类项目不应填写 gameplay 标签」触发
+        ↓
+<b>7 条 problems</b>：cordis-snake · dict-scene-engine · lab · novel-reader
+             sin-virtue-cordis-host · sin-virtue-game · weiqi-lab
+        ↓
+<code>platform/scripts/check.mjs</code> 能报出来 —— 但它<b>不在默认跑批里</b>
+        ↓
+<b>盲区</b>：<code>run_all_gates.sh</code> 只在 <code>--with-platform</code> 分支跑 platform check
+<code>g17-registry</code> 只判 id/生命周期/完备性，<b>不调 validateEntry 字段级判据</b>
+        ↓
+<b>结果</b>：20 道门禁全绿 ✅ ＋ CI 全红 ❌ —— 两者同时为真
+</div>
+
+<p>CI 上两个失败 job 实为<b>同一根因</b>：Windows job 在 <code>npm run smoke:e2e</code> 之前先跑 <code>npm test --prefix platform</code>，该步 exit 1 导致冒烟根本没执行。<code>smoke:e2e</code> 本身无问题——本地实跑 8/8 全绿。</p>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h3>这件事的治理意义，比红灯本身严重</h3>
+  <p>方向修正文档（2026-10-31 §7.1）把「CI Linux+Windows 双平台绿，run <code>41154530905</code>」列为<b>本仓历史上第一次有外部可复现的绿</b>，并据此判定「可复制性」从推断升级为事实。</p>
+  <p><b>该论据现在已不成立</b>——CI 连续 8 天红灯，且红灯的根因恰恰是「数据改了、门禁没覆盖」，与文档批评的「只有一台机器验过」是同一类问题的变体。</p>
+  <p style="margin-bottom:0"><b>更要紧的是：</b>这份报告的其余部分（叙事传播 D3.1）恰恰建立在「CI 绿」之上。对外发声前必须先恢复这个事实，否则就是把已知红灯的仓推给陌生人。</p>
+</div>
+
+<h3>失守二：远端仓数三处口径不一，且门禁够不着</h3>
+
+<table>
+  <tr><th>出处</th><th>声称值</th><th>时点</th></tr>
+  <tr><td><b>Gitee API 实测</b></td><td><b class="mono" style="color:var(--red)">141</b>（page1=100 / page2=41 / page3=0）</td><td>2026-11-21 本次实测</td></tr>
+  <tr><td><code>PORTFOLIO.md</code></td><td class="mono">139</td><td>2026-11-14 生成</td></tr>
+  <tr><td><code>SPEC-204</code></td><td class="mono">139</td><td>2026-11-09 修订</td></tr>
+  <tr><td><code>docs/事实源/机器分区索引.md</code> §5</td><td class="mono">138</td><td>2026-11-03 实测</td></tr>
+</table>
+
+<p><b>为何无人拦截：</b><code>g20-facts</code> 的 COUNT 判据要求断言行内含<b>本机绝对路径</b>（<code>g20_facts.py:280-288</code>，先 <code>ABS_PATH.findall</code> 再 <code>target_path.is_dir()</code>，非目录则跳过）。远端 API 仓数没有对应本地目录 ⇒ 判据<b>结构性够不着</b>。</p>
+<p class="note">这不是门禁失职，是判据覆盖面的真实边界——事实源里明写着「失效条件：仓数变化后立即失效」，但「立即失效」靠人自觉，无机器保证。</p>
+
+<h3>失守三：外部证据为零，且方向修正文档的停手令正在被违反</h3>
+
+<table>
+  <tr><th>通道</th><th>状态</th><th>说明</th></tr>
+  <tr><td>Gitee star / fork / issue</td><td><span class="tag t-red">0 / 0 / 0</span></td><td>2026-11-21 实测</td></tr>
+  <tr><td>GitHub open issues</td><td><span class="tag t-amber">9 个，全是 Dependabot</span></td><td>人工 issue = <b>0</b></td></tr>
+  <tr><td>PyPI <code>allin-governance</code></td><td><span class="tag t-green">0.0.0a5，6 个版本</span></td><td>已发布，288 KB wheel</td></tr>
+  <tr><td>门面站</td><td><span class="tag t-green">HTTP 200</span></td><td>siwpan95.github.io/allin</td></tr>
+  <tr><td>GitHub Pages</td><td><span class="tag t-green">已启用</span></td><td>—</td></tr>
+</table>
+
+<p>方向修正文档 §零 的判断——「最近一个月 161 次提交里，platform 350 次文件改动、tools 213 次、docs 240 次，<b>没有一次是在给外部提供价值</b>」——在本次实测中<b>完全成立，且已恶化</b>：</p>
+
+<table>
+  <tr><th>近 30 天改动面</th><th>文件改动数</th><th>对外价值</th></tr>
+  <tr><td><code>docs/</code></td><td class="num">833</td><td>—</td></tr>
+  <tr><td><code>platform/</code></td><td class="num">516</td><td>—</td></tr>
+  <tr><td><code>tools/</code></td><td class="num">465</td><td>—</td></tr>
+  <tr><td><code>website/</code></td><td class="num">127</td><td>—</td></tr>
+  <tr><td><code>registry/</code></td><td class="num">108</td><td>—</td></tr>
+  <tr><td colspan="2"><b>面向外部采用者的产出</b></td><td><b class="mono" style="color:var(--red)">0</b></td></tr>
+</table>
+
+<div class="card" style="border-left:4px solid var(--amber)">
+  <h3>悖论：越是被约束，越是容易违反</h3>
+  <p>停手令写得很清楚——「新增门禁、新增 SPEC、新增 registry 条目，一律先问『这条是给外部用的，还是只是让中枢更好看？』」。</p>
+  <p>但机制本身在<b>奖励增量</b>：门禁要覆盖新事故、SPEC 要新增规范、registry 要补全条目——每一条都能通过门禁并获得成就感，<b>没有任何一条门禁能判断「这条改进对外部有用」</b>。</p>
+  <p style="margin-bottom:0">停手令靠人自问，而 240 笔/月的产出节奏下，自问是最容易被跳过的一步。这解释了为什么方向修正写于 10-31，而 11 月的产出<b>反而创了新高</b>。</p>
+</div>
+
+<h2>四、服务对象：四类用户，只有一类真实存在</h2>
+
+<table>
+  <tr><th>服务对象</th><th>设计形态</th><th>实际状态</th><th>判据</th></tr>
+  <tr><td><b>① 单一作者（真实主用户）</b></td><td>治理中枢 + 集成平台 + 门禁</td><td><span class="tag t-green">活跃且有效</span></td><td>143 仓（各机检出口径）</td></tr>
+  <tr><td><b>② AI 协作者</b></td><td>双形态注入（WorkBuddy skill ⇄ DSH preset）</td><td><span class="tag t-green">机制完备</span></td><td>g14/g16/g21 三门禁对账</td></tr>
+  <tr><td><b>③ 潜在外部采用者</b></td><td>PyPI 包 + 模板仓 + wiki + 门面站</td><td><span class="tag t-red">通道全备、无一人</span></td><td>人工 issue = 0</td></tr>
+  <tr><td><b>④ 未来的自己（新会话接续）</b></td><td>文档枢纽 + 交接卷 + 事实源</td><td><span class="tag t-green">高保真</span></td><td>381 文件、交接卷 180+ 节</td></tr>
+</table>
+
+<p><b>关键判断：</b>①④ 是真实且被服务得很好的；② 是机制的<b>内生目的</b>——allin 本质是「给 AI 协作者装上规矩」的工具箱，AI 是第一服务对象；③ 是方向修正文档设定的战略目标，但<b>尚无任何证据表明它是真实需求</b>。</p>
+
+<div class="card">
+  <h3>方向修正文档自己的反证条款值得称道</h3>
+  <p>该文档 §五 列了 5 条「本文可能被推翻」的反证，并逐条标注当前判定为「未证否」。第 4 条尤其清醒：</p>
+  <blockquote style="margin:0; padding-left:16px; border-left:3px solid var(--line); color:var(--ink-2)">
+    「allin 的复杂度高于其价值（143 个仓用 1 人管是负担不是资产）⇒ 应做减法而非做大。<b>未证否但有张力</b>。这是真实风险：20 道门禁 + 145 条 registry + 85 份文档，一个人维护。」
+  </blockquote>
+  <p style="margin-bottom:0">一份战略文档主动写下「我可能错了，而且这是真实风险」——这种自我设限在这类项目里罕见，也是 allin 文档体系可信度的一部分。</p>
+</div>
+
+<h2>五、未来愿景：三条路线与一个死锁</h2>
+
+<h3>愿景谱系</h3>
+
+<table>
+  <tr><th>阶段</th><th>文件</th><th>核心主张</th><th>状态</th></tr>
+  <tr><td>战略修正</td><td><code>allin自身做大做强方向修正</code>（10-31）</td><td>不做 137 仓的门面，<b>把 allin 本身做成可被外部采用的产品</b>；冻结在内部继续加治理功能</td><td>现行战略</td></tr>
+  <tr><td>智能升级</td><td><code>交付团项目交付方案</code>（11-05，8 份专项）</td><td>三面贯通：website 唯一整合 UI ⇄ platform 唯一聚合出口 ⇄ kernel CLI；<code>smoke:e2e</code> 为北极星</td><td><b>已落地且本地全绿</b></td></tr>
+  <tr><td>交付规范</td><td><code>SPEC-107</code>（11-20，最新）</td><td>六阶段闭环：需求→拆分→开发→审查→测试→修复；机器实跑 + 带行号问题 + 备份强制</td><td>首版即实证</td></tr>
+</table>
+
+<h3>三条候选路线</h3>
+
+<div class="grid3">
+  <div class="card">
+    <h4><span class="tag t-blue">P1</span> 可安装治理工具包</h4>
+    <p><b>形态</b>：<code>pip install allin-governance</code> → <code>init</code> 生成最小治理骨架。</p>
+    <p><b>现状</b>：已到 0.0.0a5，6 个版本，sdist 修复后自包含。</p>
+    <p><b>证据</b>：干净 venv 装 → init → 14/14 门禁 clean（Windows + Linux 双平台 CI 实测）。</p>
+    <p style="margin-bottom:0"><b>缺口</b>：零外部使用者。</p>
+  </div>
+  <div class="card">
+    <h4><span class="tag t-violet">P2</span> 模板仓 / fork 式采用</h4>
+    <p><b>形态</b>：<code>gh repo create --template</code> 拉一份改。</p>
+    <p><b>现状</b>：Gitee <b>无模板仓机制</b>（API 探测：<code>template</code> 字段不存在）⇒ 必须走 GitHub 侧。</p>
+    <p><b>参考</b>：ApexYard 证明「文件式治理，无包可装，star 并 fork」这条路有人走。</p>
+    <p style="margin-bottom:0"><b>缺口</b>：D1.5 尚未建。</p>
+  </div>
+  <div class="card">
+    <h4><span class="tag t-green">P3</span> 纯文件 + 一键脚本</h4>
+    <p><b>形态</b>：<code>git clone</code> + <code>bash scripts/bootstrap.sh</code>。</p>
+    <p><b>现状</b>：<b>今天就能给外部用</b>，已实测通过。</p>
+    <p><b>价值</b>：成本最低、路径最短，无需发版。</p>
+    <p style="margin-bottom:0"><b>缺口</b>：不可「安装」，门槛在 Node ≥22.18。</p>
+  </div>
+</div>
+
+<h3>死锁：D2.1 与 D3.1 互为前置</h3>
+
+<div class="flow">
+D2.1「3 名陌生人各自在陌生机器 30 分钟跑绿」←→ D3.1「写长文对外传播」
+
+  原始顺序：D2.1 取证据 → D3.1 才开口        ← 逻辑正确，但 D2.1 <b>凑不齐人</b>
+  实际死锁：需求侧为 0 ⇒ 找不到 3 个陌生人 ⇒ D2.1 永远待执行
+  10-31 改序：D3.1 先开口 → 用反馈招人 → 再跑 D2.1   ← 死锁解开
+</div>
+
+<p><b>但这个改序在今天有了一个新问题：</b>方向修正文档 §六 明确写了代价——「内容传播先行意味着<b>在拿到陌生人复跑证据之前就对外发声</b>」，因此 D3.1 只能陈述「CI 在 Linux/Windows 双平台绿」这一已实测事实。</p>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h3>⚠ 而这个事实已经不成立了</h3>
+  <p>CI 自 2026-11-13 起连续 5 次全红。文档里被反复引用为「本仓历史上第一次有外部可复现的绿」的那条证据（run <code>41154530905</code>），现在是<b>过期状态</b>。</p>
+  <p style="margin-bottom:0">⇒ <b>D3.1 的唯一可用论据目前是失效的</b>。要么先修 CI 恢复绿灯，要么 D3.1 改用别的已实测事实（如「sdist 物化后强制从源码构建装上、init 后 14/14 clean」——这条不依赖 CI，是本地可复现的硬证据）。</p>
+</div>
+
+<h2>六、诊断：三处结构性张力</h2>
+
+<table>
+  <tr><th>#</th><th>张力</th><th>证据</th><th>后果</th></tr>
+  <tr>
+    <td><b>1</b></td>
+    <td><b>质量与价值脱钩</b><br>机制质量持续提升，外部价值持续为零</td>
+    <td>近 30 天 2,400+ 改动中对外产出 0；人工 issue 0；star 0</td>
+    <td>「越努力越无人在乎」——边际收益递减，但无信号刹车</td>
+  </tr>
+  <tr>
+    <td><b>2</b></td>
+    <td><b>门禁只审自己</b><br>20 道门禁覆盖 allin 自身，不覆盖被管的 141 仓</td>
+    <td><code>registry.js</code> 的 <code>validateEntry</code> 判据在 platform 侧，20 道门禁无一调用</td>
+    <td>真实缺陷可绕过门禁而不被发现（本次即实证）</td>
+  </tr>
+  <tr>
+    <td><b>3</b></td>
+    <td><b>单点依赖</b><br>141 仓不依赖 allin，allin 依赖 141 仓证明自己成立</td>
+    <td>方向修正 §2.2 实测：外围对 allin 依赖 0，allin 对外围依赖 100%</td>
+    <td>allin 是唯一「不能停」的那个，也是唯一值得做大做强的那个——但也最孤独</td>
+  </tr>
+</table>
+
+<h2>七、建议：按投入产出排序</h2>
+
+<div class="lede">
+  <p><b>以下均为建议，未执行任何修改。</b>依 SPEC-002，推送/建仓/删除等高风险动作需全哥在场逐项放行；本地提交与记账属自主模式可做。</p>
+</div>
+
+<table>
+  <tr><th>优先级</th><th>动作</th><th>验收判据（可复测）</th><th>工作量</th></tr>
+  <tr>
+    <td><b style="color:var(--red)">P0</b></td>
+    <td><b>修复 CI 红灯</b>：7 条 registry 条目的 <code>gameplay</code> 标签与 category 对齐（补标签 or 改归类），并复核「重分类时 gameplay 是否要同步」是否该进变更检查单</td>
+    <td><code>npm --prefix platform run check</code> exit 0 ＋ <code>node --test</code> 75/75 ＋ CI 双平台绿</td>
+    <td>0.5 天</td>
+  </tr>
+  <tr>
+    <td><b style="color:var(--red)">P0</b></td>
+    <td><b>补盲区</b>：把 platform check 纳入 <code>run_all_gates.sh</code> 默认跑批（不只 <code>--with-platform</code>），或在 <code>g17-registry</code> 内调用 <code>validateEntry</code> 字段级判据</td>
+    <td>故意改坏一条 registry 条目 ⇒ 默认跑批即报红（当前不会）</td>
+    <td>1 天</td>
+  </tr>
+  <tr>
+    <td><b style="color:var(--amber)">P1</b></td>
+    <td><b>远端仓数对账</b>：141 实测值写回 PORTFOLIO/SPEC-204/机器分区索引 §5，并给 g20 增「API 计数」判据类型（无本地路径可数时的第二条路）</td>
+    <td>三处口径统一为 141；g20 能判「声称 N 仓 vs API 实测 M」</td>
+    <td>1 天</td>
+  </tr>
+  <tr>
+    <td><b style="color:var(--amber)">P1</b></td>
+    <td><b>CI 绿灯作为对外传播的前置条件</b>：D3.1 暂缓，先恢复「CI 绿」这一唯一论据；或改用不依赖 CI 的本地硬证据</td>
+    <td>CI 最近一次 run 为 success，且期间无未修红灯</td>
+    <td>随 P0</td>
+  </tr>
+  <tr>
+    <td><b style="color:var(--blue)">P2</b></td>
+    <td><b>把停手令机械化</b>：新增门禁/SPEC/registry 条目时强制回答「这条是给外部用的还是让中枢更好看」——不新增门禁数，而是给 <code>g00-meta</code> 加一个<b>必填字段</b>，让「内卷」在 PR 里显形</td>
+    <td>新增条目若无「对外价值声明」则门禁报红；<b>注意：这本身又是增量治理，须评估是否又落回张力 1</b></td>
+    <td>1 天</td>
+  </tr>
+  <tr>
+    <td><b style="color:var(--blue)">P2</b></td>
+    <td><b>D1.5 模板仓</b>（GitHub 侧）：<code>gh repo create --template</code> 可产出干净仓，成本最低的分发形态</td>
+    <td><code>gh repo create x --template siwpan95/allin-template</code> 成功</td>
+    <td>1.5 天</td>
+  </tr>
+</table>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h3>一条反向建议：考虑做减法</h3>
+  <p>方向修正文档的反证第 4 条至今「未证否但有张力」。综合本次实测，这个张力的量级已经变化——<b>CI 连续红灯 + 对外产出为零 + 近 30 天改动量创新高</b>，三条同时成立，说明系统正在高速生产<b>无人消费</b>的产物。</p>
+  <p style="margin-bottom:0">一个候选动作：<b>把 20 道门禁中 P1 档的门禁合并或降频</b>，只保留事故封印类（g01/g03/g04/g08/g11/g14/g20）。门禁的价值与它拦住的事故成正比，而「跑得更多」不等于「拦得更准」。</p>
+</div>
+
+<h2>八、结论</h2>
+
+<div class="card">
+  <p><b>1. allin 的工程质量是真实的高水平。</b>20 道门禁 + D1–D17 文档契约 + 30 条 repocheck + 基线棘轮 + 自检契约 + 双形态注入 + 结构化事实投影 + 三栈派生层 + 零依赖可安装包——这套东西的完整度在个人开源项目里罕见，且每条机制都有事故出处，不是纸上谈兵。</p>
+  <p><b>2. 但它当前正被自己的成功反噬。</b>机制越完善，内部投入的回报感越强，而外部价值信号为零——两者叠加，产出量在创新高（240 笔/月），采用者在零。这不是执行不力，是<b>优化目标设错了</b>：allin 优化的是「治理完备性」，而方向修正文档已经把战略目标改成了「外部采用」，机制却没跟着换。</p>
+  <p><b>3. 三处失守都在同一个位置：判据与现实之间的缝。</b>CI 漏检 registry 字段漂移（判据在 platform，门禁在 tools）、远端仓数无人核（判据要求本地路径）、停手令靠自觉（无机器判据）。allin 已经有成熟范式可循——<b>把每条「靠自觉的纪律」变成一条带自检的门禁</b>——但每一次这样做都会增加中枢体积。这是这个体系最深层的结构性矛盾。</p>
+  <p><b>4. 最紧迫的动作是修 CI，不是做新东西。</b>当前 CI 红状态下，任何对外传播都是把一个已知有缺陷的仓推给陌生人；而 D3.1 长文的唯一硬论据恰恰就是「CI 双平台绿」。修 CI 是解锁传播的前置，不是并行项。</p>
+  <p style="margin-bottom:0"><b>5. 对未来的判断：</b>allin 大概率会长期保持「一个人维护、零外部采用」的状态——这不是失败，因为服务对象①（作者本人）和②（AI 协作者）都已成立且受益。但若要兑现方向修正文档设想的第三条腿，必须接受一个前提：<b>接下来 90 天的产出量应当下降</b>，而不是继续上升。</p>
+</div>
+
+<footer>
+  <p><b>勘察方法</b>：全程只读，未修改 G:\allin 任何文件。所有数字均现场复测（门禁实跑 6m11s、platform 单测实跑、Gitee/GitHub API 实查、git 历史实测），未照抄文档。文档声称值与实测值的差异已在文中逐条标注。</p>
+  <p><b>本报告的两处局限</b>：① 仅在本机（DESKTOP-KQABATS）实测，另两台机器（DESKTOP-8RSV60V / SIWPAN）的状态未复核；② CI 失败日志未取到完整 step 输出（无 gh CLI，API 未提供完整日志），失败根因由「本地复现 + 提交历史二分 + workflow 定义」三方交叉推定确认。</p>
+</footer>
+
+</div>
+</body>
+</html>

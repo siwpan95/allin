@@ -116,6 +116,12 @@ bin-release/
 # 与 g15 基线（`governance/baseline/g15-docs-contract.txt`，已入库）同一性质：
 # 跨机共享的时间棘轮，不是可重生成的机器状态。
 !/tools/gate/audit/docs_index_baseline.txt
+# 例外：**发布区治理豁免台账必须入库（2026-11-21）**。
+# 与 repo_hygiene_exemptions.csv 同性质且更需要跨机共享：`publish_area_gate.py`
+# 靠它把「已实证裁决」与「待裁决」区分开。若不入库，他机/CI 上所有豁免失效，
+# 台账里那 2 条有理由的例外（版本线重置、第三方平台公开常量）会重新变成红灯，
+# 逼着后来者「为了绿灯改数据」—— 这正是豁免表要防止的事。
+!/tools/gate/audit/publish_area_exemptions.csv
 
 # reposcan 生成产物（脚本产出，不入版本控制；g01 会因内含机器路径报红，g05 判 output/ 为 artifact 目录）
 tools/reposcan/repos_meta.json

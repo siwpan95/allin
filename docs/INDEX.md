@@ -4,7 +4,7 @@
 > **怎么用**：想找东西先在这里搜；**不要**靠翻目录。找"规矩"看 `规范/`，找"现在的值"看 `事实源/`，找"当时怎么发生的"看 `记录/`。
 > **谁保证它不过期**：`python tools/gate/docs_index.py`（判据 D1–D17）——文件没登记、登记没文件、规范缺头部、规范名带日期、分类错位、ASCII 别名缺失、交接卷断号、计划闭环、事实源留痕、**本行自述份数与实际不符**，任一条都报红。
 > **分类判据与命名规则**：见 [`规范/SPEC-005-文档枢纽契约.md`](规范/SPEC-005-文档枢纽契约.md)。
-> **时点** 2026-11-21 ｜ **覆盖** 根 4 + 规范 19 + 事实源 22 + 记录 84 = **129 份**（不含 `md/` 历史树 232 篇）
+> **时点** 2026-11-21 ｜ **覆盖** 根 4 + 规范 19 + 事实源 22 + 记录 85 = **130 份**（不含 `md/` 历史树 232 篇）
 > ⚠ **本行份数由门禁 D8 逐次核对**：改完文档忘了改这里的数字会直接报红（2026-09-28 曾出现「头部写 51 / 实际 49」）。
 
 | 类别 | 目录 | ASCII 别名 | 是什么 | 可变性 |
@@ -94,7 +94,7 @@
 | FACT-20 | [runtime_defaults.json](事实源/runtime_defaults.json) | 2026-11-11 | **运行时超时默认值结构化权威源**（机器可读、零第三方依赖）：`unit=seconds` + key→正整数秒；由 `tools/runtime_defaults.py` 统一读取，消费方为首批 8 处 + venv_security 9 处 subprocess/urlopen 超时（值不变，仅换字面量为 `timeout(key)`） | `tools/runtime_defaults.py` · `tools/gate/runtime_defaults_check.py`（审计 M-10 / P2 #20） |
 | FACT-21 | [registry分类词表.md](事实源/registry分类词表.md) | 2026-11-13 | **registry `category` 受控枚举唯一事实源**（机器可读孪生 = `platform/registry/categories.yaml`）：13 类（`game`/`engine`/`ai`/`content`/`media`/`music`/`player`/`crawler`/`tool`/`automation`/`platform`/`prototype`/`unclassified`）+ 类型优先的归类判据 + 本轮 19 条重分类清单 + 与 `build_batch.mjs` 的已知耦合 + 借鉴记账（Wikipedia CC BY-SA 4.0 / GitHub Topics） | `platform/registry/projects/*.yaml` 的 `category` 字段 · 与 [工具分类索引](事实源/工具分类索引.md)（人向七类）、[组合分级决策索引](事实源/组合分级决策索引.md)（决策层）三者分层 |
 
-## 四、记录（`记录/`，84 份，**只增不改，不作为约束**）
+## 四、记录（`记录/`，85 份，**只增不改，不作为约束**）
 
 ### 4.1 交接（逐轮事实流水，按月分卷）
 
@@ -145,6 +145,7 @@
 | REC-AU-29 | [复评 CI 取证记录（2026-11-08）](记录/审计/复评CI取证记录_2026-11-08.md) | 2026-11-08 | 双 CI 联网**只读**取证（GitHub Actions API + Gitee 公开 API，不写权限、不改仓库、不推送、不触碰凭据）；目标 commit `70882e1`，含 GitHub run 链接与逐项裁决，只做取证不含修改动作 |
 | REC-AU-30 | [深度审计报告（2026-11-10）](记录/审计/深度审计报告_2026-11-10.md) | 2026-11-10 | 覆盖代码结构/安全性/异常处理/性能/可维护性五维深度审计：基线 `b7efd1b`，四路并行只读侦察 + 主审逐条复核 + 联网取证 16 条来源；**4 项严重**（registry 命令白名单放行解释器内联 ⇒ 任意命令执行 / registry `path` 无 `..` 校验 ⇒ 逃出仓根 / repocheck 规则崩溃 ⇒ `--fail-on error` 仍 exit 0 假绿 / MCP `docs.cite` 路径穿越 ⇒ 任意文件读取）+ 7 项高 + 10 项中 + 10 项低；含「已确认强项」与 21 条待验证疑点、联网来源清单、28 条分优先级处置建议；配套交付 `tools/gate/audit_doc_check.py`（审计文档错漏自动检查器 E1–E7）与 `.workbuddy/skills/allin-audit-doc-check/`（Skill） |
 | REC-AU-31 | [新人开发上手指南校准（2026-11-11）](记录/审计/新人开发上手指南校准_2026-11-11.md) | 2026-11-11 | 按 `HUB-06` 指南第 0 章逐条实跑并校准：抓到 **5 处硬伤**（末行验收基线逐字已变 / `repocheck` 排除项少 3 个照抄 exit 1 / 注册表 146→145 / `platform check-repos` 已转 exit 0 / `--with-platform` 红项实为 `harness` 门户探活且门户起来即绿）+ **13 处数字漂移**（主链 17→**47** 条命令 / 冒烟 6→**8** / platform test 56→**75** / kernel 单测 10→**26** / `.venv` 3.13.14→**3.12.13** / 机器 `@DESKTOP-KQABATS`→**`@SIWPAN`** / 「本机未装 PowerShell 7」→**已装 7.6.6**）+ **6 处缺失内容**（`facts/` 数据层 / 三机分区实况 / `g21` 对账 / 主链逐条清单 / 扩展链前置条件 / 陈旧 `portal.port`）；订正 `HUB-06` 本身并复验全链 exit 0 · 20/20 · `status=clean` |
+| REC-AU-32 | [allin 现状分析与愿景评估（2026-11-21）](记录/审计/附属/allin现状分析与愿景评估_2026-11-21.html) | 2026-11-21 | **只读勘察**（未改任何被勘察文件）：门禁本地全绿 `status=clean fail=0`，但 GitHub Actions `governance-gates` 自 2026-11-09 起连续 24 笔全红，回归起点定位到提交 `559eb31`（registry `category` v1→v2 后 `gameplay` 标签未同步，撞 `registry.js` 判据）；**门禁盲区**实证：`platform/scripts/check.mjs` 不在 `run_all_gates.sh` 默认跑批内，`g17` 只判 id/生命周期不调 `validateEntry` ⇒ 「20 道全绿但 CI 红」；仓数口径三处漂移（远端 API 实测 **141** / 事实源 138 / PORTFOLIO 139），`g20` 的 COUNT 判据只数本机绝对路径故无人拦；外部证据为零（GitHub 9 个 open 全是 Dependabot，star/fork/人工 issue 均 0）；近 90 天 543 笔提交全为单人，近 30 天改动面 docs 833 / platform 516 / tools 465、**无一笔面向外部采用者** —— 实证支持 2026-10-31《方向修正》的停手令判断。⚠ 报告的战略建议已被随后的「服务对象＝`repos`」定调取代，详见 [REC-TO-15](记录/专题/发布区治理闭环落地_2026-11-21.md)；**本件保留为勘察时点的原始证据** |
 
 ### 4.3 计划 · 事故 · 专题
 
