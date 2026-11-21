@@ -21,6 +21,10 @@
     "sbom": "python tools/sbom.py",
     "licenses": "python tools/license_matrix.py",
     "sarif": "python tools/sarif.py",
-    "smoke:e2e": "node scripts/smoke_e2e.mjs"
+    "smoke:e2e": "node scripts/smoke_e2e.mjs",
+    "console:check": "npm --prefix console run check",
+    "console:smoke": "npm --prefix console run smoke",
+    "console:plugins": "npm --prefix console run verify:plugins",
+    "console:lifecycle": "npm --prefix console run verify:lifecycle"
   }
 }

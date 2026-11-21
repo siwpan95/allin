@@ -15,6 +15,8 @@
    约定都从这里索引出去。
 2. **治理载体与执行器**：
    - [`platform/`](platform/README.md) —— Node 零依赖集成平台（门户 + 注册表 + 门禁）。
+   - [`console/`](console/README.md) —— 治理控制台（Electron 45）把 148 条登记变成可点操作面：
+     项目启停走 `@allin/core` 共享 pid 表，插件经 cordis-js 加命令/面板（[`SPEC-205`](docs/规范/SPEC-205-allin-console契约.md)）。
    - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条规则，零第三方依赖）。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。

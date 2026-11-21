@@ -20,6 +20,7 @@
 - **文档枢纽**在 `docs/`（`INDEX.md` 总目录 + 规范/事实源/记录/历史 四分类）。
 - **执行器**有两条执行面（互不耦合）：Python/Cordis 内核 CLI（`kernel/` + `allin_cli.py`）与
   Node 集成平台（`platform/` 门户）；外加 `tools/gate/` 治理门禁作「监工」。
+  **`console/`（2026-11-22 起）是 platform 的可视客户端**，不是第三条执行面（见 §2.3.1）。
 - **治理大脑（Agent）** 以**双形态**落地：WorkBuddy 侧 skill 与 DSH 侧 preset 治理段，同源同步。
 - **可安装产物**（`packages/`，2026-10-31 起）：`allin-governance`（PyPI），源码经 package-dir
   映射自本仓（对账门禁见 ADR-0008）；**对外站点**（`website/`，2026-11-02 起）：本地部署的
@@ -135,6 +136,23 @@
   新端口先查 `registry/ports.yaml`（外部端口分配表，唯一事实源）。
 - **API 契约**：见同仓 `platform/apps/portal/openapi.yaml`（OpenAPI 3.0.3，13 条路径，
   含请求/响应 schema 与示例；由真实源码生成，非推测）。
+
+#### 2.3.1 治理控制台 —— `console/`（2026-11-22 起，platform 的**客户端**）
+
+不是第四条执行面，而是 `platform` 的可视客户端：把 148 条登记从命令行搬到可点操作面。
+契约见 [`SPEC-205`](SPEC-205-allin-console契约.md)。
+
+- **复用不复制**：项目清单读 `@allin/core` 的 `loadRegistry`；启停走 `startEntry` / `stopEntry`，
+  **不自建 pid 表 / 端口表 / 项目清单** —— 与门户、CLI 共享 `running.json`，console 重启后状态自动恢复。
+- **CLI 是唯一总线**：`info` / `version` / `selfcheck` / `launch` / `stop` / `logs`，子命令白名单收口在主进程；
+  148 条规则里只有 31 个真实现了 `info`（其余属 B0′/B3 待补批次）。
+- **插件**：`packages/cordis-js`（`@cordisjs/core` 3.18.1）只开三个扩展点
+  `console.command` / `console.panel` / `console.on`，能力经 `ctx.deps` 注入。
+  ⚠ 与 `kernel/` 的 cordis-py 4.0.0 **不是同一条版本线**，也不共用插件。
+- **边界（SPEC-205 §0 的反向判据）**：删掉所有网页标签页它依然成立。**不做** Chromium 内核分支、扩展商店、
+  DRM、账号同步 —— 那些是浏览器产品的成本，与本仓的治理价值无关。
+- **进程模型**：`BaseWindow` + `WebContentsView`；渲染层 `contextIsolation` + `sandbox` + 无 Node，
+  主进程独占 spawn。P1 的多标签位已预留，尚未接。
 
 ### 2.4 治理门禁（监工）—— `tools/gate/`
 - **20 道治理门禁** `g00-meta` … `g20-facts`：`tools/gate/governance/run.ts` 聚合，

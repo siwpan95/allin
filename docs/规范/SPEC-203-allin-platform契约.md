@@ -77,7 +77,9 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 | **模式层（不动）** | `docs/规范/`（SPEC-001 / 002 / 005 / 006 / 105 / 203）、`tools/gate/` 判据、`platform/packages/core/` 与 `platform/scripts/` 的校验逻辑、`scripts/run_all_gates.sh` | 原样保留 |
 | **实例层（整体替换 / 重建）** | `platform/registry/projects/*.yaml`、`facts/facts.json` 的 projects / tiering / tools / licenses 投影、`PORTFOLIO.md`、`docs/事实源/组合分级决策索引.md` 与 `组合分级后续路线.md` | 按新发行区重建；旧组合材料按「只增不改」归档，不作现值 |
 
-⚠ 现有 **145 / 140 / 138** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
+⚠ 现有 **148 / 140 / 141** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
+（2026-11-22 重测：registry **148 条** / 唯一名 **142**（含 1 条仓内条目）/ 远端 **141 仓** /
+本机发布区检出 **140 目录**。上一版的 145 / 140 / 138 是 2026-11-13 的值。）
 📌 **口径补充（2026-11-13 二次实测，取代本轮首版）**：145 份 YAML 中 **1 条是仓内条目**（`portal.yaml`，`path: platform`，`publish.repo: siwpan/allin`）；其余 144 份发行区条目归并后 **139 个唯一发行仓名**（`musickit` 主仓 + `mixer` + `remix`、`foolproof-operation` 双入口、`magic-tower` / `magictowel`、`radio` / `video` ⇒ **一仓多条目是既有设计，不是重复登记**）。加上治理仓自身共 **140 个仓名** 参与远端对账。组合分级的「140 决策对象」又是另一套语义 —— 三处数值撞车，一律不得混用。扫描器同时输出 `entries` / `uniqueNames` / `internalEntries` 三个数。
 
 ### 发现参数（唯一来源）
@@ -105,6 +107,10 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 > **触发**：全哥「在本机实现扫描登记」。此前 `--apply` 只扫**差集**（有 `local_only` 才动手），
 > 本机 145 份手抄条目从未被扫描碰过，实战证据来自临时异组合而非本机发行区。
 > 本节把扫描登记从「补新仓」推进到「跑满本机、逐仓对账、落盘可复核快照」。
+>
+> 📌 **2026-11-22 现值**（本节下方 138 / 145 为该轮时点快照，非现值）：
+> registry **148 条** / 唯一名 **142** / 本机检出 **140** / 远端 **141**；
+> `local_only=0`、`remote_undeclared=0`、`declared_missing_local=3`（墓碑或 `remote-only` 豁免）。
 
 **分层契约（不可越界）**：本机实测 138 仓 / 145 条目，其中 **133 份 `manual`、96 份 `verify`、
 47 份 `note`、44 份 `gameplay`** 属扫描推不出的人工语义 ⇒ 它们是**不可覆盖的保留层**：
