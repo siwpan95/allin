@@ -18,4 +18,13 @@ contextBridge.exposeInMainWorld('allin', {
    */
   runCli: (projectId, subcommand, extraArgs = []) =>
     ipcRenderer.invoke('cli:run', { projectId, subcommand, extraArgs }),
+
+  /** 正在运行的项目 id 列表（来自 @allin/core 的 pid 表 + 存活探测） */
+  runningIds: () => ipcRenderer.invoke('projects:running'),
+
+  /** 启动项目（走 @allin/core.startEntry，pid 记在 core 那边） */
+  start: (projectId) => ipcRenderer.invoke('project:start', projectId),
+
+  /** 停止项目（走 @allin/core.stopEntry，含终止梯） */
+  stop: (projectId) => ipcRenderer.invoke('project:stop', projectId),
 })

@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url)
 const { BaseWindow, WebContentsView, ipcMain } = require('electron')
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadRegistry, PORTS_YAML, resolvePath } from '@allin/core'
+import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds } from '@allin/core'
 import { locateCli, hasInfoSubcommand, runCli, failureSummary } from '@allin/cli-bus'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -124,12 +124,46 @@ export function registerIpc() {
       summary: result.ok ? '' : failureSummary(result),
     }
   })
+
+  registerLifecycleIpc()
 }
 
 /** 冒烟脚本用：直接拿项目清单（不经 IPC）。 */
 export function listProjects() {
   const { entries, problems } = loadRegistry(REGISTRY_DIR)
   return { total: entries.length, items: entries.map(compact), problems: problems || [] }
+}
+
+/**
+ * 启停一律走 `@allin/core`（pid 表 / tasks.log / 终止梯都在那边），
+ * console **不自己 spawn**、不自己记 pid —— 否则两边状态必然分裂（SPEC-205 §6）。
+ */
+export function registerLifecycleIpc() {
+  ipcMain.handle('projects:running', () => ({ ids: runningIds() }))
+
+  ipcMain.handle('project:start', (_evt, projectId) => {
+    const { entries } = loadRegistry(REGISTRY_DIR)
+    const entry = entries.find((e) => e.id === projectId)
+    if (!entry) return { ok: false, reason: 'not-found', message: `未知项目：${projectId}` }
+    try {
+      const r = startEntry(entry)
+      return { ok: r.ok !== false, pid: r.pid, reason: r.reason, id: projectId }
+    } catch (e) {
+      // core 会抛 INVALID_ENTRY / UNSAFE_COMMAND / PATH_ESCAPE —— 原样回传原因
+      return { ok: false, reason: e.code || 'start-failed', message: e.message }
+    }
+  })
+
+  ipcMain.handle('project:stop', async (_evt, projectId) => {
+    const { entries } = loadRegistry(REGISTRY_DIR)
+    const entry = entries.find((e) => e.id === projectId) || null
+    try {
+      const r = await stopEntry(projectId, entry)
+      return { ok: r.ok !== false, reason: r.reason, id: projectId }
+    } catch (e) {
+      return { ok: false, reason: e.code || 'stop-failed', message: e.message }
+    }
+  })
 }
 
 export { runCli, resolvePath }

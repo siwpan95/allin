@@ -100,6 +100,15 @@ app.whenReady().then(async () => {
       log(`不合规项目（stdout 非纯 JSON）: ${nonCompliant.join(', ')}`)
     }
 
+    // —— 运行态接口：只读调用，不启动任何项目（避免冒烟产生副作用）——
+    const runningOk = await wc.executeJavaScript(`
+      (async () => {
+        const r = await window.allin.runningIds();
+        return Array.isArray(r && r.ids);
+      })()
+    `, true)
+    log(`runningIds 接口: ${runningOk ? 'OK' : '不可用'}`)
+
     const img = await wc.capturePage()
     mkdirSync(path.dirname(OUT), { recursive: true })
     writeFileSync(OUT, img.toPNG())
@@ -110,7 +119,8 @@ app.whenReady().then(async () => {
     if (count <= 0) problems.push('未渲染出任何项目条目')
     if (!/\/\s*\d+/.test(stats)) problems.push(`统计栏未体现总数：${stats}`)
     if (size < 5000) problems.push(`截图过小（${size} 字节），疑似空白`)
-    if (!picked) problems.push('前 8 个带 CLI 的项目里没有一个 info --json 返回纯 JSON')
+    if (!picked) problems.push('前 8 个带 CLI 的项目里没有一个 info 返回纯 JSON')
+    if (!runningOk) problems.push('runningIds 接口不可用（启停链路未接通）')
 
     if (problems.length) {
       for (const p of problems) console.error(`[smoke] ✗ ${p}`)
