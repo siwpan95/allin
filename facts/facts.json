@@ -616,6 +616,15 @@
       "source_file": "platform/registry/projects/dict-scene-engine.yaml"
     },
     {
+      "project_id": "docx-converter",
+      "name": "docx 文档互转程序",
+      "category": "tool",
+      "version": "1.0.0",
+      "path": "repos/docx-converter",
+      "publish_repo": "siwpan/docx-converter",
+      "source_file": "platform/registry/projects/docx-converter.yaml"
+    },
+    {
       "project_id": "drawpic",
       "name": "画图",
       "category": "tool",

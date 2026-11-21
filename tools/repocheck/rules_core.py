@@ -91,6 +91,29 @@ STALE_SUFFIXES = (
 #: 其中「最可能夹带硬编码路径」的那几类，扫描时优先。
 _STALE_CODE_SUFFIXES = (".py", ".bat", ".cmd", ".ps1", ".sh", ".toml", ".cfg", ".ini")
 
+#: 历史留档 —— 整份文件记录的是「当时发生了什么」，里面的旧路径是**史实**而非
+#: 待执行指令，改它等于篡改历史。与 ``tools/publish_area_stale_paths.py`` 的
+#: ``is_historical_file`` 同源，避免出现「清洗工具不改、门禁一直红」的僵局。
+#: 实测（2026-11-21 发布区全量）：an-engine 的 CHANGELOG 里「去掉内部路径 <旧仓根>」
+#: 是变更条目、adventurelog 的运行日志、kard 的集成报告与 pq-multiverse 的
+#: 项目总结是交付留档 —— 六条红线全部落在这类文件上，而它们一个字都不该动。
+_HISTORICAL_NAME_PARTS = ("changelog", "change-log", "history", "news",
+                          "report", "总结", "指导", "迁移")
+_HISTORICAL_PATH_PARTS = ("audit/", "/audit", "记录/", "/records/", "/adr/", "adr-")
+_HISTORICAL_SUFFIXES = (".log",)
+_HISTORICAL_NAME_EXACT = ("log.txt", "log.md")
+
+
+def _is_historical_archive(path: str) -> bool:
+    """该文件是否属于历史留档（整份不判旧路径残留）。"""
+    low = path.replace("\\", "/").lower()
+    name = low.rsplit("/", 1)[-1]
+    if name.endswith(_HISTORICAL_SUFFIXES) or name in _HISTORICAL_NAME_EXACT:
+        return True
+    if any(part in name for part in _HISTORICAL_NAME_PARTS):
+        return True
+    return any(part in low for part in _HISTORICAL_PATH_PARTS)
+
 #: 单次旧路径扫描最多读多少个文件。上万文件的仓库（截图/存档仓库常见）
 #: 若不限量，光读 .txt 就能吃掉好几秒。
 MAX_STALE_FILES = 1500
@@ -385,7 +408,8 @@ def _check_stale_paths(ctx: "ProjectContext") -> CheckResult:
     与 ``tools/publish_area_stale_paths.py`` 的口径同源（同一套语境标记），
     避免「清洗工具说已清干净、门禁还在报」。
     """
-    candidates = [p for p in ctx.files if p.endswith(STALE_SUFFIXES)]
+    candidates = [p for p in ctx.files
+                  if p.endswith(STALE_SUFFIXES) and not _is_historical_archive(p)]
     # 源码与脚本最可能夹带路径，排在文档前面（后面的会被上限截断）
     candidates.sort(key=lambda p: (0 if p.endswith(_STALE_CODE_SUFFIXES) else 1, p))
 

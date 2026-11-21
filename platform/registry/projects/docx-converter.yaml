@@ -1,0 +1,20 @@
+id: docx-converter
+name: docx 文档互转程序
+category: tool
+version: 1.0.0
+path: repos/docx-converter
+manual: true
+note: |
+  PDF / Word / PPT / HTML / MD / TXT 之间的批量互转。input/ 进、output/ 出，一一对应；
+  以能力矩阵求解 (源, 目标) 路线并按保真度分级，跨格式有损的部分显式标注而非假装等价。
+launch:
+  command: python 转换.py
+  # 2026-11-21 补登记：本机 repos/ 下有该 git 工作树但 registry 无条目，
+  # g17-registry 判 unregistered-repo 红项（远端 dec2217 拉取后首次本机全量跑暴露）。
+publish:
+  repo: siwpan/docx-converter
+  # 远端默认分支是 main（git symbolic-ref 实测），不是 master —— 显式登记避免发布拉取落空。
+  branch: main
+verify:
+  # 轻量自检：只探测后端可用性并退出，不依赖 input/ 里的素材，也不需要 LibreOffice 实际转换。
+  command: python 转换.py --list-engines

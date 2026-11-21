@@ -61,6 +61,38 @@ _COMMENT_PREFIXES = ("#", "//", "*", ">", "|", ";")
 _SCAN_SUFFIXES = (".py", ".md", ".txt", ".sh", ".ps1", ".yml", ".yaml", ".cfg",
                   ".ini", ".toml", ".bat", ".cmd", ".json", ".js", ".mjs", ".ts")
 
+#: 整份文件都是历史留档 —— 里面的旧路径记的是「当时发生了什么」，不是让人照着做。
+#: 实测误伤（2026-11-21 本机全量）：``adventurelog/log.txt`` 的运行日志与
+#: ``an-engine/CHANGELOG.md`` 的变更条目被逐行替换并追加注释，等于篡改历史；
+#: ``pq-multiverse/docs/项目总结.md``、``media-effect-migration-report.md`` 同理。
+#: 行级 ``_EXPLANATION_MARKERS`` 拦不住这种「整份文件都是过去时」的形态 ——
+#: 日志行里既没有「已失效」也没有「原」，却每一行都是历史事实，故必须在文件层排除。
+_HISTORICAL_NAME_PARTS = (
+    "changelog", "change-log", "history", "news", "report", "总结", "指导", "迁移",
+)
+_HISTORICAL_PATH_PARTS = (
+    "audit/", "/audit", "记录/", "/records/", "/adr/", "adr-",
+)
+_HISTORICAL_SUFFIXES = (".log",)
+#: 日志类文件名：``log.txt`` / ``run.log`` 之类，内容是运行痕迹而非指南。
+_HISTORICAL_NAME_EXACT = ("log.txt", "log.md")
+
+
+def is_historical_file(rel: str, fn: str) -> bool:
+    """该文件是否属于历史留档（整份不改）。
+
+    ``rel`` 是仓内相对路径（正斜杠），``fn`` 是文件名。
+    """
+    low_rel = rel.lower()
+    low_fn = fn.lower()
+    if low_fn.endswith(_HISTORICAL_SUFFIXES) or low_fn in _HISTORICAL_NAME_EXACT:
+        return True
+    if any(p in low_fn for p in _HISTORICAL_NAME_PARTS):
+        return True
+    if any(p in low_rel for p in _HISTORICAL_PATH_PARTS):
+        return True
+    return False
+
 
 def is_explanation_line(line: str) -> bool:
     """该行是否属于「说明性文字」（含旧路径但不该改）。"""
@@ -77,8 +109,151 @@ def is_explanation_line(line: str) -> bool:
     return False
 
 
-def make_replacement(line: str, repo_name: str = "") -> str | None:
-    """算出该行应改成什么；None 表示不改。"""
+def _norm_name(s: str) -> str:
+    """仓库名归一化：``pq-multiverse`` / ``pq_multiverse`` / ``PQ.Multiverse`` 视为同名。"""
+    return "".join(ch for ch in s.lower() if ch.isalnum())
+
+
+def _path_exists_under(root: Path | None, parts: list[str]) -> bool:
+    """该相对路径在仓内是否真实存在（parts 为空 = 仓根本身，恒真）。
+
+    ``root is None`` 时不做校验并返回 True —— 拿不到仓根就退回旧的「只按名字剥」
+    行为，宁可少改也不错改。
+    """
+    if root is None or not parts:
+        return True
+    try:
+        return (root.joinpath(*parts)).exists()
+    except OSError:
+        return True
+
+
+#: 按仓缓存 ``{仓根: {子项名: [相对路径, …]}}``，供 basename 兜底查找用。
+_NAME_INDEX: dict[str, dict[str, list[str]]] = {}
+_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", ".deps",
+              "dist", "build", "vendor"}
+
+
+def _name_index(root: Path) -> dict[str, list[str]]:
+    """仓内「文件名 → 相对路径列表」索引（懒建、按仓缓存）。"""
+    key = str(root)
+    if key in _NAME_INDEX:
+        return _NAME_INDEX[key]
+    index: dict[str, list[str]] = {}
+    try:
+        for p in root.rglob("*"):
+            if any(part in _SKIP_DIRS for part in p.parts):
+                continue
+            if p.is_file() or p.is_dir():
+                index.setdefault(p.name, []).append(p.relative_to(root).as_posix())
+    except OSError:
+        pass
+    _NAME_INDEX[key] = index
+    return index
+
+
+def _resolve_in_repo(root: Path | None, parts: list[str],
+                     base_dir: str = "") -> list[str] | None:
+    """把「旧仓根之后的路径尾巴」解析成**当前仓内真实存在**的相对路径。
+
+    为什么需要它：旧仓根下的目录层级与当前仓布局并不一致，光删掉
+    ``<旧仓根>`` 前缀会产出新的死路径。实测三类：
+
+    * 独立仓 —— ``<旧仓根>/stay/pq_multiverse/src`` ⇒ 仓内就是 ``src``
+      （中间的 ``stay/pq_multiverse`` 全属仓外）；
+    * 仓根别名 —— ``<旧仓根>/hell_below_vn/build_all.py`` ⇒ novel-reader 的仓根
+      内容就是 hell_below_vn 本身，故应为 ``build_all.py``；
+    * **聚合仓** —— game-prototypes 仓下有 ``pq-multiverse/`` 子目录，同一句
+      ``cd <旧仓根>/stay/pq_multiverse/src`` 在这里应解析成
+      ``pq-multiverse/src``（且目录名是连字符，与旧路径的下划线不同名）。
+
+    做法：从尾巴的每个起点尝试「逐段按归一化名解析到真实子项」，最长匹配优先；
+    全都解析不了时退回「按 basename 全仓唯一命中」；仍不行返回 None。
+    """
+    if root is None or not parts:
+        return None
+    if _path_exists_under(root, parts):
+        return parts
+    # 1) 从每个起点逐段解析，取最长成功
+    best: list[str] | None = None
+    for start in range(len(parts)):
+        cur = root
+        real: list[str] = []
+        ok = True
+        for seg in parts[start:]:
+            cand = cur / seg
+            if cand.exists():
+                real.append(seg)
+                cur = cand
+                continue
+            try:
+                match = [c.name for c in cur.iterdir()
+                         if _norm_name(c.name) == _norm_name(seg)]
+            except OSError:
+                ok = False
+                break
+            if len(match) == 1:
+                real.append(match[0])
+                cur = cur / match[0]
+            else:
+                ok = False
+                break
+        if ok and real and (best is None or len(real) > len(best)):
+            best = real
+    if best:
+        return best
+    # 2) 当前文件所在目录兜底 —— 聚合仓里同名文件在多处存在（game-prototypes 下
+    #    mahjong / sandbox / fish 各有一份 allin_engine），「全仓唯一命中」因此失效；
+    #    但「一份文档引用的入口脚本通常就在它自己旁边」是可靠得多的上下文。
+    if base_dir and parts:
+        cand = root / base_dir / parts[-1]
+        if cand.exists():
+            return (Path(base_dir) / parts[-1]).as_posix().split("/")
+    # 3) basename 全仓唯一命中兜底
+    hits = _name_index(root).get(Path(parts[-1]).name, [])
+    if len(hits) == 1:
+        return hits[0].split("/")
+    return None
+
+
+#: 形态 a 里的「工具 + 目标」对，用于把命令尾部的相对路径也校正到仓内真实位置。
+_TOOL_TARGET = re.compile(r"\b(pythonw?|pytest|cd)\s+((?!-)[^\s&;|]+)")
+
+
+def _fix_relative_paths(text: str, repo_root: Path | None, base_dir: str = "") -> str:
+    """把命令里的相对路径校正到**仓内真实存在**的位置。
+
+    ``cd <旧仓根> && python allin_engine/x.py`` 去掉 cd 之后，命令本身仍可能指向
+    旧布局（实测 fish 仓的实际位置是 ``tools/allin_engine/``，聚合仓 game-prototypes
+    下则是 ``fish/tools/allin_engine/``）—— 只删盘符等于把「盘符死路径」换成
+    「层级死路径」。能唯一解析的就改对，解析不了的保持原样（宁可不改也不错改）。
+    """
+    if repo_root is None:
+        return text
+
+    def _repl(m: re.Match[str]) -> str:
+        tool, tgt = m.group(1), m.group(2)
+        if re.match(r"^[A-Za-z]:", tgt) or tgt.startswith(("<", "/", "\\", "<")):
+            return m.group(0)
+        parts = [p for p in tgt.replace("\\", "/").split("/") if p]
+        if not parts or _path_exists_under(repo_root, parts):
+            return m.group(0)
+        resolved = _resolve_in_repo(repo_root, parts, base_dir)
+        return f"{tool} {'/'.join(resolved)}" if resolved else m.group(0)
+
+    return _TOOL_TARGET.sub(_repl, text)
+
+
+def make_replacement(line: str, repo_name: str = "", repo_root: Path | None = None,
+                     rel_file: str = "") -> str | None:
+    """算出该行应改成什么；None 表示不改。
+
+    ``rel_file`` 是**当前文件**的仓内相对路径，用于在聚合仓里按「同目录」上下文
+    解析出正确层级（见 :func:`_resolve_in_repo` 第 2 条兜底）。
+    """
+    base_dir = str(Path(rel_file).parent.as_posix()) if rel_file else ""
+    if base_dir == ".":
+        base_dir = ""
     if is_explanation_line(line):
         return None
 
@@ -92,7 +267,7 @@ def make_replacement(line: str, repo_name: str = "") -> str | None:
         if m2:
             return "  # 去符盘：原 cd 指向旧仓根，已在本仓根执行"
     if m:
-        cmd = m.group(2).strip()
+        cmd = _fix_relative_paths(m.group(2).strip(), repo_root, base_dir)
         indent = line[: len(line) - len(line.lstrip())]
         return f"{indent}{cmd}  # 去符盘：原 `cd <旧仓根> && …` 指向旧仓根，已改为仓内相对路径"
 
@@ -105,16 +280,10 @@ def make_replacement(line: str, repo_name: str = "") -> str | None:
     if m:
         tail = m.group(2).replace("\\", "/")
         parts = [p for p in tail.split("/") if p]
-        # 以仓库名为锚点：仓库名之后的路径才是仓内相对路径
-        for i, p in enumerate(parts):
-            # 仓库名 pq-multiverse 与路径里的 pq_multiverse 是同一名：
-            # 统一把非字母数字字符折叠掉再比。
-            def _norm(s: str) -> str:
-                return "".join(ch for ch in s.lower() if ch.isalnum())
-
-            if _norm(p) == _norm(repo_name) and i + 1 < len(parts):
-                parts = parts[i + 1:]
-                break
+        # 交给仓内真实路径解析：既剥掉仓外层级（stay/pq_multiverse），
+        # 也处理聚合仓（game-prototypes 下应得 pq-multiverse/src）。
+        resolved = _resolve_in_repo(repo_root, parts, base_dir)
+        parts = resolved if resolved else []
         rel = "/".join(parts)
         indent = line[: len(line) - len(line.lstrip())]
         if not rel or rel == ".":
@@ -134,11 +303,15 @@ def make_replacement(line: str, repo_name: str = "") -> str | None:
             idx = tail.index("allin")
         except ValueError:
             return "<仓库根>"
-        rest = tail[idx + 1:]
-        if rest and rest[0].lower().replace("_", "-").replace(".", "") == \
-                repo_name.lower().replace("_", "-").replace(".", ""):
+        rest = [p for p in tail[idx + 1:] if p]
+        if rest and _norm_name(rest[0]) == _norm_name(repo_name):
             rest = rest[1:]
-        return "/".join(rest) if rest else "<仓库根>"
+        # 旧仓根下的目录名未必等于当前仓库名（novel-reader 的仓根内容就是
+        # <旧仓根>/hell_below_vn 本身），层级也未必只有一层（stay/pq_multiverse
+        # 全属仓外）。统一交给仓内真实路径解析，解析不出来才降级为 <仓库根> 占位 ——
+        # 占位符至少诚实，不会像残留旧路径那样看起来能跑。
+        resolved = _resolve_in_repo(repo_root, rest, base_dir)
+        return "/".join(resolved) if resolved else "<仓库根>"
 
     new = line
     pat_repo = re.compile(
@@ -185,6 +358,8 @@ def process_repo(repo: Path, include_untracked: bool = False) -> dict:
                 continue
             full = Path(dirpath) / fn
             rel = str(full.relative_to(repo)).replace("\\", "/")
+            if is_historical_file(rel, fn):
+                continue
             if tracked and not include_untracked and rel not in tracked:
                 continue
             try:
@@ -197,7 +372,7 @@ def process_repo(repo: Path, include_untracked: bool = False) -> dict:
             changed = 0
             for line in text.splitlines():
                 if "allin" in line and (_LEGACY_FWD in line or _LEGACY_BACK in line):
-                    rep = make_replacement(line, repo.name)
+                    rep = make_replacement(line, repo.name, repo, rel)
                     if rep is not None:
                         new_lines.append(rep)
                         changed += 1

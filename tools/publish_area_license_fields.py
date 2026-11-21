@@ -35,6 +35,124 @@ from pathlib import Path
 
 from publish_area_readme_sections import detect_license, detect_sections
 
+#: 与门禁**同源**：直接复用 repocheck 的 SPDX 关键词表与归一化函数，
+#: 而不是在本工具里另造一套。判据一旦分叉就会互相打架 —— 2026-11-21 实测：
+#: 门禁的 ``_KEYWORD_TO_SPDX`` 不含 ``MIT-0``，``mit`` 会把 MIT-0 归一成 MIT 族，
+#: 因此 README 写「MIT」而 LICENSE 是 MIT-0 时门禁判**同族、不报错**；
+#: 本工具若按字面比较，就会把这 9 个已合规的仓误判成待补并再写一遍声明。
+sys.path.insert(0, str(Path(__file__).resolve().parent / "repocheck"))
+try:  # pragma: no cover - 依赖仓内目录结构，缺失时退回宽松判据
+    from rules_docs import _keyword_spdx, normalize_spdx
+except Exception:  # noqa: BLE001
+    _keyword_spdx = None  # type: ignore[assignment]
+    normalize_spdx = None  # type: ignore[assignment]
+
+#: 许可章节标题 —— 与门禁 ``tools/repocheck/rules_docs.py::_readme_license_section``
+#: 同源（含编号章节「## 10. 许可证」的写法）。工具与门禁判据必须一致，否则会出现
+#: 「工具认为已声明、门禁认为缺声明」的僵局：实测 2026-11-21，dict-scene-engine 的
+#: 「## 插件与事件协议」被本工具旧的宽判据当成许可章节（正则含「协议」），
+#: loly / stay / zhuangtaiji 的章节里只有「演示用途」「以既有约定为准」和一个 badge
+#: 而无任何许可类型，工具三次都跳过，门禁三次都判红。
+_LICENSE_HEAD = re.compile(
+    r"^#{1,6}\s*(?:\d+[.、)．]*\s*)?(?:license|licence|许可|协议)(?![a-z0-9]).*$",
+    re.I | re.M)
+
+#: SPDX 标识 → README 里可能出现的写法（归一化后比较）。
+_LICENSE_TOKENS = {
+    "MIT-0": (r"\bmit[-\s_]?0\b", r"\bmit\s+no\s+attribution\b"),
+    "MIT": (r"\bmit\b(?!\s*[-\s]?\s*0\b)", r"\bmit\s+license\b"),
+    "Apache-2.0": (r"\bapache[-\s]?2\.0\b", r"\bapache\s+license\b"),
+    "GPL-3.0": (r"\bgpl[-\s]?3(\.0)?\b", r"\bgnu\s+general\s+public\s+license\b"),
+    "BSD-3-Clause": (r"\bbsd[-\s]?3[-\s]?clause\b",),
+    "CC0-1.0": (r"\bcc0\b",),
+}
+
+
+def _mentions_license(text: str, lic: str) -> bool:
+    """文本里是否出现**明确**的许可类型（与门禁同族口径）。
+
+    优先走门禁的 ``_keyword_spdx`` + ``normalize_spdx``：MIT 与 MIT-0 在门禁里
+    属同一族，这里也必须如此，否则同一个仓会出现「工具补、门禁仍判不一致」或
+    「门禁已认可、工具又补一遍」的来回拉锯。
+    """
+    if _keyword_spdx is not None and normalize_spdx is not None:
+        found = _keyword_spdx(text)
+        if not found:
+            return False
+        a, b = normalize_spdx(found), normalize_spdx(lic)
+        # 前缀包容：本工具的 detect_license 会把 LICENSE 识别成 ``GPL-3``，
+        # 而门禁关键词表里是 ``GPL-3.0`` —— 同一许可的两种写法，不能判成两族。
+        return a == b or a.startswith(b) or b.startswith(a)
+    low = text.lower()  # 兜底：门禁模块不可用时按关键词表近似
+    for pat in _LICENSE_TOKENS.get(lic, ()):
+        if re.search(pat, low):
+            return True
+    if lic not in _LICENSE_TOKENS:
+        norm = re.sub(r"[^a-z0-9.]", "", lic.lower())
+        if norm and norm in re.sub(r"[^a-z0-9.]", "", low):
+            return True
+    return False
+
+
+def _first_paragraph_after_head(text: str) -> tuple[int, int, str] | None:
+    """许可章节标题后的第一段：返回 (段起始偏移, 段结束偏移, 段文本)。
+
+    两个偏移都要：门禁 ``_readme_license_section`` **只读第一段**，所以类型声明
+    必须落到第一段的位置上 —— 补在段尾会被空行隔成第二段，门禁照样判缺
+    （实测 loly / stay 补完仍红）。故按 ``start`` 插到段前。
+    """
+    m = _LICENSE_HEAD.search(text)
+    if not m:
+        return None
+    pos = m.end()
+    start: int | None = None
+    end = pos
+    lines: list[str] = []
+    for raw in text[m.end():].splitlines(keepends=True):
+        stripped = raw.strip()
+        if stripped.startswith("#"):
+            break
+        if not stripped:
+            if lines:
+                break
+            pos = end = pos + len(raw)
+            continue
+        if start is None:
+            start = pos
+        lines.append(stripped)
+        pos = end = pos + len(raw)
+    if start is None:
+        return None
+    return (start, end, "\n".join(lines))
+
+
+def _readme_declares(rd: Path, lic: str) -> bool:
+    """README 是否已用**明确类型**声明了该许可（与门禁同一口径）。
+
+    门禁 ``tools/repocheck/rules_docs.py`` 认三种形态，本函数必须同样认全，否则
+    会出现「工具一直补、门禁一直绿不了」或者反过来的僵局：
+
+    1. ``## 许可`` 章节 + 章节第一段写明类型；
+    2. 行首引用块 ``> 仓库：… ｜ 许可：MIT-0（见 LICENSE）``（模板化 README 常见）；
+    3. 不带 ``>`` 的同款正文行 ``仓库：<url> ｜ 许可：X``。
+    """
+    text = rd.read_text(encoding="utf-8", errors="replace")
+    para = _first_paragraph_after_head(text)
+    if para and _mentions_license(para[2], lic):
+        return True
+    # 形态 2/3：模板行。第三方语境要排除（同 _readme_license_section 的理由）。
+    for line in text.splitlines():
+        s = line.strip()
+        if not (s.startswith(">") or re.match(r"^(?:仓库|repo|repository)\s*[:：]", s, re.I)):
+            continue
+        if not re.search(r"许可|licen[cs]e", s, re.I):
+            continue
+        if re.search(r"第三方|vendor|依赖|兼容|不兼容|GPL|AGPL|LGPL|upstream|上游", s, re.I):
+            continue
+        if _mentions_license(s, lic):
+            return True
+    return False
+
 
 def add_pyproject_license(path: Path, lic: str) -> tuple[str, bool]:
     """在 [project] 段插入 license 字段。返回 (新文本, 是否改动)。"""
@@ -125,13 +243,30 @@ def process_repo(repo: Path) -> dict:
     rd = find_readme(repo)
     if rd is not None:
         text = rd.read_text(encoding="utf-8", errors="replace")
-        if "许可" not in detect_sections(text):
-            addition = (
-                f"\n\n## 许可\n\n- {lic}，见 [LICENSE](LICENSE)。\n\n"
-                f"<!-- 补写记账：{repo.name} · 本段由 allin 仓 "
-                f"tools/publish_area_license_fields.py 依据本仓 LICENSE 文件实读补写 -->\n"
-            )
-            actions.append({"file": rd.name, "kind": "readme", "new": text + addition})
+        if not _readme_declares(rd, lic):
+            para = _first_paragraph_after_head(text)
+            if para is None:
+                # 没有许可章节 ⇒ 整段追加
+                addition = (
+                    f"\n\n## 许可\n\n- {lic}，见 [LICENSE](LICENSE)。\n\n"
+                    f"<!-- 补写记账：{repo.name} · 本段由 allin 仓 "
+                    f"tools/publish_area_license_fields.py 依据本仓 LICENSE 文件实读补写 -->\n"
+                )
+                actions.append({"file": rd.name, "kind": "readme", "new": text + addition})
+            else:
+                # 章节在、但通篇没写具体类型（如「本项目为演示/教学用途」）⇒
+                # 把类型声明插到**第一段之前**，而不是段尾追加：门禁只读标题后的
+                # 第一段，补在段尾会被空行隔成第二段，等于白补（实测 loly / stay）。
+                start, _end, _body = para
+                line = (
+                    f"- 许可类型：{lic}，见 [LICENSE](LICENSE)。\n"
+                    f"<!-- 补写记账：{repo.name} · 许可类型由 allin 仓 "
+                    f"tools/publish_area_license_fields.py 补写（原章节未声明具体类型） -->\n\n"
+                )
+                actions.append({
+                    "file": rd.name, "kind": "readme",
+                    "new": text[:start] + line + text[start:],
+                })
 
     if not actions:
         return {"repo": repo.name, "status": "ok", "license": lic}
