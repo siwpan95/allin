@@ -62,6 +62,7 @@
 | --- | --- | --- | --- | --- |
 | [SPEC-201](SPEC-201-引擎接口契约.md) | 引擎（`allin_engine`）接口契约 | 准则 | 生效 | 统一引擎的入口、装配、fork、双写不变量与复用优先 |
 | [SPEC-202](SPEC-202-foolproof-operation契约.md) | foolproof-operation 契约 | 准则 | 生效 | Cordis 式内核 + USN 索引的黄金值与两条只读纪律 |
+| [SPEC-205](SPEC-205-allin-console契约.md) | allin-console 契约（治理控制台） | 准则 | 生效 | Electron 外壳 + CLI 总线 + JS cordis 插件；148 项目统一 CLI 对接，不做内核分支 |
 
 ### 3.4 存档（`SPEC-9xx`）
 
