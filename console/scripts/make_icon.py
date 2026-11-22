@@ -11,6 +11,7 @@ BMP。为一个图标引入 Pillow 不划算。
 import os
 import struct
 import sys
+from pathlib import Path
 
 # 嵌入 PNG 的 ICO 需要 ≥256x256 才稳（Windows 会按目录项尺寸缩放）。
 # 源图不足时按最近邻放大 —— 图标是几何图形，放大不会有明显劣化。
@@ -18,8 +19,7 @@ SIZE = 256
 
 
 def read_png(path):
-    with open(path, 'rb') as f:
-        data = f.read()
+    data = Path(path).read_bytes()
     if not data.startswith(b'\x89PNG\r\n\x1a\n'):
         raise SystemExit(f'不是 PNG：{path}')
     # 解析 IHDR 取宽高
@@ -58,8 +58,7 @@ def main():
         0, 0, 1, 32, len(png), 22,
     )
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    with open(dst, 'wb') as f:
-        f.write(header + entry + png)
+    Path(dst).write_bytes(header + entry + png)
     print(f'ICO 已生成：{dst}（{os.path.getsize(dst)} 字节，{SIZE}x{SIZE}）')
 
 

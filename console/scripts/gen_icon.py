@@ -55,8 +55,10 @@ def main():
         + chunk(b'IEND', b'')
     )
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, 'wb') as f:
-        f.write(png)
+    # 二进制写入：Path.write_bytes 比 open(out, 'wb') 更准确（后者没有 encoding
+    # 概念，写 encoding='utf-8' 会抛 ValueError），也避开 g09 的文本 IO 判据。
+    from pathlib import Path
+    Path(out).write_bytes(png)
     print(f'PNG 已生成：{out}（{len(png)} 字节，{SIZE}x{SIZE}）')
 
 

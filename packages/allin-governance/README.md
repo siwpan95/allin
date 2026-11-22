@@ -135,13 +135,16 @@ pip install allin-governance[full]      # 加严格校验的附加依赖
 
 ## 状态
 
-`0.0.0a5` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
+`0.0.0a6` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
 a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码），
 a2 加 `verify` 子命令与 `init --with-exceptions`，并把 sdist 修成自包含（物化构建），
 a3 补收 a2 wheel 缺失的 4 份运行时事实源（包映射 sha256 对账收口）+ 门禁判据加固，
 a4 加 `repocheck --profile` 场景预设（monorepo / component）与门禁失败修法提示，
 a5 收口深度安全审核：撤销凭据门禁的样例后缀整文件豁免、让 SKIP 不再以退出码 0
 冒充通过、修 SAST 规则「不可读即已配置」的假绿。
+a6 合入 a5 之后的门禁与体检器修复：`repocheck` 规则 6 的依赖声明识别（含数字前缀包名、
+namespace 目录、src-layout、`# r6-local` 声明与常见别名）、许可判据修正（GPL 自报不再
+误判缺声明、MIT-0 不再被认成 MIT），以及门禁套件的跨机可移植性与截断层收口。
 各版都不承诺 API 稳定。正式形态仍在演进，见 allin 仓的
 [`REC-AU-21`](https://gitee.com/siwpan/allin/blob/master/docs/记录/审计/allin自身做大做强方向修正_2026-10-31.md)
 与 [`CHANGELOG`](https://gitee.com/siwpan/allin/blob/master/CHANGELOG.md)。
