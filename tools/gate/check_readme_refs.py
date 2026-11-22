@@ -61,6 +61,7 @@ SCAN_GLOBS = (
     "README.md",
     "packages/*/README.md",
     "docs/规范/SPEC-*.md",
+    "docs/新人开发上手指南.md",
     "wiki/*.md",
     "architecture/system-architecture.svg",
 )
