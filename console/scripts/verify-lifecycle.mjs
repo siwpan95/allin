@@ -1,10 +1,16 @@
 /**
  * 临时验证：用 @allin/core 真跑一次 start → 等退出 → 读 tasks.log
  * 目的：确认 console 依赖的启停与日志链路在真实项目上成立（用完即删）。
+ *
+ * ⚠ `@allin/core` 动态导入：core 在模块顶层把 PORTS_YAML 求值成 const，
+ *   必须先 applyEnv() 设好路径 env 再导入（与 apps/shell/app.js 同一纪律）。
  */
 import path from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
-import { loadRegistry, PORTS_YAML, startEntry, runningIds, DATA_DIR } from '@allin/core'
+import { applyEnv } from '../apps/shell/config.js'
+
+applyEnv()
+const { loadRegistry, PORTS_YAML, startEntry, runningIds, DATA_DIR } = await import('@allin/core')
 
 const registryDir = path.join(path.dirname(PORTS_YAML), 'projects')
 const { entries } = loadRegistry(registryDir)

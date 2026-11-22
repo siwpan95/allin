@@ -69,7 +69,15 @@ export function createHost({ logger = () => {}, deps = {} } = {}) {
       logger('info', `注册命令 ${def.id}`)
     },
 
-    /** 注册一个 UI 面板 */
+    /**
+     * 注册一个 UI 面板。
+     *
+     * 两种形态（P3 起）：
+     *   ① 动态面板（常驻治理视图用）：`render: async () => ({ status, summary, rows })`
+     *      —— 返回**结构化数据**，由渲染层自己画。不用 HTML 字符串，避免插件注入
+     *      任意标记（渲染层 CSP 只允许 'self' 的 script，HTML 字符串会绕过这层防护）。
+     *   ② 静态面板：`html: '<p>…</p>'` —— 一次性文本，保留兼容。
+     */
     panel(def) {
       if (!def || typeof def.id !== 'string') {
         throw new Error('console.panel 需要 { id: string, slot: string, ... }')
@@ -77,11 +85,16 @@ export function createHost({ logger = () => {}, deps = {} } = {}) {
       if (!PANEL_SLOTS.includes(def.slot)) {
         throw new Error(`未知插槽 ${def.slot}，允许：${PANEL_SLOTS.join('/')}`)
       }
+      const hasRender = typeof def.render === 'function'
+      if (!hasRender && typeof def.html !== 'string') {
+        throw new Error(`面板 ${def.id} 需要 render() 或 html 之一`)
+      }
       panels.push({
         id: def.id,
         slot: def.slot,
         title: def.title || def.id,
         html: def.html || '',
+        render: hasRender ? def.render : null,
         plugin: def.plugin || '',
       })
       logger('info', `注册面板 ${def.id}@${def.slot}`)

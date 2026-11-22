@@ -5,6 +5,10 @@
   "type": "module",
   "description": "allin-console —— 治理控制台（浏览器形态）。148 项目登记/启停/CLI 总线的桌面操作面；不做 Chromium 内核分支（见 SPEC-205）",
   "license": "MIT",
+  "author": {
+    "name": "siwpan",
+    "url": "https://gitee.com/siwpan"
+  },
   "main": "apps/shell/main.js",
   "workspaces": [
     "packages/*"
@@ -14,18 +18,92 @@
     "check": "node scripts/check.mjs",
     "smoke": "electron scripts/smoke.mjs",
     "verify:lifecycle": "node scripts/verify-lifecycle.mjs",
-    "verify:plugins": "node scripts/verify-plugins.mjs"
+    "verify:plugins": "node scripts/verify-plugins.mjs",
+    "icon": "python scripts/gen_icon.py && python scripts/make_icon.py",
+    "pack": "npm run clean && npm run icon && electron-builder --dir",
+    "dist": "npm run clean && npm run icon && electron-builder --win nsis portable",
+    "clean": "node scripts/clean-dist.mjs",
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify:packaged": "node scripts/verify-packaged.mjs"
   },
   "dependencies": {
     "@allin/cli-bus": "*",
     "@allin/core": "file:../platform/packages/core",
     "@cordisjs/core": "^3.18.1",
-    "@allin/cordis-js": "*"
+    "@allin/cordis-js": "*",
+    "js-yaml": "^4.3.2"
   },
   "devDependencies": {
-    "electron": "^45.3.3"
+    "electron": "^45.3.3",
+    "electron-builder": "^26.0.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "build": {
+    "appId": "cn.siwpan.allin.console",
+    "productName": "allin console",
+    "copyright": "Copyright © 2026 siwpan",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "apps/**/*",
+      "packages/**/*",
+      "plugins/**/*",
+      "package.json",
+      "!**/*.test.js",
+      "!**/node_modules/**/test{,s}/**",
+      "!**/node_modules/**/{.nyc_output,coverage}/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../platform/registry",
+        "to": "registry",
+        "filter": [
+          "**/*.yaml",
+          "**/*.yml",
+          "!**/node_modules/**"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/@allin/core/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "allin console",
+      "artifactName": "${productName}-${version}-setup.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "publish": null,
+    "compression": "normal",
+    "removePackageScripts": true
   }
 }

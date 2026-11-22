@@ -156,10 +156,27 @@ verify:
 export const name = 'allin-plugin-port-health'
 export function apply(ctx, config) {
   ctx.console.command({ id: 'port.health', title: '端口体检', run: async () => {...} })
-  ctx.console.panel({ id: 'port.health.panel', slot: 'sidebar', html: '...' })
+  ctx.console.panel({
+    id: 'port.health.panel',
+    slot: 'sidebar',
+    // P3 起：常驻面板用 render() 返回**结构化数据**，不用 HTML 字符串
+    render: async () => ({
+      status: 'ok' | 'warn' | 'bad' | 'error' | 'unknown',
+      summary: '一句话结论',
+      rows: [{ label: '8000 radio-panel', value: '监听中', tone: 'ok' }],
+    }),
+  })
   ctx.console.on('project:started', ({ id, pid }) => { /* ... */ })
 }
 ```
+
+> **面板为什么必须返回结构化数据而不是 HTML 字符串（P3 定案）**：
+> 插件可能来自用户目录，属于**外部输入**。若插件直接吐 HTML 字符串、渲染层
+> 用 `innerHTML` 塞进去，就等于给插件开了一条绕过渲染层 CSP 的注入通道
+> （CSP 只挡 `script-src`，挡不住 `<img onerror>` 这类）。
+> ⇒ 约定：面板只返回 `{status, summary, rows}`，**渲染层自己建 DOM**，
+> 全部文本经 `textContent` 赋值。契约审计 `console/scripts/check.mjs` 第 7 项
+> 就是机械检查这条（治理面板渲染函数内不得出现 `.innerHTML =`）。
 
 > **2026-11-22 P2 实测的两个坑（都已跳过，写在这里免得重犯）**：
 > 1. **不要给插件声明 `inject`**。cordis 的 `inject` 会挂起插件直到该服务被 `provide`；
@@ -218,13 +235,59 @@ console 重启后状态自动恢复，不存在「两边各记一份」的分裂
 
 | 阶段 | 内容 | 机械验收判据 | 估时 |
 |---|---|---|---|
-| **P0 壳可跑** | BaseWindow + WebContentsView + 项目面板（读 registry）+ 命令面板骨架 | 启动后列出 **148** 个 id；点击任一项目执行 `cli.py info --json` 并原样显示 JSON | 1.5 周 |
-| **P1 CLI 总线** | cli-bus + 启停 + 日志流 + 失败回传 | 对 B1 的 11 个 Web 服务逐个 `launch`/`stop`，`running.json` 与 UI 状态一致；失败时 UI 显示 stderr 末 20 行 | 2 周 |
+| **P0 壳可跑** ✅ 2026-11-22 | BaseWindow + WebContentsView + 项目面板（读 registry）+ 命令面板骨架 | 启动后列出 **148** 个 id；点击任一项目执行 `cli.py info` 并原样显示 JSON | 1.5 周 |
+| **P1 CLI 总线** ✅ 2026-11-22 | cli-bus + 启停 + 日志流 + 失败回传 | 启停走 `@allin/core`（共享 pid 表）；`tasks.log` 落 launch+exit 两行；`info` 输出以 `{` 开头 | 2 周 |
 | **P2 插件宿主** ✅ 2026-11-22 | cordis-js + 三个扩展点 + 首批 2 个插件（端口体检 / 门禁红项） | 命令面板列出命令并执行返回结果；删掉插件目录后 console 正常启动 | 2 周 |
-| **P3 治理面板** | 门禁留痕 / registry 审计 / 端口占用 / kernel 状态（桥接 Python） | 面板数值与 `allin_cli.py status --json` 一致 | 2 周 |
-| **P4 分发** | electron-builder 打包 + 自用安装包（暂不做自动更新） | 干净机器双击安装后可列 148 项目 | 1 周 |
+| **P3 治理面板** ✅ 2026-11-22 | 侧栏**常驻**三面板：门禁红项 / 端口占用 / registry 审计；`console.panel` 升级为 `render()` 结构化数据 | 启动即见 3 张卡片且每张有数据行（空壳不算）；数值与 `gate-runs.jsonl` / `ports.yaml` / registry 一致 | 2 周 |
+| **P4 分发** ✅ 2026-11-22 | electron-builder 打包 + 自用安装包（暂不做自动更新） | NSIS 安装版 + portable 均出包；装好后探针断言 `registry=148 problems=0`；不配仓时降级为快照模式且明示 | 1 周 |
 
 P0 结束即可验证「这条路成不成」；**P0 不通过则不进入 P1**。
+
+### 7.1 P3 治理面板的三条设计约定（2026-11-22 定案）
+
+1. **常驻，不是「点命令面板才看」**。三个面板放在项目列表**上方**的一条横向带里，
+   打开 console 即见 —— 否则「治理」就退化成了「又多点一次」。
+   刷新：首次加载 + 每 15 秒一次 + 手动「刷新」按钮。
+2. **面板只返回结构化数据**（`{status, summary, rows}`），渲染层自建 DOM、
+   文本走 `textContent`。理由见 §4.2 的说明：这是防插件注入的唯一办法。
+3. **门禁红项必须处理「残缺批次」**。门禁留痕按 `batch` 分组，跑批中途被打断会
+   留下一个门禁数偏少的批次（实测 30 道 vs 正常 48 道）。若直接取「最后一批」，
+   残缺批次没有失败项 ⇒ 被判成「全绿」，是**假绿**。
+   ⇒ 取批次规则：以近 12 批的**门禁数众数**为「应有规模」，取该规模的最新一批；
+   同时把最新批次若不足规模这件事**显式标出来**（`warn`）。
+   ⚠ 不可用「门禁数最多的批次」——门禁是逐次新增的，历史批次天然更多，
+   会永远选到最老的一批，报出几周前的红项（这个错我犯过一次）。
+
+### 7.2 P4 安装态路径契约（2026-11-22 定案）
+
+源码态 console 在 `<allin>/console/`，`@allin/core` 靠 `__dirname` 往上推导即可；
+**安装态**（`C:\Program Files\allin console\`）没有 allin 仓，必须显式定位：
+
+| 顺序 | 来源 | 效果 |
+|---|---|---|
+| ① | env `ALLIN_HOME` | 完整模式 |
+| ② | `%APPDATA%\allin-console\config.json` 的 `allinHome` | 完整模式 |
+| ③ | 包内 `resources/registry` 快照（extraResources） | **快照模式**：只看清单 + 治理面板，启停/路径解析不可用 |
+
+快照模式必须**明示降级**（日志写明「启停不可用」），不得伪装成完整可用。
+
+实现上的三条硬约束（都是实测踩出来的）：
+
+1. **env 必须先设再 import core**。core 在模块顶层把 `PORTS_YAML`/`REPOS_ROOT`/
+   `ALLIN_ROOT` 求值成 const，`console/apps/shell/app.js` 因此**必须动态 import**
+   `@allin/core`；静态 import 会被提升，env 还没设就锁死成 `app.asar` 里的假路径。
+2. **`ALLIN_ROOT` 需要 env 钩子**。core 原本只有 `PLATFORM_ROOT` 有钩子，`ALLIN_ROOT`
+   硬推导导致打包后 `resolvePath('platform')` 解析到 `app.asar/platform`，registry 报
+   「path 不存在」。已在 `platform/packages/core/src/registry.js` 补 `ALLIN_ROOT` env
+   （未设时行为逐字节不变）。
+3. **打包成功 ≠ 产物可用**。`file:` 依赖的传递依赖收集有盲区（`@allin/core` 声明的
+   `js-yaml` 没进 asar，打包只报一行 warning 不阻断，运行时必崩）。
+   ⇒ `console/scripts/verify-package.mjs` 检查 asar 依赖完整性；
+   `verify-packaged.mjs` 真启动 exe 并断言 `registry=148 problems=0`。
+   ⚠ Windows GUI 进程不继承 stdout，探针结果**必须写文件**。
+
+环境坑（本轮出现两次）：`ELECTRON_RUN_AS_NODE` 必须**从 env 对象 delete**，
+设成空字符串仍会被 Electron 当作已设置 ⇒ 以纯 Node 模式跑、退出码 0 但什么都没做。
 
 ## 8. 明确不做的事（防止范围漂移）
 

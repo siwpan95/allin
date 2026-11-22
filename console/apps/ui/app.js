@@ -3,6 +3,7 @@
  *
  * P0：列出项目 / 搜索 / 调 `info` 看 JSON
  * P1：启停（走 @allin/core）+ 运行态轮询
+ * P3：治理面板常驻带（门禁红项 / 端口占用 / registry 审计）
  *
  * 没有 Node 权限，全部能力经 window.allin（preload 白名单）。
  */
@@ -13,6 +14,7 @@ const state = {
   selected: null,
   runningIds: new Set(),
   busy: false,
+  panels: [],
 }
 
 const $ = (id) => document.getElementById(id)
@@ -297,6 +299,10 @@ async function boot() {
     setStatus(`已加载 ${state.items.length} 个项目`)
     await refreshRunning()
     setInterval(refreshRunning, 3000)
+    // P3：治理面板常驻带，首次拉取 + 定时刷新（15s：端口状态要新鲜，
+    // 门禁留痕与 registry 审计变化很慢，15s 足够且不浪费）
+    await refreshGov()
+    setInterval(refreshGov, 15000)
   } catch (e) {
     setStatus('加载失败：' + e)
     listEl.innerHTML = `<div class="empty"><p class="empty-hint">${esc(String(e))}</p></div>`
@@ -304,6 +310,99 @@ async function boot() {
 }
 
 searchEl.addEventListener('input', () => { applyFilter() })
+
+/* ---------------- 治理面板常驻带（P3） ---------------- */
+
+/**
+ * 渲染治理面板。
+ *
+ * ⚠ 面板数据来自插件（本地代码，但**不受信任**：插件可能来自用户目录）。
+ *   因此一律用 DOM API 建节点 + textContent 赋值，**不拼 innerHTML** ——
+ *   渲染层 CSP 虽只允许 'self' 的 script，但 innerHTML 能绕过这层防护注入标记。
+ */
+function renderGovStrip() {
+  const cards = $('gov-cards')
+  cards.textContent = ''
+  if (!state.panels.length) {
+    const d = document.createElement('div')
+    d.className = 'gov-loading'
+    d.textContent = '没有插件提供治理面板（plugins/ 目录为空或加载失败）'
+    cards.appendChild(d)
+    return
+  }
+  for (const p of state.panels) {
+    const card = document.createElement('div')
+    card.className = `gov-card tone-${p.status || 'dim'}`
+
+    const head = document.createElement('div')
+    head.className = 'gov-card-head'
+    const dot = document.createElement('span')
+    dot.className = 'gov-dot'
+    const title = document.createElement('span')
+    title.className = 'gov-card-title'
+    title.textContent = p.title
+    head.append(dot, title)
+    if (p.summary) {
+      const sum = document.createElement('span')
+      sum.className = 'gov-card-sum'
+      sum.textContent = p.summary
+      head.appendChild(sum)
+    }
+    card.appendChild(head)
+
+    const rows = Array.isArray(p.rows) ? p.rows : []
+    if (rows.length) {
+      const list = document.createElement('div')
+      list.className = 'gov-rows'
+      for (const r of rows) {
+        const line = document.createElement('div')
+        // 长列表（多端口）允许换行，否则尾部会被裁掉
+        line.className = `gov-row tone-${r.tone || 'dim'}`
+          + (r.wrap ? ' wrap' : '')
+        const l = document.createElement('span')
+        l.className = 'gov-row-label'
+        l.textContent = r.label ?? ''
+        const v = document.createElement('span')
+        v.className = 'gov-row-value'
+        v.textContent = r.value ?? ''
+        line.append(l, v)
+        list.appendChild(line)
+      }
+      card.appendChild(list)
+    } else if (p.status === 'error') {
+      const err = document.createElement('div')
+      err.className = 'gov-rows'
+      err.textContent = p.summary || '面板渲染失败'
+      card.appendChild(err)
+    }
+    cards.appendChild(card)
+  }
+  const ts = $('gov-ts')
+  if (ts) {
+    const now = new Date()
+    ts.textContent = `更新于 ${String(now.getHours()).padStart(2, '0')}:`
+      + `${String(now.getMinutes()).padStart(2, '0')}:`
+      + `${String(now.getSeconds()).padStart(2, '0')}`
+  }
+}
+
+/** 拉取治理面板数据。 */
+async function refreshGov() {
+  try {
+    const r = await window.allin.panelData('sidebar')
+    state.panels = r.panels || []
+    renderGovStrip()
+  } catch (e) {
+    state.panels = []
+    renderGovStrip()
+    setStatus('治理面板刷新失败：' + e)
+  }
+}
+
+$('gov-refresh')?.addEventListener('click', () => {
+  setStatus('刷新治理面板 …')
+  refreshGov()
+})
 
 /* ---------------- 命令面板（插件注册的命令） ---------------- */
 

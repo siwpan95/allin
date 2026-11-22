@@ -36,4 +36,7 @@ contextBridge.exposeInMainWorld('allin', {
 
   /** 执行插件注册的命令 */
   runPluginCommand: (commandId) => ipcRenderer.invoke('plugin:run', commandId),
+
+  /** 治理面板数据（P3）：按插槽取插件 render() 的结构化结果 */
+  panelData: (slot) => ipcRenderer.invoke('panels:data', { slot }),
 })

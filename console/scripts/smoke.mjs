@@ -115,6 +115,32 @@ app.whenReady().then(async () => {
     const size = statSync(OUT).size
     log(`截图    : ${OUT}（${size} 字节）`)
 
+    // —— P3：治理面板常驻带 ———
+    // 判据：三个面板都渲染出卡片，且每张卡片有标题与至少一行内容。
+    // 「有卡片」不等于「有数据」——空壳面板也算失败。
+    let govCards = 0
+    let govWithRows = 0
+    const govDetail = []
+    for (let i = 0; i < 40; i += 1) {
+      govCards = await wc.executeJavaScript(
+        "document.querySelectorAll('.gov-card').length", true)
+      if (govCards >= 3) break
+      await new Promise((r) => setTimeout(r, 250))
+    }
+    const govRows = await wc.executeJavaScript(`
+      [...document.querySelectorAll('.gov-card')].map((c) => ({
+        title: c.querySelector('.gov-card-title')?.textContent || '',
+        sum: c.querySelector('.gov-card-sum')?.textContent || '',
+        rows: c.querySelectorAll('.gov-row').length,
+      }))
+    `, true)
+    govWithRows = (govRows || []).filter((g) => g.rows > 0).length
+    for (const g of govRows || []) {
+      govDetail.push(`${g.title}[${g.rows}行] ${g.sum}`)
+    }
+    log(`治理面板: ${govCards} 张卡片，${govWithRows} 张有数据`)
+    for (const d of govDetail) log(`  · ${d}`)
+
     // —— 插件命令面板：打开 → 执行首个命令 → 截图 ——
     const cmdCount = await wc.executeJavaScript(`
       (async () => {
@@ -148,6 +174,10 @@ app.whenReady().then(async () => {
     if (size < 5000) problems.push(`截图过小（${size} 字节），疑似空白`)
     if (!picked) problems.push('前 8 个带 CLI 的项目里没有一个 info 返回纯 JSON')
     if (!runningOk) problems.push('runningIds 接口不可用（启停链路未接通）')
+    if (govCards < 3) problems.push(`治理面板只有 ${govCards} 张卡片（应为 3：门禁红项 / 端口占用 / registry 审计）`)
+    if (govCards >= 3 && govWithRows < 3) {
+      problems.push(`${govCards} 张治理卡片里只有 ${govWithRows} 张有数据行（空壳面板不算数）`)
+    }
     if (cmdCount === 0) problems.push('命令面板没有任何插件命令（cordis-js 宿主未生效）')
     if (cmdCount > 0 && !cmdRan) problems.push('插件命令执行后没有结果回传')
 

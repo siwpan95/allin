@@ -1,4 +1,8 @@
 node_modules/
 data/
+dist/
+build/icon.png
+build/icon.ico
 .screenshot.png
 *.log
+probe-out.txt

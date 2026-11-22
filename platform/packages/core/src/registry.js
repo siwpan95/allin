@@ -9,7 +9,20 @@ import yaml from 'js-yaml'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const PLATFORM_DIR = path.join(HERE, '..', '..', '..')          // platform/（本 submodule 根）
-const ALLIN_ROOT = path.join(HERE, '..', '..', '..', '..')      // 治理仓根 allin/（2026-10-26 并入后 platform 不再是仓根）
+// 治理仓根 allin/。2026-10-26 并入后 platform 不再是仓根，故往上再退一层。
+//
+// ⚠ 2026-11-22：加 env 钩子 ALLIN_ROOT（此前只有硬推导）。
+//   硬推导对**源码态**成立（core 躺在 allin/platform/packages/core/src/），
+//   但对**打包态**失效：console 被 electron-builder 打成 app.asar 后，
+//   core 落在 resources/app.asar/node_modules/@allin/core/src/，
+//   往上四层是 app.asar —— 于是 ALLIN_ROOT 变成一个假目录，
+//   `resolvePath('platform')` 解析到 app.asar/platform，registry 报
+//   「path 不存在: platform → 解析为 …\app.asar\platform」（实测安装态必现）。
+//   与 PLATFORM_ROOT 同样的道理：仓外消费方（打包后的 console）必须能指明仓根。
+//   未设 env 时结果与旧实现逐字节相同。
+const ALLIN_ROOT = process.env.ALLIN_ROOT
+  ? path.resolve(process.env.ALLIN_ROOT)
+  : path.join(HERE, '..', '..', '..', '..')
 
 // 端口唯一事实源（机器可读版）：与 端口分配表.md 同步维护。
 // 解析顺序（2026-09-24 强化：仓库可移植）：env PLATFORM_PORTS（外部端口分配表）优先；

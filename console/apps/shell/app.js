@@ -10,7 +10,36 @@ const { BaseWindow, WebContentsView, ipcMain } = require('electron')
 import path from 'node:path'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds, DATA_DIR, PLATFORM_ROOT, probePort, loadPorts } from '@allin/core'
+import { applyEnv } from './config.js'
+
+/**
+ * ⚠ `@allin/core` 必须**动态导入**，不能静态 import。
+ *
+ * 原因：core 在模块顶层就把 `PORTS_YAML` / `REPOS_ROOT` 求值成 const
+ * （`platform/packages/core/src/registry.js:18`），而安装态下这些路径
+ * 取决于「本机 allin 仓在哪」—— 要先设好 `PLATFORM_PORTS` /
+ * `PLATFORM_REPOS_ROOT` env 才有效。
+ *
+ * ESM 的静态 import 会被**提升**到模块顶部先执行 ⇒ 静态 import 时 env 还没设，
+ * core 会锁死成打包目录里的假路径（`resources/app.asar/...`），
+ * 于是 registry 加载失败、148 条变 0 条。
+ *
+ * ⇒ 动态 import 是唯一正确解法（不是「绕路」，是必要）。
+ */
+
+/** 安装态配置解析结果（P4）：本机 allin 仓根 / 发布区根从哪来。 */
+const HOME = applyEnv()
+if (!HOME.root) {
+  console.error('[allin-console] ⚠ 未定位到 allin 仓（env ALLIN_HOME / %APPDATA%\\allin-console\\config.json）')
+}
+
+// ↓↓↓ 必须在 applyEnv() 之后 ↓↓↓
+const core = await import('@allin/core')
+const {
+  loadRegistry, PORTS_YAML, resolvePath, startEntry, stopEntry, runningIds,
+  DATA_DIR, PLATFORM_ROOT, probePort, loadPorts,
+} = core
+
 import { createHost } from '@allin/cordis-js'
 import { locateCli, hasInfoSubcommand, runCli, failureSummary } from '@allin/cli-bus'
 
@@ -110,6 +139,56 @@ function readGateBatches() {
   return [...byBatch.values()].sort((a, b) => String(a.ts).localeCompare(String(b.ts)))
 }
 
+/**
+ * 列出本机实际在监听的 TCP 端口。
+ *
+ * 为什么需要它：core 的 `probePort` 是「给定端口问通不通」，**反推不出**
+ * 「哪些端口被占」—— 对 65535 个端口逐个探测要十几小时，不可行。
+ * 端口占用视图（发现「有东西占着端口但 registry 没登记」）必须读系统的
+ * 监听表。Windows 上是 `netstat -ano`；非 Windows 返回 null（视图降级，
+ * 不假装）。
+ *
+ * 返回：{ ports: [{port, pid, proto}], ok: boolean }
+ */
+let listeningCache = { ts: 0, data: null }
+async function listListeningPorts({ maxAgeMs = 5000 } = {}) {
+  if (listeningCache.data && Date.now() - listeningCache.ts < maxAgeMs) {
+    return listeningCache.data
+  }
+  if (process.platform !== 'win32') {
+    return { ok: false, ports: [], reason: `当前平台 ${process.platform} 暂不支持读取监听表` }
+  }
+  const { execFile } = await import('node:child_process')
+  const { promisify } = await import('node:util')
+  const execFileP = promisify(execFile)
+  let stdout = ''
+  try {
+    // -ano：全部连接 + 数字地址 + PID
+    const r = await execFileP('netstat', ['-ano'], { timeout: 8000, windowsHide: true, maxBuffer: 8 * 1024 * 1024 })
+    stdout = r.stdout || ''
+  } catch (e) {
+    return { ok: false, ports: [], reason: `netstat 执行失败：${e?.message || e}` }
+  }
+  const seen = new Map()
+  for (const line of stdout.split(/\r?\n/)) {
+    // TCP 行形如：  TCP    0.0.0.0:8000    0.0.0.0:0    LISTENING    1234
+    if (!/^\s*TCP\s/i.test(line)) continue
+    const cols = line.trim().split(/\s+/)
+    if (cols.length < 4) continue
+    if (String(cols[3]).toUpperCase() !== 'LISTENING') continue
+    const local = cols[1] || ''
+    const idx = local.lastIndexOf(':')
+    if (idx < 0) continue
+    const port = Number(local.slice(idx + 1))
+    if (!Number.isInteger(port) || port <= 0) continue
+    const pid = Number(cols[4] || 0) || null
+    if (!seen.has(port)) seen.set(port, { port, pid, proto: 'tcp' })
+  }
+  const data = { ok: true, ports: [...seen.values()].sort((a, b) => a.port - b.port) }
+  listeningCache = { ts: Date.now(), data }
+  return data
+}
+
 /** 插件宿主（懒加载：只有首次取命令时才读插件目录）。 */
 let host = null
 async function ensureHost() {
@@ -117,7 +196,11 @@ async function ensureHost() {
   host = createHost({
     logger: (level, msg) => console.log(`[cordis-js][${level}] ${msg}`),
     deps: {
-      core: { probePort, loadPorts, loadRegistry, REGISTRY_DIR },
+      core: {
+        probePort, loadPorts, loadRegistry, resolvePath, REGISTRY_DIR,
+        listListeningPorts,
+      },
+      cliBus: { locateCli, hasInfoSubcommand },
       readGateRuns: readGateBatches,
       runCli,
     },
@@ -196,6 +279,7 @@ function registerPluginIpc() {
       })),
       panels: h.panels.map((p) => ({
         id: p.id, slot: p.slot, title: p.title, html: p.html, plugin: p.plugin,
+        dynamic: Boolean(p.render),
       })),
       errors: h.errors,
     }
@@ -212,6 +296,48 @@ function registerPluginIpc() {
     } catch (e) {
       return { ok: false, message: e?.message || String(e), durationMs: Date.now() - started, commandId }
     }
+  })
+
+  /**
+   * P3：取治理面板的当前数据（侧栏常驻视图）。
+   *
+   * 面板由插件的 `render()` 提供，返回**结构化数据**而非 HTML ——
+   * 渲染层自己画，插件碰不到 DOM（也绕不开渲染层的 CSP）。
+   * 单个面板渲染失败不影响其它面板（降级为一条错误条目）。
+   */
+  ipcMain.handle('panels:data', async (_evt, { slot } = {}) => {
+    const h = await ensureHost()
+    const targets = h.panels.filter((p) => !slot || p.slot === slot)
+    const out = []
+    for (const p of targets) {
+      const base = { id: p.id, slot: p.slot, title: p.title, plugin: p.plugin }
+      if (typeof p.render !== 'function') {
+        out.push({ ...base, status: 'static', summary: '', rows: [], html: p.html })
+        continue
+      }
+      const started = Date.now()
+      try {
+        const data = await p.render()
+        out.push({
+          ...base,
+          status: data?.status || 'ok',
+          summary: data?.summary || '',
+          rows: Array.isArray(data?.rows) ? data.rows : [],
+          ts: Date.now(),
+          ms: Date.now() - started,
+        })
+      } catch (e) {
+        out.push({
+          ...base,
+          status: 'error',
+          summary: e?.message || String(e),
+          rows: [],
+          ts: Date.now(),
+          ms: Date.now() - started,
+        })
+      }
+    }
+    return { panels: out }
   })
 }
 

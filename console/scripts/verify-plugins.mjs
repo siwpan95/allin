@@ -1,16 +1,22 @@
 /**
  * 插件宿主的独立验证（不经 Electron）—— 快速确认 cordis-js 与内置插件可用。
  * 用法：node scripts/verify-plugins.mjs
+ *
+ * P3 起同时验**命令**与**常驻面板**（面板是治理面板的数据源）。
  */
 import path from 'node:path'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createHost } from '@allin/cordis-js'
-import { probePort, loadPorts, PLATFORM_ROOT } from '@allin/core'
+import {
+  probePort, loadPorts, loadRegistry, resolvePath, PLATFORM_ROOT,
+} from '@allin/core'
+import { locateCli, hasInfoSubcommand } from '@allin/cli-bus'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const PLUGIN_DIR = path.join(HERE, '..', 'plugins')
 const GATE_RUNS = path.join(PLATFORM_ROOT, '..', 'tools', 'gate', 'audit', 'gate-runs.jsonl')
+const REGISTRY_DIR = path.join(PLATFORM_ROOT, 'registry', 'projects')
 
 function readGateBatches() {
   if (!existsSync(GATE_RUNS)) return []
@@ -28,7 +34,11 @@ function readGateBatches() {
 
 const host = createHost({
   logger: (lv, msg) => console.log(`  [${lv}] ${msg}`),
-  deps: { core: { probePort, loadPorts }, readGateRuns: readGateBatches },
+  deps: {
+    core: { probePort, loadPorts, loadRegistry, resolvePath, REGISTRY_DIR },
+    cliBus: { locateCli, hasInfoSubcommand },
+    readGateRuns: readGateBatches,
+  },
 })
 
 const files = readdirSync(PLUGIN_DIR).filter((f) => f.endsWith('.mjs'))
@@ -56,4 +66,24 @@ for (const c of host.commands) {
     console.log(`  · ${c.id}: 抛错 ${e.message}`)
   }
 }
+
+console.log(`\n常驻面板 ${host.panels.length} 个:`)
+for (const p of host.panels) {
+  console.log(`  · ${p.id} @${p.slot} —— ${p.title}`)
+  if (typeof p.render !== 'function') {
+    console.log('    （静态面板，无 render）')
+    continue
+  }
+  const t0 = Date.now()
+  try {
+    const d = await p.render()
+    console.log(`    status=${d.status} summary=${d.summary} rows=${(d.rows || []).length} (${Date.now() - t0}ms)`)
+    for (const r of (d.rows || []).slice(0, 6)) {
+      console.log(`      - ${r.label} : ${r.value}  [${r.tone || 'dim'}]`)
+    }
+  } catch (e) {
+    console.log(`    渲染抛错：${e.message}`)
+  }
+}
+
 process.exit(0)
