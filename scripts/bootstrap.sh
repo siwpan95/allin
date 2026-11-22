@@ -134,14 +134,28 @@ elif [ "$IS_WINDOWS" = "0" ]; then
   done
   echo "   已建 $created 个、已存在 $kept 个、失败 $failed 个（POSIX symlink）"
   [ "$failed" = "0" ] || die "别名重建有失败项（见上）"
-elif command -v pwsh >/dev/null 2>&1; then
+elif command -v pwsh >/dev/null 2>&1 || command -v powershell.exe >/dev/null 2>&1; then
   # 权威实现：tools/gate/make_doc_aliases.ps1（Windows 用 junction，管理员不需要）
-  pwsh -File "$ROOT/tools/gate/make_doc_aliases.ps1" || die "别名重建失败（Windows 上若因权限失败，看 FAQ 第 6 条）"
-  echo "   已用 make_doc_aliases.ps1 重建"
+  # 2026-11-22 实测订正（@DESKTOP-KQABATS）：该脚本 #Requires -Version 5.1，
+  # powershell 5.1（系统必装）也能跑 —— 此前只试 pwsh，缺 pwsh 的机器落到下面的
+  # mklink 兜底，而中文真身目录经 Git Bash→cmd 的编码转换必败（UTF-8 字节按 cp936
+  # 解读 ⇒「文件名、目录名或卷标语法不正确」），bootstrap 因此 exit 1。
+  # 现改为 pwsh → powershell 5.1 → mklink 三级回落，前两级即可覆盖所有 Windows 机。
+  if command -v pwsh >/dev/null 2>&1 \
+     && pwsh -File "$ROOT/tools/gate/make_doc_aliases.ps1"; then
+    echo "   已用 make_doc_aliases.ps1 重建（pwsh）"
+  elif powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ROOT/tools/gate/make_doc_aliases.ps1"; then
+    echo "   已用 make_doc_aliases.ps1 重建（powershell 5.1；输出中文若乱码不影响功能）"
+  else
+    die "别名重建失败（Windows 上若因权限失败，看 FAQ 第 6 条）"
+  fi
 elif command -v cmd.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
   # 2026-11-10 换机可移植整改：无 pwsh 时**不再静默跳过**（那会让 g15 的 D6 必红，
   # 而用户以为环境就绪 —— 假绿的第一处）。改用 cmd 内建的 mklink /J 建 junction：
   # 不依赖 PowerShell 7，权限要求与 pwsh 路径相同（junction 不需要管理员）。
+  # ⚠ 2026-11-22 实测（@DESKTOP-KQABATS）：真身目录名含中文（规范/事实源/记录）时，
+  # UTF-8 命令串按 cp936 解读 ⇒ mklink 报「语法不正确」，四个别名全建失败 ——
+  # 此兜底只对真身目录为 ASCII 的仓可靠；上面两级 PowerShell 回落才是正路。
   created=0; kept=0; failed=0
   for pair in "spec:规范" "facts:事实源" "records:记录" "历史:md"; do
     alias_name="${pair%%:*}"; real_name="${pair##*:}"
@@ -164,9 +178,9 @@ elif command -v cmd.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; t
   echo "   已建 $created 个、失败 $failed 个（cmd mklink /J，无 pwsh 路径）"
   [ "$failed" = "0" ] || die "别名重建有失败项（见上）—— g15 的 D6 会红，必须先解决"
 else
-  echo "   !! 无法重建别名：既无 pwsh，也无 cmd.exe+cygpath。"
+  echo "   !! 无法重建别名：pwsh / powershell / cmd.exe+cygpath 均不可用。"
   echo "     别名是 junction/symlink、不入库；缺了 g15 的 D6 必红。"
-  die "请装 PowerShell 7（pwsh），或在 Git Bash/WSL 下重跑本脚本"
+  die "请在 PowerShell 里跑一次 tools/gate/make_doc_aliases.ps1，或在 Git Bash/WSL 下重跑本脚本"
 fi
 
 # ---------------------------------------------------------------- 5) Node 侧依赖

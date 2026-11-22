@@ -1,5 +1,18 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-22 11:35（**@`DESKTOP-KQABATS` 新人上手指南全链复跑 · 发布区对齐** ——
+>   用户指令「基于最新版新人开发上手指南实际跑一遍」：第 0 章复跑时 `g20-facts` 抓到唯一漂移 ——
+>   发布区目录数 **137 → 138**；随后 `platform check-repos` 抓到 `docx-converter` / `piano`
+>   声明 `checkout: local` 但本机无目录（11-22 早间的补检出做在 `@SIWPAN`），按「补 clone 而非改声明」
+>   从 Gitee 补齐 2 仓 ⇒ 发布区 **140** 个目录（逐目录实测 `.git` **140/140**，与 2026-11-22 早间
+>   `@SIWPAN` 侧「140 检出」口径一致）；其余可机检断言现场复测全部现存（7/7）。
+>   本仓 `master` HEAD 已快进至 `ec6bd01`（工作树含本轮指南复跑与订正改动）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **140** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百八十一（@`DESKTOP-KQABATS` 指南复跑 · 计数漂移订正，本机自留痕）
 > **时点** 2026-11-09 16:55（**@`DESKTOP-KQABATS` 全量现场复测 · 刷新主机事实文档** ——
 >   用户指令「刷新本机主机事实文档」（@`DESKTOP-KQABATS`）：按 `机器分区索引.md` 的归属纪律
 >   「改事实源前先复测」与头部失效条款，用 `tools/facts/measure.py` 自动采集
