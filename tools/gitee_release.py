@@ -8,13 +8,13 @@ gitee_release.py — Gitee 建仓 / 转公开 / 发布发行版（分步、可�
 重复跑是幂等的（已存在就跳过，不重复创建），所以中断了可以直接重跑。
 
     python tools/gitee_release.py whoami
-    python tools/gitee_release.py create   --name pluginplayer
-    python tools/gitee_release.py remote   --name pluginplayer
-    python tools/gitee_release.py public   --name pluginplayer
-    python tools/gitee_release.py release  --name pluginplayer --tag v1.0.0 \
+    python tools/gitee_release.py --name pluginplayer create
+    python tools/gitee_release.py --name pluginplayer remote
+    python tools/gitee_release.py --name pluginplayer public
+    python tools/gitee_release.py --name pluginplayer release --tag v1.0.0 \
                                            --title "PluginPlayer v1.0.0" --notes-file notes.md
-    python tools/gitee_release.py attach   --name pluginplayer --tag v1.0.0 --file dist.zip
-    python tools/gitee_release.py status   --name pluginplayer
+    python tools/gitee_release.py --name pluginplayer attach --tag v1.0.0 --file dist.zip
+    python tools/gitee_release.py --name pluginplayer status
 
 令牌来源（**绝不要写进仓库**）：
     1. --token HEX
@@ -436,6 +436,15 @@ def cmd_create(args, token):
     }
     if desc:
         payload["description"] = desc
+    # 2026-11-24 反哺（anatomy3d P1）：空仓库（auto_init=False 且无 license_template）
+    # 调 public 会被 Gitee 422 拒绝「空仓库不支持设置为公开仓库」。给出
+    # --license-template 时同步开 auto_init 生成 Initial commit；此后首推需
+    # merge --allow-unrelated-histories -X ours（SPEC-001 铁律 4 既有口径）。
+    if getattr(args, "license_template", ""):
+        payload["license_template"] = args.license_template.strip()
+        payload["auto_init"] = True
+        print("[INFO] 指定 license_template=%s，auto_init 随之开启（将生成 Initial commit）"
+              % payload["license_template"])
     st, d = api("POST", "/user/repos", token, payload)
     if st in (200, 201):
         print("[OK] 已创建私有仓库: %s (id=%s)" % (d.get("full_name"), d.get("id")))
@@ -642,6 +651,8 @@ def build_parser():
                     help="目标仓路径；留空 = 当前工作目录（cwd）")
     ap.add_argument("--desc", default="",
                     help="仓库描述；留空则自动从 --repo（或 cwd）下 README.md 首行标题取")
+    ap.add_argument("--license-template", default="",
+                    help="建仓许可证模板（如 MIT）；给出时自动开启 auto_init，避免空仓不能转公开")
     ap.add_argument("--token", default="")
     ap.add_argument("--token-file", default="")
     sub = ap.add_subparsers(dest="cmd", required=True)

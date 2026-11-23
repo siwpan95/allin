@@ -415,6 +415,16 @@ def test_license_missing_source(tmp_path):
     assert "缺少声明来源" in details(run)[10]
 
 
+def test_license_bold_readme_line(tmp_path):
+    """2026-11-24 反哺 anatomy3d P6：加粗许可行 `**许可**：代码 MIT` 须可识别。"""
+    files = good()
+    files["README.md"] = (
+        "# demo\n\n> 仓库：<https://gitee.com/siwpan/demo> ｜ "
+        "> **许可**：代码 MIT；数据沿上游 CC BY-SA。\n")
+    run = run_on(tmp_path, files)
+    assert status_map(run)[10] in ("ok", "pass"), details(run)[10]
+
+
 def test_readme_structure_missing_sections(tmp_path):
     files = good()
     files["README.md"] = "# demo\n\n只有一句话。\n"

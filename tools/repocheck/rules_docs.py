@@ -436,6 +436,15 @@ def _readme_license_line(ctx: "ProjectContext") -> str | None:
             found = _keyword_spdx(strong.group(1))
             if found:
                 return found
+        # 2026-11-24 反哺（anatomy3d P6）：模板化 README 的加粗形态
+        # `> **许可**：代码 MIT；数据沿上游 CC BY-SA` 会被冒号后的中文前缀
+        # （「代码」）挡住强信号；同行只要出现许可字样，就再扫一次全行的
+        # SPDX token，取首个可识别者。只在强信号失败后走，不改冲突裁决。
+        if re.search(r"许可|licen[cs]e", stripped, re.I):
+            for token in re.findall(r"[A-Za-z][A-Za-z0-9.+-]{1,}", stripped):
+                found = _keyword_spdx(token)
+                if found:
+                    return found
         # 排除第三方/vendor 语境（见 _readme_license_section 的同款理由）。
         # 只在没有上条强信号时才生效 —— 否则「依赖 GPL 库」与「本项目是 GPL」
         # 无法区分，前者该排除、后者该认。

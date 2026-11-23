@@ -142,11 +142,11 @@ python tools/gate/watchdog.py [--quick]   # 盘健康 + 仓完整性 + 同步漂
 ### 3.3 Gitee 推送 / 发版（SPEC-101/102 配套，幂等可重入）
 
 ```bash
-python tools/gitee_release.py whoami                 # 验证令牌
-python tools/gitee_release.py create   --name <仓>   # 建私有仓（已存在跳过）
-python tools/gitee_release.py public   --name <仓>   # 转公开（已公开跳过）
-python tools/gitee_release.py release  --name <仓> --tag vX.Y.Z --title ... --notes-file ...
-python tools/gitee_release.py attach   --name <仓> --tag vX.Y.Z --file dist.zip   # 单附件≤100MB，大载荷压一个 zip
+python tools/gitee_release.py whoami                              # 验证令牌
+python tools/gitee_release.py --name <仓> create                  # 建私有仓（已存在跳过）
+python tools/gitee_release.py --name <仓> public                  # 转公开（已公开跳过）
+python tools/gitee_release.py --name <仓> release --tag vX.Y.Z --title ... --notes-file ...
+python tools/gitee_release.py --name <仓> attach --tag vX.Y.Z --file dist.zip   # 单附件≤100MB，大载荷压一个 zip
 ```
 令牌来源顺序：`--token HEX` → 环境变量 `GITEE_TOKEN` → `--token-file`（默认 `~/.git-credentials` 首段 hex）。
 **令牌/Key 绝不进仓、绝不回显**（铁律 0 例外面 + SPEC-006）。
