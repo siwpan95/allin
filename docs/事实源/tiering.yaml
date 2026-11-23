@@ -991,6 +991,6 @@ tiering:
   seq: 141
   domain: 教育/科学可视化
   tier: ①核心推进
-  action: 持续投入：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器的人体解剖教育程序；M1 已完成（2026-11-23：9 系统 GLB + 全图谱 5954 结构 manifest、契约 PASS），M2 按 P12 性能红线走按节点懒加载
+  action: 持续投入：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器的人体解剖教育程序；M1 完成（9 系统 GLB + 全图谱 5954 结构 manifest）、M2 骨架已通（2026-11-24：按节点懒加载 8/1092 节点 4.8s、拾取/显隐/自动取景、bench 20 draw calls，截图可见颅骨/血管树），M3/M4 待推进
   archive_target: ''
   note: 2026-11-23 建仓（用户指令「按独立项目建仓推进」）；代码 MIT / 数据 CC BY-SA 双轨授权
