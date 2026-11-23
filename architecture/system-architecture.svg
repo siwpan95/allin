@@ -81,8 +81,8 @@
   <rect x="40" y="650" width="1160" height="92" rx="10" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
   <text x="60" y="674" class="ttl" fill="#1e293b">L4 · 外部  repos/ + Gitee API</text>
   <g>
-    <rect x="60" y="686" width="360" height="28" rx="6" class="chip"/><text x="72" y="705" class="chip-t">143 仓（PORTFOLIO.md 2026-11-23 刷新口径，含本仓）</text>
-    <rect x="432" y="686" width="360" height="28" rx="6" class="chip"/><text x="444" y="705" class="chip-t">Gitee API：公开 143 · MIT（铁律 0）</text>
+    <rect x="60" y="686" width="360" height="28" rx="6" class="chip"/><text x="72" y="705" class="chip-t">87 仓（PORTFOLIO.md 2026-11-24 刷新口径，含本仓）</text>
+    <rect x="432" y="686" width="360" height="28" rx="6" class="chip"/><text x="444" y="705" class="chip-t">Gitee API：公开 87 · MIT（铁律 0）</text>
     <rect x="804" y="686" width="380" height="28" rx="6" class="chip"/><text x="816" y="705" class="chip-t">divergence-events.jsonl：分歧事件源</text>
   </g>
 
