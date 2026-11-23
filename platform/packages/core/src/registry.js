@@ -63,7 +63,13 @@ export function pathCheckMode() {
 // （约定：`allin/` 与 `repos/` 并立，见仓根 README「三仓整合」待办）。
 // 工作区根 = 治理仓的上一级（allin/ 与 repos/ 在此并立）；发布区根 = 其下的 repos/。
 const WORKSPACE_ROOT = path.join(ALLIN_ROOT, '..')
-const DEFAULT_REPOS_ROOT = path.join(WORKSPACE_ROOT, 'repos')
+// 2026-11-23：治理仓自身就住在发布区里（`<repos>/allin`）时，工作区根**就是**发布区根，
+// 再拼一层会得到 `<repos>/repos`（不存在）⇒ 145 条清单全量报「path 不存在」。
+// 判据取父目录名而不是「../repos 是否存在」：后者会让一台恰好有个无关 repos 目录的
+// 机器悄悄换分支，而判据换了目标却不吭声，等于没有证据。
+const DEFAULT_REPOS_ROOT = WORKSPACE_ROOT.toLowerCase().endsWith(`${path.sep}repos`.toLowerCase())
+  ? WORKSPACE_ROOT
+  : path.join(WORKSPACE_ROOT, 'repos')
 // 2026-11-13（发行仓可替换性）：发布区根统一走这一个函数，动态读 env。
 // 此前 REPOS_ROOT 支持 PLATFORM_REPOS_ROOT，但 resolvePath() 固定用
 // WORKSPACE_ROOT + 'repos/...' 拼接 ⇒ 换发行仓后校验/启动仍指向默认区，

@@ -31,9 +31,22 @@ OUT = ROOT / "tools" / "gate" / "audit" / "license-matrix.md"
 
 
 def repos_root() -> Path:
-    """Where the sibling clones live: ALLIN_REPOS_ROOT, else <this repo>/../repos."""
+    """Where the sibling clones live.
+
+    Order: env ``ALLIN_REPOS_ROOT``; then, when this repository itself lives in
+    the publish area (``<repos>/allin``), the parent directory; else the
+    historical sibling layout ``<this repo>/../repos``.
+
+    Same discriminator as ``g17_registry.repos_root`` -- kept identical on
+    purpose: two derivations of the publish area that disagree is how the
+    registry and the licence matrix start reporting different worlds.
+    """
     override = os.environ.get("ALLIN_REPOS_ROOT")
-    return Path(override) if override else ROOT.parent / "repos"
+    if override:
+        return Path(override)
+    if ROOT.parent.name.lower() == "repos":
+        return ROOT.parent
+    return ROOT.parent / "repos"
 
 SIGNATURES = [
     ("MIT-0", ["MIT No Attribution"]),

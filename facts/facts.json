@@ -364,6 +364,15 @@
       "source_file": "platform/registry/projects/allin-engine.yaml"
     },
     {
+      "project_id": "allin",
+      "name": "allin · 工作区治理仓（文档枢纽 + 可执行门禁 + cordis preset）",
+      "category": "automation",
+      "version": "0.1.0",
+      "path": "repos/allin",
+      "publish_repo": "siwpan/allin",
+      "source_file": "platform/registry/projects/allin.yaml"
+    },
+    {
       "project_id": "anatomy3d",
       "name": "anatomy3d · 开放数据人体解剖 3D 教育查看器",
       "category": "tool",
@@ -1615,6 +1624,15 @@
       "source_file": "platform/registry/projects/worldbuilder.yaml"
     },
     {
+      "project_id": "worldwright",
+      "name": "worldwright《造界》· 3dworld 世界建模",
+      "category": "engine",
+      "version": "0.1.0",
+      "path": "repos/worldwright",
+      "publish_repo": "siwpan/worldwright",
+      "source_file": "platform/registry/projects/worldwright.yaml"
+    },
+    {
       "project_id": "write-agent",
       "name": "write-agent · 小说创作智能 Agent",
       "category": "ai",
@@ -2499,12 +2517,6 @@
       "repo": "dsh-release-archiver",
       "tier": "②精选旗舰",
       "domain": "工具链/自动化",
-      "source_file": "docs/事实源/tiering.yaml"
-    },
-    {
-      "repo": "anatomy3d",
-      "tier": "①核心推进",
-      "domain": "教育/科学可视化",
       "source_file": "docs/事实源/tiering.yaml"
     }
   ],

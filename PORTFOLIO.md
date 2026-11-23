@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 142 个仓库**（公开 142 · 私有 0）。
+**共 143 个仓库**（公开 143 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -148,6 +148,7 @@
 | [siwpan/weiqi_lab](https://gitee.com/siwpan/weiqi_lab.git) | — | 0 | 公开 | ������������������������������ JS ���� + Markov/CNN ������������MIT�� |
 | [siwpan/weor](https://gitee.com/siwpan/weor.git) | — | 0 | 公开 | weor（自 ai-collection 拆分） |
 | [siwpan/worldbuilder](https://gitee.com/siwpan/worldbuilder.git) | — | 0 | 公开 | 程序化生成工具包：噪声 / 地牢 / 洞穴 / 生物群系 / 城镇 / 命名 / 掉落，纯 Python + numpy，seed 可复现 |
+| [siwpan/worldwright](https://gitee.com/siwpan/worldwright.git) | — | 0 | 公开 | 《造界》—— 3dworld 的表现层：worldbuilder 出世界数据，3dworld 出画面。三区（河谷/城邦/洞窟）  84 秒成片 |
 | [siwpan/write](https://gitee.com/siwpan/write.git) | — | 0 | 公开 | 网文创作与素材工作区：多部连载网文的正文/设定/素材 ＋ 通用模板包 ＋ 仓级工具链（审校与校验流水线，npm run check） |
 | [siwpan/write-agent](https://gitee.com/siwpan/write-agent.git) | — | 0 | 公开 | 智能小说创作 Agent：大纲/章节生成、多轮润色、续写改写风格切换、剧情走向调整、基于工作区素材的知识库问答（逐条标注依据）。Python FastAPI + 原生前端，OpenAI 兼容接口，MIT 开源。 |
 | [siwpan/yasuo](https://gitee.com/siwpan/yasuo.git) | — | 0 | 公开 | 文件加密与压缩工具：AES-256-GCM / CBC + zlib / lzma / bz2，GUI 与 CLI 双入口 |

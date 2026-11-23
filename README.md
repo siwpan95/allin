@@ -126,7 +126,16 @@ allin docs portfolio --apply
 - **命名沿革**：统一游戏引擎现行名为 `allin_engine`（PyPI 包名 `allin-engine`）；
   仓内文档残留的 `alloy.*` 写法一律按 `allin_engine` 读，接口契约见 `docs/` 规范目录（SPEC-201）。
 
+## 许可
+
+本仓按 **MIT-0**（MIT No Attribution）授权，全文见 [`LICENSE`](LICENSE)；
+`package.json` 的 `license` 字段与之一致。`packages/allin-governance/` 随仓同许可。
+`vendor/cordis/` 是上游 cordis-py 的源码内联副本，保留其各自的 MIT 许可与出处
+（见 `vendor/cordis/VENDOR.md`），**不因本仓的 MIT-0 而改变**。
+
 ---
 
-*最后更新：2026-11-08 —— 补 `site/` 与 `website/` 区分说明，
-allin-governance 版本口径同步至 `0.0.0a6`。体例沿革（2026-11-07 重写为中性直述）与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*
+*最后更新：2026-11-23 —— 本仓迁入发布区 `repos/allin`（原 `<工作区>/allin`），
+补「许可」章节使许可证三处声明（LICENSE / 本 README / 清单字段）可被
+发布区门禁机检；2026-11-08 的 `site/` 与 `website/` 区分说明与
+`allin-governance` 版本口径仍有效。体例沿革与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*

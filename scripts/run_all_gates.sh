@@ -116,6 +116,24 @@ is_environmental_skip() {
   return 1
 }
 
+# --- 发布区根推导（全脚本唯一实现）-----------------------------------------
+# 两种合法布局，判据相同：
+#   · 同级（历史）：<工作区>/allin 与 <工作区>/repos 并立 ⇒ 发布区 = <父>/repos
+#   · 内含（2026-11-23 起）：本仓自己就住在发布区里 <repos>/allin ⇒ 发布区 = 父目录本身
+# 旧推导只认同级，内含布局下得到 <repos>/repos（不存在）⇒ 下方两道发布区门禁都
+# 降级成 SKIP，「没检查」被当成了「没问题」。判据取父目录**名字**而不是
+# 「../repos 是否存在」：后者会在恰好有个无关 repos 目录的机器上悄悄切换目标，
+# 判据换了地方却不吭声，等于没有证据。
+detect_repos_root() {
+  local r="${PROJECTS_ROOT:-}"
+  if [ -n "$r" ]; then printf '%s' "$r"; return 0; fi
+  local parent="${ROOT%/*}"
+  if [ "${parent##*/}" = "repos" ]; then printf '%s' "$parent"; return 0; fi
+  if [ -d "$ROOT/repos" ]; then printf '%s' "$ROOT/repos"; return 0; fi
+  if [ -d "$parent/repos" ]; then printf '%s' "$parent/repos"; return 0; fi
+  return 0
+}
+
 note_skip() {
   # $1=log 标签（沿用既有 <工具>:skip(<原因>) 口径） $2=人读原因
   echo "    [SKIP] $2"
@@ -223,13 +241,8 @@ run() {
 # env-error(3) 退出，把整批门禁拖红 —— 这正是此前 CI 连续红的根因之一（B1）。
 # 本地有发布区时行为与之前完全一致；发布区缺席/为空时记 [SKIP]，不计入失败。
 _run_repo_hygiene() {
-  local repos_root="${PROJECTS_ROOT:-}"
-  if [ -z "$repos_root" ] && [ -d "$ROOT/repos" ]; then
-    repos_root="$ROOT/repos"
-  fi
-  if [ -z "$repos_root" ] && [ -d "${ROOT%/*}/repos" ]; then
-    repos_root="${ROOT%/*}/repos"
-  fi
+  local repos_root
+  repos_root="$(detect_repos_root)"
   if [ -z "$repos_root" ] || [ ! -d "$repos_root" ]; then
     echo "==> $PY tools/repo_hygiene.py --all"
     note_skip "repo_hygiene:skip(no-publish-area)" \
@@ -373,13 +386,8 @@ _run_repo_hygiene
 #     汇总里单列 pending，全哥在场可用 --strict-pending 逐项裁决。
 #     发布区缺席时同样降级为 skip（与 _run_repo_hygiene 同款）。
 _run_publish_area_gate() {
-  local repos_root="${PROJECTS_ROOT:-}"
-  if [ -z "$repos_root" ] && [ -d "$ROOT/repos" ]; then
-    repos_root="$ROOT/repos"
-  fi
-  if [ -z "$repos_root" ] && [ -d "${ROOT%/*}/repos" ]; then
-    repos_root="${ROOT%/*}/repos"
-  fi
+  local repos_root
+  repos_root="$(detect_repos_root)"
   if [ -z "$repos_root" ] || [ ! -d "$repos_root" ]; then
     echo "==> $PY tools/publish_area_gate.py (no-publish-area)"
     note_skip "publish_area_gate:skip(no-publish-area)" \

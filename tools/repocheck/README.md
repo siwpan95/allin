@@ -60,6 +60,7 @@ repocheck G:/repos
 | `--profile NAME` | 无 | 场景预设，一次性设定该场景的 `--skip-rules`：`monorepo`（monorepo 仓根扫描，自动跳过规则 1,7——内部中间目录不是独立项目）与 `component`（monorepo 子件扫描，跳过规则 1,2,4,5——版本控制/README/依赖/LICENSE 由仓根统一持有）。被排除的目录名单属各仓布局事实，仍由 `--exclude` 提供 |
 | `--workers N` | `1` | 按项目并发数（IO 与子进程为主，4~8 通常最快） |
 | `--no-color` | 关 | 关闭 ANSI 颜色 |
+| `--gates` | 关 | 启用**门禁规则族**（id 31–50）：对自带 `tools/gate/governance` 的仓实跑 20 道治理门禁。默认关 —— 每条规则一次子进程，实测约 90 秒/仓，会把日常体检 0.26 s/仓 的速度口径拖垮 |
 | `--dump-profile` | 关 | 打印规则清单与能力矩阵（不扫描） |
 | `--version` | — | 打印版本号 |
 
@@ -157,6 +158,33 @@ score = 10 × log1p(通过项权重之和) / log1p(全部项权重之和)
 **未纳入（需要联网）**：分支保护、release 签名、贡献者组织分布、CVE/OSV 比对、
 webhook secret、CI 真实运行记录、包发布状态、CII 徽章等级、外链是否 200。
 
+## 门禁规则族（31–50，`--gates` 启用）
+
+除了上面 30 条仓体卫生规则，repocheck 还能把**治理门禁**纳入同一次体检：
+`--gates` 时，对**自带治理套件**的仓（有 `tools/gate/governance/gates/` 与
+`runtime/govlib.py`）追加 20 条规则，逐条对应 `g00-meta` … `g20-facts`。
+
+**判据只有一份**：这 20 条不重写任何判据、也不 import 门禁的内部函数，只复用每道门
+对外稳定的 CLI 契约（`--root` + 退出码 0/1/2/3）。所以它们与 `run.ts` 跑的是同一份
+判据文件 —— 门禁改了判据，这里立刻跟着变，不存在「两边结论对不上」。
+`g14-preset` 这类 `profileProbe: true` 的门，会照 `registry.json` 的声明补传
+`--no-profile`，与 `run.ts` 的参数完全等价（实测 20/20 同结论）。
+
+**按项目裁剪，不是按项目跳过**：没有治理套件的仓**不会注册**这 20 条；而不是注册后
+逐条 `SKIP`。后者会让 20 条跳过项把每个仓的分数上限压到 9.0（见「分数上限」表），
+发布区健康分 9.5 会整体塌到 9.0 —— 那是把「没这套东西」错记成「有东西没测」。
+
+**代价与取舍**：每道门一次子进程，实测 20 道约 90 秒/仓。日常体检（0.26 s/仓）不背这个
+开销，所以默认关闭。要「一次跑完仓体 + 门禁」时显式加：
+
+```bash
+python main.py /repos --gates --fail-on error
+python main.py /repos/allin --gates          # 只有治理仓才有这 20 条
+```
+
+退出码映射：门禁 `0` → 通过；`1` → 未通过；`2`/`3` 或超时 → **按未通过记**
+（fail-loud：跑不动不等于没问题）。
+
 ## 可选依赖
 
 核心是纯标准库。装了下面这些会用更严格的库做**二次校验**，不装则走内置实现，
@@ -216,6 +244,7 @@ repocheck/
 ├── rules_vcs.py     规则 17-29 git 卫生 / 版本 / 二进制 / 敏感文件 / 密钥 / 空壳仓
 ├── rules_ci.py      规则 19-28 CI 与 workflow 安全
 ├── rules_misc.py    规则 30    目录命名规范
+├── rules_gate.py    规则 31-50 门禁规则族（复用 tools/gate/governance 的 CLI 契约，不入判据）
 ├── report.py        text / csv / html / json 渲染 + 汇总
 ├── _optional.py     可选依赖能力探测（find_spec，不真 import）
 ├── test_scanner.py  测试套件（含无 pytest 时的兜底冒烟）

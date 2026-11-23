@@ -37,11 +37,12 @@ from rulebase import (
 from rules_ci import RULES_CI
 from rules_core import RULES_CORE
 from rules_docs import RULES_DOCS
+from rules_gate import RULES_GATE, has_gate_suite
 from rules_misc import RULES_MISC
 from rules_vcs import RULES_VCS
 from scanctx import ProjectContext
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 SCHEMA_VERSION = 2
 
 #: 默认排除的目录名（不扫描、不识别为项目、检查项目时跳过）。
@@ -184,7 +185,7 @@ def _is_project(directory: Path, exclude: frozenset[str], max_py_depth: int) -> 
 # ---------------------------------------------------------------------------
 
 def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
-                  *, skip_ids: Iterable[int] = ()) -> dict:
+                  *, skip_ids: Iterable[int] = (), with_gates: bool = False) -> dict:
     """对一个项目跑全部规则，返回结构化结果。
 
     返回字典结构
@@ -204,7 +205,14 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
     merged = _merge_exclude(exclude)
     proj = Path(path)
     ctx = ProjectContext(proj, merged)
-    run = run_rules(ctx, RULES, skip_ids=frozenset(skip_ids))
+    # 门禁规则族**按项目裁剪**：只有自带治理套件的仓才追加这 20 条。
+    # 若改成「一律注册、无套件时 SKIP」，20 条 SKIP 会把每个仓的分数上限压到 9.0
+    # （见 rulebase.CAP_PARTIAL 的口径），发布区健康分 9.5 会整体塌到 9.0 ——
+    # 那是把「没这套东西」错记成「有东西没测」。
+    rules = RULES
+    if with_gates and has_gate_suite(proj):
+        rules = RULES + RULES_GATE
+    run = run_rules(ctx, rules, skip_ids=frozenset(skip_ids))
 
     # 跳过项从分母剔除，但必须压上限，否则「越残缺分越高」
     cap = CAP_FULL
@@ -260,10 +268,11 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
 
 
 def _safe_check(proj: str, exclude: Iterable[str] | None,
-                skip_ids: Iterable[int]) -> dict:
+                skip_ids: Iterable[int], with_gates: bool = False) -> dict:
     """单个项目出错不中断整体扫描，转为一条伪问题。"""
     try:
-        return check_project(proj, exclude=exclude, skip_ids=skip_ids)
+        return check_project(proj, exclude=exclude, skip_ids=skip_ids,
+                             with_gates=with_gates)
     except Exception as exc:  # noqa: BLE001 - 兜底，避免一个项目毁掉整次扫描
         return {
             "name": os.path.basename(proj),
@@ -281,7 +290,7 @@ def _safe_check(proj: str, exclude: Iterable[str] | None,
 
 def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
          depth: int = 2, skip_ids: Iterable[int] = (),
-         workers: int = 1, progress=None) -> list[dict]:
+         workers: int = 1, progress=None, with_gates: bool = False) -> list[dict]:
     """发现项目并逐个体检。
 
     ``workers > 1`` 时按项目并发（IO 与子进程为主，GIL 影响很小）。
@@ -304,7 +313,8 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
         from concurrent.futures import ThreadPoolExecutor
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(_safe_check, p, exclude, skip) for p in projects]
+            futures = [pool.submit(_safe_check, p, exclude, skip, with_gates)
+                       for p in projects]
             results: list[dict] = []
             for index, (project, future) in enumerate(zip(projects, futures), 1):
                 results.append(future.result())
@@ -314,7 +324,7 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
 
     results = []
     for index, project in enumerate(projects, 1):
-        results.append(_safe_check(project, exclude, skip))
+        results.append(_safe_check(project, exclude, skip, with_gates))
         if progress:
             progress(index, total, project)
     return results
@@ -408,6 +418,20 @@ def dump_profile() -> dict:
                 "status": "active",
             }
             for rule in RULES
+        ],
+        # 门禁族单独列，不并进 ``rules``：它默认不参与扫描（``--gates`` 才启用），
+        # 并进去会让「运行时可得的规则集」与这份自省不一致 —— 自省存在的意义就是
+        # 让人能对着它判断「这次到底能查什么」。
+        "gate_rules": [
+            {
+                "id": rule.id,
+                "label": rule.label,
+                "criteria": rule.criteria,
+                "key": rule.key,
+                "severity": rule.severity.value,
+                "status": "opt-in (--gates)",
+            }
+            for rule in RULES_GATE
         ],
         "exclude_dirs": sorted(DEFAULT_EXCLUDE),
         "project_markers": list(PROJECT_MARKER_FILES),

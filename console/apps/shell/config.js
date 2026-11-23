@@ -119,9 +119,14 @@ function finish(root, source) {
   const portsYaml = path.join(abs, 'platform', 'registry', 'ports.yaml')
   const cfg = readConfig()
   const cfgRepos = typeof cfg?.reposRoot === 'string' ? cfg.reposRoot.trim() : ''
-  const reposRoot = cfgRepos
-    ? path.resolve(cfgRepos)
-    : path.resolve(abs, '..', 'repos')
+  // 2026-11-23：仓根搬进发布区后（`<repos>/allin`），`abs/../repos` 指向不存在的
+  // `<repos>/repos`。父目录名为 repos 时，发布区根就是该父目录本身。
+  const parentDir = path.resolve(abs, '..')
+  const siblingRepos =
+    path.basename(parentDir).toLowerCase() === 'repos'
+      ? parentDir
+      : path.resolve(parentDir, 'repos')
+  const reposRoot = cfgRepos ? path.resolve(cfgRepos) : siblingRepos
   return {
     root: abs,
     source,

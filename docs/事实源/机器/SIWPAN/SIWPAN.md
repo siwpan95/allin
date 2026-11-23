@@ -1,5 +1,19 @@
 # 机器事实 · `SIWPAN`（第三台接入机器，曾改名）
 
+> **时点** 2026-11-23（**@`SIWPAN` 仓根迁入发布区** —— 全哥指令「将 /allin 转入 /repos」：
+> 本仓由 `<工作区>/allin` 迁至 `D:\projects\repos\allin`，与 142 个被管仓同住发布区。
+> 搬迁连带修好五处只认同级布局的发布区推导：Python 侧 `g17_registry.repos_root`、
+> `tools/license_matrix.py`、`tools/repo_hygiene.py`、`scripts/run_all_gates.sh:detect_repos_root`，
+> JS 侧 `@allin/core`、console shell、MCP 白名单；判据一律为「父目录名是 `repos` 则取父目录」。
+> ⚠ **修复前 g17 的完备性检查一直 `SKIPPED`（not a pass）** —— 内含布局下
+> `<本仓>/../repos` 指向不存在的 `<repos>/repos`，门禁把「没检查」当通过报了出来；
+> 修好后首次真正生效，当场判出 `repos/allin` 与 `repos/worldwright` 两个未登记仓
+> （后者是长期盲区里的存量，本仓 `206ec7b` 2026-11-23 首发 0.1.0、非残留）。
+> 仓数现场实测：`D:\projects\repos` **143** 个目录（含本仓）· 含 `.git` **142** ·
+> 含 `origin` **142** · 非 git 目录 1 个（`out`）；`.git` 总数 **142**（本仓已计入发布区，
+> 不再另加 1）。远端 Gitee `siwpan` **143** 仓（`tools/build_portfolio.py` API 实测）。
+> 本仓 `.venv` 于同日以 uv 重建（CPython 3.12.13，见 §5）。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百八十五（搬迁与门禁纳入 repocheck 的自留痕）
 > **时点** 2026-11-08（**@`SIWPAN` PyPI 凭据收编第 5 条** —— a4 发版暴露 token 无受管
 > 落点（a3 上传时交互输入未存）。`D:\projects\pypi.txt` 内两条 token 处置：有效
 > token 收进 `~/.dsvault/` 条目 `pypi_upload`（回程字节级一致；密文 `pypi-` 前缀
@@ -59,8 +73,8 @@
 | 内存 | **31.9 GB** | `Win32_ComputerSystem.TotalPhysicalMemory`（2026-10-29 实测） |
 | 系统 | **Windows 11 专业版**，10.0.**26100**（build 26100） | `Win32_OperatingSystem`（measure.py 复测一致） |
 | 物理盘 | **1 块**：`M.2 SSD 1TB`（SATA，932 GB）——三卷同盘分区 | `Get-Disk`（measure.py） |
-| 本仓仓根 | **`D:\projects\allin`** | `git rev-parse --show-toplevel` |
-| 发布区 | **`D:\projects\repos`** | 与仓根同级 |
+| 本仓仓根 | **`D:\projects\repos\allin`** | `git rev-parse --show-toplevel`（2026-11-23 迁入发布区） |
+| 发布区 | **`D:\projects\repos`** | 本仓所在目录（仓根在**发布区内**，不再与发布区同级） |
 
 ## 2. 盘位（2026-10-30 实测）
 
@@ -78,8 +92,8 @@
 
 | 落点 | 内容 |
 | --- | --- |
-| `D:\projects\allin` | **本仓**（治理仓，`origin` = `https://gitee.com/siwpan/allin.git`） |
-| `D:\projects\repos` | **发布区**（Gitee 仓的本地检出，**全量检出**（2026-11-03 晚补检出 `dsh-release-archiver` 后恢复），见 §4 仓数） |
+| `D:\projects\repos\allin` | **本仓**（治理仓，`origin` = `https://gitee.com/siwpan/allin.git`；2026-11-23 起住在发布区内） |
+| `D:\projects\repos` | **发布区**（Gitee 仓的本地检出，**全量检出**，含本仓；仓数见 §4） |
 
 - 便携工具链：`C:\Users\13122\.workbuddy\binaries\`（Node / Python / 等，随 WorkBuddy）；
   git 走 WorkBuddy vendor 的 PortableGit（见 §5）。
@@ -89,27 +103,27 @@
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **138** | API 匿名分页实测（**2026-11-03 复测**：page1=100 / page2=38 / page3=0；2026-10-30 首测为 137，差值即新仓 `dsh-release-archiver`）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../../机器分区索引.md) §5 |
-| **本机发布区目录数** | **138** | `D:\projects\repos` **138** 个仓（2026-11-03 晚补检出 `dsh-release-archiver`；上午复测时为 137） |
-| 含 `.git` | **138 / 138** | 逐目录实测 |
-| 含 `origin` | **138 / 138** | 逐仓读 `.git/config` 判 `[remote "origin"]`（新仓 origin = `https://gitee.com/siwpan/dsh-release-archiver.git`） |
-| 本机 `.git` 总数 | **139** | 138（发布区）+ 本仓 `D:\projects\allin` |
+| **远端仓总数**（Gitee `siwpan`） | **143** | `tools/build_portfolio.py` API 实测（2026-11-23：公开 143 / 私有 0）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../../机器分区索引.md) §5 |
+| **本机发布区目录数** | **143** | `D:\projects\repos` **143** 个目录（含本仓 `allin`，2026-11-23 搬迁后实测） |
+| 含 `.git` | **142 / 143** | 逐目录实测（唯一非 git 目录是 `out`） |
+| 含 `origin` | **142 / 142** | 逐仓 `git remote get-url origin`（2026-11-23 实测，142 个 git 仓全命中） |
+| 本机 `.git` 总数 | **142** | 全部位于发布区内（本仓已计入，不再另加 1 —— 迁移前的「138 + 本仓 = 139」口径作废） |
 
-- **口径**：本机是**全量检出**（2026-11-03 晚补检出后 138 = 远端 138）；提「远端仓数」一律查索引 §5；
+- 口径：本机是**全量检出**（2026-11-23 实测 143 = 远端 143）；提「远端仓数」一律查索引 §5；
   提「本机发布区仓数」一律**现场实测**。
-- ⚠ **与 `DESKTOP-KQABATS` 的差异**：那机是**部分检出**（23 仓，2026-11-03 复测），本机是全量检出 138 仓 ——
+- ⚠ **与 `DESKTOP-KQABATS` 的差异**：那机是**部分检出**（23 仓，2026-11-03 复测），本机是全量检出 143 仓 ——
   「哪仓在哪台」以各机分区文件为准，勿跨机假设。
 
 ## 5. 运行时与工具链（2026-10-30 实测；PATH 实际解析，非文档声称）
 
 | 工具 | 现值 | 备注 |
 | --- | --- | --- |
-| Python | **`E:\Python314\python.exe` → 3.13.14（有 tkinter，Tk 8.6）** | **本机主 Python**，唯一带 tkinter 的；本机无 `.venv`，门禁套件实际用 PATH 上的便携解释器 |
+| Python | **`E:\Python314\python.exe` → 3.13.14（有 tkinter，Tk 8.6）** | **本机主 Python**，唯一带 tkinter 的；仓内 `.venv`（ 3.12.13）优先，其余走 PATH 便携解释器 |
 | Node | `C:\Users\13122\.workbuddy\binaries\node\versions\22.22.2-6\node.exe`（v22.22.2） | WorkBuddy 便携工具链 |
 | npm | 同目录（10.9.7） | 与 node 同版本目录 |
 | git | `C:\Users\13122\AppData\Local\Programs\WorkBuddy\resources\vendor\PortableGit\mingw64\bin\git.EXE`（**2.55.0.windows.3**） | WorkBuddy vendor 版**在 PATH**（与 KQABATS 的「系统安装版在 PATH」不同） |
 | pwsh | **`C:\Program Files\PowerShell\7\pwsh.exe`（7.6.6）** | 在 PATH；`powershell` = 系统 Windows PowerShell 5.1 |
-| `.venv` | 本仓 `D:\projects\allin` **无 `.venv`** | `run_all_gates.sh` 的仓内 `.venv` 优先策略在本机落到 PATH 解释器（便携 3.13.14，无 tkinter） |
+| `.venv` | 本仓 `D:\projects\repos\allin\.venv` **存在**（CPython **3.12.13**，uv 建，含 PyYAML / pytest / bandit 等） | 2026-11-23 搬迁时重建 —— 旧 venv 的 console_scripts 内嵌旧绝对路径，移动后全失效；`run_all_gates.sh` 的仓内 `.venv` 优先策略从此真正生效 |
 
 ### 5.1 Python 解释器清单（2026-10-30 实测；选型前先测 `import tkinter`）
 

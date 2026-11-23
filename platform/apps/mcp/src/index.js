@@ -53,7 +53,12 @@ const EXCEPTION_DRAFTS = path.join(AUDIT_DIR, 'exception-drafts')
 // 采用 CWE-22 推荐的 canonicalize-then-contain：先 path.resolve 做词法收敛，
 // 再用 fs.realpathSync 防 symlink / junction 逃逸；分隔符感知的 startsWith
 // 避免 `/repo-evil` 被 `/repo` 前缀误判为内部路径。
-const REPOS_SIBLING = path.resolve(REPO, '..', 'repos')
+// 2026-11-23：治理仓搬进发布区后（`<repos>/allin`），`../repos` 变成 `<repos>/repos`（不存在）
+// ⇒ 白名单里少掉整个发布区，MCP 对所有 repos/ 路径一律拒绝。父目录名为 repos 时取父目录本身。
+const WORKSPACE_SIBLING = path.resolve(REPO, '..')
+const REPOS_SIBLING = path.basename(WORKSPACE_SIBLING).toLowerCase() === 'repos'
+  ? WORKSPACE_SIBLING
+  : path.resolve(WORKSPACE_SIBLING, 'repos')
 const REPO_BASES = [path.resolve(REPO)]
 const REPO_AND_SIBLING_BASES = [path.resolve(REPO), REPOS_SIBLING]
 

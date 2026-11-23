@@ -1285,13 +1285,23 @@ def _default_repos_root():
     两者都满足「上溯两级（或一级）= 工作区根，其下的 `repos` 就是仓根」，故用**同级 repos**
     而不是脚本自身仓根 —— 后者会让 `--all` 恒得 0 个仓（2026-09-28 实测踩到）。
     全程不出现盘符（铁律 5），换机/换盘自适应。
+
+    2026-11-23 补第三种布局：**本仓自身就住在发布区里**（`<repos>/allin`）。此时
+    「同级 repos」= `<repos>/repos`（不存在）⇒ 两个候选全落空 ⇒ 兜底返回仓根本身，
+    `--all` 报「下没有找到任何 git 仓」。判据取父目录**名字**，与 `g17_registry.repos_root`
+    和 `run_all_gates.sh:detect_repos_root` 同源：发布区根有三处推导，判据必须一致，
+    否则一处认为有发布区、另一处认为没有。
     """
     here = os.path.dirname(os.path.abspath(__file__))          # .../tools
-    for cand_root in (os.path.dirname(here), os.path.dirname(os.path.dirname(here))):
+    repo_root = os.path.dirname(here)                          # 仓根
+    parent = os.path.dirname(repo_root)
+    if os.path.basename(parent).lower() == "repos":
+        return parent
+    for cand_root in (repo_root, parent):
         sib = os.path.join(cand_root, "repos")
         if os.path.isdir(sib):
             return sib
-    return os.path.dirname(here)                               # 兜底：脚本自身仓根
+    return repo_root                                           # 兜底：脚本自身仓根
 
 
 def collect_repos(args):

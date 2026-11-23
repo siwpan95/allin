@@ -1,0 +1,23 @@
+id: allin
+name: allin · 工作区治理仓（文档枢纽 + 可执行门禁 + cordis preset）
+category: automation
+version: 0.1.0
+path: repos/allin
+status: active
+manual: true
+note: >-
+  2026-11-23 补登记：本仓原住在发布区同级（`<工作区>/allin`），registry 里只有
+  `portal`（path: platform）这类指向仓内子目录的条目，治理仓自身从未登记 —— 因为
+  搬进发布区之前，g17 的完备性检查**一直静默 SKIP**（默认推导 `<本仓>/../repos` 在
+  「本仓就在 repos 里」时指向不存在的 `<repos>/repos`），没人发现它漏了自己。
+  搬迁修好推导后 g17 第一次真正生效，当场判出 `repos/allin` 未登记 ⇒ 按判据补登。
+  定位：文档枢纽（`docs/`，SPEC-001~107）+ 可执行门禁（`tools/gate/`：20 道 governance、
+  docs_index、ps1_bom、发布区门禁）+ 离线仓库体检器（`tools/repocheck/` 30 条规则，
+  已作为 `allin-governance` 的 `repocheck` 子命令发布到 PyPI）+ cordis 治理 preset。
+  常驻服务只有 portal（见 `portal.yaml`，path: platform，publish.repo 同为本仓）；
+  本条目 manual=true，人工入口为 `allin.bat <子命令>`（tools / docs / platform / preset / status）。
+launch:
+  command: python allin_cli.py status
+publish:
+  repo: siwpan/allin
+  branch: master

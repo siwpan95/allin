@@ -92,10 +92,30 @@ def load_gaps(path: Path) -> dict[str, str]:
 
 
 def repos_root(root: Path) -> Path:
+    """The publish area root: ``ALLIN_REPOS_ROOT``, else derived from layout.
+
+    Two layouts are legitimate and both are judged the same way:
+
+    * **sibling** (historical) -- ``<workspace>/allin`` and ``<workspace>/repos``
+      sit next to each other, so the root is ``<this repo>/../repos``;
+    * **inside** (2026-11-23) -- this repository itself lives in the publish
+      area as ``<repos>/allin``. Then ``<this repo>/../repos`` resolves to
+      ``<repos>/repos``, which does not exist, and completeness used to
+      degrade to ``SKIPPED`` -- a gate that reports success without having
+      judged anything. The parent being named ``repos`` is the discriminator.
+
+    The discriminator is the parent's *name*, not "does ../repos exist":
+    existence-based probing would silently switch branches on a machine that
+    happens to have an unrelated ``repos`` directory, and a judgement that
+    changes target without saying so is not evidence.
+    """
     override = os.environ.get("ALLIN_REPOS_ROOT")
     if override:
         return Path(override)
-    return root.parent / "repos"
+    parent = root.parent
+    if parent.name.lower() == "repos":
+        return parent
+    return parent / "repos"
 
 
 def local_dirs(repos: Path) -> tuple[list[str], list[str]]:

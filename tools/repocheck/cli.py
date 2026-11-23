@@ -171,6 +171,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-color", action="store_true", help="关闭 ANSI 颜色")
     parser.add_argument(
+        "--gates", action="store_true",
+        help="启用门禁规则族（id 31-50）：对自带 tools/gate/governance 的仓实跑 20 道治理门禁。"
+             "默认关闭 —— 每条规则一次子进程，实测约 60–70 秒/仓，会拖垮日常体检的速度口径。")
+    parser.add_argument(
         "--dump-profile", action="store_true",
         help="打印规则清单与能力矩阵（不扫描）")
     parser.add_argument(
@@ -258,6 +262,14 @@ def _format_profile(profile: dict) -> str:
         lines.append(
             f"  [{rule['id']:>2}] {rule['severity']:<5} {rule['label']}{suffix}")
         lines.append(f"        {rule['criteria']}")
+    gate_rules = profile.get("gate_rules") or []
+    if gate_rules:
+        lines.append("")
+        lines.append(f"门禁规则族（{len(gate_rules)} 条，仅 --gates 启用；"
+                     "只对自带 tools/gate/governance 的仓生效）：")
+        for rule in gate_rules:
+            lines.append(
+                f"  [{rule['id']:>2}] {rule['severity']:<5} {rule['label']}")
     lines.append("")
     lines.append("排除目录：" + ", ".join(profile["exclude_dirs"]))
     lines.append("项目标记：" + ", ".join(profile["project_markers"]))
@@ -316,6 +328,7 @@ def run(args: argparse.Namespace) -> int:
         depth=args.depth,
         skip_ids=args.skip_rules,
         workers=args.workers,
+        with_gates=args.gates,
     )
     if not results:
         print(f"未发现任何项目：{root}", file=sys.stderr)

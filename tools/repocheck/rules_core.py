@@ -99,7 +99,18 @@ _STALE_CODE_SUFFIXES = (".py", ".bat", ".cmd", ".ps1", ".sh", ".toml", ".cfg", "
 #: 项目总结是交付留档 —— 六条红线全部落在这类文件上，而它们一个字都不该动。
 _HISTORICAL_NAME_PARTS = ("changelog", "change-log", "history", "news",
                           "report", "总结", "指导", "迁移")
-_HISTORICAL_PATH_PARTS = ("audit/", "/audit", "记录/", "/records/", "/adr/", "adr-")
+_HISTORICAL_PATH_PARTS = (
+    "audit/", "/audit", "记录/", "/records/", "/adr/", "adr-",
+    # 2026-11-23 扩口：历史归档区与他机事实源。
+    #   前者是整仓的历史快照（allin 的 `docs/md/` 就是 ASCII 别名「历史/」），
+    #   里面的旧仓根（盘符 + allin）是"这份文档当年从哪来"的出处标注；
+    #   后者描述的是**别的机器**的落点（`docs/facts/机器/<HOST>/`），在本机不成立
+    #   也不该被判死 —— 与 g20「每台机只自验自己那份」同口径。
+    #   两者都不是"照着做会失败"的可执行路径，判红只会逼人篡改历史。
+    #   注意 `docs/facts` 是 junction（不入库），git 侧真身是 `docs/事实源`，两种形态都认。
+    "docs/md/", "/历史/", "docs/history/",
+    "docs/facts/机器/", "docs/事实源/机器/",
+)
 _HISTORICAL_SUFFIXES = (".log",)
 _HISTORICAL_NAME_EXACT = ("log.txt", "log.md")
 

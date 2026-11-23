@@ -1,0 +1,22 @@
+id: worldwright
+name: worldwright《造界》· 3dworld 世界建模
+category: engine
+version: 0.1.0
+path: repos/worldwright
+status: active
+manual: true
+note: >-
+  2026-11-23 登记：本仓 HEAD `206ec7b`（2026-11-23）首发 `0.1.0`，此前在本机检出、
+  有 origin（`gitee.com/siwpan/worldwright`）、52 个跟踪文件，但 registry 无条目，
+  长期未被 g17 发现。根因不在本仓：治理仓搬进发布区之前，g17 的完备性检查一直
+  **SKIP**（详见 `allin.yaml` 的 note），所以「本地有仓、registry 没有」这整类
+  漏洞都没人判。搬迁修好推导后当场判红，按判据补登记。
+  定位：《造界》—— 用 3dworld 搭的世界建模工程（12 个 globe 级区域 + 94 模块能力
+  调度层），依赖 `3dworld`（PyPI 名，导入名 `world3d`）与 numpy；视频是副产品不是目标。
+  为什么独立成仓：挂 `3dworld-demos`（67 个最小示例的集合）下会被当成附属品 — 见仓内 README。
+  category 取 `engine`，与 `3dworld-globe` 同口径：同为 3dworld 之上的世界构建工程，非可玩成品。
+launch:
+  command: python -m worldwright.regions.journey
+publish:
+  repo: siwpan/worldwright
+  branch: master
