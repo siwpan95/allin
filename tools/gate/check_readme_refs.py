@@ -127,9 +127,21 @@ def collect_paths(text: str) -> list:
     return out
 
 
-def extract_versions(text: str) -> set[str]:
-    """抽取一段文本里出现的 allin-governance 版本号集合（去重）。"""
-    return {m.group(0) for m in VERSION.finditer(text)}
+def extract_versions(text: str, actual: str | None = None) -> set[str]:
+    """抽取一段文本里出现的 allin-governance 版本号集合（去重）。
+
+    2026-11-24：VERSION 正则刻意只匹配**预发布形态**（`0.0.0aN` 等），因为纯三段
+    `1.2.3` 在本仓文档里几乎全是第三方版本/IP/章节号/日期，匹配即全域误报。
+    但这条取舍有个盲区：**版本一旦从预发布转正式（如 1.0.0），正则就再也抓不到它** ——
+    门禁会报「门面未包含真值」，而门面里明明写着。
+
+    取舍：正则不动（继续零误伤），额外用 `actual` 精确匹配真值原文补上。
+    只有与 pyproject 里那一串完全相同的字符串才算数，不会误伤别的三段数字。
+    """
+    found = {m.group(0) for m in VERSION.finditer(text)}
+    if actual and actual in text:
+        found.add(actual)
+    return found
 
 
 def read_pkg_version(pyproject_text: str) -> str | None:
@@ -160,7 +172,7 @@ def version_problems(docs: dict[str, str], pkg_version: str) -> list[str]:
     problems: list[str] = []
     truth_set = {pkg_version}
     for rel, text in sorted(docs.items()):
-        mentioned = extract_versions(text)
+        mentioned = extract_versions(text, pkg_version)
         stale = sorted(mentioned - truth_set)
         if stale:
             problems.append(
@@ -172,8 +184,8 @@ def version_problems(docs: dict[str, str], pkg_version: str) -> list[str]:
     readme_text = docs.get(README_REL)
     if readme_text is None:
         problems.append(f"R2 门面缺席：判定面内找不到 {README_REL}（无法执行「必须包含真值」判据）")
-    elif pkg_version not in extract_versions(readme_text):
-        mentioned = sorted(extract_versions(readme_text))
+    elif pkg_version not in extract_versions(readme_text, pkg_version):
+        mentioned = sorted(extract_versions(readme_text, pkg_version))
         problems.append(
             f"R2 门面落后：{README_REL} 未包含真值 {pkg_version}"
             f"（实际提到 {mentioned or '[]'}）"
