@@ -82,6 +82,11 @@ npm run check:docs                # 文档索引契约 D1–D17
 python tools/repocheck/main.py <目录>   # 离线仓库体检（无参数 = GUI）
 ```
 
+> **门禁入口（2026-11-23 起）**：`scripts/run_all_gates.sh` 默认用 repocheck 的
+> 门禁规则族（规则 31-50）跑那 20 道门禁 —— 判据仍是同一份 `gates/*.py`，只是换了编排者。
+> `npm run check:governance` 作为**回退与对照**保留（判据没漂的证据），要强制走它：
+> `ALLIN_GATES_VIA_NPM=1 bash scripts/run_all_gates.sh`。
+
 **统一命令行入口**：经 [`allin.bat`](allin.bat)（或仓内 venv 的 python）运行
 [`allin_cli.py`](allin_cli.py)，子命令为 `tools` / `docs` / `platform` / `preset` / `status`。
 
@@ -133,22 +138,48 @@ allin docs portfolio --apply
 - **smoke:e2e 显示 SKIP**：platform / website 两侧 Node 依赖未安装（`.gitignore` 忽略 node_modules）。
   装依赖后复跑：`npm ci --prefix website && npm ci --prefix platform`。SKIP 不计入失败。
 - **repocheck 对本仓自检报「无 .git / 无 README」**：本仓是 monorepo，子目录不是独立仓。
-  自检口径见 `scripts/run_all_gates.sh` 中的排除与跳过参数，勿直接对仓根裸跑。
+  加 `--profile monorepo` 与完整 `--exclude` 列表；要对仓根自身体检再加 `--self`。
+  具体命令见下文「已知限制」第三条。
 - **Gitee Wiki 怎么改**：Wiki 只能网页编辑，[`wiki/`](wiki/Home.md) 目录是唯一真身，
   改文案改这里再同步过去。
 
 ## 已知限制
 
-- **发布区缺席时部分门禁自动 SKIP**：CI（及无同级 `repos/` 的机器）上，发布区卫生检查与
-  smoke:e2e 会降级为 skip，不代表检查通过。
-- **PORTFOLIO.md 会过期**：它是脚本从 Gitee API 生成的索引（非源码镜像），仓库数量变化后
-  需重跑生成脚本刷新。
-- **monorepo 结构限制**：`tools/` `packages/` 等是仓库自身的中间目录，直接对其裸跑体检器
-  会产生假阳性；正确口径见上文运行方式与门禁脚本。
+> 每条都写「怎么绕过去」。只写「有这个限制」而不写解法，等于把问题留给下一个人。
+> 标注的实测日期是本机（`@SIWPAN`）跑出来的结果，不是推测。
+
+- **发布区不可达时门禁降级为 SKIP —— 那是「没检查」，不是「通过」**：
+  发布区路径解析不出来时（父目录名不是 `repos`，且 `<本仓>/../repos` 也不存在，
+  例如 CI 上的一次性 clone），`g17` 的完备性检查、`repo_hygiene`、`publish_area_gate`
+  会打印 `SKIPPED (not a pass)` 并仍以 0 退出。
+  **要用别处的发布区：`ALLIN_REPOS_ROOT=<路径>`。**
+  〔2026-11-24 实测：指向不存在的路径时 `g17` 报 `skipped 2 / blocking 0`，
+  摘要自带 `SKIPPED (not a pass)` 与 `set ALLIN_REPOS_ROOT` 提示。〕
+- **`PORTFOLIO.md` 会过期**：它由 `tools/build_portfolio.py` 从 Gitee API 生成（是索引，
+  不是源码镜像）。仓数变化后刷新：`python tools/build_portfolio.py --apply`；
+  去掉 `--apply` 是干跑，只打印数字、不写盘。
+  〔2026-11-24 实测：干跑报 143 仓，`--apply` 后与 `system-architecture.svg` /
+  `SPEC-204` 三处仓数一致，`check_arch_assets.py` 全绿。〕
+- **monorepo 下不能对仓根裸跑体检器**：`tools/` `packages/` `console/` `kernel/` 等是仓内
+  中间目录、不是独立仓。裸跑 `repocheck .` 会把它们当成 11 个「项目」逐个判
+  「缺 `.git` / 缺 README」，健康分掉到 6.0（2026-11-24 实测）。正确口径：
+
+  ```bash
+  # 只查子项目，跳过仓根（仓体卫生的日常口径）
+  python tools/repocheck/main.py . --profile monorepo \
+    --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform
+
+  # 连仓根一起查（--self 是 2026-11-23 新增：默认项目发现只认一级子目录，
+  # 仓根从不算「项目」，缺了它门禁规则族对 allin 自己恒不生效）
+  python tools/repocheck/main.py . --self --profile monorepo \
+    --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform
+  ```
+
 - **历史路径陈述**：仓内文档中出现的历史盘符 / 路径按「当时的事实」保留备查，
   现行落点以 [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md) 为准。
 - **命名沿革**：统一游戏引擎现行名为 `allin_engine`（PyPI 包名 `allin-engine`）；
-  仓内文档残留的 `alloy.*` 写法一律按 `allin_engine` 读，接口契约见 `docs/` 规范目录（SPEC-201）。
+  仓内文档残留的 `alloy.*` 写法一律按 `allin_engine` 读，接口契约见
+  [`docs/规范/SPEC-201-引擎接口契约.md`](docs/规范/SPEC-201-引擎接口契约.md)。
 
 ## 许可
 
@@ -159,7 +190,8 @@ allin docs portfolio --apply
 
 ---
 
-*最后更新：2026-11-23 —— 本仓迁入发布区 `repos/allin`（原 `<工作区>/allin`），
-补「许可」章节使许可证三处声明（LICENSE / 本 README / 清单字段）可被
-发布区门禁机检；2026-11-08 的 `site/` 与 `website/` 区分说明与
-`allin-governance` 版本口径仍有效。体例沿革与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*
+*最后更新：2026-11-24 —— 重写「已知限制」：原第 3 条指向的「上文运行方式」早已不存在
+（失效指针），且未给 monorepo 的正确口径；现每条限制都附可执行解法与实测日期。
+同日早些时候：本仓迁入发布区 `repos/allin`（原 `<工作区>/allin`）、补「许可」章节、
+收入仓格言引言、`allin-governance` 升至 `0.0.0a7` 并发布。
+体例沿革与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*
