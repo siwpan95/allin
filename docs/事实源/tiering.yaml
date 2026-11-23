@@ -954,8 +954,11 @@ tiering:
   seq: 136
   domain: 归档聚合仓
   tier: '**③b 容器**'
-  action: 接收 13 个薄开发者工具 + 2 原型（`haha`/`test`）；实收 **13 子项 / 13 条 `archive/<仓>` 分支**；master
-    `bb4afe8`
+  action: 接收 13 个薄开发者工具 + 2 原型（`haha`/`test`）；实收 **13 子项 / 13 条 `archive/<仓>` 分支**；
+    master `bb4afe8`。**2026-11-24 起兼作 PyPI 分发源**：其中 9 个纯 Python 工具经
+    `pyproject.toml` 的 package-dir 映射打包为 `allin-toolkit`（单一入口 `toolkit <子命令>`），
+    已发布 0.1.0 —— 消费方改 `pip install allin-toolkit` 引用，不再复制源码；
+    源码仍只在本仓一份（派生副本手抄必漂）。九个均为 tkinter GUI，需桌面环境。
   archive_target: ''
   note: '2026-10-30 补录。**非被收敛对象**，是 ③ 的落点；远端 public，registry `status: archived`；`launch.command`
     仅 `ls`（无单一运行入口）'
