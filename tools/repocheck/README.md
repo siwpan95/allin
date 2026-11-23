@@ -61,6 +61,8 @@ repocheck G:/repos
 | `--workers N` | `1` | 按项目并发数（IO 与子进程为主，4~8 通常最快） |
 | `--no-color` | 关 | 关闭 ANSI 颜色 |
 | `--gates` | 关 | 启用**门禁规则族**（id 31–50）：对自带 `tools/gate/governance` 的仓实跑 20 道治理门禁。默认关 —— 每条规则一次子进程，实测约 90 秒/仓，会把日常体检 0.26 s/仓 的速度口径拖垮 |
+| `--self` | 关 | 把**根目录本身**也当一个项目体检（默认只在没有子项目时才这么做）。monorepo 仓根必须加：门禁套件在仓根，而仓根默认从不被当作「项目」，少了它 `--gates` 恒不生效 |
+| `--only-gates` | 关 | 只跑门禁规则族（31–50），**不掺** 30 条仓体卫生规则。给「用 repocheck 当治理门禁的单一入口」用，使结论与 `npm run check:governance` 逐条等价 |
 | `--dump-profile` | 关 | 打印规则清单与能力矩阵（不扫描） |
 | `--version` | — | 打印版本号 |
 
@@ -180,6 +182,9 @@ webhook secret、CI 真实运行记录、包发布状态、CII 徽章等级、�
 ```bash
 python main.py /repos --gates --fail-on error
 python main.py /repos/allin --gates          # 只有治理仓才有这 20 条
+
+# monorepo 仓根：--self 必加（否则仓根不是「项目」）；--only-gates 只要门禁结论
+python main.py . --self --only-gates --fail-on error
 ```
 
 退出码映射：门禁 `0` → 通过；`1` → 未通过；`2`/`3` 或超时 → **按未通过记**

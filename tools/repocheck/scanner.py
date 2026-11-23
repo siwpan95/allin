@@ -185,7 +185,8 @@ def _is_project(directory: Path, exclude: frozenset[str], max_py_depth: int) -> 
 # ---------------------------------------------------------------------------
 
 def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
-                  *, skip_ids: Iterable[int] = (), with_gates: bool = False) -> dict:
+                  *, skip_ids: Iterable[int] = (), with_gates: bool = False,
+                  only_gates: bool = False) -> dict:
     """对一个项目跑全部规则，返回结构化结果。
 
     返回字典结构
@@ -210,8 +211,11 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
     # （见 rulebase.CAP_PARTIAL 的口径），发布区健康分 9.5 会整体塌到 9.0 ——
     # 那是把「没这套东西」错记成「有东西没测」。
     rules = RULES
-    if with_gates and has_gate_suite(proj):
-        rules = RULES + RULES_GATE
+    if (with_gates or only_gates) and has_gate_suite(proj):
+        # ``only_gates``：只要门禁结论，不掺仓体卫生规则。给「用 repocheck 当治理
+        # 门禁的单一入口」用 —— 仓体卫生本来就是另一步（run_all_gates.sh 第 3 步
+        # 的 repocheck）的职责，两步混在一起会让「门禁红」与「仓体脏」无法区分。
+        rules = RULES_GATE if only_gates else RULES + RULES_GATE
     run = run_rules(ctx, rules, skip_ids=frozenset(skip_ids))
 
     # 跳过项从分母剔除，但必须压上限，否则「越残缺分越高」
@@ -268,11 +272,12 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
 
 
 def _safe_check(proj: str, exclude: Iterable[str] | None,
-                skip_ids: Iterable[int], with_gates: bool = False) -> dict:
+                skip_ids: Iterable[int], with_gates: bool = False,
+                only_gates: bool = False) -> dict:
     """单个项目出错不中断整体扫描，转为一条伪问题。"""
     try:
         return check_project(proj, exclude=exclude, skip_ids=skip_ids,
-                             with_gates=with_gates)
+                             with_gates=with_gates, only_gates=only_gates)
     except Exception as exc:  # noqa: BLE001 - 兜底，避免一个项目毁掉整次扫描
         return {
             "name": os.path.basename(proj),
@@ -290,7 +295,8 @@ def _safe_check(proj: str, exclude: Iterable[str] | None,
 
 def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
          depth: int = 2, skip_ids: Iterable[int] = (),
-         workers: int = 1, progress=None, with_gates: bool = False) -> list[dict]:
+         workers: int = 1, progress=None, with_gates: bool = False,
+         include_self: bool = False, only_gates: bool = False) -> list[dict]:
     """发现项目并逐个体检。
 
     ``workers > 1`` 时按项目并发（IO 与子进程为主，GIL 影响很小）。
@@ -299,12 +305,21 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
     若根目录下没发现任何子项目、而根目录本身就像一个项目（有 ``.git`` 或
     marker 文件），则把根目录本身当作单个项目体检 —— 这样 ``cd myrepo`` 之后
     ``repocheck .`` 才符合直觉。
+
+    ``include_self``（2026-11-23，``--self``）：**即使发现了子项目，也把根目录本身
+    作为一个项目体检**。存在的理由：monorepo 的仓根恰恰是「治理规则由谁持有」的那一层，
+    只查子目录会导致门禁规则族（``--gates``）恒不生效 —— 因为门禁套件在仓根，
+    而仓根从来不是被检查的「项目」。这不是方便开关，是让仓根可被评估的唯一途径。
     """
     root_path = Path(root)
     projects = discover_projects(root, exclude=exclude, max_py_depth=depth)
     if not projects and root_path.is_dir() and _is_project(
             root_path, _merge_exclude(exclude), depth):
         projects = [str(root_path)]
+    if include_self and root_path.is_dir():
+        self_abs = os.path.abspath(root_path)
+        if self_abs not in {os.path.abspath(p) for p in projects}:
+            projects.insert(0, self_abs)
 
     skip = tuple(skip_ids)
     total = len(projects)
@@ -313,7 +328,7 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
         from concurrent.futures import ThreadPoolExecutor
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(_safe_check, p, exclude, skip, with_gates)
+            futures = [pool.submit(_safe_check, p, exclude, skip, with_gates, only_gates)
                        for p in projects]
             results: list[dict] = []
             for index, (project, future) in enumerate(zip(projects, futures), 1):
@@ -324,7 +339,7 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
 
     results = []
     for index, project in enumerate(projects, 1):
-        results.append(_safe_check(project, exclude, skip, with_gates))
+        results.append(_safe_check(project, exclude, skip, with_gates, only_gates))
         if progress:
             progress(index, total, project)
     return results

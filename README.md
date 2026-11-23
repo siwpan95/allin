@@ -6,6 +6,13 @@
 
 > do it better than future —— 仓标语，沿用初始提交的原文。
 
+> **当某件事足够重要时，即使胜算不大，你也要去做。**
+> —— Elon Musk，2012 年 CBS《60 Minutes》「SpaceX」片段，记者 Scott Pelley 问
+> 「Why even begin?」（那为什么还要开始）时的回答。
+> 英文原文 *When something is important enough you do it even if the odds are not in your favor.*
+> 出处核实：[Snopes fact-check](https://www.snopes.com/fact-check/elon-musk-when-something-important-quote/)（2022 年 12 月核对 2012-03-18 首播的 CBS 访谈与官方文字稿）；
+> CBS 文字稿在 `enough` 后无逗号，流行版本多加了一个。
+
 ## 项目用途
 
 本仓是一个**单一索引仓库**，承担三件事：
@@ -15,15 +22,32 @@
    约定都从这里索引出去。
 2. **治理载体与执行器**：
    - [`platform/`](platform/README.md) —— Node 零依赖集成平台（门户 + 注册表 + 门禁）。
-   - [`console/`](console/README.md) —— 治理控制台（Electron 45）把 148 条登记变成可点操作面：
+   - [`console/`](console/README.md) —— 治理控制台（Electron 45）把 151 条登记变成可点操作面：
      项目启停走 `@allin/core` 共享 pid 表，插件经 cordis-js 加命令/面板（[`SPEC-205`](docs/规范/SPEC-205-allin-console契约.md)）。
-   - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条规则，零第三方依赖）。
+   - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条仓体规则 + 20 条可选治理门禁规则，零第三方依赖）。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
    发布为 PyPI 包 `allin-governance`（当前版本 `0.0.0a6`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
+
+### 为什么本仓住在发布区里（2026-11-23）
+
+此前 `allin` 与 `repos/` 是**两条腿走路**：allin 管治理、repos 被治理。但 allin 这条腿迈得
+明显更快 —— 治理规则越写越细，被管对象却纹丝不动，两条腿步频不一致就必然互相拉扯：
+**allin 声称自己管 repos，而 repos 的真实状况并不参与 allin 的判据**。这就是漂移的来源。
+
+现在 allin 住在 `repos/allin` 里，于是：
+
+- **allin 只治理 `repos/`，而 allin 自身也是 `repos/` 的一员。** 没有"我在系统之外"的特权视角 ——
+  门禁对别的仓要求什么，对 allin 自己也一样要求。本轮搬迁后 `g17` 第一个判出的未登记仓
+  就是 `repos/allin` 自己。
+- **只剩一条腿。** `repos/` 哪怕只有一个成员（就是 allin），治理闭环依然成立，
+  不再依赖"另一条腿走多快"。
+- 以前不做主要是**技术原因**（发布区根推导只认同级布局、打包态下 `ALLIN_ROOT` 失效等），
+  这些已随 2026-11-23 的改动消解（五处推导统一为「父目录名是 `repos` 则取父目录」）。
+  剩下的只是方向问题 —— 方向已定。
 
 ## 安装步骤
 

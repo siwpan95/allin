@@ -264,7 +264,28 @@ _run_repo_hygiene() {
 
 echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
-run npm run check:governance
+# 治理门禁的**两个入口**（2026-11-23）：
+#   默认 —— `npm run check:governance`（run.ts）：带 tier 选择、profile 转发、
+#           selfcheck 聚合等完整语义，是当前的权威入口。
+#   可选 —— `ALLIN_GATES_VIA_REPOCHECK=1` 时改走 repocheck 的门禁规则族（规则 31-50）：
+#           逐条以 `--root` + 退出码复跑同一批 `gates/*.py`，判据仍是同一份文件。
+# 为什么默认不切：run.ts 的 tier / --selfcheck-all 语义尚未搬进 rules_gate，
+# 直接替换会**静默丢掉**这些检查 —— 那比两个入口更糟。开关的真实用途是
+# 「随时可验证两条路同结论」：本机 2026-11-23 实测两侧都是 20/20 clean。
+# `--self` 不可省：repocheck 的默认项目发现只认一级子目录，monorepo 的仓根
+# 从来不是「项目」，少了它门禁规则族对 allin 自己恒不生效。
+if [ "${ALLIN_GATES_VIA_REPOCHECK:-0}" = "1" ]; then
+  echo "[gates-via-repocheck] 用 repocheck 规则 31-50 复跑 20 道治理门禁"
+  # --only-gates：只跑门禁结论，不掺 30 条仓体卫生规则 —— 否则 repocheck 的
+  # 规则 22/23 会把 `console/.npmrc`（仅 registry 配置）与交接卷里「扫描哪些
+  # 密钥模式」的文档陈述判成 error，让「门禁红」与「仓体脏」混为一谈。
+  # 仓体卫生由本脚本第 3 步的 repocheck 负责，两步各管各的。
+  run "$PY" tools/repocheck/main.py . --self --only-gates \
+    --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform \
+    --fail-on error
+else
+  run npm run check:governance
+fi
 # 门禁工具自身回归（selfcheck-all）：证明「每道门禁仍能检出问题」，堵住
 # 「门禁被改坏却 CI 常绿」的盲区（S2 · 2026-11-08 审查闭环）。与 check:governance
 # 同源调用链（run.ts --selfcheck-all），不引入新依赖、不触外部资源。

@@ -175,6 +175,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="启用门禁规则族（id 31-50）：对自带 tools/gate/governance 的仓实跑 20 道治理门禁。"
              "默认关闭 —— 每条规则一次子进程，实测约 60–70 秒/仓，会拖垮日常体检的速度口径。")
     parser.add_argument(
+        "--self", dest="include_self", action="store_true",
+        help="把根目录本身也当作一个项目体检（默认只在没有子项目时才这么做）。"
+             "monorepo 仓根必须加它，否则 --gates 恒不生效 —— 门禁套件在仓根，而仓根从不被评估。")
+    parser.add_argument(
+        "--only-gates", action="store_true",
+        help="只跑门禁规则族（31-50），不掺 30 条仓体卫生规则。"
+             "给「用 repocheck 当治理门禁单一入口」用，使结论与 npm run check:governance 逐条等价。")
+    parser.add_argument(
         "--dump-profile", action="store_true",
         help="打印规则清单与能力矩阵（不扫描）")
     parser.add_argument(
@@ -329,6 +337,8 @@ def run(args: argparse.Namespace) -> int:
         skip_ids=args.skip_rules,
         workers=args.workers,
         with_gates=args.gates,
+        include_self=args.include_self,
+        only_gates=args.only_gates,
     )
     if not results:
         print(f"未发现任何项目：{root}", file=sys.stderr)
