@@ -235,10 +235,13 @@ tiering:
 - repo: foolproof-operation
   seq: 34
   domain: 开发者/系统工具
-  tier: ②保留
-  action: 图形化 Python 依赖库管理（761 库），内部有用
+  tier: ③收敛合并
+  action: '2026-11-24 已并入 allin：远端与本地仓均删除，仅保留 PyPI 发行 foolproof-operation
+    1.1.2。两项能力已上提为 allin 工具——tools/scan_repos.py（发布区扫盘：项目指纹 / 重复检出 /
+    迁移残留）与 tools/deps_doctor.py（依赖体检：声明·实装·import 三者对账）。完整历史 33 提交存于
+    <工作区>/_archived/foolproof-operation-20261124.bundle'
   archive_target: ''
-  note: 内部工具
+  note: 能力已上提；源码另可从 PyPI sdist 取得
 - repo: markdown
   seq: 35
   domain: 开发者/系统工具

@@ -605,7 +605,15 @@ def cmd_upload(args, token):
     try:
         import gen_third_party_notices as notices
     except ImportError as exc:
+        # 2026-11-24：此前这里只打印异常，看上去像「本仓文件丢了」。
+        # 实际 `gen_third_party_notices.py` **不在本仓**，它住在 pluginplayer 仓的
+        # tools/ 下 —— 是个跨仓隐式依赖（本仓从未声明）。要么把 pluginplayer 的
+        # tools/ 加进 PYTHONPATH，要么把 dist_payload 的口径内联进来。
         print("[FAIL] 无法 import gen_third_party_notices: %s" % exc)
+        print("       该模块不在本仓：它位于 pluginplayer 仓的 tools/gen_third_party_notices.py，")
+        print("       本功能属于「跨仓隐式依赖」。修法二选一：")
+        print("         ① PYTHONPATH=<pluginplayer>\\tools python tools/gitee_release.py ...")
+        print("         ② 把 dist_payload() 的载荷口径内联进本文件（消除跨仓依赖）")
         return 1
     d = args.dir or os.path.join(args.repo, "dist")
     payload = notices.dist_payload(dist=d)

@@ -135,7 +135,7 @@ pip install allin-governance[full]      # 加严格校验的附加依赖
 
 ## 状态
 
-`0.0.0a7` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
+`0.0.0a8` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
 a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码），
 a2 加 `verify` 子命令与 `init --with-exceptions`，并把 sdist 修成自包含（物化构建），
 a3 补收 a2 wheel 缺失的 4 份运行时事实源（包映射 sha256 对账收口）+ 门禁判据加固，
@@ -149,6 +149,8 @@ a7 让 `repocheck` 能直接跑治理门禁（`--gates` / `--self` / `--only-gat
 复用同一份 `gates/*.py` 的 CLI 契约），并修两类误报：`.npmrc` 只看文件名会误伤纯镜像
 配置（改为看内容有无凭据字段）、文档里「讲怎么扫密钥」的陈述会被当泄密（改为看同行语境，
 代码文件不享受）；旧路径残留判据补齐历史归档区与他机事实源两类语境。
+a8 不含包内工具代码变更：发布目的是把仓从 143 收敛到 86（冻结子项归档、foolproof 并入）
+这一结构性治理对齐到版本线；CLI/API 与 a7 完全一致。
 各版都不承诺 API 稳定。正式形态仍在演进，见 allin 仓的
 [`REC-AU-21`](https://gitee.com/siwpan/allin/blob/master/docs/记录/审计/allin自身做大做强方向修正_2026-10-31.md)
 与 [`CHANGELOG`](https://gitee.com/siwpan/allin/blob/master/CHANGELOG.md)。

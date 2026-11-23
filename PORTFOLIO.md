@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 87 个仓库**（公开 87 · 私有 0）。
+**共 86 个仓库**（公开 86 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -39,7 +39,6 @@
 | [siwpan/dsh-release-archiver](https://gitee.com/siwpan/dsh-release-archiver.git) | — | 0 | 公开 | DeepSeek Harness 发布归档流水线：人工一键触发 run.sh（检测→双格式下载→完整性校验→解压复核）；平台定时任务仅调用本仓 run.sh；判据唯一实现，无 AI 依赖 |
 | [siwpan/dungeon](https://gitee.com/siwpan/dungeon.git) | Python | 0 | 公开 | 地下城小游戏 |
 | [siwpan/dwarf-scrolls](https://gitee.com/siwpan/dwarf-scrolls.git) | — | 0 | 公开 | dwarf_scrolls（自 game-collection 拆分） |
-| [siwpan/foolproof-operation](https://gitee.com/siwpan/foolproof-operation.git) | Python | 0 | 公开 | 按需下载 |
 | [siwpan/game-prototypes](https://gitee.com/siwpan/game-prototypes.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/god-hand-](https://gitee.com/siwpan/god-hand-.git) | Python | 0 | 公开 | 十二试炼 |
 | [siwpan/hushi_twrj](https://gitee.com/siwpan/hushi_twrj.git) | — | 0 | 公开 | 胡适留学日记全集抓取/OCR/校验归档（纯标准库，零第三方依赖）｜/repos/hushi_twrj |

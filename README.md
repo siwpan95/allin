@@ -25,10 +25,13 @@
    - [`console/`](console/README.md) —— 治理控制台（Electron 45）把 151 条登记变成可点操作面：
      项目启停走 `@allin/core` 共享 pid 表，插件经 cordis-js 加命令/面板（[`SPEC-205`](docs/规范/SPEC-205-allin-console契约.md)）。
    - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条仓体规则 + 20 条可选治理门禁规则，零第三方依赖）。
+   - [`tools/scan_repos.py`](tools/scan_repos.py) —— 发布区扫盘：项目指纹、重复检出、迁移残留（只报告不处置）。
+   - [`tools/deps_doctor.py`](tools/deps_doctor.py) —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
+   - [`tools/docs_backlinks.py`](tools/docs_backlinks.py) —— 文档反向链接 / 影响面（改一篇文档前先看波及谁）。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `0.0.0a7`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   发布为 PyPI 包 `allin-governance`（当前版本 `0.0.0a8`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 
@@ -193,5 +196,6 @@ allin docs portfolio --apply
 *最后更新：2026-11-24 —— 重写「已知限制」：原第 3 条指向的「上文运行方式」早已不存在
 （失效指针），且未给 monorepo 的正确口径；现每条限制都附可执行解法与实测日期。
 同日早些时候：本仓迁入发布区 `repos/allin`（原 `<工作区>/allin`）、补「许可」章节、
-收入仓格言引言、`allin-governance` 升至 `0.0.0a7` 并发布。
+收入仓格言引言、`allin-governance` 升至当前版本并发布（当日两次：门禁入口切换后一次、
+冻结仓归档与 foolproof 并入后再一次）。
 体例沿革与更早记录见 git 历史与 [`CHANGELOG.md`](CHANGELOG.md)。*

@@ -47,3 +47,20 @@ pip-audit>=2.7
 # 变异测试工具（mutmut）刻意不纳入本依赖集：它依赖较旧的 pytest 生态，
 # 与仓内 pytest 9 + pytest-cov 可能冲突，会把已验证的单测环境带坏。
 # 变异基线须在独立虚拟环境 / 干净检出的副本上执行（本轮未实测）。
+
+# ---------------------------------------------------------------- 可选依赖（缺失即降级，非硬前提）
+#
+# 2026-11-24 依赖体检（tools/deps_doctor.py）扫出三个「被 import 但未声明」的包。
+# 逐一核实后确认它们是**设计上的可选依赖**，不是漏装：代码里都是函数内延迟导入，
+# 缺了对应能力会显式 SKIP（repocheck 的 requires=(...) 声明即为此而设）。
+# 把它们列在这里是为了让「谁缺了什么、会少查哪一层」有据可查，而不是让它静默降级。
+#
+# license_expression —— repocheck 规则 41/42（许可可识别 / 许可一致性）
+#   tools/repocheck/rules_docs.py:143 延迟导入；缺失时这两条规则 SKIP。
+# markdown_it —— repocheck 规则 43（README 结构）
+#   tools/repocheck/rules_docs.py:566 延迟导入；缺失时该规则 SKIP。
+# openpyxl —— scripts/ai-agent-changelog/build_checklists.py 专用（生成 xlsx 清单）
+#   不在门禁链路内，只在该脚本被手动运行时才需要。
+#
+# 需要完整能力时手动装：
+#   pip install license_expression markdown_it openpyxl

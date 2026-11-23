@@ -562,24 +562,6 @@
       "source_file": "platform/registry/projects/dwarf-scrolls.yaml"
     },
     {
-      "project_id": "foolproof-operation-cli",
-      "name": "傻瓜式操作（CLI）",
-      "category": "tool",
-      "version": "1.1.2",
-      "path": "repos/foolproof-operation",
-      "publish_repo": "siwpan/foolproof-operation",
-      "source_file": "platform/registry/projects/foolproof-operation-cli.yaml"
-    },
-    {
-      "project_id": "foolproof-operation",
-      "name": "傻瓜式操作（依赖安装器）",
-      "category": "tool",
-      "version": "1.1.2",
-      "path": "repos/foolproof-operation",
-      "publish_repo": "siwpan/foolproof-operation",
-      "source_file": "platform/registry/projects/foolproof-operation.yaml"
-    },
-    {
       "project_id": "game-prototypes",
       "name": "游戏原型归档仓 · ③收敛合并落点",
       "category": "game",

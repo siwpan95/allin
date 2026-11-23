@@ -3,6 +3,30 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 0.0.0a8 —— 2026-11-24
+
+**本版不含包内工具代码变更。** 发布的目的是把一次结构性治理对齐到版本线上，
+让「你装的包对应的仓是什么形态」有据可查。
+
+### 变了什么（对消费者）
+
+- **CLI / API 零变更**：`init` / `repocheck` / `verify` 的用法与 a7 完全一致。
+- **仓规模发生变化**：本仓从 143 个仓收敛到 **86 个**。
+  - 68 个冻结子项的**独立仓入口全部清除**（远端 56 个 + 本地 66 个目录），
+    内容并入 4 个合集仓（dev-toolkit / game-prototypes / media-prototypes / music-prototypes）
+    与 players-unified；每个子项的**完整提交历史**保全在合集的 `archive/<名>` 分支。
+  - `foolproof-operation` 并入本仓后删除，仅保留 PyPI 发行。
+- 若你的项目里断言过「allin 管 143 个仓」，需要改。
+
+### 两个新工具（仓内，暂未随包分发）
+
+- `tools/scan_repos.py` —— 发布区扫盘：项目指纹、重复检出、迁移残留。只报告不处置。
+- `tools/deps_doctor.py` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
+
+它们目前**只在仓内**，不在 wheel 的 package-dir 映射里。若后续要随包分发，
+需在 `pyproject.toml` 增加映射并跑 `tools/check_pkg_parity.py` 逐文件 sha256 对账
+（a3 的教训：漏收 4 份运行时事实源，对账 12 处红）。
+
 ## `allin-governance` 0.0.0a7 —— 2026-11-24
 
 让 `repocheck` 能直接跑治理门禁，并修掉两类「判得太粗」的误报。CLI 形态不变，a6 的命令全部照旧。
