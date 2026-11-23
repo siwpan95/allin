@@ -501,6 +501,23 @@ def test_env_example_is_exempt(tmp_path):
     assert st[22] == "pass"
 
 
+def test_npmrc_without_credentials_is_not_sensitive(tmp_path):
+    """2026-11-23：`.npmrc` 只看文件名会误伤镜像配置（本仓 console/platform 两处实证）。"""
+    files = good()
+    files[".npmrc"] = ("registry=https://registry.npmmirror.com\n"
+                       "electron_mirror=https://npmmirror.com/mirrors/electron/\n")
+    st = status_map(run_on(tmp_path, files))
+    assert st[22] == "pass"
+
+
+def test_npmrc_with_auth_token_is_sensitive(tmp_path):
+    """同一判据的反例：真的带凭据字段时仍必须报红。"""
+    files = good()
+    files[".npmrc"] = "//registry.npmjs.org/:_authToken=npm_abcdefghijklmnop\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[22] == "fail"
+
+
 #: 假 AWS 密钥**运行时拼接**构造 —— 本文件正是被 repocheck 自检扫描的对象，
 #: 写成完整字面量会让工具自己报自己「源码硬编码密钥」。
 _FAKE_AWS_KEY = "AKIA" + "QWERTYUIOPASDFGH"
@@ -520,6 +537,26 @@ def test_placeholder_secret_is_ignored(tmp_path):
     files["docs_sample.py"] = 'AWS_KEY = "AKIAIOSFODNN7EXAMPLE"\n'
     st = status_map(run_on(tmp_path, files))
     assert st[23] == "pass"
+
+
+def test_doc_explanation_line_is_not_a_leak(tmp_path):
+    """2026-11-23：文档里「讲怎么扫密钥」的那一行不是泄密。
+
+    实测来源：交接卷里「按 11 类模式扫描（sk- / ghp_ / AKIA ...）」与
+    「门禁自己的夹具」两行被规则 23 判成硬编码密钥。
+    """
+    files = good()
+    files["docs/notes.md"] = f"按模式扫描：`sk-` / AKIA 前缀 / {_FAKE_AWS_KEY}\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[23] == "pass"
+
+
+def test_doc_bare_secret_is_still_flagged(tmp_path):
+    """反例：文档里**不是**说明语境的那一行，照样报红 —— 豁免不是整类放过。"""
+    files = good()
+    files["docs/notes.md"] = f"我的密钥是 {_FAKE_AWS_KEY}\n"
+    st = status_map(run_on(tmp_path, files))
+    assert st[23] == "fail"
 
 
 def test_private_key_header(tmp_path):

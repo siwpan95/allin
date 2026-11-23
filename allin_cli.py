@@ -90,6 +90,9 @@ def dispatch(args) -> object:
             return svc.aliases()
         if args.action == 'index':
             return svc.index()
+        if args.action == 'backlinks':
+            return svc.backlinks(getattr(args, 'target', None), hub=args.hub,
+                                 as_json=args.json, limit=args.limit)
         if args.action == 'audit-check':
             docs = [a for a in (getattr(args, 'docs', None) or []) if a != '--']
             return svc.audit_check(docs=docs, as_json=getattr(args, 'json', False),
@@ -141,6 +144,11 @@ def build_parser() -> argparse.ArgumentParser:
     ds_pf.add_argument('--apply', action='store_true')
     ds.add_parser('aliases')
     ds.add_parser('index')
+    ds_bl = ds.add_parser('backlinks', help='反向链接/影响面：谁引用了我（纯查询、不写盘）')
+    ds_bl.add_argument('target', nargs='?', help='文档路径或名称片段，如 SPEC-001')
+    ds_bl.add_argument('--hub', action='store_true', help='输出全图被引排行')
+    ds_bl.add_argument('--json', action='store_true', help='机读输出')
+    ds_bl.add_argument('--limit', type=int, default=30)
     ds_ac = ds.add_parser('audit-check', help='审计/报告类文档错漏自动检查（E1 证据锚点 / E2 章节 / E3 排序 / E4 无源 / E6 口径 / E7 疑点）')
     ds_ac.add_argument('docs', nargs='*', help='待检文档路径（相对仓根）；省略则检查 docs/记录/审计/ 下全部')
     ds_ac.add_argument('--json', action='store_true', help='机器可读输出')

@@ -425,6 +425,17 @@ _SENSITIVE_NAMES = frozenset({
 _SENSITIVE_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore")
 _ENV_EXEMPT = (".env.example", ".env.sample", ".env.template", ".env.dist", ".env.test")
 
+#: 这些文件名**本身不构成敏感**，要看内容里有没有凭据字段。
+#: 2026-11-23 实测：`console/.npmrc` 内容只有 `registry=` 镜像地址与
+#: `electron_mirror=`，被「文件名一刀切」判成 error —— 而把所有 .npmrc 都当敏感文件，
+#: 等于要求每个用镜像源的项目都加豁免，门禁会因此被关掉。
+#: 判据改为：出现 `_authToken` / `_auth` / `_password` / `username|email =` 才算敏感。
+_CONTENT_GATED_NAMES = frozenset({".npmrc", ".pypirc"})
+_RC_CREDENTIAL = re.compile(
+    r"(?im)^\s*(?:_authToken|_auth|_password|username|email)\s*="
+    r"|//[^\s]*:_authToken\s*="
+)
+
 
 def _is_sensitive(rel: str) -> bool:
     low = rel.lower()
@@ -441,8 +452,21 @@ def _is_sensitive(rel: str) -> bool:
 
 
 def _check_sensitive_files(ctx: "ProjectContext") -> CheckResult:
-    """规则 22：凭据类文件是否被纳入版本控制。"""
-    hits = [rel for rel in ctx.git.ls_files if _is_sensitive(rel)]
+    """规则 22：凭据类文件是否被纳入版本控制。
+
+    ``.npmrc`` / ``.pypirc`` 这类「配置文件名敏感、内容未必敏感」的文件走内容门：
+    只有真的出现凭据字段才算命中（见 ``_CONTENT_GATED_NAMES``）。
+    """
+    hits: list[str] = []
+    for rel in ctx.git.ls_files:
+        if not _is_sensitive(rel):
+            continue
+        name = rel.rsplit("/", 1)[-1].lower()
+        if name in _CONTENT_GATED_NAMES:
+            text = ctx.text(rel) or ""
+            if not _RC_CREDENTIAL.search(text):
+                continue
+        hits.append(rel)
     if not hits:
         return CheckResult.ok()
     detail = ", ".join(hits[:MAX_DETAIL_ITEMS])
@@ -582,6 +606,34 @@ def shannon_entropy(text: str) -> float:
     )
 
 
+#: 文档类后缀：只有这些文件享受「说明语境」豁免。
+#: 刻意不含 ``.txt`` —— 随手记的 notes.txt 里贴真 token 是常见事故形态，
+#: 不能因为「是文本」就放宽。
+_DOC_EXPLANATION_SUFFIXES = frozenset({".md", ".rst", ".html", ".htm"})
+
+#: 文档里的说明性语境标记 —— 命中任一即视为「在讲这件事」而非「在做这件事」。
+#: 2026-11-23 实测误报：交接卷里「按 11 类模式扫描（sk- / ghp_ / AKIA ...）」与
+#: 「门禁自己的夹具 sk-abcdefghijklmnop...」两行被判成硬编码密钥。
+#: 判据只对「文档后缀 + 同一行含说明词」放行；代码文件一律照旧 ——
+#: 代码注释里写「示例 token」不构成免死金牌。
+_DOC_EXPLANATION_MARKERS = (
+    "模式", "扫描", "示例", "夹具", "正则", "占位", "演示", "反例", "误报", "判据",
+)
+
+
+def _line_at(text: str, pos: int) -> str:
+    """取 ``pos`` 所在的整行（按 ``\\n`` 切，与行号口径一致）。"""
+    start = text.rfind("\n", 0, pos) + 1
+    end = text.find("\n", pos)
+    return text[start:end if end != -1 else len(text)]
+
+
+def _is_explanation_line(text: str, pos: int) -> bool:
+    """该位置所在行是否处于「讲密钥」的说明语境。"""
+    line = _line_at(text, pos)
+    return any(marker in line for marker in _DOC_EXPLANATION_MARKERS)
+
+
 def _check_secrets(ctx: "ProjectContext") -> CheckResult:
     """规则 23：`git ls-files` 文本里是否有硬编码凭据。"""
     hits: list[str] = []
@@ -596,11 +648,16 @@ def _check_secrets(ctx: "ProjectContext") -> CheckResult:
         if text is None:
             continue
         scanned += 1
+        # 文档类文件才享受「说明语境」豁免；代码文件不享受 ——
+        # 代码里写一句「# 示例 token」不该成为免死金牌。
+        is_doc = suffix in _DOC_EXPLANATION_SUFFIXES
 
         matched = False
         for label, pattern in _SECRET_PATTERNS:
             for hit in pattern.finditer(text):
                 if _is_placeholder(hit.group(0)):
+                    continue
+                if is_doc and _is_explanation_line(text, hit.start()):
                     continue
                 hits.append(f"{rel}({label})")
                 matched = True
@@ -615,6 +672,8 @@ def _check_secrets(ctx: "ProjectContext") -> CheckResult:
                 # 2026-11-21：结构上就不可能是密钥的取值（URL / 模板串 /
                 # 业务标识符）不报 —— 见 _looks_like_non_secret 的实测依据。
                 if _looks_like_non_secret(value):
+                    continue
+                if is_doc and _is_explanation_line(text, match.start()):
                     continue
                 if shannon_entropy(value) >= _ENTROPY_THRESHOLD:
                     hits.append(f"{rel}(疑似硬编码密钥)")

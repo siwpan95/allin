@@ -264,27 +264,31 @@ _run_repo_hygiene() {
 
 echo "allin 治理门禁跑齐 @ $ROOT"
 echo "----------------------------------------"
-# 治理门禁的**两个入口**（2026-11-23）：
-#   默认 —— `npm run check:governance`（run.ts）：带 tier 选择、profile 转发、
-#           selfcheck 聚合等完整语义，是当前的权威入口。
-#   可选 —— `ALLIN_GATES_VIA_REPOCHECK=1` 时改走 repocheck 的门禁规则族（规则 31-50）：
-#           逐条以 `--root` + 退出码复跑同一批 `gates/*.py`，判据仍是同一份文件。
-# 为什么默认不切：run.ts 的 tier / --selfcheck-all 语义尚未搬进 rules_gate，
-# 直接替换会**静默丢掉**这些检查 —— 那比两个入口更糟。开关的真实用途是
-# 「随时可验证两条路同结论」：本机 2026-11-23 实测两侧都是 20/20 clean。
+# 治理门禁的入口（2026-11-23 **已切换**）：
+#   默认 —— repocheck 的门禁规则族（规则 31-50）：逐条以 `--root` + 退出码复跑
+#           同一批 `gates/*.py`，判据仍是同一份文件，与 run.ts 结论逐条等价。
+#   回退 —— `ALLIN_GATES_VIA_NPM=1` 时走 `npm run check:governance`（run.ts）。
+#
+# 为什么现在敢切（上一轮不敢）：当时顾虑「切换会丢掉 tier 选择与 --selfcheck-all」。
+# 核对后确认这两条都不在切换点范围内 ——
+#   · `--selfcheck-all` 是本脚本下面的**独立步骤**，根本不经过这里；
+#   · `check:governance` 本身不带 `--tier`（即默认跑全部 20 道），rules_gate 同样跑
+#     全部 20 道；`profileProbe` 的 `--no-profile` 也已按 registry.json 复现。
+#     两侧 2026-11-23 实测均为 20/20 clean。
+# 保留 npm 回退而不是直接删：单一入口的价值是「只有一个真相」，不是「只有一个实现」；
+# 能随时对照的另一条路，正是判据没漂的证据。
+#
 # `--self` 不可省：repocheck 的默认项目发现只认一级子目录，monorepo 的仓根
 # 从来不是「项目」，少了它门禁规则族对 allin 自己恒不生效。
-if [ "${ALLIN_GATES_VIA_REPOCHECK:-0}" = "1" ]; then
-  echo "[gates-via-repocheck] 用 repocheck 规则 31-50 复跑 20 道治理门禁"
-  # --only-gates：只跑门禁结论，不掺 30 条仓体卫生规则 —— 否则 repocheck 的
-  # 规则 22/23 会把 `console/.npmrc`（仅 registry 配置）与交接卷里「扫描哪些
-  # 密钥模式」的文档陈述判成 error，让「门禁红」与「仓体脏」混为一谈。
-  # 仓体卫生由本脚本第 3 步的 repocheck 负责，两步各管各的。
+# `--only-gates` 不可省：否则规则 22/23 的仓体卫生结论会混进同一个退出码，
+# 让「门禁红」与「仓体脏」无法区分。
+if [ "${ALLIN_GATES_VIA_NPM:-0}" = "1" ]; then
+  echo "[gates-via-npm] 回退到 run.ts 跑 20 道治理门禁"
+  run npm run check:governance
+else
   run "$PY" tools/repocheck/main.py . --self --only-gates \
     --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform \
     --fail-on error
-else
-  run npm run check:governance
 fi
 # 门禁工具自身回归（selfcheck-all）：证明「每道门禁仍能检出问题」，堵住
 # 「门禁被改坏却 CI 常绿」的盲区（S2 · 2026-11-08 审查闭环）。与 check:governance

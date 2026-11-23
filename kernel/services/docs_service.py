@@ -70,6 +70,27 @@ class DocsService(Service):
             return 3
         return subprocess.run([sys.executable, tool], cwd=ROOT)
 
+    # ---- 反向链接 / 影响面（2026-11-23）----
+    def backlinks(self, target=None, hub: bool = False, as_json: bool = False, limit: int = 30):
+        """给一份文档列出「谁引用了我」；``hub`` 输出全图被引排行。
+
+        纯查询、不写盘：122 份文档扫描 < 0.2 s，按需算即可。刻意不生成反链页面 ——
+        派生文档自己还要被 D1 登记、被 g15 判契约、被 g19 判链接，为一份随时可重算的
+        数据引入三处维护面不值得。
+        """
+        tool = os.path.join(TOOLS_DIR, 'docs_backlinks.py')
+        if not os.path.isfile(tool):
+            print('（docs_backlinks.py 不存在）', file=sys.stderr)
+            return 3
+        argv = [sys.executable, tool, '--limit', str(limit)]
+        if hub:
+            argv.append('--hub')
+        if as_json:
+            argv.append('--json')
+        if target:
+            argv.append(target)
+        return subprocess.run(argv, cwd=ROOT)
+
     # ---- 审计/报告类文档错漏自动检查（E1–E7）----
     def audit_check(self, docs=None, as_json: bool = False, quiet: bool = False):
         """检查结论型文档（审计报告 / 复评报告）的证据锚点与结构自洽性。

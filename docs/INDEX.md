@@ -4,7 +4,7 @@
 > **怎么用**：想找东西先在这里搜；**不要**靠翻目录。找"规矩"看 `规范/`，找"现在的值"看 `事实源/`，找"当时怎么发生的"看 `记录/`。
 > **谁保证它不过期**：`python tools/gate/docs_index.py`（判据 D1–D17）——文件没登记、登记没文件、规范缺头部、规范名带日期、分类错位、ASCII 别名缺失、交接卷断号、计划闭环、事实源留痕、**本行自述份数与实际不符**，任一条都报红。
 > **分类判据与命名规则**：见 [`规范/SPEC-005-文档枢纽契约.md`](规范/SPEC-005-文档枢纽契约.md)。
-> **时点** 2026-11-23 ｜ **覆盖** 根 4 + 规范 20 + 事实源 22 + 记录 87 = **133 份**（不含 `md/` 历史树 232 篇）
+> **时点** 2026-11-24 ｜ **覆盖** 根 4 + 规范 20 + 事实源 22 + 记录 88 = **134 份**（不含 `md/` 历史树 232 篇）
 > ⚠ **本行份数由门禁 D8 逐次核对**：改完文档忘了改这里的数字会直接报红（2026-09-28 曾出现「头部写 51 / 实际 49」）。
 
 | 类别 | 目录 | ASCII 别名 | 是什么 | 可变性 |
@@ -95,7 +95,7 @@
 | FACT-20 | [runtime_defaults.json](事实源/runtime_defaults.json) | 2026-11-11 | **运行时超时默认值结构化权威源**（机器可读、零第三方依赖）：`unit=seconds` + key→正整数秒；由 `tools/runtime_defaults.py` 统一读取，消费方为首批 8 处 + venv_security 9 处 subprocess/urlopen 超时（值不变，仅换字面量为 `timeout(key)`） | `tools/runtime_defaults.py` · `tools/gate/runtime_defaults_check.py`（审计 M-10 / P2 #20） |
 | FACT-21 | [registry分类词表.md](事实源/registry分类词表.md) | 2026-11-13 | **registry `category` 受控枚举唯一事实源**（机器可读孪生 = `platform/registry/categories.yaml`）：13 类（`game`/`engine`/`ai`/`content`/`media`/`music`/`player`/`crawler`/`tool`/`automation`/`platform`/`prototype`/`unclassified`）+ 类型优先的归类判据 + 本轮 19 条重分类清单 + 与 `build_batch.mjs` 的已知耦合 + 借鉴记账（Wikipedia CC BY-SA 4.0 / GitHub Topics） | `platform/registry/projects/*.yaml` 的 `category` 字段 · 与 [工具分类索引](事实源/工具分类索引.md)（人向七类）、[组合分级决策索引](事实源/组合分级决策索引.md)（决策层）三者分层 |
 
-## 四、记录（`记录/`，87 份，**只增不改，不作为约束**）
+## 四、记录（`记录/`，88 份，**只增不改，不作为约束**）
 
 ### 4.1 交接（逐轮事实流水，按月分卷）
 
@@ -184,6 +184,7 @@
 | REC-TO-15 | [发布区治理闭环落地](记录/专题/发布区治理闭环落地_2026-11-21.md) | 2026-11-21 | 全哥定调「allin 服务对象应是 `repos/`」后的落地：20 道门禁此前对 139 个被管仓**零覆盖**，本轮把 repocheck 接入发布区并建逐项豁免台账。error **285→9**、健康分 9.2→9.5、0 阻断（7 项版本/许可业务决策登记待裁决、2 项实证豁免）。修正 9 处判据过严（license 三处齐全/PEP621 file 形态/中文标题 `\b`/README 模板占位/版本取 vendor 与日期 tag/二进制资产误报/URL 当密钥/治理留痕当死路径）+ 修复约 60 仓真实数据缺口（README/requirements/去符盘/许可证声明），新建 4 个补写工具与 `publish_area_gate.py`，判据改动均连带自检（repocheck 83/83、platform 75/75）。两处新坑：`git ls-files` 中文 quotepath 转义、路径替换形态优先级。未做：CI 覆盖仍 13/139（`.gitee/` 多为 issue 模板非 workflow）、另两机未复核、待裁决项未擅改 |
 | REC-TO-16 | [基于开源内核二次开发桌面端自研浏览器深度调研](记录/专题/自研浏览器_开源内核二次开发_桌面端深度调研_2026-11-22.md) | 2026-11-22 | 桌面同名调研稿原样收录（此前仅在 `SPEC-205` §10 留有 Downloads 外部指针）：桌面端自研的唯一务实路线是 Chromium 下游分支跟随；POC 3～5 人/4～6 周、正式版 12～18 人/6～9 月、首年 1,500万～3,000万元（**均为估算**）；真正成本是长期跟版（Chrome 已改双周发布）而非首版。四大多低估风险＝上游同步落点/签名与更新链/国密信创/扩展生态壁垒；给「治理控制台**不做内核分支**」的 `SPEC-205` 提供技术对照，非实施要求 |
 | REC-TO-17 | [仓根迁入发布区与门禁纳入 repocheck](记录/专题/仓根迁入发布区与门禁纳入repocheck_2026-11-23.md) | 2026-11-23 | 全哥指令「将 `/allin` 转入 `/repos`，将门禁纳入 repocheck」。① **搬迁**：junction 自引用使目录不可 rename（`docs/` 4 个 + `node_modules/@allin` 6 个），摘链后逐项 rename，`docs` 因瞬时句柄走 `robocopy`（385 文件/5,295,997 字节逐数一致）；`.venv` launcher 内嵌旧绝对路径 ⇒ uv 重建 3.12.13。② **五处发布区推导修正**（Python 4 + JS 3 个落点），统一判据「父目录名是 `repos` 则取父目录」——修好前 `g17` 完备性**长期 `SKIPPED`（not a pass）**、`repo_hygiene`/`publish_area_gate` 静默报 `no-publish-area`，143 仓一个没扫；修好后**当场判出 2 个未登记仓**（`allin`、`worldwright`）。③ **门禁纳入 repocheck**：新增 `rules_gate.py`（规则 31–50，20 条），只复用每道门的 `--root` + 退出码契约、不 import 内部函数 ⇒ 判据仍只有一份；`profileProbe` 按 `registry.json` 补传 `--no-profile`；**按项目裁剪而非逐条 SKIP**（否则 20 条 SKIP 把发布区健康分 9.5 压到 9.0）；默认关（实测 90 s/仓），`--gates` 启用，`--dump-profile` 新增 `gate_rules`。④ **台账**：registry 148→150、`facts.json` 重生成、`PORTFOLIO` 139→143 三处（svg/SPEC-204）联动、`SIWPAN.md` 仓根与仓数（143 目录/142 `.git`/142 origin）订正。⑤ 顺带修 `3dworld` 源码版本 0.7.6→0.9.6（声明 < tag 属真缺陷）、补本仓 README「许可」章节。验收：`status=clean fail=0`、20/20、`publish_area_gate verdict=PASS blocking=0`、repocheck 门禁族 20/20、自检 83/83。未做：未把 `run_all_gates.sh` 切到单一入口（权威仍是 `npm run check:governance`）、另两机未真机验证、移动期句柄持有者未定位 |
+| REC-TO-18 | [PKM 增强可行性评估](记录/专题/PKM增强可行性评估_2026-11-23.md) | 2026-11-23 | 全哥「增强现有相关技术（而非引入），按性价比推进」。**先量数据再设计**：排除 junction 别名后实测 122 份真身文档 / 301 条图内引用 / **零入链 0 份** —— 后者直接否掉「孤儿文档检测」（D1 已强制全量登记）。联网调研三条硬结论：① Karpathy LLM Wiki Pattern（2026-04）：几百页语料靠 markdown 链接路由即可，向量/图检索要到百万级文档才赢，其实测 token 比向量 RAG 低 95%；② 专名密集语料纯语义检索会失效（实测搜 `twscrape` 只返回同类工具），本仓满地 `g17`/`D12`/`SPEC-204`，字面匹配才是主力；③ SQLite FTS5 trigram 中文可零分词但**两字词搜不到**、索引膨胀 3–5 倍，且与现有 MCP BM25 功能重叠。**落地唯一高性价比项**：`tools/docs_backlinks.py` + CLI `allin docs backlinks`（纯标准库 150 行，零依赖，不写盘），给「改这份文档会波及谁」提供带行号的反向清单（实测 SPEC-001 被 11 处正文引用）。**明确不做**：GraphRAG 全量（骨架保留，触发条件写死）、本地 embedding、图谱可视化、孤儿检测、FTS5 暂缓。判据：不引入重依赖、派生数据不进仓。另：规则 22 `.npmrc` 只看文件名误伤镜像配置 → 改内容门；规则 23 把交接卷「扫描哪些密钥模式」的文档陈述当泄密 → 改「文档后缀 + 同行说明语境」才放行，均配正反例（repocheck 87/87） |
 
 ### 4.4 外部 · 快照
 
