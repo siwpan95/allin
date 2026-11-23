@@ -2518,6 +2518,12 @@
       "tier": "②精选旗舰",
       "domain": "工具链/自动化",
       "source_file": "docs/事实源/tiering.yaml"
+    },
+    {
+      "repo": "anatomy3d",
+      "tier": "①核心推进",
+      "domain": "教育/科学可视化",
+      "source_file": "docs/事实源/tiering.yaml"
     }
   ],
   "tools": [

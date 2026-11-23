@@ -266,7 +266,31 @@ CREDENTIAL_CONTEXT = re.compile(
 )
 
 
-def looks_like_secret_hex(value: str, line: str = "") -> bool:
+def _url_span(line: str, at: int) -> tuple[int, int] | None:
+    """``at`` 所在 URL 的 ``[start, end)``；不在任何 URL 内则 None。"""
+    start = -1
+    for m in re.finditer(r"https?://", line[:at + 1], re.IGNORECASE):
+        start = m.start()
+    if start < 0:
+        return None
+    tail = line[at:]
+    blank = re.search(r"\s", tail)
+    return start, at + (blank.start() if blank else len(tail))
+
+
+def _url_query_key(line: str, at: int) -> str | None:
+    """``at`` 处在 URL 查询串里时返回该参数的键名，否则 None。"""
+    span = _url_span(line, at)
+    if span is None:
+        return None
+    prefix = line[span[0]:at]
+    if "?" not in prefix:
+        return None
+    m = re.search(r"[?&]([A-Za-z0-9_\-.\[\]]+)=", prefix)
+    return m.group(1) if m is not None else None
+
+
+def looks_like_secret_hex(value: str, line: str = "", at: int | None = None) -> bool:
     """A bare hex run is a credential only when it is long and high-entropy.
 
     40/64 位是 git SHA 与 SHA-256 的标准长度，公开仓里遍布 action 钉、提交留档、
@@ -274,12 +298,23 @@ def looks_like_secret_hex(value: str, line: str = "") -> bool:
     **唯一例外**是整行明确处于凭据语境（token / password / 密钥…）—— 此时 Gitee
     PAT 与摘要在字符串层面不可区分，宁可报红也不能放行。带键名的 40/64 hex 由
     ``assignment`` 分支先行拦截，走不到这里。
+
+    2026-11-23 补一维：**URL 查询参数里的 hex 不是凭据**。
+    实测误报：微信公众号文章链接 `...&sn=d6e69fb207d73f005ff5664ea7b95914&chksm=...`
+    的 32 位签名被当作裸 hex 令牌判红 —— 那是公开文章的可分享链接，不带任何权限。
+    判据只对「URL 内 + 键名不含凭据词」放行：
+    ``?access_token=<hex>`` 这类键名自带凭据语义的仍照常报红（selfcheck 有反例），
+    因为「找得到键名」正是区分签名参数与访问令牌的可判依据。
     """
     h = value.lower()
     if not re.fullmatch(r"[0-9a-f]{30,}", h):
         return False
     if shannon_entropy(h) < 3.5:
         return False
+    if at is not None:
+        key = _url_query_key(line, at)
+        if key is not None and CREDENTIAL_CONTEXT.search(key) is None:
+            return False
     if len(h) in (40, 64):  # canonical git SHA / SHA-256 — a digest, not a token
         return CREDENTIAL_CONTEXT.search(line) is not None
     return True
@@ -414,7 +449,8 @@ def scan(root: Path, *, include_docs: bool = True,
                 if value_is_sample(value, line):
                     report.exempt("token shape carries a synthetic marker")
                     continue
-                if category == "hex-secret" and not looks_like_secret_hex(value, line):
+                if category == "hex-secret" and not looks_like_secret_hex(
+                        value, line, match.start()):
                     report.exempt("hex run is a digest or low-entropy, not a token")
                     continue
             matched = True
@@ -489,6 +525,10 @@ def selfcheck() -> int:
         "src/quiet_digest.ts": (
             "const head = 'e7e54de074b2d6dfe24cac08de4535875c34651f'\n"  # gov-credentials: allow
             "const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'\n"),  # gov-credentials: allow
+        # 2026-11-23 新判据的正反例：URL 查询参数里的裸 hex 是公开签名（微信公众号
+        # 文章的 sn= / chksm=），不是凭据；而同组 query.ts 的 access_token= 仍必须报红。
+        "src/url_signature.ts": (
+            "const u = 'http://mp.weixin.qq.com/s?__biz=MzI1&sn=d6e69fb207d73f005ff5664ea7b95914'\n"),
     }
 
     # 第三面（机器本地明文）：@ 前缀把夹具写到索引外，等价于旧的 direct-write。
@@ -533,6 +573,8 @@ def selfcheck() -> int:
         Case("a 40-char git SHA is not flagged as a secret", hex_files, expect="clean", by="src/commit_sha.ts"),
         Case("40-char hex behind a JSON quoted key", p1_files, by="src/json_key.ts::assignment"),
         Case("40-char hex in a URL query parameter", p1_files, by="src/query.ts::assignment"),
+        Case("bare hex inside a URL query signature parameter (sn=) is not a secret",
+             p1_files, expect="clean", by="src/url_signature.ts"),
         Case("64-char hex behind a JSON quoted key", p1_files, by="src/long_key.ts::assignment"),
         Case("bare 40-char hex in a credential context", p1_files, by="src/bare_with_context.ts::hex-secret"),
         Case("128-char bare hex run (beyond the old {30,63} cap)", p1_files, by="src/very_long_hex.ts::hex-secret"),
