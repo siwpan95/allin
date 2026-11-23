@@ -3,6 +3,40 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 0.0.0a10 —— 2026-11-24
+
+**修 a9 的一个发布缺陷：测试规则族在包装版里根本不可用。**
+
+### 缺陷实况（a9 已发布，不能覆盖，故发 a10）
+
+`a9` 的 `--dump-profile` 在仓内能看到测试规则族，但**从 PyPI 装出来的包看不到**，
+`repocheck --tests` 直接崩。两个独立原因叠加：
+
+1. **嵌套子包没声明**：`_toolkit` 目录映射进了包，但它的子包 `_toolkit/pytrunner/`
+   不在 `packages` 列表里 ⇒ wheel 里没有它 ⇒
+   `ModuleNotFoundError: No module named 'allin_governance._toolkit.pytrunner'`。
+   （与 allin-toolkit 的 `calculator/calculator/` 是**同一个坑**，本轮第二次踩。）
+2. **双环境 import 路径**：`rules_tests.py` 只写了仓内那条
+   `from _shared.pytrunner import Probe`；装进包后 `_shared` 不存在，需回退到
+   `allin_governance._toolkit.pytrunner`。现改为 try/except 双路径。
+
+### 顺带修一个判据误判
+
+环境没装 pytest 时，`python -m pytest` 以 returncode 1 退出并打 `No module named pytest`，
+原实现会把它判成「项目的测试已腐烂」。现识别该情形并跳过 ——
+**「本机没装工具」不是「项目有问题」**，这条在体检器里必须分清。
+
+### 验证（这次验的是装出来的包，不是仓内）
+
+```
+从 PyPI 装干净 venv → repocheck --dump-profile 显示 [51][52][53]
+                     → repocheck <含坏测试的目录> --tests 报收集错误
+                     → wheel 内含 _toolkit/pytrunner/{__init__,error_types,log_manager,test_probe}.py
+```
+
+教训：**「仓内能跑」不等于「发布物能跑」**。a9 的验收只看了仓内 `--dump-profile`，
+没在装出来的包里验 —— 这跟 a8 那次「提了没做」是同一类失误：**验的地方不对**。
+
 ## `allin-governance` 0.0.0a9 —— 2026-11-24
 
 这版**有实质内容**：两个工具真正进了 wheel，repocheck 多了一族测试规则。

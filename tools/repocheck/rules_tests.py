@@ -40,13 +40,20 @@ from rulebase import CheckResult, Rule, Severity
 if TYPE_CHECKING:
     from scanctx import ProjectContext
 
-#: 探针内核在 tools/_shared 下；repocheck 的模块以**顶层模块**方式加载，
-#: 所以必须把 tools/ 加进 sys.path 才能 `from _shared.pytrunner import ...`。
+#: 探针内核的位置**在两种形态下不同**：
+#:   - 仓内：`tools/_shared/pytrunner/`，repocheck 以顶层模块方式加载（sys.path 含 tools/）
+#:     ⇒ `import _shared.pytrunner`
+#:   - 包内：`allin_governance/_toolkit/pytrunner/`，本模块是 `allin_governance._repocheck.rules_tests`
+#:     ⇒ `import allin_governance._toolkit.pytrunner`
+#: 2026-11-24 实测教训：a9 只写了仓内那条，装出来的包里 import 静默失败，
+#: `--dump-profile` 看不到测试规则族 —— 功能等于没发。
 _TOOLS_DIR = Path(__file__).resolve().parent.parent
 if str(_TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(_TOOLS_DIR))
-
-from _shared.pytrunner.test_probe import Probe  # noqa: E402
+try:  # 仓内
+    from _shared.pytrunner.test_probe import Probe  # type: ignore[import-not-found]
+except ImportError:  # 包内
+    from allin_governance._toolkit.pytrunner.test_probe import Probe  # type: ignore[import-not-found]
 
 TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
 TEST_DIR_NAMES = frozenset({"tests", "test", "spec", "__tests__"})
@@ -110,7 +117,13 @@ def _check_collectable(ctx: "ProjectContext") -> tuple[bool, str]:
         return False, "pytest --collect-only 超过 90 秒（conftest 导入期可能做了重活）"
     if out.returncode == 0:
         return True, "收集成功"
-    tail = " / ".join((out.stdout + out.stderr).strip().splitlines()[-5:])
+    blob = out.stdout + out.stderr
+    # 环境没装 pytest ≠ 项目缺陷。2026-11-24 实测：干净 venv 只装 allin-governance 时
+    # `python -m pytest` 会以 returncode 1 退出并打 "No module named pytest"，
+    # 若不识别就会把「本机没装工具」误判成「项目的测试已腐烂」。
+    if "No module named pytest" in blob or "No module named 'pytest'" in blob:
+        return True, "环境未装 pytest，跳过"
+    tail = " / ".join(blob.strip().splitlines()[-5:])
     return False, tail[:400]
 
 

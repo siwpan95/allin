@@ -135,7 +135,7 @@ pip install allin-governance[full]      # 加严格校验的附加依赖
 
 ## 状态
 
-`0.0.0a9` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
+`0.0.0a10` 仍是**占位版本系列**：a0 先占住 `allin-governance` 这个名字，
 a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码），
 a2 加 `verify` 子命令与 `init --with-exceptions`，并把 sdist 修成自包含（物化构建），
 a3 补收 a2 wheel 缺失的 4 份运行时事实源（包映射 sha256 对账收口）+ 门禁判据加固，
