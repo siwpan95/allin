@@ -1,11 +1,11 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-14），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-23），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 139 个仓库**（公开 139 · 私有 0）。
+**共 142 个仓库**（公开 142 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -17,6 +17,7 @@
 | [siwpan/adventurelog](https://gitee.com/siwpan/adventurelog.git) | Python | 0 | 公开 | 探险日志 |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
+| [siwpan/anatomy3d](https://gitee.com/siwpan/anatomy3d.git) | — | 0 | 公开 | 人体解剖 3D 教育查看器：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器，教学用途非临床 |
 | [siwpan/arcade](https://gitee.com/siwpan/arcade.git) | — | 1 | 公开 | 街机游戏合集（自 game-collection 拆分） |
 | [siwpan/art_video_gen](https://gitee.com/siwpan/art_video_gen.git) | — | 0 | 公开 | 元胞自动机 + 粒子系统生成随机艺术视频，程序化音频同步、ffmpeg 合并 |
 | [siwpan/ashen-beacon](https://gitee.com/siwpan/ashen-beacon.git) | — | 0 | 公开 | 灰烬信标 · 用 dse-core   allin-engine 双引擎做的终端文字冒险 |
@@ -44,6 +45,7 @@
 | [siwpan/dev-toolkit](https://gitee.com/siwpan/dev-toolkit.git) | — | 0 | 公开 | Tier③ 收敛归档仓：收纳薄原型/薄工具/薄游戏，保留 git 历史（archive/<repo> 分支） |
 | [siwpan/diablo](https://gitee.com/siwpan/diablo.git) | Python | 0 | 公开 | 私服版本 |
 | [siwpan/dict-scene-engine](https://gitee.com/siwpan/dict-scene-engine.git) | — | 0 | 公开 | 字典场景引擎 —— 基于 Cordis 4.0 插件架构的文字冒险游戏引擎（场景即字典，能力即插件） |
+| [siwpan/docx-converter](https://gitee.com/siwpan/docx-converter.git) | — | 0 | 公开 | 文档互转程序：能力矩阵 + IR 中间层 + 保真度分级 |
 | [siwpan/drawpic](https://gitee.com/siwpan/drawpic.git) | — | 0 | 公开 | 故障艺术生成器：21 个 glitch / 网络美学生成器，导出静态 PNG 与动态 MP4（Tkinter，MVVM） |
 | [siwpan/dse-core](https://gitee.com/siwpan/dse-core.git) | — | 0 | 公开 | 字典场景引擎内核 —— 基于 Cordis 4.0 插件架构、与内容解耦的文字冒险/互动叙事引擎（场景即字典，能力即插件） |
 | [siwpan/dsh-release-archiver](https://gitee.com/siwpan/dsh-release-archiver.git) | — | 0 | 公开 | DeepSeek Harness 发布归档流水线：人工一键触发 run.sh（检测→双格式下载→完整性校验→解压复核）；平台定时任务仅调用本仓 run.sh；判据唯一实现，无 AI 依赖 |
@@ -128,6 +130,7 @@
 | [siwpan/shikonghuaban](https://gitee.com/siwpan/shikonghuaban.git) | — | 0 | 公开 | 时空画板（自 media-collection 拆分） |
 | [siwpan/sign-in-simulator](https://gitee.com/siwpan/sign-in-simulator.git) | Python | 0 | 公开 | 签到一下吧 |
 | [siwpan/sin-virtue-cordis-host](https://gitee.com/siwpan/sin-virtue-cordis-host.git) | — | 0 | 公开 | 七宗罪 VS 七美德 · Cordis「一切皆插件」宿主验证原型｜/repos/sin-virtue-cordis-host |
+| [siwpan/skyrim-lifeline](https://gitee.com/siwpan/skyrim-lifeline.git) | — | 0 | 公开 | 霜语 Frostwords：基于 dse-core 的上古卷轴同人纯文字生存叙事（Lifeline 式远端建议） |
 | [siwpan/smile](https://gitee.com/siwpan/smile.git) | — | 0 | 公开 | smile 签到+表情包（自 sign-in-simulator#2.0 拆分） |
 | [siwpan/stay](https://gitee.com/siwpan/stay.git) | — | 0 | 公开 | Progress Quest 2 正统续作｜/repos/stay |
 | [siwpan/subtitle](https://gitee.com/siwpan/subtitle.git) | — | 0 | 公开 | 桌面字幕处理工具（Tkinter + ffmpeg）：提取、编辑、烧录，面向中文用户 |

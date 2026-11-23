@@ -987,3 +987,10 @@ tiering:
     `68d1900` 为提示词改「只调 run.sh」的纯文档提交；远端 `gitee.com/siwpan/dsh-release-archiver`（已推送、公开）
   archive_target: ''
   note: 自动化基础设施；服务对象是 `deepseek-ai/deepseek-harness` 的发布归档，脚本已参数化，可复用到同形态仓库
+- repo: anatomy3d
+  seq: 141
+  domain: 教育/科学可视化
+  tier: ①核心推进
+  action: 持续投入：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器的人体解剖教育程序；M0 框架底座已交付（selfcheck exit 0），M1-M4 按 docs/项目书.md 推进
+  archive_target: ''
+  note: 2026-11-23 建仓（用户指令「按独立项目建仓推进」）；代码 MIT / 数据 CC BY-SA 双轨授权

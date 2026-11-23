@@ -1,5 +1,21 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-23 18:55（**@`DESKTOP-KQABATS` 新仓 `anatomy3d` 建仓入册（用户指令「按独立项目建仓推进」）—— 发布区 140 → 141** ——
+>   Gitee 新建 `siwpan/anatomy3d`（公开 + MIT，令牌经 wincred 取得，不落盘不回显）；
+>   @`DESKTOP-KQABATS` 本机检出 `/repos/anatomy3d`，首推 `494363c`（M0 框架底座，24 文件）；
+>   `git ls-remote` 与本地 HEAD 逐字符相等（IN_SYNC）；匿名克隆复验：三件套齐、
+>   `python selfcheck.py` exit 0、产物零混入、公开生效。
+>   治理同步：registry 新增 `projects/anatomy3d.yaml`（manual、无 port）；
+>   `tiering.yaml` / 组合分级决策索引 / PORTFOLIO.md（142 仓口径）/ SPEC-204 /
+>   `architecture/system-architecture.svg` 计数均已随本块刷新；
+>   facts 投影重建（tiering=141 / projects=149，`--check` 双绿）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **141** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md)（@`DESKTOP-KQABATS` anatomy3d 建仓 · 本机自留痕）
+
 > **时点** 2026-11-22 11:35（**@`DESKTOP-KQABATS` 新人上手指南全链复跑 · 发布区对齐** ——
 >   用户指令「基于最新版新人开发上手指南实际跑一遍」：第 0 章复跑时 `g20-facts` 抓到唯一漂移 ——
 >   发布区目录数 **137 → 138**；随后 `platform check-repos` 抓到 `docx-converter` / `piano`
