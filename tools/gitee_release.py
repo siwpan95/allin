@@ -598,25 +598,51 @@ def cmd_upload(args, token):
     """按 build.py --release 的口径挑出发布载荷，逐个上传（小文件场景用）。
 
     大文件多的时候更推荐先压成一个 zip 再 attach —— 见文件头。
-    载荷口径直接复用 gen_third_party_notices.dist_payload()，不在这里再写一份，
+    载荷口径 2026-11-24 起**内联在本函数里**（原先复用 pluginplayer 的 gen_third_party_notices），
     否则"哪些文件算发布载荷"会有两个真相。
     """
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    try:
-        import gen_third_party_notices as notices
-    except ImportError as exc:
-        # 2026-11-24：此前这里只打印异常，看上去像「本仓文件丢了」。
-        # 实际 `gen_third_party_notices.py` **不在本仓**，它住在 pluginplayer 仓的
-        # tools/ 下 —— 是个跨仓隐式依赖（本仓从未声明）。要么把 pluginplayer 的
-        # tools/ 加进 PYTHONPATH，要么把 dist_payload 的口径内联进来。
-        print("[FAIL] 无法 import gen_third_party_notices: %s" % exc)
-        print("       该模块不在本仓：它位于 pluginplayer 仓的 tools/gen_third_party_notices.py，")
-        print("       本功能属于「跨仓隐式依赖」。修法二选一：")
-        print("         ① PYTHONPATH=<pluginplayer>\\tools python tools/gitee_release.py ...")
-        print("         ② 把 dist_payload() 的载荷口径内联进本文件（消除跨仓依赖）")
-        return 1
+    # 2026-11-24：原实现 `import gen_third_party_notices` 拿到 dist 载荷口径 ——
+    # 但该模块**不在本仓**，它住在 pluginplayer 仓的 tools/ 下，是个跨仓隐式依赖。
+    # 全哥指令「跨仓依赖改内联」，故把两段逻辑原样收进来。
+    #
+    # 来源：pluginplayer/tools/gen_third_party_notices.py
+    #   - is_runtime_artifact()（第 218 行起）
+    #   - dist_payload()（第 230 行起）
+    #   - 常量 RUNTIME_ARTIFACT_DIRS / RUNTIME_ARTIFACT_PREFIXES
+    # ⚠ 这些常量描述的是 **pluginplayer 的 dist/ 结构**（logs/、selftest_out*、test_assets*）。
+    #   内联消除的是「import 不到」的硬失败，但没有消除语义耦合 ——
+    #   若上传别的项目的 dist，需要按那个项目的结构改这里。
+    RUNTIME_ARTIFACT_DIRS = ("logs",)
+    RUNTIME_ARTIFACT_PREFIXES = ("selftest_out", "test_assets")
+
+    def is_runtime_artifact(rel):
+        top = rel.split("/")[0]
+        if top in RUNTIME_ARTIFACT_DIRS or top.startswith(RUNTIME_ARTIFACT_PREFIXES):
+            return True
+        if rel.lower().endswith(".log"):
+            return True
+        if rel == "config/rpc-token.txt":
+            return True
+        return False
+
+    def dist_payload(include_artifacts=False, dist=None):
+        root = dist
+        if not os.path.isdir(root):
+            return None
+        files = []
+        for cur, _dirs, fs in os.walk(root):
+            for f in fs:
+                pp = os.path.join(cur, f)
+                rel = os.path.relpath(pp, root).replace(os.sep, "/")
+                if not include_artifacts and is_runtime_artifact(rel):
+                    continue
+                files.append((rel, os.path.getsize(pp)))
+        files.sort()
+        return files
+
+
     d = args.dir or os.path.join(args.repo, "dist")
-    payload = notices.dist_payload(dist=d)
+    payload = dist_payload(dist=d)
     if payload is None:
         print("[FAIL] %s 不存在（先 build.py --release）" % d)
         return 1

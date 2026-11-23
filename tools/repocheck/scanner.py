@@ -38,6 +38,7 @@ from rules_ci import RULES_CI
 from rules_core import RULES_CORE
 from rules_docs import RULES_DOCS
 from rules_gate import RULES_GATE, has_gate_suite
+from rules_tests import RULES_TESTS
 from rules_misc import RULES_MISC
 from rules_vcs import RULES_VCS
 from scanctx import ProjectContext
@@ -186,7 +187,7 @@ def _is_project(directory: Path, exclude: frozenset[str], max_py_depth: int) -> 
 
 def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
                   *, skip_ids: Iterable[int] = (), with_gates: bool = False,
-                  only_gates: bool = False) -> dict:
+                  only_gates: bool = False, with_tests: bool = False) -> dict:
     """对一个项目跑全部规则，返回结构化结果。
 
     返回字典结构
@@ -216,6 +217,10 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
         # 门禁的单一入口」用 —— 仓体卫生本来就是另一步（run_all_gates.sh 第 3 步
         # 的 repocheck）的职责，两步混在一起会让「门禁红」与「仓体脏」无法区分。
         rules = RULES_GATE if only_gates else RULES + RULES_GATE
+    # 测试规则族（51-53）**不按套件裁剪**：任何项目都可能自带测试，
+    # 与「有没有治理套件」无关。默认关闭是因为它要拉子进程跑 pytest。
+    if with_tests:
+        rules = tuple(rules) + RULES_TESTS
     run = run_rules(ctx, rules, skip_ids=frozenset(skip_ids))
 
     # 跳过项从分母剔除，但必须压上限，否则「越残缺分越高」
@@ -273,11 +278,12 @@ def check_project(path: str | os.PathLike, exclude: Iterable[str] | None = None,
 
 def _safe_check(proj: str, exclude: Iterable[str] | None,
                 skip_ids: Iterable[int], with_gates: bool = False,
-                only_gates: bool = False) -> dict:
+                only_gates: bool = False, with_tests: bool = False) -> dict:
     """单个项目出错不中断整体扫描，转为一条伪问题。"""
     try:
         return check_project(proj, exclude=exclude, skip_ids=skip_ids,
-                             with_gates=with_gates, only_gates=only_gates)
+                             with_gates=with_gates, only_gates=only_gates,
+                             with_tests=with_tests)
     except Exception as exc:  # noqa: BLE001 - 兜底，避免一个项目毁掉整次扫描
         return {
             "name": os.path.basename(proj),
@@ -296,7 +302,8 @@ def _safe_check(proj: str, exclude: Iterable[str] | None,
 def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
          depth: int = 2, skip_ids: Iterable[int] = (),
          workers: int = 1, progress=None, with_gates: bool = False,
-         include_self: bool = False, only_gates: bool = False) -> list[dict]:
+         include_self: bool = False, only_gates: bool = False,
+         with_tests: bool = False) -> list[dict]:
     """发现项目并逐个体检。
 
     ``workers > 1`` 时按项目并发（IO 与子进程为主，GIL 影响很小）。
@@ -328,7 +335,7 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
         from concurrent.futures import ThreadPoolExecutor
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(_safe_check, p, exclude, skip, with_gates, only_gates)
+            futures = [pool.submit(_safe_check, p, exclude, skip, with_gates, only_gates, with_tests)
                        for p in projects]
             results: list[dict] = []
             for index, (project, future) in enumerate(zip(projects, futures), 1):
@@ -339,7 +346,7 @@ def scan(root: str | os.PathLike, *, exclude: Iterable[str] | None = None,
 
     results = []
     for index, project in enumerate(projects, 1):
-        results.append(_safe_check(project, exclude, skip, with_gates, only_gates))
+        results.append(_safe_check(project, exclude, skip, with_gates, only_gates, with_tests))
         if progress:
             progress(index, total, project)
     return results

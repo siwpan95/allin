@@ -126,11 +126,27 @@ def _cmd_init(argv: list[str]) -> int:
     return init_module.main(argv)
 
 
+def _cmd_scan(argv: list[str]) -> int:
+    """发布区扫盘：项目指纹、重复检出、迁移残留（Python 版）。"""
+    from ._toolkit import scan_repos
+
+    return scan_repos.main(argv)
+
+
+def _cmd_deps(argv: list[str]) -> int:
+    """依赖体检：requirements 声明 · 解释器实装 · 仓内 import 三者对账。"""
+    from ._toolkit import deps_doctor
+
+    return deps_doctor.main(argv)
+
+
 #: 子命令表。新增能力只需在这里加一行，**不要**新开一个顶层入口点。
 SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "repocheck": ("离线仓库体检：30 条规则，给出 0-10 健康分与 error/warn/info 三级问题", _cmd_repocheck),
     "init": ("生成可跑的最小治理骨架：14 道门禁 + 文档四分类 + registry + 基线", _cmd_init),
     "verify": ("复核 init 生成的套装快照是否仍与 GENERATED.json 记载的一致", _cmd_verify),
+    "scan": ("发布区扫盘：项目指纹 / 重复检出 / 迁移残留（只报告不处置）", _cmd_scan),
+    "deps": ("依赖体检：requirements 声明 · 解释器实装 · 仓内 import 三者对账", _cmd_deps),
 }
 
 

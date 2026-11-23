@@ -5,7 +5,7 @@
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
 
-**共 86 个仓库**（公开 86 · 私有 0）。
+**共 85 个仓库**（公开 85 · 私有 0）。
 
 ## 全量清单（按仓库名排序）
 
@@ -70,7 +70,6 @@
 | [siwpan/players-unified](https://gitee.com/siwpan/players-unified.git) | — | 0 | 公开 | 本地三个播放器(daily_player/localplayer/PluginPlayer)的整合规划 meta 仓库 |
 | [siwpan/pluginplayer](https://gitee.com/siwpan/pluginplayer.git) | — | 0 | 公开 | 插件版 Windows 播放器：FFmpeg 9 + SDL3 重写内核，C ABI 插件宿主（事件总线 / 帧处理链 / JSON-RPC 控制通道 / 完整性清单） |
 | [siwpan/private-radio-stations](https://gitee.com/siwpan/private-radio-stations.git) | Python | 0 | 公开 | 私人电台 + 转播整机方案：音频电台（HLS / ICY）+ 视频转播 + 门户面板，独立进程、按需启停 |
-| [siwpan/py_test_runner](https://gitee.com/siwpan/py_test_runner.git) | — | 0 | 公开 | Python 多模式测试框架：AST 静态扫描 + 架构模式识别 + 动态运行，输出 HTML / JSON / 覆盖率报告 |
 | [siwpan/pyinstaller](https://gitee.com/siwpan/pyinstaller.git) | — | 0 | 公开 | PyInstaller 批量打包工具箱：从基础 GUI 到专业级（签名 / UPX / 图标转换） |
 | [siwpan/pywallpaper](https://gitee.com/siwpan/pywallpaper.git) | — | 0 | 公开 | pywallpaper |
 | [siwpan/radio_special_instruments](https://gitee.com/siwpan/radio_special_instruments.git) | — | 0 | 公开 | 特殊乐器采样包库（CC0 等）+ 下载与乐器池生成脚本｜/repos/radio_special_instruments |

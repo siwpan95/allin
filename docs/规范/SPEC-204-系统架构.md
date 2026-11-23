@@ -14,7 +14,7 @@
 
 ## 1. 总览
 
-`allin` 是 86 个 Gitee 仓（PORTFOLIO.md 2026-11-24 刷新口径；冻结子项已归档进 4 个合集仓）的 **「制度 + 文档枢纽 + 执行器 + 数据面」四位一体** 治理仓：
+`allin` 是 85 个 Gitee 仓（PORTFOLIO.md 2026-11-24 刷新口径；冻结子项已归档进 4 个合集仓）的 **「制度 + 文档枢纽 + 执行器 + 数据面」四位一体** 治理仓：
 
 - **制度**在 `docs/规范/`（铁律、协作流程、治理准则、文档契约、本机边界、platform 契约、事故响应）。
 - **文档枢纽**在 `docs/`（`INDEX.md` 总目录 + 规范/事实源/记录/历史 四分类）。
@@ -54,7 +54,7 @@
             └─────────────────────────────────────────────────────┘
                  │ 校验对象 / 推送目标
             ┌─────────────────────────────────────────────────────┐
-  外部       │  repos/<仓名> (86 成员仓, 独立进程) + Gitee API       │
+  外部       │  repos/<仓名> (85 成员仓, 独立进程) + Gitee API       │
             │  divergence-events.jsonl 分歧事件源                   │
             └─────────────────────────────────────────────────────┘
 ```
@@ -171,7 +171,7 @@
   `verify-upstream-merge.ps1`（上游 PR 合并门禁）、`bundle/`、`安装说明.md`。
 
 ### 2.6 可安装产物 —— `packages/allin-governance`（2026-10-31 起）
-- PyPI 包 `allin-governance`（现版本 0.0.0a8，演进见根 `CHANGELOG.md`）：
+- PyPI 包 `allin-governance`（现版本 0.0.0a9，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
 - **一份源码两处消费**：`pyproject.toml` 的 `package-dir` 把仓内 `tools/repocheck` 与
   `tools/gate/governance` 映射进包（`_repocheck` / `_gatesuite`），不复制；

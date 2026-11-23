@@ -19,6 +19,7 @@ import report
 import scanner
 from _optional import PACKAGE_NAMES, missing_packages
 from rulebase import RANK
+from rules_tests import RULES_TESTS
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +184,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="只跑门禁规则族（31-50），不掺 30 条仓体卫生规则。"
              "给「用 repocheck 当治理门禁单一入口」用，使结论与 npm run check:governance 逐条等价。")
     parser.add_argument(
+        "--tests", action="store_true",
+        help="启用测试规则族（id 51-53）：静态判定有无测试；有测试时跑 "
+             "pytest --collect-only 验证「还能不能收集」（不执行测试体）。"
+             "默认关闭 —— 要拉子进程，比仓体卫生规则慢得多。")
+    parser.add_argument(
         "--dump-profile", action="store_true",
         help="打印规则清单与能力矩阵（不扫描）")
     parser.add_argument(
@@ -278,6 +284,15 @@ def _format_profile(profile: dict) -> str:
         for rule in gate_rules:
             lines.append(
                 f"  [{rule['id']:>2}] {rule['severity']:<5} {rule['label']}")
+
+    test_rules = list(RULES_TESTS)
+    if test_rules:
+        lines.append("")
+        lines.append(f"测试规则族（{len(test_rules)} 条，仅 --tests 启用；"
+                     "会拉 pytest 子进程，故默认关闭）：")
+        for rule in test_rules:
+            sev = getattr(rule.severity, "value", rule.severity)
+            lines.append(f"  [{rule.id:>2}] {str(sev):<5} {rule.label}")
     lines.append("")
     lines.append("排除目录：" + ", ".join(profile["exclude_dirs"]))
     lines.append("项目标记：" + ", ".join(profile["project_markers"]))
@@ -337,6 +352,7 @@ def run(args: argparse.Namespace) -> int:
         skip_ids=args.skip_rules,
         workers=args.workers,
         with_gates=args.gates,
+        with_tests=args.tests,
         include_self=args.include_self,
         only_gates=args.only_gates,
     )

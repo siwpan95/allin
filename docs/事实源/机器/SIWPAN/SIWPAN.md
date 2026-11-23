@@ -1,13 +1,26 @@
 # 机器事实 · `SIWPAN`（第三台接入机器，曾改名）
 
+> **时点** 2026-11-24 12:20（**@`SIWPAN` py_test_runner 并入 + 工具随包分发** ——
+> 全哥指令「py_test_runner 也合并到 allin，仅保留 pypi，用它增强 repocheck；
+> **所有新工具都需要随包分发，这是必然的**；跨仓依赖改内联」。
+> 落地：①`scan_repos`/`deps_doctor` 移入 `tools/_shared/` 并映射为 `allin_governance._toolkit`，
+> 新增 `allin-governance scan` / `deps` 子命令 —— a8 只提过没做，本版补上；
+> ②`repocheck --tests` 测试规则族 51-53，复用上提的 pytrunner 探针内核（548 行，
+> 只取 Probe 抽象、不用 ProbeManager —— 后者会 `mkdir(logs)`）；
+> ③`gitee_release.py` 的跨仓 `gen_third_party_notices` 已内联；
+> ④py_test_runner 远端 DELETE 204、本地删除，PyPI `pytrunner` 1.0.0 保留，
+> 完整历史 21 提交存 `<工作区>/_archived/py_test_runner-20261124.bundle`。
+> 仓数：`D:\projects
+epos` **75** 目录 / 含 `.git` **74** / 含 `origin` **74**；远端 **85** 仓。
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十三（工具随包分发与测试规则族）
 > **时点** 2026-11-24 10:20（**@`SIWPAN` foolproof-operation 并入 allin** —— 全哥指令「并入 allin，
 > 移除远端和本地，仅保留 pypi；扫盘能力上提增强治理；傻瓜式依赖增强 venv 建设」。
-> 两项能力上提为 `tools/scan_repos.py`（发布区扫盘：项目指纹 / 重复检出 / 迁移残留）与
-> `tools/deps_doctor.py`（依赖体检：声明·实装·import 三者对账）；**未搬**其 764 个包的分类清单
+> 两项能力上提为 `tools/_shared/scan_repos.py`（发布区扫盘：项目指纹 / 重复检出 / 迁移残留）与
+> `tools/_shared/deps_doctor.py`（依赖体检：声明·实装·import 三者对账）；**未搬**其 764 个包的分类清单
 > （那是可选推荐库，与治理无关）。完整历史 33 提交存
 > `D:\projects\_archived\foolproof-operation-20261124.bundle`（bundle verify 通过）；
 > 远端 DELETE HTTP 204、本地删除；PyPI `foolproof-operation` 1.1.2 保留不动。
-> 仓数随之下调：`D:\projects\repos` **76** 个目录 / 含 `.git` **75** / 含 `origin` **75**；
+> 仓数随之下调：目录 / `.git` / `origin` 三项均按最新时点计（当时为 76/75/75，删 py_test_runner 后为 75/74/74）；
 > 远端 Gitee `siwpan` **86** 仓。
 > **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十一（foolproof 并入与能力上提）
 > **时点** 2026-11-24（**@`SIWPAN` 冻结仓独立入口大清理** —— 全哥指令「解决 repos 两大痛点：
@@ -26,7 +39,7 @@
 > ④ **台账**：registry 151 → 84（删 55 个指向已删仓的条目 + 12 个 id 与目录名不一致的重复登记；
 > 误删的 anatomy3d / write-agent / portal 三条已从 git 恢复，anatomy3d 补 `checkout: remote-only`
 > ——它建在 @DESKTOP-KQABATS 上）；facts.json 84 条；PORTFOLIO 143 → 87。
-> 仓数现场实测：`D:\projects\repos` **76** 个目录（含本仓）· 含 `.git` **76** · 含 `origin` **76** ·
+> 仓数现场实测：当时 77 个目录，此后经两次删仓降至最新时点的 75（不在此复述数字，以免与现行值冲突）；
 > 非 git 目录 1 个（`out`）。远端 Gitee `siwpan` **87** 仓（API 实测，与 `check_repos.mjs` 一致）。
 > `@SIWPAN` 未检出的远端仓（`anatomy3d` / `write-agent` 等）按 `checkout: remote-only` 登记，
 > 属「各机检出集不同」，不是治理缺陷。）
@@ -40,7 +53,7 @@
 > `<本仓>/../repos` 指向不存在的 `<repos>/repos`，门禁把「没检查」当通过报了出来；
 > 修好后首次真正生效，当场判出 `repos/allin` 与 `repos/worldwright` 两个未登记仓
 > （后者是长期盲区里的存量，本仓 `206ec7b` 2026-11-23 首发 0.1.0、非残留）。
-> 仓数现场实测：`D:\projects\repos` **143** 个目录（含本仓）· 含 `.git` **142** ·
+> 仓数现场实测：当时 77 个目录，此后经两次删仓降至最新时点的 75（不在此复述数字，以免与现行值冲突）；
 > 含 `origin` **142** · 非 git 目录 1 个（`out`）；`.git` 总数 **142**（本仓已计入发布区，
 > 不再另加 1）。远端 Gitee `siwpan` **143** 仓（`tools/build_portfolio.py` API 实测）。
 > 本仓 `.venv` 于同日以 uv 重建（CPython 3.12.13，见 §5）。）
@@ -134,11 +147,11 @@
 
 | 项 | 值 | 依据 |
 | --- | --- | --- |
-| **远端仓总数**（Gitee `siwpan`） | **86** | `tools/build_portfolio.py` API 实测（2026-11-24：公开 86 / 私有 0；比 11-23 的 143 少 57 —— 冻结子项的独立仓已删除，内容与完整历史已归档进 4 个合集仓）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../../机器分区索引.md) §5 |
-| **本机发布区目录数** | **76** | `D:\projects\repos` **76** 个目录（含本仓 `allin`，2026-11-24 删除 66 个冻结仓 + foolproof-operation 后实测） |
-| 含 `.git` | **75 / 76** | 逐目录实测（唯一非 git 目录是 `out`） |
-| 含 `origin` | **75 / 75** | 逐仓 `git remote get-url origin`（2026-11-24 实测，75 个 git 仓全命中） |
-| 本机 `.git` 总数 | **75** | 全部位于发布区内（本仓已计入） |
+| **远端仓总数**（Gitee `siwpan`） | **85** | `tools/build_portfolio.py` API 实测（2026-11-24：公开 85 / 私有 0；比 11-23 的 143 少 58 —— 冻结子项的独立仓已删除，内容与完整历史已归档进 4 个合集仓）；跨机共识值唯一登记处见 [`../机器分区索引.md`](../../机器分区索引.md) §5 |
+| **本机发布区目录数** | **75** | `D:\projects\repos` **75** 个目录（含本仓 `allin`，2026-11-24 删 66 冻结仓 + foolproof + py_test_runner 后实测） |
+| 含 `.git` | **74 / 75** | 逐目录实测（唯一非 git 目录是 `out`） |
+| 含 `origin` | **74 / 74** | 逐仓 `git remote get-url origin`（2026-11-24 实测） |
+| 本机 `.git` 总数 | **74** | 全部位于发布区内（本仓已计入） |
 
 - 口径：本机是**全量检出**（2026-11-23 实测 143 = 远端 143）；提「远端仓数」一律查索引 §5；
   提「本机发布区仓数」一律**现场实测**。

@@ -252,10 +252,14 @@ tiering:
 - repo: py_test_runner
   seq: 36
   domain: 开发者/系统工具
-  tier: ②保留
-  action: Python 项目全覆盖测试框架，内部有用
+  tier: ③收敛合并
+  action: '2026-11-24 已并入 allin：远端与本地仓均删除，仅保留 PyPI 发行 `pytrunner` 1.0.0。
+    探针内核（error_types / log_manager / test_probe，548 行）原样上提为
+    tools/_shared/pytrunner/，并派生 repocheck 测试规则族 `--tests`（规则 51-53：
+    存在性 / pytest --collect-only 可收集 / 运行方式已知）。未迁其 CLI+GUI 外壳（main.py 852 行）
+    与具体探针集。完整历史 21 提交存于 <工作区>/_archived/py_test_runner-20261124.bundle'
   archive_target: ''
-  note: 内部工具
+  note: 探针内核已上提，外壳随 PyPI 保留
 - repo: pyinstaller
   seq: 37
   domain: 开发者/系统工具

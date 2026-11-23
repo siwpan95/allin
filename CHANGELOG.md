@@ -3,6 +3,50 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 0.0.0a9 —— 2026-11-24
+
+这版**有实质内容**：两个工具真正进了 wheel，repocheck 多了一族测试规则。
+
+### 新增子命令 `scan` / `deps`（终于随包分发）
+
+a8 时提过一件事：`scan_repos.py` / `deps_doctor.py` 只在仓内，没进映射。
+本版把这两个能力收进 `tools/_shared/`（setuptools 的 `package-dir` 只能映射**目录**，
+散放的单文件打不进 wheel），映射为 `allin_governance._toolkit`：
+
+```bash
+allin-governance scan --deep     # 发布区扫盘：项目指纹 / 重复检出 / 迁移残留
+allin-governance deps            # 依赖体检：声明 · 实装 · import 三者对账
+```
+
+源码仍只有一份（映射不复制）。
+
+### 新增 `repocheck --tests`：测试规则族（51-53）
+
+前 30 条规则都是静态的。这族补「测试还能不能跑」：
+
+| id | 判据 |
+|---|---|
+| 51 | 有测试文件或 `tests/` 目录（没有则 skip，不算缺陷） |
+| 52 | `pytest --collect-only` 能收到用例（有测试却收不上来 = 测试已腐烂） |
+| 53 | 有 pytest 配置或 Makefile 的 `test` 目标 |
+
+默认关闭：要拉两次子进程，比仓体规则慢两个数量级。
+判据复用内联的探针内核（上提自 py_test_runner / PyPI `pytrunner`）。
+
+### 内联跨仓依赖
+
+`tools/gitee_release.py` 的 `--release` 此前 `import gen_third_party_notices` ——
+该模块**不在本仓**，住 pluginplayer 仓的 tools/ 下。本版把
+`is_runtime_artifact()` / `dist_payload()` 与两个常量原样内联。
+注：常量描述的是 pluginplayer 的 dist 结构，内联消除的是「import 不到」的硬失败，
+没有消除语义耦合 —— 注释里已写明。
+
+### 并入 py_test_runner
+
+远端起本地仓均删除，仅保留 PyPI `pytrunner` 1.0.0；
+探针内核（548 行）上提为 `tools/_shared/pytrunner/`，完整历史 21 提交存 bundle。
+本仓仓数 86 → 85。
+
 ## `allin-governance` 0.0.0a8 —— 2026-11-24
 
 **本版不含包内工具代码变更。** 发布的目的是把一次结构性治理对齐到版本线上，
@@ -20,8 +64,8 @@
 
 ### 两个新工具（仓内，暂未随包分发）
 
-- `tools/scan_repos.py` —— 发布区扫盘：项目指纹、重复检出、迁移残留。只报告不处置。
-- `tools/deps_doctor.py` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
+- `tools/_shared/scan_repos.py` —— 发布区扫盘：项目指纹、重复检出、迁移残留。只报告不处置。
+- `tools/_shared/deps_doctor.py` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
 
 它们目前**只在仓内**，不在 wheel 的 package-dir 映射里。若后续要随包分发，
 需在 `pyproject.toml` 增加映射并跑 `tools/check_pkg_parity.py` 逐文件 sha256 对账

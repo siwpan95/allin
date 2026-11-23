@@ -19,7 +19,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allin-governance"
-version = "0.0.0a8"
+version = "0.0.0a9"
 description = "工作区治理中枢：可执行门禁 + 文档枢纽契约 + 仓库体检，面向一人多仓与 AI 协作者"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -74,10 +74,14 @@ packages = [
   "allin_governance._gatesuite",
   "allin_governance._gatesuite.gates",
   "allin_governance._gatesuite.runtime",
+  # 随包分发的仓治理工具（2026-11-24）：扫盘 / 依赖体检 / 测试探针。
+  # 散在 tools/ 根下的单文件打不进 wheel，故收进 tools/_shared 这个包目录。
+  "allin_governance._toolkit",
 ]
 
 [tool.setuptools.package-dir]
 "allin_governance" = "src/allin_governance"
+"allin_governance._toolkit" = "../../tools/_shared"
 # 指向仓内真身：一份源码，两处消费（仓内 tools/repocheck + 包内 _repocheck）
 "allin_governance._repocheck" = "../../tools/repocheck"
 "allin_governance._gatesuite" = "../../tools/gate/governance"

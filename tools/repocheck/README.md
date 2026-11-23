@@ -63,6 +63,7 @@ repocheck G:/repos
 | `--gates` | 关 | 启用**门禁规则族**（id 31–50）：对自带 `tools/gate/governance` 的仓实跑 20 道治理门禁。默认关 —— 每条规则一次子进程，实测约 90 秒/仓，会把日常体检 0.26 s/仓 的速度口径拖垮 |
 | `--self` | 关 | 把**根目录本身**也当一个项目体检（默认只在没有子项目时才这么做）。monorepo 仓根必须加：门禁套件在仓根，而仓根默认从不被当作「项目」，少了它 `--gates` 恒不生效 |
 | `--only-gates` | 关 | 只跑门禁规则族（31–50），**不掺** 30 条仓体卫生规则。给「用 repocheck 当治理门禁的单一入口」用，使结论与 `npm run check:governance` 逐条等价 |
+| `--tests` | 关 | 启用**测试规则族**（id 51–53）：静态判定有无测试；有测试时跑 `pytest --collect-only` 验证「还能不能收集」（不执行测试体）。默认关 —— 要拉子进程，比仓体卫生规则慢 |
 | `--dump-profile` | 关 | 打印规则清单与能力矩阵（不扫描） |
 | `--version` | — | 打印版本号 |
 
@@ -160,6 +161,26 @@ score = 10 × log1p(通过项权重之和) / log1p(全部项权重之和)
 **未纳入（需要联网）**：分支保护、release 签名、贡献者组织分布、CVE/OSV 比对、
 webhook secret、CI 真实运行记录、包发布状态、CII 徽章等级、外链是否 200。
 
+## 测试规则族（51–53，`--tests` 启用）
+
+前 30 条都是**静态**的：看目录、看文件、看声明。而「这个项目的测试到底还能不能跑」
+必须**执行**才知道。这一族补的就是这块：
+
+| id | key | 判据 | severity |
+|---|---|---|---|
+| 51 | `tests.exists` | 项目内有测试文件或 `tests/` 目录 | INFO（没有则 skip，不算缺陷） |
+| 52 | `tests.collectable` | 有测试时 `pytest --collect-only` 必须能收到用例 | ERROR |
+| 53 | `tests.runner-known` | 有 pytest 配置或 Makefile 的 `test` 目标 | INFO |
+
+**为什么默认关闭**：两次拉起解释器 + pytest import 全套 conftest，比仓体规则慢两个数量级。
+**判据来源**：复用内联在 `tools/_shared/pytrunner/` 的探针内核（上提自 py_test_runner 仓，
+PyPI `pytrunner`）—— `Probe` 提供「检查函数签名 + 异常兜底」的约定，本仓只定义检查体。
+**刻意不用它的 `ProbeManager`**：它需要 `LogManager`，而后者 `__init__` 会 `mkdir(logs)`，
+体检器不该在别人仓里建目录。
+
+实测（2026-11-24）：对一个 `import` 了不存在模块的测试文件，规则 52 报
+`ModuleNotFoundError ... Interrupted: 1 error during collection`；对正常仓则静默通过。
+
 ## 门禁规则族（31–50，`--gates` 启用）
 
 除了上面 30 条仓体卫生规则，repocheck 还能把**治理门禁**纳入同一次体检：
@@ -250,6 +271,7 @@ repocheck/
 ├── rules_ci.py      规则 19-28 CI 与 workflow 安全
 ├── rules_misc.py    规则 30    目录命名规范
 ├── rules_gate.py    规则 31-50 门禁规则族（复用 tools/gate/governance 的 CLI 契约，不入判据）
+├── rules_tests.py   规则 51-53 测试规则族（用 _shared/pytrunner 的 Probe 抽象）
 ├── report.py        text / csv / html / json 渲染 + 汇总
 ├── _optional.py     可选依赖能力探测（find_spec，不真 import）
 ├── test_scanner.py  测试套件（含无 pytest 时的兜底冒烟）
