@@ -1001,6 +1001,6 @@ tiering:
   seq: 141
   domain: 教育/科学可视化
   tier: ①核心推进
-  action: 持续投入：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器的人体解剖教育程序；**M0–M4 全通**（2026-11-24：9 系统 GLB + 5954 结构三语 manifest + 按节点懒加载查看器 + 剖面裁剪 + quiz 判分），完工后已启动向 allin/3dworld 反哺（P1/P2/P6 已落地）
+  action: 持续投入：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器的人体解剖教育程序；**v1.0.0 定版发布**（2026-11-24：M0–M4 全通 + tag/Release 匿名可达 + 反哺 P1/P2/P6/P16 闭环），后续按用户需求迭代
   archive_target: ''
   note: 2026-11-23 建仓（用户指令「按独立项目建仓推进」）；代码 MIT / 数据 CC BY-SA 双轨授权
