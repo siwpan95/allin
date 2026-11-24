@@ -35,6 +35,18 @@
 # 本仓口径是 SKIPPED (not a pass)，凭据防线不允许「假装跑过了」。
 # 退出码：0 通过 / 1 发现密钥 / 2 注解越权（fail closed）/ 3 环境错。
 
+# 全历史档（审计用，**不接进门禁**）：`gitleaks git . --config .gitleaks.toml`
+#   2026-11-24 首次在本机跑通：566 commits / 23 条发现 → 逐条核对**全是自检夹具**
+#   （`gov-credentials: allow` / `repo-hygiene: allow` 注解行，及交接卷里抄录的夹具值）
+#   → 建 `.gitleaks.toml` 基线后复扫 **0 条**。负对照：同一假 PAT 不加注解仍报 1 条
+#   （exit 1），加了注解才放过 —— 基线是窄的，不是把文件整体放行。
+#
+# 版本口径：CI 固定 8.18.4（install-gitleaks.sh，与 .pre-commit-config.yaml 同版）；
+#   本机 2026-11-24 用 **8.30.1** 实扫（官方 windows_x64 包）。本脚本只用
+#   `detect --no-git --source <dir> --exit-code 1`，两版实测一致（命中均 exit 1）。
+#   全历史档的 `.gitleaks.toml` 用 8.30 新语法（顶层 `[[allowlists]]`），8.18.4 不读它
+#   （脚本也不传 --config），故不影响 CI。
+
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
