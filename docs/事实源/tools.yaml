@@ -121,10 +121,10 @@ tools:
   status: null
 - tool: py_test_runner
   category: dev
-  purpose: Python 项目全覆盖测试框架（静态扫描/架构检测/动态运行）
-  registry_id: py-test-runner
-  remote_url: https://gitee.com/siwpan/py_test_runner
-  status: 已更名
+  purpose: Python 项目全覆盖测试框架（静态扫描/架构检测/动态运行）；2026-11-24 能力并入 allin（tools/_shared/pytrunner），远端与本地仓均删除，仅保留 PyPI 发行 pytrunner
+  registry_id: ''
+  remote_url: ''
+  status: 已退役（能力上提 allin）
 - tool: pyinstaller
   category: dev
   purpose: PyInstaller 批量打包工具集（GUI 打包、PNG→ICO、数字签名）

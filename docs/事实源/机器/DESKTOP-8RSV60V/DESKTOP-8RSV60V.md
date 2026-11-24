@@ -1,5 +1,26 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-24（**@`DESKTOP-8RSV60V` 仓根迁入发布区 + 发布区两次清理收口** ——
+>   **@`DESKTOP-8RSV60V` 补做上游 `6d05645` 的交接项**：本仓由 `<工作区>/allin` 迁至 `<工作区>/repos/allin`。
+>   **迁移前快照**：HEAD `19ea3e6`、追踪文件 1085、体积 922 MB、工作区干净；迁移后三项逐一复测相同（零丢失）。
+>   @`DESKTOP-8RSV60V` **原仓根下无 junction 阻断**（符号链接 0 个，上游当时为 10 个），直接 `Move-Item` 同盘改名完成。
+>   **迁移连带修复**：`.venv` 重建（旧 `Scripts/*.exe` 内嵌 `G:\allin` 绝对路径 ⇒ console_scripts 全废；
+>   `uv venv --python 3.13.14` + `requirements-dev.txt`，`pip 26.3` / `pytest 9.2.0` 复验可用）；
+>   `platform/node_modules/@allin/{cli,core,portal}` 三个 Junction 原指向旧绝对路径 ⇒ 按新根重建、3/3 可遍历。
+>   **发布区实例值（2026-11-24 现场实测，每行单事实）**：
+>   本仓仓根现为 `repos/allin`，父目录名是 `repos` ⇒ 门禁 `repos_root` 统一推导得发布区根。
+>   发布区含 `.git` 目录 **75**。
+>   发布区含 `origin` 远端 **75**。
+>   registry 条目 **81**。
+>   远端 Gitee owner `siwpan` 仓数 **76**（带令牌分页实测，含本仓 `allin`）。
+>   差额 **1** = `anatomy3d` 属 remote-only（该仓在 @`DESKTOP-KQABATS` 建仓维护，@`DESKTOP-8RSV60V` 有意不检出，铁律 6）。
+>   `check_repos.mjs`：**通过，81 条清单的本地/远端锚点一致**，exit 0。
+>   **本轮两次清理（发表区 140 → 75）**：58 个「gitee 远端 404」的冻结仓三侧删除；
+>   9 个 README 带「已归档（Archived — 仅作参考）」标记且接任仓 `archive/<name>` 分支实测存在的归档仓三侧删除。
+>   两批均先移入备份区并逐仓 `git bundle create --all` + `verify` 留档，再删远端；详见交接卷 2026-11 的第一百九十七节之 197.3 与 197.5 小节。
+>   `py-test-runner` registry 条目删除（远端与本地仓均已删，能力已上提 `tools/_shared/pytrunner`）。
+>   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第一百九十七节（能力上提 / 权威关系 / 冻结仓与归档仓清理 / 仓根迁移）。
+>
 > **时点** 2026-11-13（**@`DESKTOP-8RSV60V` 用 `piano` 验证扫描登记 + 新仓正式入库闭环** ——
 >   用户原话「piano 已转移到 repos，需要用 piano 项目验证 allin 的扫描登记」，随后放行「完整推进含建仓推送」。
 >   **发行区实例值（19:40 现场实测，每行单事实）**：

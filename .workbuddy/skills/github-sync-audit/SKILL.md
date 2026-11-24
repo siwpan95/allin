@@ -29,11 +29,13 @@ agent_created: true
 
 | 口径 | 真值获取 | 注意 |
 |---|---|---|
-| 本地仓数 | `ls -d <发布区>/*/.git \| wc -l`，或工具 `list` | 2026-11-23 实测 **140**；任务名「135仓」已过期 |
-| GitHub 仓数 | `gh_repos()` 分页 `GET /user/repos?affiliation=owner` | 实测 **142** = 140 巡检仓 + `allin` + `sin-virtue-game` |
+| 本地仓数 | `ls -d <发布区>/*/.git \| wc -l`，或工具 `list` | **2026-11-24 实测 75**（含本仓自身；远端 76 = 75 + `anatomy3d` remote-only）；两次清理前为 140（58 冻结 + 9 归档）。任务名「135仓」历史值 |
+| GitHub 仓数 | `gh_repos()` 分页 `GET /user/repos?affiliation=owner` | **2026-11-24 实测 76**（与 gitee 一致，含 `allin`；`sin-virtue-game` 已随冻结仓清理删除） |
 | gitee 仓数 | `git ls-remote` origin（逐仓） | GitHub 独有 2 中：`allin` 独立双推不在巡检范围；`sin-virtue-game` 已退役（gitee 404） |
 
-**巡检范围**：只 `G:\repos` 顶层含 `.git` 的目录；`allin` 在 `G:\allin` 独立双推，不扫。
+**巡检范围**：发布区顶层含 `.git` 的目录。**2026-11-24 起本仓自身也在发布区内**
+（仓根由 `<工作区>/allin` 迁至 `<工作区>/repos/allin`），因此同样纳入巡检；
+它自己的 origin 已配双推（gitee + github），重复推送幂等无害。
 **待建** = 本地有而 GitHub 无；**GitHub 独有** = GitHub 有而本地无（不算失败，需人工判定是否遗漏检出）。
 
 ## 三、平台差异（Gitee 与 GitHub 不能照搬）
@@ -67,12 +69,13 @@ cd /g/allin
 ALLIN_REPOS_ROOT=/g/repos .venv/Scripts/python.exe tools/github/github_release.py verify
 ```
 
-以独立前台命令输出的 `VERIFY_SUMMARY total=140 ok=140 bad=0 skip=2` 为准（`skip` 为 allin/sin-virtue-game）。
+以独立前台命令输出的 `VERIFY_SUMMARY total=75 ok=75 bad=0` 为准（2026-11-24 清理后的基线；
+`skip` 只应出现在 GitHub 无对应仓的仓上）。
 **看不到这一行就不算完成**，不允许用脚本自称成功替代。
 
 ## 六、已知坑（脚本已内置，了解即可）
 
-- 62/140 是 shallow clone：GitHub 拒收 shallow push → 自动 `git fetch --unshallow origin`（超时给 1200s）
+- 部分仓是 shallow clone：GitHub 拒收 shallow push → 自动 `git fetch --unshallow origin`（超时给 1200s）
 - GitHub 内容创建二级限流：撞 403/429 按 `Retry-After` 退避；不可用 Gitee 的「退避 1 次即收工」套用
 - 响应头大小写：Python `dict(resp.headers)` 的键是 `X-OAuth-Scopes`（首字母大写）；曾因取 `x-oauth-scopes` 小写键误判「fine-grained」，实际是 classic PAT 含全 scope。**取头先看原始大小写**
 - `pushed_done.txt` 历史上被并发写重复过，**不作为完成判据**；只以 `verify` 独立复核为准
@@ -83,6 +86,6 @@ ALLIN_REPOS_ROOT=/g/repos .venv/Scripts/python.exe tools/github/github_release.p
 | 技能 | 管什么 |
 |---|---|
 | `repo-sync-remote-to-local` | **单仓**「本地落后」场景：现场勘查 → fetch → PURE_BEHIND 才快进 → 三方核对 |
-| 本技能 | **批量 140 仓**三端巡检：差集盘点 + 建仓 + 推送 + 回推 + 独立复核 |
+| 本技能 | **批量全发布区**三端巡检：差集盘点 + 建仓 + 推送 + 只读偏离 + 独立复核 |
 | `github-release-source-archive-download` | GitHub release 源码包下载归档（different 场景） |
 | `gitee-push-from-extracted-dir` | Gitee 从解压目录推送（different 场景） |
