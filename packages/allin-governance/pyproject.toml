@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 # allin-governance —— 把 allin 治理中枢的可复用面装成一个包。
@@ -19,11 +19,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allin-governance"
-version = "1.0.0"
+version = "1.0.1"
 description = "工作区治理中枢：可执行门禁 + 文档枢纽契约 + 仓库体检，面向一人多仓与 AI 协作者"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT-0" }
+# SPDX 表达式（PEP 639）：setuptools 77 起 `license = { text = ... }` 与
+# license 分类器都已弃用，1.0.1 起改用字符串形式 —— 否则每次构建都会打两条
+# SetuptoolsDeprecationWarning，而「构建期长期有告警」正是下一个人忽略真告警的开始。
+license = "MIT-0"
+license-files = ["LICENSE"]
 authors = [{ name = "siwpan" }]
 keywords = [
   "governance", "policy-as-code", "repo-hygiene", "audit", "gates",
@@ -33,7 +37,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Quality Assurance",

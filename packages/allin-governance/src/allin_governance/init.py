@@ -978,6 +978,25 @@ def verify_main(argv: list[str] | None = None) -> int:
         print("ENV ERROR: 清单里没有 files 段，无法复核", file=sys.stderr)
         return 3
 
+    # 清单只应描述**本目录内**的快照文件。若某条 `..` 出去（手改或伪造），
+    # 复核就会去读目标目录之外的文件，并且可能对仓外文件回一句「快照未被改动」——
+    # 那是把「我核对了一个别处的文件」说成了「你的快照是好的」。
+    # 2026-11-24 发版全检实测：`../outside_probe.txt` 一条即可让 verify 报「一致 1」。
+    # 处置是 fail closed（exit 3 = 清单不可用），不是逐条跳过 —— 清单被污染时，
+    # 其余条目的结论也不再可信。
+    root = target.resolve()
+    unsafe = []
+    for relative in files:
+        resolved = (root / relative).resolve()
+        if resolved != root and root not in resolved.parents:
+            unsafe.append(relative)
+    if unsafe:
+        print("ENV ERROR: 生成清单含指向目标目录之外的条目，拒绝复核（fail closed）：", file=sys.stderr)
+        for item in sorted(unsafe)[:10]:
+            print(f"  {item}", file=sys.stderr)
+        print(f"  共 {len(unsafe)} 条；清单只应描述本目录内的快照文件。", file=sys.stderr)
+        return 3
+
     changed: list[str] = []
     missing: list[str] = []
     intact = 0

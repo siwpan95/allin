@@ -23,11 +23,14 @@ from __future__ import annotations
 
 __all__ = ["__version__"]
 
-#: 与 pyproject 的 project.version 保持一致。
-#: 仍是**占位版本系列**（REC-AU-21 D1.3），版本递增对应可复述的差异：
-#:   a0 占住名字；a1 修掉 cp1252 控制台崩溃（见 `_stdio`）；
-#:   a2 加 `verify` 与 `init --with-exceptions`，并让 sdist 变成自包含（物化构建）；
-#:   a3 补收 a2 wheel 缺失的 4 份运行时事实源（parity 对账收口）+ 门禁判据加固；
-#:   a4 repocheck `--profile` 场景预设 + 门禁失败修法提示（registry remediation）。
-#: 仍不承诺 API 稳定；正式形态按实际演进再发。
-__version__ = "1.0.0"
+#: 与 pyproject 的 project.version 保持一致 —— **单一来源是 pyproject**，
+#: 这里只是运行期读得到的那一份；`tests/test_cli.py` 逐次对账，两处不许对不上。
+#:
+#: 版本史（可复述的差异，不是流水账）：
+#:   0.0.0a0–a10 占位系列：占名 → 修 cp1252 崩溃 → 自包含 sdist → 补 4 份事实源
+#:               → profile 预设 → 工具随包分发 → 嵌套子包/双环境 import 修复。
+#:   1.0.0        第一个正式版，冻结五个子命令名与 0/1/2/3 退出码语义。
+#:                **该版 sdist 装不上**（跨目录映射未物化，见 docs/记录/事故/）。
+#:   1.0.1        修 1.0.0 的发布缺陷：发版前置校验 + sdist 自包含回归测试 +
+#:                版本护栏改为「单一来源对账」。
+__version__ = "1.0.1"

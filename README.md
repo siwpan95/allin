@@ -31,7 +31,7 @@
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.0`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.1`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 
@@ -161,8 +161,9 @@ allin docs portfolio --apply
 - **`PORTFOLIO.md` 会过期**：它由 `tools/build_portfolio.py` 从 Gitee API 生成（是索引，
   不是源码镜像）。仓数变化后刷新：`python tools/build_portfolio.py --apply`；
   去掉 `--apply` 是干跑，只打印数字、不写盘。
-  〔2026-11-24 实测：干跑报 143 仓，`--apply` 后与 `system-architecture.svg` /
-  `SPEC-204` 三处仓数一致，`check_arch_assets.py` 全绿。〕
+  〔2026-11-24 复核：干跑报 **85** 仓（公开 85 / 私有 0），与 `system-architecture.svg` /
+  `SPEC-204` 三处一致，`check_arch_assets.py` 全绿。**同日 08:06 的「66 冻结仓移入备份区」
+  使这条数字从 143 变成 85** —— 时点值一律按复核当日重测，不要沿用旧数。〕
 - **monorepo 下不能对仓根裸跑体检器**：`tools/` `packages/` `console/` `kernel/` 等是仓内
   中间目录、不是独立仓。裸跑 `repocheck .` 会把它们当成 11 个「项目」逐个判
   「缺 `.git` / 缺 README」，健康分掉到 6.0（2026-11-24 实测）。正确口径：

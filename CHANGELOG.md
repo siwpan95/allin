@@ -3,9 +3,58 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.0.1 —— 2026-11-24
+
+**修 1.0.0 的一个发布缺陷：sdist 装不上。** wheel 不受影响。
+
+### 缺陷实况
+
+`pip install allin_governance-1.0.0.tar.gz` 在任何机器上都失败：
+
+```
+error: package directory '..\..\tools\repocheck' does not exist
+```
+
+原因不是代码，是**构建路径**：`pyproject.toml` 用跨目录 `package-dir` 把
+`tools/repocheck`、`tools/gate/governance`、`tools/_shared` 映射进包内，这套映射对
+wheel 有效，**对 sdist 无效**（setuptools 不收项目根之外的文件）。sdist 里那 6 棵
+映射树一棵都没有，而 `package-dir` 仍指向 `../../tools/...` ⇒ 解包后连构建都过不了。
+
+为什么当初没发现：`twine check` 只判元数据（PASSED），干净 venv 验的是 **wheel**
+（能跑）。两条检查各自都绿，缺的那条恰好是「从 sdist 装一次」。
+仓内 `scripts/build_dist.py` 的文档注释**早就写明**这个坑与物化流程 —— 1.0.0 是在
+没走那个脚本的情况下构建的。
+
+### 1.0.1 改了什么
+
+| # | 改动 | 为什么 |
+|---|---|---|
+| 1 | 新增 `scripts/release_preflight.py` | 把「版本一致 / dist 干净 / sdist 自包含 / twine check / 干净 venv 装 sdist+wheel 并跑五个子命令」固化成一条命令，`--install` 才是能判出本缺陷的那个实验 |
+| 2 | 新增 `tests/test_dist_artifacts.py` | 把 sdist 自包含写成回归判据：只要 `dist/` 里有当前版本的 sdist，就逐棵核对映射树、并核对 `package-dir` 已物化 |
+| 3 | 版本护栏改为单一来源对账 | 原测试断言「版本号必须是 `0.0.0aN` 占位系列」，与 1.0.0 直接冲突 ⇒ 1.0.0 是在**测试变红**的状态下发出去的。新判据是 `pyproject == __init__`（原 docstring 自己说的「两处不许对不上」），版式交给 PEP 440 |
+| 4 | `license` 改 SPDX 表达式、去掉 license 分类器 | setuptools 77 起两种旧写法均弃用，每次构建打两条告警；告警长期存在 = 真告警被忽略 |
+| 5 | 构建下限 `setuptools>=68` → `>=77` | 支撑第 4 条的 PEP 639 字段 |
+
+### 验证（本机 `@SIWPAN`，2026-11-24）
+
+- `python scripts/release_preflight.py --install` → `PREFLIGHT ok=8 fail=0 skip=0` / `RESULT: CLEAN`
+- **判据能判红**（负对照）：把 1.0.1 的 sdist 人为摘掉 `_repocheck/` 再跑，得到
+  `[FAIL] sdist 自包含  缺映射树：allin_governance._repocheck` + `RESULT: BLOCKED`；
+  同一次里 `twine check` 仍是 `[ok]` —— 这正是 1.0.0 当初「全绿却装不上」的成因
+- sdist 在**与仓无关**的 venv 里装成功，`--version` / `repocheck` / `scan` / `deps` / `verify` / `init --dry-run` 全 exit 0
+- 对照：PyPI 上的 `1.0.0` sdist 在同一条命令下 `exit 1`（`package directory ... does not exist`）—— 判据确实能判红
+
+### 升级建议
+
+从 1.0.0 装过的人**不需要动**（wheel 是好的）；依赖 sdist 的场景（`--no-binary`、
+无 wheel 的平台、离线镜像）请升到 1.0.1。
+
 ## `allin-governance` 1.0.0 —— 2026-11-24
 
 **第一个正式版。** 从此不再叫 `0.0.0aX` 占位系列。
+
+> ⚠ **事后订正（2026-11-24，不改原文）**：本版 **sdist 装不上**，下表「装出来能跑」
+> 只对 wheel 成立。缺陷与修复见上方 `1.0.1`。原文保留，方便对照当初的判据漏在哪。
 
 ### 为什么现在够 1.0
 

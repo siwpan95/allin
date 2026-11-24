@@ -364,3 +364,24 @@ def test_verify_detects_tampering_and_missing(tmp_path: Path) -> None:
 def test_verify_without_manifest_is_an_env_error(tmp_path: Path) -> None:
     """没有清单 ≠ 快照有问题。前者是前提不成立（3），后者是判据结论（1）。"""
     assert init_module.verify_main([str(tmp_path), "--quiet"]) == 3
+
+
+def test_verify_refuses_manifest_entries_outside_target(tmp_path: Path) -> None:
+    """清单里的 `..` 条目必须 fail closed（3），而不是去读目标目录之外的文件。
+
+    2026-11-24 发版全检实测的失败形态：在 `GENERATED.json` 里写一条
+    `"../outside_probe.txt": "sha256:<真实摘要>"`，verify 会去读仓外文件并回
+    「一致 1 / 快照未被改动」—— 把「我核对了一个别处的文件」说成了「你的快照是好的」。
+    判据是 exit 3（清单不可用），因为清单一旦被污染，其余条目的结论也不可信。
+    """
+    assert _run(tmp_path) == 0
+    outside = tmp_path.parent / "outside_probe.txt"
+    outside.write_text("outside\n", encoding="utf-8")
+
+    manifest = tmp_path / "tools/gate/governance/GENERATED.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    digest = hashlib.sha256(outside.read_bytes()).hexdigest()
+    payload["files"]["../outside_probe.txt"] = f"sha256:{digest}"
+    manifest.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    assert init_module.verify_main([str(tmp_path), "--quiet"]) == 3

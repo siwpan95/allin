@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -28,10 +29,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from allin_governance import __version__  # noqa: E402
 from allin_governance.cli import _repocheck_dir, main  # noqa: E402
 
+PYPROJECT = Path(__file__).resolve().parent.parent / "pyproject.toml"
 
-def test_version_string_is_a_placeholder_release() -> None:
-    """版本号必须仍是 0.0.0aN 占位系列 —— 它只用来占名，不是功能承诺。"""
-    assert __version__.startswith("0.0.0a")
+
+def test_version_has_exactly_one_source() -> None:
+    """版本号只有一个来源：`pyproject.toml` 的 `project.version`。
+
+    **2026-11-24 改写（1.0.0 发版当天）**：原守卫断言「必须是 `0.0.0aN` 占位系列」。
+    它护的是发版**之前**的命名约定，一旦真的定版就必然自证为红 —— 而 1.0.0 就是
+    在这条红灯下发布出去的（见 `docs/记录/事故/`）。把「约定」当「事实」校验，
+    红的那天没人分得清是代码错了还是约定过期了。
+
+    现在的判据回到这条测试的本意（原 docstring 自己写着「两处各写一个版本号迟早
+    对不上，而没人会在发布前发现」）：**两处必须相等**，版式交给 PEP 440。
+    """
+    declared = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]["version"]
+    assert __version__ == declared, (
+        f"包内 __version__={__version__!r} 与 pyproject 的 version={declared!r} 不一致；"
+        "发布物元数据会以 pyproject 为准，用户看到的是另一个版本号。"
+    )
+    assert not __version__.startswith("0.0.0a"), (
+        "占位版本系列已在 1.0.0 终止；回退到 0.0.0aN 会让 PyPI 上出现倒序版本。"
+    )
 
 
 def test_no_arguments_prints_help_and_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
