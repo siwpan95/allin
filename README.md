@@ -107,7 +107,7 @@ allin tools auto-flow --with-platform # 追加 platform check/test/harness
 allin tools auto-flow --json          # 机读输出
 ```
 
-全程只读或本地留痕（结果落 `tools/gate/audit/auto-flow-runs.jsonl`，已 gitignore），
+全程只读或本地留痕（结果落 `tools/gate/audit/` 下的 `auto-flow-runs.jsonl`，运行时产物、已 gitignore），
 **绝不 push / 建仓 / 自提交** —— 高风险动作仍须人在场逐项放行（SPEC-001 铁律 3）。
 汇总行 `ALLIN_AUTO_FLOW_SUMMARY status=clean|finding ... not_applicable=N` 是机器判定
 准出；门禁的 `incomplete`（SKIP）按 finding 透传，不冒充通过。发版专属的两项
