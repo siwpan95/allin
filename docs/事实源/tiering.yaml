@@ -405,6 +405,8 @@ tiering:
   domain: 原型/学习/杂项
   tier: ③收敛合并
   action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: dev-toolkit
   note: 原型/学习/杂项
 - repo: auto_clicker
@@ -559,6 +561,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: fish
@@ -573,6 +577,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: happy-childrens-day
@@ -629,6 +635,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: maga
@@ -678,6 +686,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: russia
@@ -699,6 +709,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: smile
@@ -720,6 +732,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: text-adventure
@@ -741,6 +755,8 @@ tiering:
   domain: 游戏作品
   tier: ③收敛合并
   action: 收敛合并：迁入 game-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: game-prototypes
   note: 游戏作品
 - repo: yuanbao
@@ -804,6 +820,8 @@ tiering:
   domain: 视频/图像/特效
   tier: ③收敛合并
   action: 收敛合并：迁入 media-prototypes（保留 git 历史），原仓冻结
+  retired_at: 2026-11-24
+  retired_note: README 带「已归档—仅作参考」标记且接任仓远端 archive 分支实测存在；gitee/本地/GitHub 三侧已删（交接卷 §197.5）
   archive_target: media-prototypes
   note: 视频/图像/特效
 - repo: media-tools
@@ -869,6 +887,8 @@ tiering:
   action: 收敛合并：已退役（2026-10-28 README 退役横幅），0–100 轴规则被主仓 counter 模型取代；内容已并入 `sin-virtue-cordis-host`（cards→`plugins/cards.js`、前端→`public/runner.html`）
   archive_target: sin-virtue-cordis-host
   note: 已退役；2026-10-29 目录已实际移入归档区（目录名 `sin-virtue-game-retired-20261029`，盘符随机器），30
+  retired_at: 2026-11-24
+  retired_note: gitee 早于本轮已 404、本地无检出；2026-11-24 GitHub 侧删除前先克隆留档（4d5d132 / 2 提交）并 `git bundle --all` + verify 通过，再 DELETE 并匿名复核 404（交接卷 §197.7）
     文件 / HEAD `4d5d132` / `fsck` 通过；归档区唯一落点见 `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md` §2.2，历史保全
 - repo: music-prompt-generator
   seq: 124

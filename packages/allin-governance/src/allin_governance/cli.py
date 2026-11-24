@@ -140,6 +140,20 @@ def _cmd_deps(argv: list[str]) -> int:
     return deps_doctor.main(argv)
 
 
+def _cmd_github(argv: list[str]) -> int:
+    """GitHub 建仓/推送/三端巡检（gitee 为权威，单向 gitee → 本地 → GitHub）。
+
+    子命令：whoami|list|create|public|remote|push|verify|sync（github_release.py）
+    三端巡检：传 github-sync <list|pull|drift|sync> 走 sync_repos.py。
+    令牌走 GITHUB_TOKEN 环境变量或 Windows GCM；工具本身不打印、不入库。
+    """
+    from ._github import github_release, sync_repos
+
+    if argv and argv[0] == 'github-sync':
+        return sync_repos.main(argv[1:])
+    return github_release.main(argv)
+
+
 #: 子命令表。新增能力只需在这里加一行，**不要**新开一个顶层入口点。
 SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "repocheck": ("离线仓库体检：30 条规则，给出 0-10 健康分与 error/warn/info 三级问题", _cmd_repocheck),
@@ -147,6 +161,7 @@ SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "verify": ("复核 init 生成的套装快照是否仍与 GENERATED.json 记载的一致", _cmd_verify),
     "scan": ("发布区扫盘：项目指纹 / 重复检出 / 迁移残留（只报告不处置）", _cmd_scan),
     "deps": ("依赖体检：requirements 声明 · 解释器实装 · 仓内 import 三者对账", _cmd_deps),
+    "github": ("GitHub 建仓/推送/三端巡检（gitee 为权威）；github-sync 子命令走巡检器", _cmd_github),
 }
 
 

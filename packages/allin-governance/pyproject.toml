@@ -85,12 +85,16 @@ packages = [
   # `No module named 'allin_governance._toolkit.pytrunner'`。
   # allin-toolkit 那次（calculator/calculator/）也是同一个坑。
   "allin_governance._toolkit.pytrunner",
+  # GitHub 建仓 / 三端巡检（2026-11-24）：仓内真身在 tools/github/，
+  # 由 package-dir 映射进来，**不复制源码**（与 _repocheck 同一纪律）。
+  "allin_governance._github",
 ]
 
 [tool.setuptools.package-dir]
 "allin_governance" = "src/allin_governance"
 "allin_governance._toolkit" = "../../tools/_shared"
 "allin_governance._toolkit.pytrunner" = "../../tools/_shared/pytrunner"
+"allin_governance._github" = "../../tools/github"
 # 指向仓内真身：一份源码，两处消费（仓内 tools/repocheck + 包内 _repocheck）
 "allin_governance._repocheck" = "../../tools/repocheck"
 "allin_governance._gatesuite" = "../../tools/gate/governance"

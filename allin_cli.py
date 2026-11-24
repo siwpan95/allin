@@ -66,12 +66,16 @@ def dispatch(args) -> object:
         svc = ctx.tools
         parts = [a for a in args.args if a != '--']
         if not parts:
-            print('用法: allin tools <gitee-release|credential|venv-audit|skills> ...')
+            print('用法: allin tools <gitee-release|github-release|github-sync|credential|venv-audit|skills> ...')
             return 1
         tool = parts[0]
         rest = parts[1:]
         if tool == 'gitee-release':
             return svc.gitee_release(rest)
+        if tool == 'github-release':
+            return svc.github_release(rest)
+        if tool == 'github-sync':
+            return svc.github_sync(rest)
         if tool == 'credential':
             name = rest[0] if rest else 'gitee'
             action = rest[1] if len(rest) > 1 else 'get'

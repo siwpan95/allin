@@ -247,7 +247,7 @@ def run_on(root: Path, quiet: bool = False) -> int:
             f"check_readme_refs：干净（R1 {len(seen)} 个仓内路径引用全部存在；"
             f"R2 判定面 {len(docs)} 份文档，集合相等口径 mentioned ⊆ {{{pkg_version}}} "
             f"违例文档 {per_doc} 份；门面 {README_REL} 必须包含真值 = "
-            f"{pkg_version in extract_versions(readme_text)}）。"
+            f"{pkg_version in extract_versions(readme_text, pkg_version)}）。"
         )
     return 0
 

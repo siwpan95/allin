@@ -4,3 +4,10 @@
 # 声明即负债：P0-4 之后每条都要补审批人与到期日，过期自动转红。
 deepseek-harness-master | 上游 DeepSeek Harness 的源码快照（无 origin，非本工作区项目），仅作阅读与参照
 calculator | 本机检出但尚未纳入工作区组合治理的临时仓（2026-11-08 深度审核发现）；声明为缺口而非静默豁免，待维护者确认后补 registry 条目或删除
+# 2026-11-24 已结案（原 9 条缺口声明移除）：
+# diablo / god-hand- / lonely-desert-road / mathematical-formula-renderer /
+# random-dungeon- / sign-in-simulator / table-hanging-machine / test / under-withered-limbs
+# 全哥裁决：这 9 仓 README 均带「已归档（Archived — 仅作参考）」标记，指明已迁入
+# game-prototypes / media-prototypes / dev-toolkit 且远端 refs/heads/archive/<name>
+# 分支实测存在 ⇒ 独立入口属冗余，与 58 个冻结仓同性质，三侧（gitee/本地/GitHub）已删除。
+# 不再是缺口，故从本文件移除；删除证据见交接卷 §197.5。

@@ -135,7 +135,7 @@ pip install allin-governance[full]      # 加严格校验的附加依赖
 
 ## 状态
 
-**`1.0.0` —— 第一个正式版**（2026-11-24）。此前从 a0 到 a10 是占位/预发布系列：
+**`1.0.1` —— 当前版本**（2026-11-24，GitHub 巡检随包）；`1.0` 第一个正式版（同日）。此前从 a0 到 a10 是占位/预发布系列：
 a0 先占住 `allin-governance` 这个名字，
 a1 修掉 a0 在 cp1252 控制台上的崩溃（中文输出未钉编码），
 a2 加 `verify` 子命令与 `init --with-exceptions`，并把 sdist 修成自包含（物化构建），
@@ -157,7 +157,7 @@ a9 两个工具真正进 wheel：新增 `scan`（发布区扫盘）与 `deps`（
 跨仓依赖（gen_third_party_notices）已内联；并入 py_test_runner 的探针内核。
 a10 修 a9 的发布缺陷：测试规则族在包装版里不可用（嵌套子包 `_toolkit/pytrunner` 未声明进
 `packages`，加双环境 import 路径未处理）。顺带修「环境没装 pytest 被误判成项目测试腐烂」。
-**1.0.0 起承诺**五个子命令（`init` / `repocheck` / `verify` / `scan` / `deps`）的名字与
+**1.0 起承诺**五个子命令（`init` / `repocheck` / `verify` / `scan` / `deps`）的名字与
 退出码语义在 1.x 内不变；规则集只增不减，旧规则 id 的含义不改。形态演进见 allin 仓的
 [`REC-AU-21`](https://gitee.com/siwpan/allin/blob/master/docs/记录/审计/allin自身做大做强方向修正_2026-10-31.md)
 与 [`CHANGELOG`](https://gitee.com/siwpan/allin/blob/master/CHANGELOG.md)。

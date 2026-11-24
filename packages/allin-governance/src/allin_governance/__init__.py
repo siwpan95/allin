@@ -31,7 +31,8 @@ __all__ = ["__version__"]
 #:               → profile 预设 → 工具随包分发 → 嵌套子包/双环境 import 修复。
 #:   1.0.0        第一个正式版，冻结五个子命令名与 0/1/2/3 退出码语义。
 #:                **该版 sdist 装不上**（跨目录映射未物化，见 docs/记录/事故/）。
-#:   1.0.1        同日由仓外另一次构建发布（含物化 sdist，可安装），但**不含**下述修正。
-#:   1.0.2        缺陷线的收口版：`verify` 拒绝越界清单、license 改 SPDX、
-#:                新增 release_preflight 与 sdist 自包含回归测试、版本护栏改单一来源。
+#:   1.0.1        同日另一条工作线发布：物化 sdist（可安装）+ 新增 `github` 子命令与
+#:                `_github` 包映射；**不含**本线的 verify 越界防线 / SPDX 元数据 / 回归测试。
+#:   1.0.2        本线收口：`verify` 拒绝越界清单、license 改 SPDX、新增 release_preflight
+#:                与 sdist 自包含回归测试、版本护栏改单一来源。
 __version__ = "1.0.2"

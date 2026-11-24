@@ -5,22 +5,23 @@
 
 ## `allin-governance` 1.0.2 —— 2026-11-24
 
-**1.0.0 缺陷线的收口版。** 1.0.1 已修掉「sdist 装不上」，但那一版是同日**另一次构建**
-发布的，不含下面这几项；本版把剩下的补齐。
+**1.0.0 缺陷线的收口版。** 1.0.1 已把 sdist 物化修好（109 文件、实测可装）并随包分发
+`github` 子命令；本版补齐同一缺陷线上剩下的几项。
 
 ### 与已发布的 1.0.1 的差别（实测口径）
 
 | 项 | 1.0.1（已发布） | 1.0.2（本版） |
 |---|---|---|
-| sdist 自包含 | ✅（109 条目 / 80 项映射树，实测装得上） | ✅（preflight 逐棵核对） |
+| sdist 自包含 | ✅ 109 条目 / 80 项映射树，干净 venv 装得上 | ✅ preflight 逐棵核对 |
+| `github` 子命令 | ✅ 随包分发 | ✅ 保留，本版未改动 |
 | `verify` 拒绝越界清单 | ❌ 清单里 `..` 仍会读仓外文件并回「快照未被改动」 | ✅ fail closed（exit 3）+ 回归用例 |
 | license 元数据 | ❌ `license = { text = … }`（setuptools 77 起弃用） | ✅ SPDX 表达式 + `license-files` |
 | 发版前置校验 | ❌ 无 | ✅ `scripts/release_preflight.py`（`--install` 双产物各装一次） |
 | sdist 自包含回归测试 | ❌ 无 | ✅ `tests/test_dist_artifacts.py` |
 | 版本护栏 | ❌ 仍断言「必须是 `0.0.0aN`」 | ✅ 改为 pyproject ↔ `__init__` 对账 |
 
-> 为什么不是「重传 1.0.1」：PyPI 的版本号不可覆盖也不可删除。1.0.1 已被占用且内容与
-> 本仓当前树不同，只能顺延。
+> 为什么不是「重传 1.0.1」：PyPI 的版本号不可覆盖也不可删除。1.0.1 已被占用，
+> 内容与本仓当前树不同，只能顺延。
 
 ### 验证（本机 `@SIWPAN`，2026-11-24）
 
@@ -30,53 +31,17 @@
 
 ## `allin-governance` 1.0.1 —— 2026-11-24
 
-> ⚠ **事后订正（同日）**：本版由仓外另一次构建发布，**不含**下面「1.0.1 改了什么」里
-> 第 2–5 项（`verify` 越界防线、SPDX 元数据、回归测试、版本护栏）。那四项实际由
-> 上方 `1.0.2` 承载。原文保留，方便对照计划与实物。
+**GitHub 建仓推送 + 三端增量巡检随包分发**（gitee 远端为权威源）。
 
-**修 1.0.0 的一个发布缺陷：sdist 装不上。** wheel 不受影响。
-
-### 缺陷实况
-
-`pip install allin_governance-1.0.0.tar.gz` 在任何机器上都失败：
-
-```
-error: package directory '..\..\tools\repocheck' does not exist
-```
-
-原因不是代码，是**构建路径**：`pyproject.toml` 用跨目录 `package-dir` 把
-`tools/repocheck`、`tools/gate/governance`、`tools/_shared` 映射进包内，这套映射对
-wheel 有效，**对 sdist 无效**（setuptools 不收项目根之外的文件）。sdist 里那 6 棵
-映射树一棵都没有，而 `package-dir` 仍指向 `../../tools/...` ⇒ 解包后连构建都过不了。
-
-为什么当初没发现：`twine check` 只判元数据（PASSED），干净 venv 验的是 **wheel**
-（能跑）。两条检查各自都绿，缺的那条恰好是「从 sdist 装一次」。
-仓内 `scripts/build_dist.py` 的文档注释**早就写明**这个坑与物化流程 —— 1.0.0 是在
-没走那个脚本的情况下构建的。
-
-### 1.0.1 改了什么
-
-| # | 改动 | 为什么 |
-|---|---|---|
-| 1 | 新增 `scripts/release_preflight.py` | 把「版本一致 / dist 干净 / sdist 自包含 / twine check / 干净 venv 装 sdist+wheel 并跑五个子命令」固化成一条命令，`--install` 才是能判出本缺陷的那个实验 |
-| 2 | 新增 `tests/test_dist_artifacts.py` | 把 sdist 自包含写成回归判据：只要 `dist/` 里有当前版本的 sdist，就逐棵核对映射树、并核对 `package-dir` 已物化 |
-| 3 | 版本护栏改为单一来源对账 | 原测试断言「版本号必须是 `0.0.0aN` 占位系列」，与 1.0.0 直接冲突 ⇒ 1.0.0 是在**测试变红**的状态下发出去的。新判据是 `pyproject == __init__`（原 docstring 自己说的「两处不许对不上」），版式交给 PEP 440 |
-| 4 | `license` 改 SPDX 表达式、去掉 license 分类器 | setuptools 77 起两种旧写法均弃用，每次构建打两条告警；告警长期存在 = 真告警被忽略 |
-| 5 | 构建下限 `setuptools>=68` → `>=77` | 支撑第 4 条的 PEP 639 字段 |
-
-### 验证（本机 `@SIWPAN`，2026-11-24）
-
-- `python scripts/release_preflight.py --install` → `PREFLIGHT ok=8 fail=0 skip=0` / `RESULT: CLEAN`
-- **判据能判红**（负对照）：把 1.0.1 的 sdist 人为摘掉 `_repocheck/` 再跑，得到
-  `[FAIL] sdist 自包含  缺映射树：allin_governance._repocheck` + `RESULT: BLOCKED`；
-  同一次里 `twine check` 仍是 `[ok]` —— 这正是 1.0.0 当初「全绿却装不上」的成因
-- sdist 在**与仓无关**的 venv 里装成功，`--version` / `repocheck` / `scan` / `deps` / `verify` / `init --dry-run` 全 exit 0
-- 对照：PyPI 上的 `1.0.0` sdist 在同一条命令下 `exit 1`（`package directory ... does not exist`）—— 判据确实能判红
-
-### 升级建议
-
-从 1.0.0 装过的人**不需要动**（wheel 是好的）；依赖 sdist 的场景（`--no-binary`、
-无 wheel 的平台、离线镜像）请升到 1.0.1。
+- 新增 `github` 子命令：`allin-governance github <whoami|list|create|public|remote|push|verify|sync>`，
+  以及 `allin-governance github github-sync <list|pull|drift|sync>`（三端巡检）。
+- 令牌纪律：优先 `GITHUB_TOKEN` 环境变量，否则 Windows GCM `git credential fill(host=github.com)`；
+  **不指向令牌文件、不回显、不入库**。
+- 权威关系单向：**gitee 远端 → 本地 → GitHub**；不向 gitee 推送（原 pushorigin 废止，改为只读 `drift`）。
+- 判据按 GitHub 平台差异实现（先私后公、SSH 通道、shallow 补全、5000/h 主限流 + 次级退避），
+  **不照搬 Gitee 的 `public` 整数 / 空仓 PATCH / 保守退避口径**。
+- 修 `verify` 的 ref 格式错配假红（本地 `refs/...` vs 远端去前缀 `heads/...`），修后单仓实测 `[SKIP] 无差异`。
+- 修 `check_readme_refs` 正式版摘要显示 bug（`extract_versions` 未传 actual，导致明明含真值却显示 False）。
 
 ## `allin-governance` 1.0.0 —— 2026-11-24
 
