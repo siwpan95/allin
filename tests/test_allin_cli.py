@@ -38,6 +38,10 @@ class _FakeService:
         self.calls.append(("venv_audit", list(rest)))
         return self.ret
 
+    def auto_flow(self, rest):
+        self.calls.append(("auto_flow", list(rest)))
+        return self.ret
+
     def skills(self):
         self.calls.append(("skills",))
         return self.ret
@@ -219,6 +223,12 @@ def test_dispatch_tools_credential_explicit(fake_ctx):
 def test_dispatch_tools_venv_audit(fake_ctx):
     rc = allin_cli.dispatch(argparse.Namespace(domain="tools", args=["venv-audit", "scan", "x"]))
     assert fake_ctx.tools.calls[-1] == ("venv_audit", ["scan", "x"])
+
+
+def test_dispatch_tools_auto_flow(fake_ctx):
+    rc = allin_cli.dispatch(argparse.Namespace(domain="tools", args=["auto-flow", "--quick", "--json"]))
+    assert rc == 0
+    assert fake_ctx.tools.calls[-1] == ("auto_flow", ["--quick", "--json"])
 
 
 def test_dispatch_tools_skills(fake_ctx):

@@ -114,6 +114,9 @@ allin docs aliases
 allin tools gitee-release -- status --name <仓>
 allin tools credential gitee get
 allin tools venv-audit scan <根>    # GHSA-6q48-6c7w-9gw2 CA 证书巡检
+allin tools auto-flow [--quick|--with-platform|--no-fetch|--json]
+                                # 全流程自动推进（定时任务入口）：同步核对 → 门禁 → 发版预检 → 状态汇总
+                                # 只读/本地留痕，绝不 push；汇总行 ALLIN_AUTO_FLOW_SUMMARY 供机器判定
 allin tools skills
 allin platform check-repos         # 注册表审计
 allin platform registry-count

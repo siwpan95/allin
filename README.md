@@ -96,6 +96,23 @@ python tools/repocheck/main.py <目录>   # 离线仓库体检（无参数 = GUI
 **统一命令行入口**：经 [`allin.bat`](allin.bat)（或仓内 venv 的 python）运行
 [`allin_cli.py`](allin_cli.py)，子命令为 `tools` / `docs` / `platform` / `preset` / `status`。
 
+**全流程自动推进（定时任务入口）**：`allin tools auto-flow` 把「同步核对 → 门禁全跑 →
+发版预检 → 状态汇总」串成一条可重入命令，供 WorkBuddy automation 等无人值守调度调用：
+
+```bash
+allin tools auto-flow                 # 全流程
+allin tools auto-flow --quick         # 快跑：同步核对 + 状态汇总
+allin tools auto-flow --with-platform # 追加 platform check/test/harness
+allin tools auto-flow --json          # 机读输出
+```
+
+全程只读或本地留痕（结果落 `tools/gate/audit/auto-flow-runs.jsonl`，已 gitignore），
+**绝不 push / 建仓 / 自提交** —— 高风险动作仍须人在场逐项放行（SPEC-001 铁律 3）。
+汇总行 `ALLIN_AUTO_FLOW_SUMMARY status=clean|finding ... not_applicable=N` 是机器判定
+准出；门禁的 `incomplete`（SKIP）按 finding 透传，不冒充通过。发版专属的两项
+（twine check / `--install` 安装实测）在无人值守场景记为 `not_applicable` 单列，
+既不判红、也不声称已验证 —— 发版前仍须人在场跑 `release_preflight.py --install`。
+
 **平台门户**：按需启动（默认 `PORT=0`，由系统分配临时端口；固定端口 9000 已在 [`docs/事实源/ports.yaml`](docs/事实源/ports.yaml) 记为 `status: retired`，仅手动模式可选）；
 website 默认端口 9042，同样以 ports.yaml 登记为准。
 

@@ -134,6 +134,20 @@ class ToolService(Service):
             env['GITHUB_TOKEN'] = tok
         return _run(cmd, cwd=ROOT, env=env)
 
+    # ---- 全流程自动推进（定时任务单一入口）----
+    def auto_flow(self, args):
+        """调度 tools/auto_flow.py：同步核对 + 门禁 + 发版预检 + 状态汇总。
+
+        零三方依赖、可重入、退出码语义与治理门禁一致。全程只读或本地留痕，
+        绝不 push / 建仓 / 自提交 —— 高风险动作仍需人在场逐项放行。
+        用法：allin tools auto-flow [--quick] [--with-platform] [--no-fetch] [--json]
+        """
+        tool = os.path.join(TOOLS_DIR, 'auto_flow.py')
+        if not os.path.isfile(tool):
+            raise FileNotFoundError(f'全流程工具不存在: {tool}')
+        cmd = [sys.executable, tool] + list(args)
+        return _run(cmd, cwd=ROOT)
+
     # ---- 已吸收的技能：列出可被内核调度的技能清单 ----
     def skills(self):
         skill_dir = os.path.join(ROOT, '.workbuddy', 'skills')

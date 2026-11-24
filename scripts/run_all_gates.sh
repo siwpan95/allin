@@ -484,7 +484,7 @@ run "$PY" -m pytest tools/repocheck/test_scanner.py -q
 # ⑥ P1（2026-11-10 深度审计 H-2 / H-4）：CLI 与服务层退出码、治理门禁严格模式
 #    SKIP 的两组回归。此前 tests/test_allin_cli.py 的 42 个用例从未进跑批，
 #    正是「测试写了不跑 = 没有测试」的同一类缺口，一并接入。
-run "$PY" -m pytest tests/test_allin_cli.py tests/test_gate_strict_skip.py -q
+run "$PY" -m pytest tests/test_allin_cli.py tests/test_gate_strict_skip.py tests/test_auto_flow.py -q
 # ⑥ P2（2026-11-10 深度审计）：本轮新增回归，同样按「写了不跑 = 没有测试」接入。
 #   分三组：安全可靠性（#13-16/22）、跨模块性能与收敛（#17-19）、纯函数单测（#21）+
 #   vendored 归档边界（M-2）+ 超时单一事实源（#20）。facts 相关用例全部子进程隔离，
