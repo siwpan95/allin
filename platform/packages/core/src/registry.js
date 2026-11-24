@@ -397,12 +397,77 @@ function registrySignature(dir) {
       parts.push(`${f}:missing`)
     }
   }
+  // 观测态也进签名：否则「重扫一次、observed/ 变了」会读到旧缓存，
+  // 表现是「扫描明明写了，读出来还是上一版」—— 比慢一点糟得多。
+  const obsDir = path.join(dir, '..', 'observed')
+  let obsFiles = []
+  try {
+    obsFiles = fs.readdirSync(obsDir).filter((f) => f.endsWith('.json')).sort()
+  } catch {
+    parts.push('observed:absent')
+    return parts.join('|')
+  }
+  for (const f of obsFiles) {
+    try {
+      const st = fs.statSync(path.join(obsDir, f))
+      parts.push(`obs/${f}:${st.mtimeMs}:${st.size}`)
+    } catch {
+      parts.push(`obs/${f}:missing`)
+    }
+  }
   return parts.join('|')
 }
 
 function cloneRegistryResult(r) {
   // structuredClone 保留 Map（ports）与 Date（YAML 时间戳），且不共享引用。
   return structuredClone(r)
+}
+
+/**
+ * 读取**观测态**（扫描产出），与声明态 `projects/*.yaml` 平级：`<dir>/../observed/*.json`。
+ *
+ * 分域理由（2026-11-24，三层切分 P2）：声明态是人写的真相，观测态是机器现场采集，
+ * 两者的生命周期完全不同 —— 声明态要评审、要追溯；观测态随时可重生、可丢弃。
+ * 此前 `discover_repos.mjs --apply` 直接往 `projects/` 写新 YAML，于是机扫条目混进
+ * 人工目录（现存 82 条里 8 条无 `manual: true` 就是这么来的），只能靠
+ * 「文件已存在就跳过」避免覆盖 —— 靠运气。现在机扫产物落 observed/（不入库），
+ * 人工目录永远只装人手写的东西。
+ *
+ * 目录不存在 = 没有观测态（干净检出 / CI 常态），**不是错误**：返回空 Map。
+ */
+function loadObserved(dir) {
+  const obsDir = path.join(dir, '..', 'observed')
+  const map = new Map()
+  let files = []
+  try {
+    files = fs.readdirSync(obsDir).filter((f) => f.endsWith('.json'))
+  } catch {
+    return map
+  }
+  for (const f of files.sort()) {
+    try {
+      const o = JSON.parse(fs.readFileSync(path.join(obsDir, f), 'utf8'))
+      if (o && typeof o.id === 'string' && o.id) map.set(o.id, o)
+    } catch {
+      // 单条坏文件不污染整份注册表：跳过即可（观测态是**可再生**的，坏了下一次扫描覆盖）
+    }
+  }
+  return map
+}
+
+/**
+ * 声明态 ⊕ 观测态合并。**人工永远优先**：声明态给了的值一律不覆盖，
+ * 观测态只补声明态没有的字段（即「这个仓被扫描到了，人手还没登记」这种情形）。
+ * 合并后的条目带 `_origin`：`declared` / `observed`，让消费方看得见来源。
+ */
+function mergeObserved(entry, obs) {
+  if (!obs) return { ...entry, _origin: 'declared' }
+  const out = { ...obs, ...entry }  // 人工在右 ⇒ 同名键人工胜
+  if (obs.publish || entry.publish) {
+    out.publish = { ...(obs.publish || {}), ...(entry.publish || {}) }
+  }
+  out._origin = 'observed+declared'
+  return out
 }
 
 /**
@@ -423,12 +488,14 @@ function loadRegistryUncached(dir) {
   const ports = loadPorts()
   const entries = []
   const problems = []
+  const observed = loadObserved(dir)
   let files = []
   try {
     files = fs.readdirSync(dir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'))
   } catch (e) {
+    // 不 early-return（2026-11-24 修）：声明态目录缺失/不可读时，观测态仍要被读出来 ——
+    // 否则「新机器上还没写任何人手条目、但扫描已经跑过」这种形态会静默变成空注册表。
     problems.push(`registry dir 不可读: ${dir} (${e.message})`)
-    return { entries, problems }
   }
   for (const f of files.sort()) {
     let entry
@@ -441,7 +508,28 @@ function loadRegistryUncached(dir) {
     if (!entry || typeof entry !== 'object') { problems.push(`${f}: 空清单`); continue }
     const errs = validateEntry(entry, ports)
     if (errs.length) problems.push(`${f}: ${errs.join('; ')}`)
-    entries.push({ ...entry, _file: f, _valid: errs.length === 0 })
+    const obs = observed.get(entry.id)
+    if (obs) observed.delete(entry.id)  // 声明态已覆盖这条观测，不再单独计入
+    entries.push({ ...mergeObserved(entry, obs), _file: f, _valid: errs.length === 0 })
+  }
+  // 只在观测态出现的条目 = 扫到了、人手还没登记。仍要进 entries，
+  // 否则 g17 的「未登记仓」判据永远看不见它们（等于把发现藏起来）。
+  //
+  // 校验口径与声明态**不同**：观测态天生没有人工语义（name/category/version/note…），
+  // 拿 validateEntry 那套 REQUIRED 去判它，等于要求扫描器凭空造出人写的字段。
+  // 对它只判「机器字段合不合规」；缺人工语义这件事由 g17 以「未登记」形式报，
+  // 一个事实一个出口，别在两层里重复计数。
+  const OBSERVED_REQUIRED = ['id', 'path']
+  for (const [id, obs] of observed) {
+    const errs = []
+    for (const k of OBSERVED_REQUIRED) {
+      if (obs[k] === undefined || obs[k] === null || obs[k] === '') errs.push(`missing required field: ${k}`)
+    }
+    if (obs.path) {
+      for (const problem of pathProblems(obs.path)) errs.push(`path ${problem}`)
+    }
+    if (errs.length) problems.push(`observed/${id}.json: ${errs.join('; ')}`)
+    entries.push({ ...obs, _origin: 'observed', _file: `observed/${id}.json`, _valid: errs.length === 0 })
   }
   const seen = new Set()
   for (const e of entries) {

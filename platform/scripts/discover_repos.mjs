@@ -267,6 +267,36 @@ function displayName(dir, fallback) {
 }
 
 /** 生成完整可入库 YAML：所有字段来自实际扫描，探测不到入口的仓不生成。 */
+/**
+ * 扫描候选 → **观测态对象**（2026-11-24 P2 分域）。
+ *
+ * 与 `buildEntryYaml` 同一份探测逻辑、同一批字段，区别只在**去向**：
+ * 人工目录 `registry/projects/` 从此只装人手写的条目；机扫产物落
+ * `registry/observed/<id>.json`（不在版本库 —— 它是可再生的现场快照）。
+ *
+ * 为什么原先的 `--apply` 是个坑：它直接往人工目录写 YAML，靠「文件已存在就跳过」
+ * 避免覆盖人手写的内容。这等于用运气代替边界 —— 一旦有人改了文件名或删了条目，
+ * 下一次扫描就会把人写的语义盖成 `category: unclassified` / `version: 0.0.0`。
+ */
+function buildObservedObject(name, localSet) {
+  if (!localSet.has(name)) return null  // 只有远端、无本地目录 ⇒ 探测不到入口，交人工
+  const dir = path.join(REPOS_ROOT, name)
+  const launch = detectLaunch(dir)
+  if (!launch) return null
+  const gi = gitInfo(dir)
+  return {
+    id: name,
+    path: `repos/${name}`,
+    checkout: 'local',
+    launch: { command: launch.command },
+    publish: { repo: gi.repo || `${OWNER}/${name}`, branch: gi.branch },
+    _origin: 'scan',
+    _scanned_at: new Date().toISOString(),
+    _note: `discover_repos.mjs 机扫产出；launch 来自 ${launch.basis} 探测，publish 来自 git remote。` +
+      '人工语义（name/category/version/note/verify…）只能由人写进 registry/projects/。',
+  }
+}
+
 function buildEntryYaml(name, localSet, remoteSet) {
   const isLocal = localSet.has(name)
   if (!isLocal) return null // 只有远端、无本地目录 ⇒ 无法探测入口，交由人工
@@ -550,11 +580,15 @@ for (const name of candidates) {
 let written = 0
 let skipped = 0
 if (APPLY) {
-  fs.mkdirSync(REGISTRY, { recursive: true })
+  // 写**观测态**目录，不写人工目录（见 buildObservedObject 的说明）。
+  const OBSERVED_DIR = process.env.PLATFORM_OBSERVED_DIR || path.join(__dirname, '..', 'registry', 'observed')
+  fs.mkdirSync(OBSERVED_DIR, { recursive: true })
   for (const g of generated) {
-    const target = path.join(REGISTRY, `${g.name}.yaml`)
-    if (fs.existsSync(target)) { skipped++; continue }
-    fs.writeFileSync(target, g.yaml, 'utf8')
+    const obj = buildObservedObject(g.name, local)
+    if (!obj) { skipped++; continue }
+    const target = path.join(OBSERVED_DIR, `${g.name}.json`)
+    // 观测态允许覆盖：它就是「本次扫描看到的样子」，不存在需要保护的人工语义。
+    fs.writeFileSync(target, JSON.stringify(obj, null, 2) + '\n', 'utf8')
     written++
   }
 }
@@ -734,7 +768,7 @@ if (flag('--json')) {
   for (const r of retiredLocal) console.log(`   ${r.name}: ${r.reason}`)
   console.log(`注：本机未检出中 ${excused} 条为墓碑 / checkout:remote-only 豁免；仓内条目 ${internal.length} 条不进差集。`)
   console.log(`-- 扫描登记：可生成 ${generated.length} 条 / 需人工 ${needsManual.length} 条` +
-    (APPLY ? ` / 已写入 ${written} 条 / 跳过已存在 ${skipped} 条` : '（dry-run，加 --apply 写盘）'))
+    (APPLY ? ` / 已写入 observed/ ${written} 条 / 探测不到入口交人工 ${skipped} 条` : '（dry-run，加 --apply 写盘）'))
   for (const n of needsManual) console.log(`   需人工 ${n.name}: ${n.reason}`)
   if (audit) {
     console.log(`-- 全量扫描登记（跑满本机 ${audit.counts.scanned_local_repos} 仓）--`)

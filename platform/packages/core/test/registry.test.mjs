@@ -342,3 +342,49 @@ test('M-7 回归：pathCheckMode 自动检测 memoize，逐 entry 不再重扫�
     invalidateRegistryCache()
   }
 })
+
+// ── 2026-11-24 P2 分域：观测态（机扫）与声明态（人写）分家 ──────────────────
+// 锁两件事：① 观测态条目能被合并读出且**不被**人工语义的 REQUIRED 误判；
+//          ② 声明态目录缺失时，观测态不被静默丢弃（曾因 early-return 丢过）。
+test('loadRegistry: 观测态与声明态合并，人工优先且不缺字段误报', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-obs-'))
+  const projects = path.join(d, 'projects')
+  const observed = path.join(d, 'observed')
+  fs.mkdirSync(projects, { recursive: true })
+  fs.mkdirSync(observed, { recursive: true })
+  // 声明态：人写了语义，path 与观测态一致
+  fs.writeFileSync(path.join(projects, 'alpha.yaml'), [
+    'id: alpha', 'name: 甲', 'category: tool', 'version: 1.0.0', `path: ${EXISTING_DIR}`,
+    'launch:', '  command: python alpha.py',
+  ].join('\n') + '\n', 'utf8')
+  // 观测态：只有机器字段（name/category/version 天生没有）
+  fs.writeFileSync(path.join(observed, 'alpha.json'),
+    JSON.stringify({ id: 'alpha', path: EXISTING_DIR, publish: { repo: 'siwpan/alpha', branch: 'main' } }), 'utf8')
+  fs.writeFileSync(path.join(observed, 'beta.json'),
+    JSON.stringify({ id: 'beta', path: EXISTING_DIR, launch: { command: 'python x.py' } }), 'utf8')
+
+  const r = loadRegistry(projects)
+  const byId = Object.fromEntries(r.entries.map((e) => [e.id, e]))
+  // ① alpha：人工语义保留（name 来自声明态），机器字段由观测态补
+  assert.equal(byId.alpha.name, '甲')
+  assert.equal(byId.alpha.publish?.repo, 'siwpan/alpha')
+  assert.equal(byId.alpha._origin, 'observed+declared')
+  // ② beta：只在观测态 ⇒ 进 entries（否则「未登记仓」永远看不见），且不算 problem
+  assert.equal(byId.beta._origin, 'observed')
+  assert.equal(byId.beta._valid, true, '观测态缺人工语义不是错误')
+  assert.deepEqual(r.problems, [], '观测态条目不许产生字段缺失噪声')
+})
+
+test('loadRegistry: 声明态目录缺失时观测态不被丢弃（early-return 回归）', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-obs2-'))
+  const observed = path.join(d, 'observed')
+  fs.mkdirSync(observed, { recursive: true })
+  fs.writeFileSync(path.join(observed, 'gamma.json'),
+    JSON.stringify({ id: 'gamma', path: EXISTING_DIR }), 'utf8')
+
+  const r = loadRegistry(path.join(d, 'projects'))  // 故意不建 projects/
+  assert.equal(r.entries.length, 1, '观测态必须被读出来')
+  assert.equal(r.entries[0].id, 'gamma')
+  // 但「声明态目录不可读」这个事实仍要如实上报（fail-loud 不放宽）
+  assert.ok(r.problems.some((p) => p.includes('registry dir 不可读')))
+})
