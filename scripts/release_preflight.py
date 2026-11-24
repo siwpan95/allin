@@ -167,7 +167,7 @@ def check_sdist_self_contained(result: Result, version: str, sdist: Path | None)
         return
     mapping = read_pyproject().get("tool", {}).get("setuptools", {}).get("package-dir", {})
     external = {pkg: path for pkg, path in mapping.items() if str(path).startswith("..")}
-    with tarfile.open(sdist, "r:gz") as tar:
+    with tarfile.open(sdist, "r:gz") as tar:  # gov-python: allow —— 二进制归档，无编码参数
         names = tar.getnames()
         member = tar.extractfile(f"allin_governance-{version}/pyproject.toml")
         inner = tomllib.loads(member.read().decode("utf-8")) if member else {}

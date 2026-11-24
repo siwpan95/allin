@@ -50,7 +50,7 @@ def test_sdist_carries_every_mapped_package_tree() -> None:
     external = {pkg: path for pkg, path in mapping.items() if path.startswith("..")}
     assert external, "pyproject 里没有任何跨目录映射 —— 本测试的前提已变，请复核"
 
-    with tarfile.open(_sdist(), "r:gz") as tar:
+    with tarfile.open(_sdist(), "r:gz") as tar:  # gov-python: allow —— 二进制归档，无编码参数
         names = tar.getnames()
 
     prefix = f"allin_governance-{version}/src/"
@@ -71,7 +71,7 @@ def test_sdist_pyproject_is_materialized() -> None:
     不存在的相对路径 —— 那是 1.0.0 的失败形态（`package directory ... does not exist`）。
     """
     version, _ = _declared()
-    with tarfile.open(_sdist(), "r:gz") as tar:
+    with tarfile.open(_sdist(), "r:gz") as tar:  # gov-python: allow —— 二进制归档，无编码参数
         member = tar.extractfile(f"allin_governance-{version}/pyproject.toml")
         assert member is not None, "sdist 里没有 pyproject.toml"
         data = tomllib.loads(member.read().decode("utf-8"))
