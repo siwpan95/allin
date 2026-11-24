@@ -1,0 +1,23 @@
+feat(facts): 机器事实拆域单源化 —— facts/machine/<机>.json 为真相，facts.json 改派生
+
+机器事实（machines / volumes / runtimes / observation_runs）此前与跨机共识
+（projects / tiering / tools / licenses / ports / facts / doc_refs）同住在
+facts/facts.json 一个文件里：三机共一处、没有归属隔离、无真实性判据 ——
+`volumes.free_gb` 停在 56 天前也没有任何红灯（g20 只判 markdown 分区，
+facts_drift 只做「md 目录数 vs machines 条数」的计数对账）。
+
+改动（plan P2-2 原设计）
+- 新增 facts/machine/<machine_id>.json：每台机一份（SIWPAN / KQABATS / 8RSV60V），
+  该机的 machine 段 + volumes + runtimes + observation_runs —— 铁律 6 的数字版：
+  一机一件，各机只写自己那份
+- 新增 tools/facts/build_machine_index.py：machine/*.json → facts.json 机器段（聚合）
+  · --split 从 facts.json 拆出三份（一次性迁移，已跑）
+  · 默认聚合写入并加 _machine_section_derived: true 标记
+  · --check 只比对（派生滞后或被手改 → exit 1）
+- facts.json 的机器四段改为派生；其余九个键（共识层）不动，仍由 build_*.py 各自投影
+
+验证
+- --split → 三份（SIWPAN 1977B / KQABATS 638B / 8RSV60V 569B）
+- 聚合写入后 --check → machines-sync: clean（3 台机，与 machine/ 聚合一致）
+- verify_facts exit 0（schema 未破，新增键不触 required）
+- 幂等：聚合结果与拆分前原值逐字段一致

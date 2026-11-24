@@ -3,22 +3,14 @@
   "generated_at": "2026-11-09T05:30:00+08:00",
   "machines": [
     {
-      "machine_id": "SIWPAN",
-      "hostname": "SIWPAN",
-      "aliases": [
-        "siwpan"
-      ],
-      "os_caption": "Windows 11 专业版",
-      "os_build": "26100",
-      "cpu": "Intel Core i7-9750H",
-      "ram_gb": 31.9,
+      "machine_id": "DESKTOP-8RSV60V",
+      "hostname": "DESKTOP-8RSV60V",
       "status": "active",
-      "is_primary": true,
-      "observed_at": "2026-10-30",
+      "observed_at": "2026-11-06",
       "observed_by": "tools/facts/measure.py",
-      "evidence_ref": "docs/记录/交接/2026-10.md",
+      "evidence_ref": "docs/记录/交接/2026-11.md §一百三十五",
       "visibility": "public",
-      "valid_from": "2026-10-29",
+      "valid_from": "2026-10-30",
       "valid_to": null
     },
     {
@@ -35,14 +27,22 @@
       "valid_to": null
     },
     {
-      "machine_id": "DESKTOP-8RSV60V",
-      "hostname": "DESKTOP-8RSV60V",
+      "machine_id": "SIWPAN",
+      "hostname": "SIWPAN",
+      "aliases": [
+        "siwpan"
+      ],
+      "os_caption": "Windows 11 专业版",
+      "os_build": "26100",
+      "cpu": "Intel Core i7-9750H",
+      "ram_gb": 31.9,
       "status": "active",
-      "observed_at": "2026-11-06",
+      "is_primary": true,
+      "observed_at": "2026-10-30",
       "observed_by": "tools/facts/measure.py",
-      "evidence_ref": "docs/记录/交接/2026-11.md §一百三十五",
+      "evidence_ref": "docs/记录/交接/2026-10.md",
       "visibility": "public",
-      "valid_from": "2026-10-30",
+      "valid_from": "2026-10-29",
       "valid_to": null
     }
   ],
@@ -2370,5 +2370,6 @@
       "status": "已归档",
       "source_file": "docs/事实源/licenses.yaml"
     }
-  ]
+  ],
+  "_machine_section_derived": true
 }

@@ -1,0 +1,20 @@
+{
+  "schema_version": "0.1.0",
+  "machine": {
+    "machine_id": "DESKTOP-KQABATS",
+    "hostname": "DESKTOP-KQABATS",
+    "os_caption": "Windows 11 家庭版",
+    "os_build": "26300",
+    "status": "active",
+    "observed_at": "2026-11-08",
+    "observed_by": "tools/facts/measure.py",
+    "evidence_ref": "docs/记录/交接/2026-11.md §一百四十四",
+    "visibility": "public",
+    "valid_from": "2026-10-30",
+    "valid_to": null
+  },
+  "volumes": [],
+  "runtimes": [],
+  "observation_runs": [],
+  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**"
+}

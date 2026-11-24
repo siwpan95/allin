@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1.0",
+  "machine": {
+    "machine_id": "DESKTOP-8RSV60V",
+    "hostname": "DESKTOP-8RSV60V",
+    "status": "active",
+    "observed_at": "2026-11-06",
+    "observed_by": "tools/facts/measure.py",
+    "evidence_ref": "docs/记录/交接/2026-11.md §一百三十五",
+    "visibility": "public",
+    "valid_from": "2026-10-30",
+    "valid_to": null
+  },
+  "volumes": [],
+  "runtimes": [],
+  "observation_runs": [],
+  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**"
+}

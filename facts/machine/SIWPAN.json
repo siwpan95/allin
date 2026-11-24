@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "machine": {
+    "machine_id": "SIWPAN",
+    "hostname": "SIWPAN",
+    "aliases": [
+      "siwpan"
+    ],
+    "os_caption": "Windows 11 专业版",
+    "os_build": "26100",
+    "cpu": "Intel Core i7-9750H",
+    "ram_gb": 31.9,
+    "status": "active",
+    "is_primary": true,
+    "observed_at": "2026-10-30",
+    "observed_by": "tools/facts/measure.py",
+    "evidence_ref": "docs/记录/交接/2026-10.md",
+    "visibility": "public",
+    "valid_from": "2026-10-29",
+    "valid_to": null
+  },
+  "volumes": [
+    {
+      "machine_id": "SIWPAN",
+      "letter": "C",
+      "label": "system",
+      "fs": "NTFS",
+      "size_gb": 118,
+      "free_gb": 41,
+      "role": "system",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    },
+    {
+      "machine_id": "SIWPAN",
+      "letter": "D",
+      "label": "dalang",
+      "fs": "NTFS",
+      "size_gb": 405,
+      "free_gb": 326,
+      "role": "workspace",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    },
+    {
+      "machine_id": "SIWPAN",
+      "letter": "E",
+      "label": "erlang",
+      "fs": "NTFS",
+      "size_gb": 407,
+      "free_gb": 389,
+      "role": "data",
+      "observed_at": "2026-10-30",
+      "evidence_ref": "docs/事实源/机器/SIWPAN/SIWPAN.md §2",
+      "visibility": "public"
+    }
+  ],
+  "runtimes": [],
+  "observation_runs": [
+    {
+      "run_id": "OBS-20261109-001",
+      "machine_id": "SIWPAN",
+      "ts": "2026-11-09T05:24:45+08:00",
+      "command": "python tools/facts/measure.py --json",
+      "raw_hash": "sha256:PLACEHOLDER",
+      "adjudicated_by": null,
+      "evidence_ref": null
+    }
+  ],
+  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**"
+}
