@@ -101,6 +101,29 @@ flat 老项目转 PyPI 最常见的坏包形态是**可选依赖耦合**：`rend
 在仓库根 `python -c "import pkg"` 命中本地源码树而非 site-packages（假绿）。
 `cd` 到仓库外 + 打印 `模块.__file__` 确认指向 `site-packages`。
 
+### 4b. sdist 也要单独装一次（2026-11-24 allin-governance 1.0.0 事故）
+
+上面第 1 步历史上只装了 **wheel**。wheel 与 sdist 是两条独立的构建路径，
+尤其当 `pyproject.toml` 用了**跨目录 `package-dir`**（把仓内 `tools/xxx` 映射进包）：
+
+- wheel：跨目录映射有效，源文件被收进 wheel ⇒ 装得上、跑得起来；
+- sdist：setuptools **不收项目根之外的文件** ⇒ 包里没有那些目录，而 `package-dir`
+  仍指向 `../../tools/...` ⇒ `pip install xxx.tar.gz` 直接
+  `error: package directory '..\..\tools\repocheck' does not exist`。
+
+`twine check` 对这两种形态都给 PASSED，所以**它是元数据检查，不是可用性检查**。
+1.0.0 就是这样发出去的：twine check 绿、装 wheel 绿、装 sdist 炸。
+
+必做：
+
+```bash
+# 两个产物各建一个 clean venv，各装一次，各跑一遍真实命令
+python scripts/release_preflight.py --install   # allin 仓内已封装（含五个子命令冒烟）
+```
+
+自己写判据时注意：`dist/` 里同时存在多个版本时，`twine upload dist/*` 会把旧版本
+一起上传（PyPI 对旧文件返回 400 ⇒ 命令失败，但新文件其实已经上去了）。发版前清空。
+
 ## 阶段 5：上传纪律（本技能不执行，仅备忘）
 
 - **429 有两种**：A. 流量限流（短暂冷却）；B. **新建项目配额**（`429 Too many new projects created`，
