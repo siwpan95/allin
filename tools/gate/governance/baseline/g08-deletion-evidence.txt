@@ -1,4 +1,3 @@
 # Baseline ratchet for this gate. One finding key per line.
 # Refresh only after the remaining findings were reviewed in full:
 #   python governance/gates/<gate>.py --no-baseline --list-all
-commit 9d70dfd|8b8eda6a3d1e364c|deletion-without-evidence
