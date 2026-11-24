@@ -86,8 +86,9 @@ tools:
 - tool: auto_clicker
   category: desktop
   purpose: 鼠标连点器（频率 + 随机抖动，热键）
-  registry_id: auto-clicker
-  remote_url: https://gitee.com/siwpan/auto_clicker
+  registry_id: dev-toolkit
+  remote_url: https://gitee.com/siwpan/dev-toolkit
+  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: 已更名
 - tool: daily_player
   category: desktop
@@ -98,8 +99,9 @@ tools:
 - tool: subtitle
   category: desktop
   purpose: 字幕工具（提取/编辑/烧录 SRT，ffmpeg）
-  registry_id: subtitle
-  remote_url: https://gitee.com/siwpan/subtitle
+  registry_id: dev-toolkit
+  remote_url: https://gitee.com/siwpan/dev-toolkit
+  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: pdf
   category: desktop
@@ -112,12 +114,13 @@ tools:
   purpose: 中文字体资源库（数百 TTF/TTC/OTF）+ 字体浏览复制工具
   registry_id: fonts
   remote_url: https://gitee.com/siwpan/fonts
-  status: null
+  status: 非工具（纯字体资源库；2026-11-24 按「发版即工具」口径正名，源码已移入 dev-toolkit 的 non-tools/）
 - tool: print
   category: desktop
   purpose: 中文拼音输入法（本地字典 + 全局键盘钩子）
-  registry_id: print
-  remote_url: https://gitee.com/siwpan/print
+  registry_id: dev-toolkit
+  remote_url: https://gitee.com/siwpan/dev-toolkit
+  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: py_test_runner
   category: dev
@@ -140,8 +143,9 @@ tools:
 - tool: renamer
   category: dev
   purpose: 正则批量重命名 GUI
-  registry_id: renamer
-  remote_url: https://gitee.com/siwpan/renamer
+  registry_id: dev-toolkit
+  remote_url: https://gitee.com/siwpan/dev-toolkit
+  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: requirements
   category: dev
@@ -152,8 +156,9 @@ tools:
 - tool: yasuo
   category: dev
   purpose: 文件加密/压缩工具（zlib/lzma/bz2 + AES-256，算法对比）
-  registry_id: yasuo
-  remote_url: https://gitee.com/siwpan/yasuo
+  registry_id: dev-toolkit
+  remote_url: https://gitee.com/siwpan/dev-toolkit
+  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: allin_engine
   category: game

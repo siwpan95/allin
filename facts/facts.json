@@ -1993,7 +1993,7 @@
     {
       "tool": "auto_clicker",
       "category": "desktop",
-      "registry_id": "auto-clicker",
+      "registry_id": "dev-toolkit",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
@@ -2005,7 +2005,7 @@
     {
       "tool": "subtitle",
       "category": "desktop",
-      "registry_id": "subtitle",
+      "registry_id": "dev-toolkit",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
@@ -2023,13 +2023,13 @@
     {
       "tool": "print",
       "category": "desktop",
-      "registry_id": "print",
+      "registry_id": "dev-toolkit",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
       "tool": "py_test_runner",
       "category": "dev",
-      "registry_id": "py-test-runner",
+      "registry_id": "",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
@@ -2047,7 +2047,7 @@
     {
       "tool": "renamer",
       "category": "dev",
-      "registry_id": "renamer",
+      "registry_id": "dev-toolkit",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
@@ -2059,7 +2059,7 @@
     {
       "tool": "yasuo",
       "category": "dev",
-      "registry_id": "yasuo",
+      "registry_id": "dev-toolkit",
       "source_file": "docs/事实源/tools.yaml"
     },
     {
