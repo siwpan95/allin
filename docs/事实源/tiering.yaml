@@ -439,7 +439,10 @@ tiering:
   seq: 62
   domain: 开发者/系统工具
   tier: ③收敛合并
-  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  action: '收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结。**2026-11-24 进一步退役**：
+    其「PDF 页 → 位图」渲染能力已上提到 docx-converter（docxconv/pdf_raster.py，实测出 PNG）；
+    PDF 解析本就由 docx-converter 的 parse_pdf 承接；tkinter 交互阅读无接任者且属界面形态非能力。
+    dev-toolkit/pdf 目录已删除，历史仍在 archive/pdf 分支。
   archive_target: dev-toolkit
   note: 开发者/系统工具
 - repo: pomodmer
@@ -453,7 +456,10 @@ tiering:
   seq: 64
   domain: 开发者/系统工具
   tier: ③收敛合并
-  action: 收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结
+  action: '收敛合并：迁入 dev-toolkit（保留 git 历史），原仓冻结。**2026-11-24 补 CLI**：
+    纯控制台版只保留「拼音 → 候选词」能力（print/cli.py），字典缺失时支持
+    --auto-download 多源下载（源 GitHub mapull/chinese-dictionary）或 --dict-dir 指定；
+    本机对全部下载源不可达，成功路径未在本机验证。
   archive_target: dev-toolkit
   note: 开发者/系统工具
 - repo: renamer
