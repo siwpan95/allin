@@ -208,7 +208,12 @@ def build_db(doc: dict, db: Path) -> dict:
             continue
         for row in doc.get(t, []):
             key = row.get("machine_id") or row.get("repo_id") or row.get("port") or row.get("service_id") or row.get("doc_id") or row.get("run_id") or ""
-            con.execute(f"INSERT INTO {t} (key, payload) VALUES (?,?)", (str(key), _flatten(row)))
+            # 说明见上一段：`t` 来自模块级常量 TABLES（封闭元组），不含外部输入，
+            # 值一律走 `?` 占位。bandit 只看「f-string 拼进 SQL」，分不清表名白名单
+            # 与用户输入。2026-11-24 发版全检逐行确认后标注 —— 不标注的话每次 SAST
+            # 都亮一条 MEDIUM，久了就没人再看这份报告。
+            # （`# nosec` 必须与被执行语句**同一行**，bandit 不认上一行的注释。）
+            con.execute(f"INSERT INTO {t} (key, payload) VALUES (?,?)", (str(key), _flatten(row)))  # nosec B608
     for f in doc.get("facts", []):
         con.execute("INSERT INTO facts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (f["fact_id"], f["subject"], f["attribute"], json.dumps(f["value"], ensure_ascii=False),
