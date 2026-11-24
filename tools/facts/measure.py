@@ -31,7 +31,10 @@ from datetime import date
 from pathlib import Path
 
 # 退出码单一事实源（R-08 收敛，2026-11-10）；measure 只采集不判 blocking，仍 import 全档防漂移
-from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+try:  # 包内形态（allin_governance._facts.*，`pip install allin-governance` 之后）
+    from .exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+except ImportError:  # 仓内直跑形态（脚本目录即 sys.path[0]）
+    from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
 
 # 这些目录按仓根相对写，避免把盘符写进代码（铁律 5）。
 REPO_MARKERS = ("docs", "preset", "tools")
@@ -157,13 +160,19 @@ def collect_env() -> dict:
     return out
 
 
-def emit_markdown(root: Path) -> str:
+def _empty_remotes() -> dict:
+    """无仓根时的空远端视图 —— 字段全在，值为空，便于下游按同一形状消费。"""
+    return {"origin_url": "", "pushurls": [], "head": "", "branch": ""}
+
+
+def emit_markdown(root: Path | None) -> str:
+    """采集报告。`root=None` = **无仓模式**（见 main 的说明）。"""
     today = date.today().isoformat()
     sysinfo = collect_system()
     vols = collect_volumes()
     disks = collect_disks()
     tools = collect_toolchain()
-    remotes = collect_remotes(root)
+    remotes = collect_remotes(root) if root is not None else _empty_remotes()
     envs = collect_env()
 
     L: list[str] = []
@@ -200,17 +209,23 @@ def emit_markdown(root: Path) -> str:
         L.append("")
     L.append("### 仓与归档")
     L.append("")
-    L.append("| 项 | 值 |")
-    L.append("| --- | --- |")
-    repos = root.parent / "repos"
-    if repos.is_dir():
-        L.append(f"| `repos/` 顶层目录 | **{count_dirs(repos)}** |")
-        withgit = sum(1 for c in repos.iterdir() if c.is_dir() and (c / ".git").exists())
-        L.append(f"| `repos/` 含 `.git` | **{withgit}** |")
-    arch = root.parent / "archive"
-    if arch.is_dir():
-        L.append(f"| `archive/` 项数 | **{count_all(arch)}** |")
-    L.append(f"| 本仓分支 / HEAD | `{remotes['branch']}` / `{remotes['head'][:12] or '(空)'}` |")
+    if root is None:
+        # 无仓模式：**没查**，不是 0。仓内纪律「SKIP ≠ 通过」同样适用于采集输出。
+        L.append("> **无仓根 —— 本段未采集**（不是 0，是**没查**）。"
+                 "换机后只装了包、还没 clone 治理仓时属正常形态；"
+                 "要看仓相关项，用 `--root <仓根>` 重跑。")
+    else:
+        L.append("| 项 | 值 |")
+        L.append("| --- | --- |")
+        repos = root.parent / "repos"
+        if repos.is_dir():
+            L.append(f"| `repos/` 顶层目录 | **{count_dirs(repos)}** |")
+            withgit = sum(1 for c in repos.iterdir() if c.is_dir() and (c / ".git").exists())
+            L.append(f"| `repos/` 含 `.git` | **{withgit}** |")
+        arch = root.parent / "archive"
+        if arch.is_dir():
+            L.append(f"| `archive/` 项数 | **{count_all(arch)}** |")
+        L.append(f"| 本仓分支 / HEAD | `{remotes['branch']}` / `{remotes['head'][:12] or '(空)'}` |")
     L.append("")
     if tools:
         L.append("### 工具链（PATH 实际解析，非文档声称）")
@@ -222,12 +237,15 @@ def emit_markdown(root: Path) -> str:
         L.append("")
     L.append("### 推送与远端")
     L.append("")
-    L.append("| 项 | 值 |")
-    L.append("| --- | --- |")
-    L.append(f"| `remote.origin.url` | `{remotes['origin_url'] or '(无)'}` |")
-    L.append(f"| `remote.origin.pushurl` 条数 | **{len(remotes['pushurls'])}** |")
-    for u in remotes["pushurls"]:
-        L.append(f"| 　└ pushurl | `{u}` |")
+    if root is None:
+        L.append("> **无仓根 —— 本段未采集**（远端口径依赖治理仓自身的 `git config`）。")
+    else:
+        L.append("| 项 | 值 |")
+        L.append("| --- | --- |")
+        L.append(f"| `remote.origin.url` | `{remotes['origin_url'] or '(无)'}` |")
+        L.append(f"| `remote.origin.pushurl` 条数 | **{len(remotes['pushurls'])}** |")
+        for u in remotes["pushurls"]:
+            L.append(f"| 　└ pushurl | `{u}` |")
     L.append("")
     L.append("### 环境变量（只报有无，不打印值）")
     L.append("")
@@ -249,10 +267,21 @@ def main(argv: list[str] | None = None) -> int:
         print("ENV ERROR: 本脚本只支持 Windows（依赖 Get-Volume / Get-Disk）", file=sys.stderr)
         return EXIT_ENV
 
-    root = Path(args.root).resolve() if args.root else find_repo_root()
-    if root is None or not (root / "docs").is_dir():
-        print("ENV ERROR: 找不到仓根（需含 docs/ 与 preset/）", file=sys.stderr)
-        return EXIT_ENV
+    # 仓根是**可选上下文**，不是必需输入 —— 这是「快速换机」的关键一刀：
+    # 新机器只 `pip install allin-governance` 时还没有仓，此时仍应能采集本机事实
+    # （盘位 / 运行时 / 工具链），否则「先装包看看这台机器长什么样」就做不到。
+    # 找不到根 ⇒ 无仓模式，输出里逐段标注「未采集（不是 0）」，退出码仍 0（采集本身成功）。
+    # 但 `--root` **显式给了却不对** ⇒ 仍 fail-loud（给了地址还找错，是输入错不是缺省）。
+    if args.root:
+        root: Path | None = Path(args.root).resolve()
+        if not (root / "docs").is_dir():
+            print(f"ENV ERROR: --root 指向的目录不含 docs/：{root}", file=sys.stderr)
+            return EXIT_ENV
+    else:
+        root = find_repo_root()
+        if root is None:
+            print("[warn] 未找到仓根（需含 docs/ 与 preset/）⇒ 无仓模式：只采集本机事实，"
+                  "仓与远端两段标注为未采集。要看仓相关项请加 --root <仓根>。", file=sys.stderr)
 
     md = emit_markdown(root)
     if args.out:

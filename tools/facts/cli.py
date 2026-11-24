@@ -21,7 +21,10 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV  # 单一事实源，勿重定义
+try:  # 包内形态（allin_governance._facts.*，`pip install allin-governance` 之后）
+    from .exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+except ImportError:  # 仓内直跑形态（脚本目录即 sys.path[0]）
+    from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV  # 单一事实源，勿重定义
 def _repo_root() -> Path:
     """从脚本位置向上找仓根，不写死盘符（铁律 5 / g01-paths）。"""
     for p in Path(__file__).resolve().parents:

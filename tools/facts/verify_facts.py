@@ -54,15 +54,37 @@ from pathlib import Path
 
 GATE_MODULE_DIR = Path(__file__).resolve().parents[2] / "tools" / "gate" / "governance" / "gates"
 # 退出码单一事实源（R-08 收敛，2026-11-10）；EXIT_FINDING 是历史别名，等价于 EXIT_BLOCKING
-from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+try:  # 包内形态（allin_governance._facts.*，`pip install allin-governance` 之后）
+    from .exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
+except ImportError:  # 仓内直跑形态（脚本目录即 sys.path[0]）
+    from exit_codes import EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV
 EXIT_FINDING = EXIT_BLOCKING
 
 
 def load_gate():
-    """把门禁模块当库导入 —— 判据唯一来源。"""
+    """把门禁模块当库导入 —— 判据唯一来源。
+
+    **两个落点，同一份源码**（2026-11-24 补，换机可用性）：
+      ① 包内 `allin_governance._gatesuite.gates.g20_facts` —— `pip install allin-governance` 之后；
+      ② 仓内 `tools/gate/governance/gates/g20_facts.py` —— 未装包、直接跑仓内脚本（开发形态）。
+
+    为什么必须两条：`parents[2]/tools/...` 在 site-packages 里指向的是 pip 自己的目录树，
+    永远找不到；而装包的用户**根本没有仓**。旧实现那种环境下恒 `ENV ERROR`，
+    等于「装了也没有这个能力」—— 正是本仓「公共核必须脱离仓也能跑」要修的那类耦合。
+    """
+    try:
+        from allin_governance._gatesuite.gates import g20_facts  # noqa: PLC0415
+
+        return g20_facts
+    except ImportError:
+        pass  # 未装包 ⇒ 退到仓内落点
+
     candidate = GATE_MODULE_DIR / "g20_facts.py"
     if not candidate.is_file():
-        print(f"ENV ERROR: 找不到判据实现：{candidate}", file=sys.stderr)
+        print(
+            f"ENV ERROR: 找不到判据实现（包内 allin_governance._gatesuite 与仓内 {GATE_MODULE_DIR} 均不可用）",
+            file=sys.stderr,
+        )
         return None
     if str(GATE_MODULE_DIR) not in sys.path:
         sys.path.insert(0, str(GATE_MODULE_DIR))

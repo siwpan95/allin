@@ -37,9 +37,19 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 # 已安装包内模块 → 仓内真身目录
+#
+# 覆盖口径 = pyproject.toml 的 `[tool.setuptools] packages` 里**每一个跨目录映射**。
+# 2026-11-24 补齐（此前只核 2 组，另 3 组「进了 wheel 但没人核对」）：
+#   缺口不是理论风险 —— 映射漏收/陈旧打包不会自己报错，它只会让某个子命令
+#   在装了包的新机器上跑出与仓内不同的行为，而本地永远看不见（本地跑的是仓内源码）。
+# `_toolkit.pytrunner` 是 `_toolkit` 的子目录，collect() 递归已覆盖，故不单列。
 PAIRS = [
     ("allin_governance._repocheck", "tools/repocheck"),
     ("allin_governance._gatesuite", "tools/gate/governance"),
+    ("allin_governance._toolkit", "tools/_shared"),
+    ("allin_governance._github", "tools/github"),
+    ("allin_governance._secret_scan", "tools/secret_scan"),
+    ("allin_governance._facts", "tools/facts"),
 ]
 
 # 仓内侧允许存在而不进包的文件（合法排除：运行时产物 / 编辑器杂项 / 点目录——

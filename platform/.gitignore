@@ -5,3 +5,8 @@ release/
 build-batch/
 installer/
 *.log
+
+# 注意：registry/scan-snapshot.json 这个**旧路径**里现在放的是一份迁移指针
+# （无机器数据，靠它让仍引用旧路径的他机文档不判红）。真正的快照在
+# facts/machine/<machine_id>/scan-snapshot.json，脚本已不会写回旧路径。
+# 故此处**刻意不再忽略**旧路径 —— 忽略了指针就进不了 git，g19 会判他机文档整片红。

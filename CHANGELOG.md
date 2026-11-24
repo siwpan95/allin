@@ -3,6 +3,40 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.1.0 —— 2026-11-24
+
+**新增第 8 个子命令 `facts`：换机第一件事——先问这台机器长什么样。**
+
+这一版的主题是「装完包、不用 clone 仓也能开工」。此前包里 7 个子命令有 6 个默认
+「你身边有一个治理仓」，`facts` 是唯一一个**没有仓也成立**的：它采集的是机器事实
+（盘位 / 运行时 / PATH 实际解析 / 环境变量有无），不是仓库状态。
+
+### 有什么
+
+- **`allin-governance facts measure [--root <仓根>] [--out <文件>]`**
+  —— 采集本机事实，输出 Markdown（可直接贴进机器分区文件）。
+  **无仓模式**：找不到仓根时只采集本机部分，`仓与归档`、`推送与远端` 两段显式写
+  「**未采集（不是 0，是没查）**」，退出码仍 0。给了 `--root` 却是错目录 ⇒ 仍 fail-loud（exit 3）。
+- **`allin-governance facts verify [--file|--all|--json|--selftest]`**
+  —— 校验机器事实源里**可机检**的断言（`PATH-EXISTS` / `COUNT`）。
+  判据不另写：装包后从包内 `_gatesuite.gates.g20_facts` 取，未装包时退回仓内相对路径，
+  两条路是同一份源码。
+- **`_facts` 包映射**：`tools/facts/` 经 `package-dir` 映射进 wheel，仓内仍只有一份源码。
+
+### 修了什么（对已有用户可见）
+
+- **装包后 `verify_facts` 不再恒 `ENV ERROR`**：原实现用 `parents[2]/tools/gate/...`
+  定位判据，在 `site-packages` 里那条路径指向 pip 自己的目录树，永远不存在。
+  装包的用户根本没有仓，于是在那种环境下等于「装了也没这个能力」。
+- `tools/facts` 三个入口的 `from exit_codes import ...` 改为**相对导入优先、平铺导入兜底**，
+  使同一份源码在「包内」与「仓内直跑」两种形态下都能加载。
+
+### 边界（刻意不做）
+
+- **`_facts.cli`（facts.json 的 SQLite 查询面）不进公共核边界**：它依赖仓内
+  `tools/runtime_defaults.py` 与仓根布局，属「仓内形态」能力。装包后请勿直接调用它，
+  可用的是 `facts measure` / `facts verify` 两条。
+
 ## `allin-governance` 1.0.3 —— 2026-11-24
 
 **新增第 7 个子命令 `secrets-scan`：离线凭据扫描，不需要 gitleaks 二进制。**

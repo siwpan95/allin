@@ -19,7 +19,7 @@
 //   node scripts/discover_repos.mjs --draft         # --apply 的 dry-run 预览（兼容旧用法）
 //   node scripts/discover_repos.mjs --strict        # 存在差异时 exit 1（供人工 / CI 选用）
 //   node scripts/discover_repos.mjs --audit         # 本机全量扫描登记：跑满发行区，逐仓对账
-//   node scripts/discover_repos.mjs --audit --snapshot  # 并落盘扫描快照（platform/registry/scan-snapshot.json）
+//   node scripts/discover_repos.mjs --audit --snapshot  # 并落盘扫描快照（facts/machine/<机器>/scan-snapshot.json）
 //   node scripts/discover_repos.mjs --verify-snapshot   # 拿已落盘快照复跑对账，漂移即判红
 //   node scripts/discover_repos.mjs --selfcheck     # 集合 / 探测 / 分类 / 审计自检（能红能绿）
 //
@@ -53,7 +53,33 @@ const APPLY = flag('--apply')
 const AUDIT = flag('--audit')
 const SNAPSHOT = flag('--snapshot')
 const VERIFY_SNAPSHOT = flag('--verify-snapshot')
-const SNAPSHOT_PATH = path.join(__dirname, '..', 'registry', 'scan-snapshot.json')
+// 快照落「机器事实域」（facts/machine/<机器>/），**不落 registry/**。
+//
+// 2026-11-24 分域整改（公共核 / 事实源 / 运行产物三层切分，见 P0 批次）：
+//   旧路径 registry/scan-snapshot.json 把一份「@SIWPAN 的仓集基线」放进了 platform 的
+//   程序目录 —— 语义上是机器特化事实源（B'），位置上是程序资产管理区，两者错配。
+//   错配的代价此前靠**文档纪律**兜（他机分区文件里写着「本机不覆盖该文件」）；
+//   纪律不是结构：一台新机跑 --snapshot 就会把别人的基线覆盖掉，只要它没读过那段话。
+//   改成「路径即归属」后，每台机天然只会写到自己名下的那份，覆盖不可能发生。
+//
+// machine_id 解析顺序：facts/facts.json 的 machines 表（hostname 大小写不敏感）
+//   → 大写 hostname 兜底。找不到表也不报错，只是退化成 hostname。
+const STATIC_HOSTNAME = os.hostname() || 'unknown'
+function resolveMachineId() {
+  try {
+    const p = path.join(__dirname, '..', '..', 'facts', 'facts.json')
+    const d = JSON.parse(fs.readFileSync(p, 'utf8'))
+    const hit = (d.machines || []).find((m) => {
+      const names = [m.machine_id, m.hostname, ...(m.aliases || [])].filter(Boolean)
+      return names.some((n) => String(n).toLowerCase() === STATIC_HOSTNAME.toLowerCase())
+    })
+    if (hit?.machine_id) return hit.machine_id
+  } catch { /* 表缺失/坏掉：退化为 hostname 大写，不打断扫描 */ }
+  return STATIC_HOSTNAME.toUpperCase()
+}
+const MACHINE_ID = resolveMachineId()
+const SNAPSHOT_PATH = process.env.PLATFORM_SNAPSHOT_PATH
+  || path.join(__dirname, '..', '..', 'facts', 'machine', MACHINE_ID, 'scan-snapshot.json')
 const API = 'https://gitee.com/api/v5'
 const RETIRED_RX = /已归档|归档声明|不再维护|已退役|retired|archived/i
 // 2026-11-13（piano 验证发现的误判）：README 正文里「某依赖包已归档」不是本仓退役声明。
@@ -657,6 +683,8 @@ if (SNAPSHOT && audit) {
     audit.snapshot = { path: relPath, fingerprint: payload.fingerprint, written: false, unchanged: true }
   } else {
     payload.generated_at = new Date().toISOString()
+    // 机器事实域目录可能不存在（新机首跑 / 新机种接入）：按需建，不预置空目录
+    fs.mkdirSync(path.dirname(SNAPSHOT_PATH), { recursive: true })
     fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify({ generated_at: payload.generated_at, ...payload }, null, 2) + '\n', 'utf8')
     audit.snapshot = { path: relPath, fingerprint: payload.fingerprint, written: true,
       accepted_baseline_change: baselineChanged && accept }

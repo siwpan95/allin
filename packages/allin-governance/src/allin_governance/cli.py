@@ -210,6 +210,72 @@ def _secret_scan():
     raise ImportError("找不到 secret_scan/scanner.py（安装态与源码态都不在）")
 
 
+def _facts_modules():
+    """取 `measure` / `verify_facts` 两个模块，安装态与源码树态各一条路。
+
+    与 `_github_modules()` 同一纪律：`_facts/` 是打包时由 `package-dir` 从
+    `tools/facts/` 映射出来的，源码树里**不存在** `allin_governance._facts`。
+    两个模块都已改为「相对导入优先、平铺导入兜底」，故两条路都能跑。
+
+    为什么这两个进公共核：换机第 0 步是「说清这台机器有什么」——
+    盘、运行时、PATH 实际解析。`measure` 找不到仓根时走**无仓模式**
+    （只采集本机事实，仓与远端两段显式标注「未采集 ≠ 0」），所以新机器
+    装完包、还没 clone 仓也能用。
+    """
+    try:
+        from ._facts import measure, verify_facts  # type: ignore[import-not-found]
+
+        return measure, verify_facts
+    except (ImportError, ValueError):
+        pass
+
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "tools" / "facts"
+        if candidate.is_dir() and (candidate / "measure.py").is_file():
+            entry = str(candidate)
+            added = entry not in sys.path
+            if added:
+                sys.path.insert(0, entry)
+            try:
+                from measure import main as measure_main  # type: ignore[import-not-found]
+                from verify_facts import main as verify_main  # type: ignore[import-not-found]
+            finally:
+                if added:
+                    try:
+                        sys.path.remove(entry)
+                    except ValueError:
+                        pass
+            return measure_main, verify_main
+    raise ImportError("找不到 tools/facts（安装态与源码态都不在）")
+
+
+def _cmd_facts(argv: list[str]) -> int:
+    """机器事实：`measure` 采集本机、`verify` 校验分区文件的断言。
+
+    分工与仓内脚本完全一致（判据只有一份）：`facts measure` → `tools/facts/measure.py`，
+    `facts verify` → `tools/facts/verify_facts.py`（后者复用 g20 的判据实现，
+    安装态从包内 `_gatesuite.gates.g20_facts` 取，不另写一套）。
+    """
+    if not argv or argv[0] in {"-h", "--help"}:
+        print(
+            "用法: allin-governance facts <measure|verify> [选项]\n"
+            "  measure [--root <仓根>] [--out <文件>]   采集本机事实（无仓根时只采本机，仓段标注未采集）\n"
+            "  verify  [--root <仓根>] [--file <文件>] [--all] [--json] [--selftest]\n"
+            "         校验机器事实源里可机检的断言（PATH-EXISTS / COUNT）",
+            file=sys.stderr,
+        )
+        return 2 if not argv else 0
+
+    sub, rest = argv[0], argv[1:]
+    measure_mod, verify_mod = _facts_modules()
+    if sub == "measure":
+        return measure_mod(rest) if callable(measure_mod) else measure_mod.main(rest)
+    if sub == "verify":
+        return verify_mod(rest) if callable(verify_mod) else verify_mod.main(rest)
+    print(f"未知子命令: facts {sub}（可选 measure / verify）", file=sys.stderr)
+    return 2
+
+
 def _cmd_secrets_scan(argv: list[str]) -> int:
     """离线凭据扫描：21 条高精度规则 + 熵闸 + 仓库自有注解豁免。
 
@@ -287,6 +353,8 @@ SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "github": ("GitHub 建仓/推送/三端巡检（gitee 为权威）；github-sync 子命令走巡检器", _cmd_github),
     "secrets-scan": ("离线凭据扫描：21 条高精度规则 + 按字符集分档的熵闸（不需要 gitleaks 二进制）",
                      _cmd_secrets_scan),
+    "facts": ("机器事实：采集本机（盘/运行时/工具链）＋ 校验分区文件断言（measure / verify）",
+              _cmd_facts),
 }
 
 

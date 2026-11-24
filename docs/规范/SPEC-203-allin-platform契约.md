@@ -128,9 +128,17 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
   判为 `non_default_publish_branch`，**不算漂移**。未登记 `branch` 时按 `workshop.js` 的隐式回退 `master` 对账。
 - 远端清单不可得（限流 / 断网）⇒ `branch_check_applicable=false` 并写明 `SKIP ≠ 通过`，
   **不把未运行的判据算成全绿**；此时本机机器字段仍完整可核对。
-- **快照**：`--snapshot` 落盘 `platform/registry/scan-snapshot.json`（138 行扫描视角 + 人工字段清单 +
+- **快照**：`--snapshot` 落盘 `facts/machine/<machine_id>/scan-snapshot.json`（扫描视角 + 人工字段清单 +
   漂移 + coverage + sha256 指纹）。指纹**只取纯本地字段**，联网派生计数不进指纹 ⇒ 远端抖动不会假红。
   初版把 `branch_verdicts` 算进指纹，实测 403 时 142→0 造成假红，已修（交接卷第一百六十四节留痕）。
+  - **2026-11-24 落点迁移（三层分域）**：原落点 `platform/registry/scan-snapshot.json` 现**只剩一份迁移指针**
+    （无机器数据；保留它是因为他机分区文件仍引用该路径，而铁律 6 禁止本机代改他机文件 —— 待该机自修后即删）。
+    那份快照是「一台机器的仓集基线」，语义属**机器特化事实源**，却被放在 platform 的程序目录里；
+    跨机互不覆盖此前只靠他机分区文件里的一句纪律（「本机不覆盖该文件」）兜着 —— **纪律不是结构**，
+    换一台没读过那段话的机器跑 `--snapshot` 就会把别人的基线覆盖掉。
+    现改为**路径即归属**：`machine_id` 由 `facts/facts.json` 的 `machines` 表按 hostname（大小写不敏感）
+    解析，缺表时退化为主机名大写；`PLATFORM_SNAPSHOT_PATH` 可显式覆盖。
+    同一台机的快照仍是同一份（幂等与基线棘轮语义不变），不同机器天然写不到对方那份。
 - `--verify-snapshot` 重扫比对指纹：登记被改动 / 快照被篡改都判红（exit 1）。
 - **基线棘轮（2026-11-13 同批订正）**：快照是**已核准的干净基线**，扫描器无权自动改写。
   `--snapshot` 发现本地机器字段指纹与已落盘快照不同 ⇒ **默认拒绝覆盖**、判非零退出码，
