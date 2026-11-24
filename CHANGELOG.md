@@ -3,6 +3,27 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.1.1 —— 2026-11-25
+
+**修 1.1.0 的包内容缺失：`ledger/` 没随包，装完包跑门禁时豁免表会静默落空。**
+
+`check_pkg_parity` 在 1.1.0 发布后报两条红：
+`ledger/publish_area_exemptions.csv` / `ledger/repo_hygiene_exemptions.csv` 仓内有、包内无。
+根因是台账从 `tools/gate/audit/` 迁到 `governance/ledger/` 时改了 6 处读取方，
+但 `_gatesuite` 的 `package-data` 没跟着改（glob 还是 `baseline/*.txt`）。
+
+### 有什么
+
+- `package-data` 补 `ledger/*` —— 5 份基线/豁免台账随包分发；
+- 影响面：换机后 `pip install allin-governance` 再跑门禁，**豁免不再落空**；
+- 仓内开发同时受益：`check_pkg_parity` 由红转绿。
+
+### 升级
+
+```bash
+pip install -U allin-governance
+```
+
 ## `allin-governance` 1.1.0 —— 2026-11-24
 
 **新增第 8 个子命令 `facts`：换机第一件事——先问这台机器长什么样。**

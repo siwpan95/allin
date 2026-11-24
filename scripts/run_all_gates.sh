@@ -353,6 +353,11 @@ run "$PY" deploy/dolt/import_from_git.py --selftest
 #    零第三方依赖（ports 判据需 yaml，缺则 SKIP 该判据不拖红）；拔网 + 停三栈时仍须可跑（离线北极星）。
 run "$PY" tools/gate/facts_drift.py --selftest
 run "$PY" tools/gate/facts_drift.py --json
+# 机器事实单源化（§214）：facts/machine/<机>.json 是 B' 真相，facts.json 机器段是派生。
+# 判据 = 两边聚合一致；手改 facts.json 的机器段或漏跑聚合都会红。
+run "$PY" tools/facts/build_machine_index.py --check
+# 文档/配置归属侦察（§212–214）：机器特化内容不该躺在公共层（全仓扫描，豁免清单见脚本）。
+run "$PY" tools/machine_content_audit.py
 # 生成器自身视角的同步自检（belt-and-suspenders，A 期 Phase 1/2/3）：
 # g26 已对 ports / projects / ports_mirror / tiering / tools / licenses 做意图态对账；下列是**生成器**维度的同一类漂移判定，
 # 二者各自独立，任一被改坏都跑得出红（门禁写了不跑 = 没有门禁）。
