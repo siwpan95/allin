@@ -932,7 +932,7 @@ def selfcheck():
         # H5 反例一：占位写法不得误报
         def _cred_ok(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "cfg.py", 'api_key = "<TOKEN>"\nsecret = "****"\n')  # repo-hygiene: allow（自检夹具）
+            wr(d, "cfg.py", 'api_key = "<TOKEN>"\nsecret = "****"\n')  # repo-hygiene: allow; gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_ok", _cred_ok)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 占位写法零误报:   {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
@@ -1047,7 +1047,7 @@ def selfcheck():
 
         def _cred_real_key(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "src/a.ts", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")  # repo-hygiene: allow（自检夹具）
+            wr(d, "src/a.ts", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")  # repo-hygiene: allow; gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_real", _cred_real_key)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 真键名仍判:       {}  [{}]".format("✔" if h5 else "✘", len(h5)))
@@ -1179,7 +1179,7 @@ def selfcheck():
         def _cred_untracked(d):
             wr(d, "LICENSE", "MIT\n")
         r = _make_fixture(tmp, "cred_untracked", _cred_untracked)
-        wr(r, "diagnose-run.log", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")  # repo-hygiene: allow（自检夹具）
+        wr(r, "diagnose-run.log", "const accessToken = 'a1b2c3d4e5f67890abcdef1234567890'\n")  # repo-hygiene: allow; gov-credentials: allow（自检夹具）
         h5_off = [x for x in scan_repo(r, {}) if x.check == "H5"]
         h5_on = [x for x in scan_repo(r, {"worktree": True}) if x.check == "H5"]
         print("  H5 未跟踪面(关)不抓: {}  [{}]".format("✔" if not h5_off else "✘", len(h5_off)))
