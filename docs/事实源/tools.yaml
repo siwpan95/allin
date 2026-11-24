@@ -88,8 +88,8 @@ tools:
   purpose: 鼠标连点器（频率 + 随机抖动，热键）
   registry_id: dev-toolkit
   remote_url: https://gitee.com/siwpan/dev-toolkit
-  pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
-  status: 已更名
+  kind: script
+  status: 脚本不是工具（连点器：序列化人的点击动作，跑完不产出产物）；2026-11-24 按全哥口径移入 dev-toolkit 的 non-tools/，未随 allin-toolkit 包
 - tool: daily_player
   category: desktop
   purpose: 日常视频播放器（VLC，SRT 字幕、播放列表、系统托盘）
@@ -101,6 +101,7 @@ tools:
   purpose: 字幕工具（提取/编辑/烧录 SRT，ffmpeg）
   registry_id: dev-toolkit
   remote_url: https://gitee.com/siwpan/dev-toolkit
+  kind: tool
   pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: pdf
@@ -120,6 +121,7 @@ tools:
   purpose: 中文拼音输入法（本地字典 + 全局键盘钩子）
   registry_id: dev-toolkit
   remote_url: https://gitee.com/siwpan/dev-toolkit
+  kind: tool
   pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: py_test_runner
@@ -145,6 +147,7 @@ tools:
   purpose: 正则批量重命名 GUI
   registry_id: dev-toolkit
   remote_url: https://gitee.com/siwpan/dev-toolkit
+  kind: tool
   pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: requirements
@@ -158,6 +161,7 @@ tools:
   purpose: 文件加密/压缩工具（zlib/lzma/bz2 + AES-256，算法对比）
   registry_id: dev-toolkit
   remote_url: https://gitee.com/siwpan/dev-toolkit
+  kind: tool
   pypi: allin-toolkit  # 随包分发物（单一入口 toolkit <子命令>）
   status: null
 - tool: allin_engine

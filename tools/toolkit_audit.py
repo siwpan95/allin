@@ -136,9 +136,17 @@ def declared_tools(tools_yaml: Path) -> tuple[list[str], list[str]]:
         body = "\n".join(lines[1:])
         if PKG_MARKER not in body:
             continue
+        # 判定口径（全哥 2026-11-24 两次纠正后固化）：工具 = 一类通用问题
+        # + 稳定 I/O 契约 + **跑完产出产物**；只序列化人的动作的是脚本，不算工具。
+        # 落地成 kind 字段（tool / script），不靠人读 purpose 猜。
+        kind = re.search(r"^\s+kind:\s*(\S+)", body, re.M)
         status = re.search(r"^\s+status:\s*(.+)$", body, re.M)
-        if status and NOT_A_TOOL in status.group(1):
+        if (kind and kind.group(1) != "tool") or (status and NOT_A_TOOL in status.group(1)):
             excluded.append(norm(name))
+            continue
+        if not kind:
+            # 有 pypi 标记却没 kind ⇒ 口径没落实，别默默算成工具
+            excluded.append(f"{norm(name)}(缺kind)")
             continue
         tools.append(norm(name))
     return sorted(set(tools)), sorted(set(excluded))
