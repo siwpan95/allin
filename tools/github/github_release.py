@@ -484,9 +484,12 @@ def build_parser():
     return ap
 
 
-def main():
+def main(argv=None):
+    # argv 可选：独立运行时走 sys.argv（argparse 约定），从包内 `allin-governance github`
+    # 调用时由包装层把剩余参数传进来。2026-11-24 事故：原签名不接受参数，而 CLI 包装层
+    # 传了一个 list ⇒ 每次 `github <子命令>` 都 TypeError（1.0.1 已发布版本实测）。
     ap = build_parser()
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     if not args.cmd:
         ap.print_help()
         return 2

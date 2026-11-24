@@ -57,3 +57,17 @@ def test_invalid_subcommand_returns_two(capsys: pytest.CaptureFixture[str]) -> N
 def test_subcommand_help_reaches_repocheck_and_returns_zero() -> None:
     """子命令 --help 经 REMAINDER 透传：repocheck 自己处理 --help 并退 0。"""
     assert main(["repocheck", "--help"]) == 0
+
+
+@pytest.mark.parametrize("name", sorted(SUBCOMMANDS))
+def test_every_subcommand_help_returns_zero(name: str) -> None:
+    """**每个**登记在册的子命令，`--help` 都必须 exit 0。
+
+    2026-11-24 事故（1.0.1 已发布版本）：`github` 子命令的包装层把 argv 传给了
+    一个不接受参数的 `main()`，于是 `allin-governance github <任何东西>` 一律
+    `TypeError`。原有测试只覆盖 `repocheck --help` 一条，剩下五个子命令从未被
+    「跑一下」验证过 —— 上线前实测（装 wheel / 装 sdist 各跑一遍）才炸出来。
+
+    判据放在这里，是因为它比「装完 import 一下」强：import 通过 ≠ 命令能跑。
+    """
+    assert main([name, "--help"]) == 0, f"子命令 {name} 的 --help 未退 0"

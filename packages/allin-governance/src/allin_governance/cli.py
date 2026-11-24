@@ -126,18 +126,97 @@ def _cmd_init(argv: list[str]) -> int:
     return init_module.main(argv)
 
 
+def _shared_dir() -> Path:
+    """`tools/_shared` 的源码树落点（安装态下走包内 `_toolkit`，不会用到这里）。"""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "tools" / "_shared"
+        if candidate.is_dir() and (candidate / "scan_repos.py").is_file():
+            return candidate
+    return Path(__file__).resolve().parent / "_toolkit"
+
+
+def _toolkit_modules():
+    """取 `scan_repos` / `deps_doctor`，安装态与源码树态各一条路。
+
+    与 `_github_modules()` 同源问题：`_toolkit` 由 `package-dir` 映射进 wheel，
+    源码树里不存在。此前的实现无条件 `from ._toolkit import ...`，因此
+    `allin-governance scan --help` 只在**装完之后**可用 —— 开发态与测试里必炸。
+    存量缺口自 a8（工具随包分发）起就在，2026-11-24 的「每个子命令都要跑一次」
+    测试才把它照出来。
+    """
+    try:
+        from ._toolkit import deps_doctor, scan_repos  # type: ignore[import-not-found]
+        return scan_repos, deps_doctor
+    except (ImportError, ValueError):
+        pass
+
+    entry = str(_shared_dir())
+    added = entry not in sys.path
+    if added:
+        sys.path.insert(0, entry)
+    try:
+        import deps_doctor as flat_deps  # type: ignore[import-not-found]
+        import scan_repos as flat_scan  # type: ignore[import-not-found]
+        return flat_scan, flat_deps
+    finally:
+        if added:
+            try:
+                sys.path.remove(entry)
+            except ValueError:
+                pass
+
+
 def _cmd_scan(argv: list[str]) -> int:
     """发布区扫盘：项目指纹、重复检出、迁移残留（Python 版）。"""
-    from ._toolkit import scan_repos
-
+    scan_repos, _deps = _toolkit_modules()
     return scan_repos.main(argv)
 
 
 def _cmd_deps(argv: list[str]) -> int:
     """依赖体检：requirements 声明 · 解释器实装 · 仓内 import 三者对账。"""
-    from ._toolkit import deps_doctor
-
+    _scan, deps_doctor = _toolkit_modules()
     return deps_doctor.main(argv)
+
+
+def _github_dir() -> Path:
+    """`tools/github` 的源码树落点（安装态下应走包内 `_github`，不会用到这里）。"""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "tools" / "github"
+        if candidate.is_dir() and (candidate / "github_release.py").is_file():
+            return candidate
+    return Path(__file__).resolve().parent / "_github"
+
+
+def _github_modules():
+    """取 `github_release` / `sync_repos` 两个模块，安装态与源码树态各一条路。
+
+    与 `_repocheck_dir()` 同一纪律（2026-11-24 事故补）：`_github/` 是打包时由
+    `package-dir` 映射出来的，**源码树里根本不存在** —— 原实现无条件
+    `from ._github import ...`，于是 `pytest packages/allin-governance` 与
+    开发态直接 `ModuleNotFoundError`。安装态另有一个更严重的缺陷：两个工具的
+    `main()` 当时不接受参数，而这里传了 argv ⇒ `allin-governance github <cmd>`
+    每次 TypeError（1.0.1 已发布版本实测，见 docs/记录/事故/）。
+    """
+    try:
+        from ._github import github_release, sync_repos  # type: ignore[import-not-found]
+        return github_release, sync_repos
+    except (ImportError, ValueError):
+        pass
+
+    entry = str(_github_dir())
+    added = entry not in sys.path
+    if added:
+        sys.path.insert(0, entry)
+    try:
+        import github_release as flat_release  # type: ignore[import-not-found]
+        import sync_repos as flat_sync  # type: ignore[import-not-found]
+        return flat_release, flat_sync
+    finally:
+        if added:
+            try:
+                sys.path.remove(entry)
+            except ValueError:
+                pass
 
 
 def _cmd_github(argv: list[str]) -> int:
@@ -147,11 +226,14 @@ def _cmd_github(argv: list[str]) -> int:
     三端巡检：传 github-sync <list|pull|drift|sync> 走 sync_repos.py。
     令牌走 GITHUB_TOKEN 环境变量或 Windows GCM；工具本身不打印、不入库。
     """
-    from ._github import github_release, sync_repos
-
-    if argv and argv[0] == 'github-sync':
-        return sync_repos.main(argv[1:])
-    return github_release.main(argv)
+    github_release, sync_repos = _github_modules()
+    try:
+        if argv and argv[0] == 'github-sync':
+            return sync_repos.main(argv[1:])
+        return github_release.main(argv)
+    except SystemExit as exc:  # 两个工具都用 argparse：--help / 参数错误走 SystemExit
+        code = exc.code
+        return int(code) if isinstance(code, int) else (0 if code is None else 1)
 
 
 #: 子命令表。新增能力只需在这里加一行，**不要**新开一个顶层入口点。
@@ -201,7 +283,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     _description, handler = SUBCOMMANDS[parsed.subcommand]
-    return int(handler(parsed.args))  # type: ignore[operator]
+    # 子命令一律走 argparse（`--help` / 参数错误抛 SystemExit）。`main()` 的契约是
+    # **返回 int**，所以在这里统一收口 —— 此前只有 repocheck 自己兜了，其余四个
+    # （init/verify/scan/deps）会把 SystemExit 抛给调用方：命令行看不出问题，
+    # 但任何以函数方式调用 `main()` 的地方（测试、嵌入方）行为与文档不一致。
+    try:
+        return int(handler(parsed.args))  # type: ignore[operator]
+    except SystemExit as exc:
+        code = exc.code
+        return int(code) if isinstance(code, int) else (0 if code is None else 1)
 
 
 if __name__ == "__main__":

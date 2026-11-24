@@ -13,7 +13,7 @@
 | 项 | 1.0.1（已发布） | 1.0.2（本版） |
 |---|---|---|
 | sdist 自包含 | ✅ 109 条目 / 80 项映射树，干净 venv 装得上 | ✅ preflight 逐棵核对 |
-| `github` 子命令 | ✅ 随包分发 | ✅ 保留，本版未改动 |
+| `github` 子命令 | ❌ **一调就崩**：`TypeError: main() takes 0 positional arguments but 1 was given` | ✅ 修好（见下），六个子命令逐个 `--help` 回归 |
 | `verify` 拒绝越界清单 | ❌ 清单里 `..` 仍会读仓外文件并回「快照未被改动」 | ✅ fail closed（exit 3）+ 回归用例 |
 | license 元数据 | ❌ `license = { text = … }`（setuptools 77 起弃用） | ✅ SPDX 表达式 + `license-files` |
 | 发版前置校验 | ❌ 无 | ✅ `scripts/release_preflight.py`（`--install` 双产物各装一次） |
@@ -23,11 +23,37 @@
 > 为什么不是「重传 1.0.1」：PyPI 的版本号不可覆盖也不可删除。1.0.1 已被占用，
 > 内容与本仓当前树不同，只能顺延。
 
+### 本版修掉的 `github` 子命令缺陷（1.0.1 已发布版本实测）
+
+1.0.1 的招牌能力在发布态**完全不可用**：
+
+```
+$ allin-governance github --help
+TypeError: main() takes 0 positional arguments but 1 was given
+```
+
+两个原因叠加：
+
+1. **包装层与工具入口签名不一致**：`_cmd_github(argv)` 把 argv 传给
+   `github_release.main()`，而后者当时是 `def main():`（只读 `sys.argv`）。
+2. **源码树形态缺映射**：`from ._github import ...` 只在 wheel 里成立，
+   `_github/` 由 `package-dir` 映射产生，源码树里不存在 ⇒ 开发态与
+   `pytest packages/allin-governance` 直接 `ModuleNotFoundError`。
+   同族存量缺口：`scan` / `deps` 的 `_toolkit` 自 a8 起就有一样的问题，
+   只是从来没人在源码树里跑过它们。
+
+修法（不复制源码）：两个工具入口改 `main(argv=None)`；包装层加
+`_github_modules()` / `_toolkit_modules()`，安装态走包内、源码态按仓内路径加载
+（与 `_repocheck_dir()` 同一纪律）。并补一条**逐个子命令**的 `--help` 回归测试 ——
+此前只测了 `repocheck --help`，剩下五个从未被「跑一下」。
+
 ### 验证（本机 `@SIWPAN`，2026-11-24）
 
 - `python scripts/release_preflight.py --install` → `PREFLIGHT ok=8 fail=0 skip=0` / `RESULT: CLEAN`
 - 负对照：从 sdist 摘掉 `_repocheck/` → `[FAIL] sdist 自包含` + `BLOCKED`，同次 `twine check` 仍 `[ok]`
-- 包测试 47 passed；全仓 pytest 385 collected / 0 failed；platform 75/75；SAST 0 条
+- 包测试 53 passed（含六个子命令逐个 `--help`）；全仓 pytest 391 collected / 0 failed；platform 75/75；SAST 0 条
+- 双形态实测：sdist 与 wheel 各在干净 venv 安装，**6 个子命令**（deps/github/init/repocheck/scan/verify）
+  + `init --dry-run` 全部 exit 0 —— 1.0.1 的 `github` 缺陷正是这条实验抓出来的
 
 ## `allin-governance` 1.0.1 —— 2026-11-24
 

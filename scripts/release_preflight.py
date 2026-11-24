@@ -249,23 +249,31 @@ def install_and_smoke(result: Result, artifact: Path, label: str) -> None:
             result.fail(f"{label} 可安装", f"装完了却没有入口点：{cli}")
             return
 
-        smoke: list[tuple[str, list[str]]] = [
-            ("--version", [str(cli), "--version"]),
-            ("repocheck", [str(cli), "repocheck", "--help"]),
-            ("scan", [str(cli), "scan", "--help"]),
-            ("deps", [str(cli), "deps", "--help"]),
-            ("verify", [str(cli), "verify", "--help"]),
-        ]
+        # 子命令清单**从包里读**，不在这里手抄：手抄的清单会在新增子命令时静默过期
+        # （2026-11-24 合并两条工作线时实测：本脚本写「五个」，树里已经有 `github` 六个）。
+        # 拿不到清单就算失败 —— 拿不到本身说明包装坏了，不该降级成「少测几项」。
+        listing = run([str(python), "-c",
+                       "from allin_governance.cli import SUBCOMMANDS;"
+                       "print(' '.join(sorted(SUBCOMMANDS)))"])
+        names = listing.stdout.strip().split() if listing.returncode == 0 else []
+        if not names:
+            head = (listing.stdout + listing.stderr).strip().splitlines()[-4:]
+            result.fail(f"{label} 子命令清单", "读不到 SUBCOMMANDS | " + " | ".join(head)[:300])
+            return
+
+        smoke: list[tuple[str, list[str]]] = [("--version", [str(cli), "--version"])]
+        for name in names:
+            smoke.append((name, [str(cli), name, "--help"]))
         init_dir = Path(tmp) / "scaffold"
         init_dir.mkdir()
-        smoke.append(("init", [str(cli), "init", "--dry-run", str(init_dir)]))
+        smoke.append(("init 实跑", [str(cli), "init", "--dry-run", str(init_dir)]))
         for name, argv in smoke:
             proc = run(argv)
             if proc.returncode != 0:
                 tail = (proc.stdout + proc.stderr).strip().splitlines()[-4:]
                 result.fail(f"{label} 子命令 {name}", f"exit={proc.returncode} | " + " | ".join(tail)[:400])
                 return
-        result.ok(f"{label} 可安装", "五个子命令 + init --dry-run 全部 exit 0")
+        result.ok(f"{label} 可安装", f"{len(names)} 个子命令（{', '.join(names)}）+ init --dry-run 全部 exit 0")
 
 
 def main(argv: list[str] | None = None) -> int:

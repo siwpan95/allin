@@ -50,12 +50,15 @@ import sys
 try:
     from . import github_release as gh                    # 安装态（包内）
 except (ImportError, ValueError):
-    import importlib.util                                  # 源码态
-    _AL = os.path.dirname(os.path.abspath(__file__))       # tools/github
-    _candidate = os.path.join(_AL, "github_release.py")    # 同包目录
-    _spec = importlib.util.spec_from_file_location("allin_github_release", _candidate)
-    gh = importlib.util.module_from_spec(_spec)  # noqa: E402
-    _spec.loader.exec_module(gh)
+    try:
+        import github_release as gh                        # 源码态（调用方已把 tools/github 放进 sys.path）
+    except ImportError:
+        import importlib.util                              # 源码态兜底：按本文件相对路径加载
+        _AL = os.path.dirname(os.path.abspath(__file__))   # tools/github
+        _candidate = os.path.join(_AL, "github_release.py")  # 同包目录
+        _spec = importlib.util.spec_from_file_location("allin_github_release", _candidate)
+        gh = importlib.util.module_from_spec(_spec)  # noqa: E402
+        _spec.loader.exec_module(gh)
 
 REPOS_ROOT_ENV = "ALLIN_REPOS_ROOT"
 
@@ -223,9 +226,12 @@ def build_parser():
     return ap
 
 
-def main():
+def main(argv=None):
+    # argv 可选：独立运行时走 sys.argv（argparse 约定），从包内 `allin-governance github`
+    # 调用时由包装层把剩余参数传进来。2026-11-24 事故：原签名不接受参数，而 CLI 包装层
+    # 传了一个 list ⇒ 每次 `github <子命令>` 都 TypeError（1.0.1 已发布版本实测）。
     ap = build_parser()
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     if not args.cmd:
         ap.print_help()
         return 2
