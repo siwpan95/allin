@@ -3,6 +3,25 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.1.2 —— 2026-11-25
+
+**统一 CLI 参数契约：`--root` 现在对所有子命令都成立。**
+
+换机 E2E 实测发现两种写法并存：`scan` / `deps` 用 `--root`，`repocheck` / `verify` 只收位置参数——
+同一次验收里照着文档写，前者跑通、后者 `exit 2`。这不是用法问题，是接口契约不一致。
+
+### 有什么
+
+- `repocheck` / `verify` 接受 `--root <目录>`（作为位置参数的别名，**旧写法仍然有效**）；
+- 实现只在包装层做参数归一，底层工具与判据**一行未动**；
+- 判据：`allin-governance repocheck --root <目录>` 与 `allin-governance repocheck <目录>` 等价。
+
+### 升级
+
+```bash
+pip install -U allin-governance
+```
+
 ## `allin-governance` 1.1.1 —— 2026-11-25
 
 **修 1.1.0 的包内容缺失：`ledger/` 没随包，装完包跑门禁时豁免表会静默落空。**
