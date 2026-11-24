@@ -115,7 +115,7 @@
   <text x="60" y="802" class="cap" fill="#9d174d">与治理子系统零代码耦合 —— 图中不与治理层连线即此意；健康度由独立 CI job / repocheck 排除清单兜底</text>
   <g>
     <rect x="60" y="810" width="540" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
-    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，1.0.0）</text>
+    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，1.0.1）</text>
     <text x="72" y="848" class="chip-t">init / repocheck / verify · 源码映射自 tools/（sha256 对账，ADR-0008）</text>
     <rect x="620" y="810" width="560" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
     <text x="632" y="830" class="chip-t" font-weight="700">website/ 对外站点（Express + node:sqlite，:9042）</text>

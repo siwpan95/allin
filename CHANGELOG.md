@@ -3,6 +3,20 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.0.1 —— 2026-11-24
+
+**GitHub 建仓推送 + 三端增量巡检随包分发**（gitee 远端为权威源）。
+
+- 新增 `github` 子命令：`allin-governance github <whoami|list|create|public|remote|push|verify|sync>`，
+  以及 `allin-governance github github-sync <list|pull|drift|sync>`（三端巡检）。
+- 令牌纪律：优先 `GITHUB_TOKEN` 环境变量，否则 Windows GCM `git credential fill(host=github.com)`；
+  **不指向令牌文件、不回显、不入库**。
+- 权威关系单向：**gitee 远端 → 本地 → GitHub**；不向 gitee 推送（原 pushorigin 废止，改为只读 `drift`）。
+- 判据按 GitHub 平台差异实现（先私后公、SSH 通道、shallow 补全、5000/h 主限流 + 次级退避），
+  **不照搬 Gitee 的 `public` 整数 / 空仓 PATCH / 保守退避口径**。
+- 修 `verify` 的 ref 格式错配假红（本地 `refs/...` vs 远端去前缀 `heads/...`），修后单仓实测 `[SKIP] 无差异`。
+- 修 `check_readme_refs` 正式版摘要显示 bug（`extract_versions` 未传 actual，导致明明含真值却显示 False）。
+
 ## `allin-governance` 1.0.0 —— 2026-11-24
 
 **第一个正式版。** 从此不再叫 `0.0.0aX` 占位系列。

@@ -15,15 +15,12 @@ from kernel.cordis import Service
 from kernel.paths import ROOT, TOOLS_DIR
 
 
-def get_gitee_token() -> str | None:
-    """取 Gitee 令牌：优先 GITEE_TOKEN 环境变量，否则从 Windows GCM 现取（绝不硬编码）。"""
-    tok = os.environ.get('GITEE_TOKEN')
-    if tok:
-        return tok
+def _gcm_token(host: str) -> str | None:
+    """从 Windows GCM 现取指定 host 的令牌（绝不硬编码、不回显）。"""
     try:
         out = subprocess.run(
             ['git', 'credential', 'fill'],
-            input='protocol=https\nhost=gitee.com\n',
+            input=f'protocol=https\nhost={host}\n',
             capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
         )
         if out.returncode != 0:
@@ -35,6 +32,21 @@ def get_gitee_token() -> str | None:
     except Exception:
         pass
     return None
+
+
+def get_gitee_token() -> str | None:
+    """取 Gitee 令牌：优先 GITEE_TOKEN 环境变量，否则从 Windows GCM 现取（绝不硬编码）。"""
+    return os.environ.get('GITEE_TOKEN') or _gcm_token('gitee.com')
+
+
+def get_github_token() -> str | None:
+    """取 GitHub 令牌：优先 GITHUB_TOKEN 环境变量，否则从 Windows GCM 现取。
+
+    2026-11-24 上提增量巡检时新增：github_release.py 自身也会取令牌，
+    这里注入环境变量是为了让被调度的工具与 gitee-release 保持同一取令牌纪律。
+    GCM 中 github.com 条目已实测可用（classic PAT 含 repo scope）。
+    """
+    return os.environ.get('GITHUB_TOKEN') or _gcm_token('github.com')
 
 
 def _run(cmd, cwd=ROOT, env=None):
@@ -87,6 +99,40 @@ class ToolService(Service):
             raise FileNotFoundError(f'巡检工具不存在: {tool}')
         cmd = [sys.executable, tool] + list(args)
         return _run(cmd, cwd=ROOT)
+
+    # ---- GitHub 建仓 / 转公开 / 增量推送 / 独立复核 ----
+    def github_release(self, args):
+        """调度 tools/github/github_release.py（对称 gitee-release，按 GitHub 平台差异实现）。
+
+        用法：allin tools github-release whoami|list|create|public|remote|push|verify|sync
+        GitHub 令牌注入 GITHUB_TOKEN；工具本身也有 GCM 兜底。
+        """
+        tool = os.path.join(TOOLS_DIR, 'github', 'github_release.py')
+        if not os.path.isfile(tool):
+            raise FileNotFoundError(f'工具不存在: {tool}')
+        cmd = [sys.executable, tool] + list(args)
+        env = dict(os.environ)
+        tok = get_github_token()
+        if tok:
+            env['GITHUB_TOKEN'] = tok
+        return _run(cmd, cwd=ROOT, env=env)
+
+    # ---- 三端增量巡检（委托 github_release 做建仓/推 GitHub/复核）----
+    def github_sync(self, args):
+        """调度 tools/github/sync_repos.py：list|pull|pushorigin|sync。
+
+        默认 dry-run（只报告不改动远端）；--apply 才真动作，属高风险须人在场放行。
+        发布区根可由 ALLIN_REPOS_ROOT 环境变量给出（去符盘）。
+        """
+        tool = os.path.join(TOOLS_DIR, 'github', 'sync_repos.py')
+        if not os.path.isfile(tool):
+            raise FileNotFoundError(f'工具不存在: {tool}')
+        cmd = [sys.executable, tool] + list(args)
+        env = dict(os.environ)
+        tok = get_github_token()
+        if tok:
+            env['GITHUB_TOKEN'] = tok
+        return _run(cmd, cwd=ROOT, env=env)
 
     # ---- 已吸收的技能：列出可被内核调度的技能清单 ----
     def skills(self):
