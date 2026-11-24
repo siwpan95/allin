@@ -49,7 +49,7 @@
         └───────────────────┘         └──────────────────────────────────┘
                  │ subprocess                      │ 读写共享状态
             ┌─────────────────────────────────────────────────────┐
-  治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D17) │
+  治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D18) │
    (监工)    │  repocheck(30规则) · repo_hygiene(H1–H8)            │
             └─────────────────────────────────────────────────────┘
                  │ 校验对象 / 推送目标
@@ -160,7 +160,7 @@
   ⚠ **20 道聚合口径不变**：2026-11-09 起新增的 `facts`/`docs_index` 之外的独立对账门禁
   （`g21` 三方对账、`cli.py validate` / `facts_parity.py` / `relative_refs_gate.py` / `offline-check`）
   一律照 `g21` 模式以**独立脚本**接 `scripts/run_all_gates.sh`，不占 g00–g20 编号，也不改八处「20 道」自述。
-- **文档索引契约** `docs_index.py`：D1–D17（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数/计划闭环/事实源留痕…）。
+- **文档索引契约** `docs_index.py`：D1–D18（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数/计划闭环/事实源留痕…）。
 - **仓库体检** `repocheck/main.py`：30 规则，0–10 健康分，text/json/csv/html 导出。
 - **仓库卫生** `repo_hygiene.py`：H1–H8 基线棘轮（`--all` 跑全量）。
 
@@ -329,7 +329,7 @@ facts/facts.json   ← 唯一写入权威（Git 文本，SPEC-005 §3.11）
   脚本在 `tools/deploy/`，注册由人执行。ADR-0010 冻结的是**首版 4 任务**，第 5 个为
   2026-11-07 增量（不回改冻结决策）：`ALLIN-monthly-audit` = ERP 调研 P2 的**备用路线**，
   把月度盘点从 WorkBuddy 会话侧定时自动化（换机即失效）改为**跨机可复制的仓内调度**：
-  `tools/deploy/monthly_audit.py` 复用 `verify_facts`(g20) / `docs_index`(D1–D17) /
+  `tools/deploy/monthly_audit.py` 复用 `verify_facts`(g20) / `docs_index`(D1–D18) /
   repocheck / 组合分级表内自洽（137 = 140 − 3），留痕
   `tools/gate/audit/monthly-audit-runs.jsonl`；纯标准库、零 npm / bash / WorkBuddy 依赖。
   触发器取「每周一」+ Python 侧月度幂等守卫（同月已有 `status=ok` 即 skip），

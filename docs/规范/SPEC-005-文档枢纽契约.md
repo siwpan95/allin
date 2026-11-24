@@ -2,7 +2,7 @@
 
 > **编号** SPEC-005 ｜ **效力** 铁律级（目录与命名契约）｜ **状态** 生效
 > **生效** 2026-09-28 ｜ **最后修订** 2026-11-09 ｜ **适用面** `docs/` 全部内容 + 仓根 `facts/` 结构化真身 + 任何引用本枢纽的外部落点
-> **承载体** `tools/gate/docs_index.py`（D1–D17，D9–D17 的**唯一实现**在 `tools/gate/governance/runtime/docs_contract.py`，两个入口 import 同一份）；DSH 分发版同源门禁 `governance/gates/g15_docs_contract.py`；结构化事实源的独立脚本门禁 `tools/facts/cli.py validate` / `tools/gate/facts_parity.py` / `tools/gate/relative_refs_gate.py` / `tools/gate/facts_provenance.py` / `deploy/dolt/import_from_git.py --selftest`（照 `g21` 模式接 `scripts/run_all_gates.sh`，**不占 g00–g20 的 20 道聚合口径**）
+> **承载体** `tools/gate/docs_index.py`（D1–D18，D9–D17 的**唯一实现**在 `tools/gate/governance/runtime/docs_contract.py`，两个入口 import 同一份）；DSH 分发版同源门禁 `governance/gates/g15_docs_contract.py`；结构化事实源的独立脚本门禁 `tools/facts/cli.py validate` / `tools/gate/facts_parity.py` / `tools/gate/relative_refs_gate.py` / `tools/gate/facts_provenance.py` / `deploy/dolt/import_from_git.py --selftest`（照 `g21` 模式接 `scripts/run_all_gates.sh`，**不占 g00–g20 的 20 道聚合口径**）
 > **引用格式** `SPEC-005 §3.2`
 
 ---
@@ -294,6 +294,24 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 > 三基准都不存在 36（混杂示例与历史卷旧路径）；限定范围 + 分层豁免后收敛到 **10 条**可处置 finding，
 > 全部挂入棘轮。以 `docs/` 等仓根前缀开头的 markdown 链接为 **0** —— 这正是判据要补的缺口。
 
+### 3.13 **交接卷按机标注**（门禁 D18）
+
+> **2026-11-25 新增**。交接卷是**多机共持**的传递文档（不属于公共核）。此前 102 节混排，
+> 任一台机器要翻两百多节才找到自己那份账；更麻烦的是新节不标归属，按机索引就成了装饰。
+
+**规范两条**：
+
+1. **月卷按机索引**：`记录/交接/YYYY-MM.md` 卷首必须有「按机索引」，以 `@SIWPAN` /
+   `@DESKTOP-KQABATS` / `@DESKTOP-8RSV60V` / `@跨机` 为顶层分组，列出各节号与标题；
+2. **新节必须标归属**：`## ` 节标题含上述四种标记之一。
+
+**判据范围（三重限定，D18）**：只认 `YYYY-MM.md` 月卷（专题/方案文件不判）；只判
+`>= 2026-11` 的卷（生效月之前的历史卷不判）；每卷**只判最新一节**（存量历史节不判）——
+与 D17 同一精神：不逼迫改写历史，只约束从今往后。正文仍**只增不改**。
+
+**判据唯一实现**：`governance/runtime/docs_contract.py` 的 `check_d18()`。
+**门禁数不变（仍 20 道）**。
+
 ## 4. 命名规则
 
 | 类别 | 规则 | 反例（门禁报红） |
@@ -391,7 +409,7 @@ D14 刻意排除 `记录/` 不同：字节损坏不分活文档与历史证据�
 | --- | --- | --- | --- |
 | 2026-11-09 | v1.10 | **B 期**：`deploy/` 三栈骨架落仓（Dolt schema + 单向导入器 / NetBox 同步器 / GraphRAG 配置）；`run_all_gates.sh` 增接 `tools/gate/facts_provenance.py`（g25 溯源）与 `deploy/dolt/import_from_git.py --selftest`；头部承载体同步；`source_git_sha` 由 Dolt `DOLT_COMMIT` 落进 commit message 与 `fact_version`。**门禁数仍 20 道**，三栈全不进阻断链前置，服务缺席时 g25 显式 SKIPPED 并计数 | 用户 2026-11-09 指令「拉取远端新增内容后推进 B 期」。实测：Dolt 2.7.2 真机建表与导入 OK，`AS OF 'HEAD'` / `AS OF 'HEAD~1'` 均查得 4 行、`dolt_diff_fact=0`；三次 `--apply` commit 数 4→4→4、两次 dry-run SQL 哈希同为 `b0532a9f9772c9f2`；g25 `checked=5 findings=0`。踩坑并修复：`generated` 为 SQL 保留字改 `is_generated`、`volume.valid_from` 用观测日兜底、`ON DUPLICATE KEY UPDATE` 消耗 AUTO_INCREMENT 改全量重建派生库 |
 | 2026-11-09 | v1.9 | 新增 **§3.11 结构化事实源契约** 与 **§3.12 文档内相对路径基准**：仓根 `facts/` 数据面与 `docs/` 枢纽并列，真身唯一 / Schema 强制 / SCD-2 append-only / 生成物 marker / 判据一份；相对路径统一以 `docs/` 为基准 + 分层豁免 + 棘轮基线。配套同步 §4 命名、§5 头部、§7 SOP、头部「适用面 / 承载体 / 最后修订」；`scripts/run_all_gates.sh` 接入 `cli.py validate` / `facts_parity.py` / `relative_refs_gate.py --json` / `cli.py offline-check` 四条独立脚本门禁，**g00–g20 的 20 道聚合口径不变**；`tools/gate/baseline/relative-refs.txt` 挂存量 10 条；`tools/facts/README.md` 补 CLI 分工 | 用户 2026-11-09 指令「按对离线最友好的那档推进；改 SPEC-005/204 生效正文、把门禁接进 run_all_gates.sh；未做内容记账，与其他改动一起提交推送」。实测：`cli.py selftest 16/16`、`offline-check 6/6 PASS`、两次 build 字节相同、`g23 doc_refs=4 missing=0`、`g24 total=10 baselined=10 new=0`；相对路径摸底 343 份 md / 422 链接目标 / 双基准歧义 193 / 收敛后 10 条 finding |
-| 2026-11-07 | v1.8 | 新增 **§3.9 计划闭环（D16）** 与 **§3.10 事实源留痕（D17）**：D16 判 `事实源/组合分级决策索引.md` 执行顺序状态机表的状态列闭集（五态）+ ✅/⚠/⏸ 行证据列必须指向 `记录/`；D17 判事实源 md（README 除外）**日期最新时点块**必须含 `记录/` 指针（无时点块豁免，历史块不判）。承载体扩到 D1–D17，判据唯一实现仍在 `governance/runtime/docs_contract.py`（`check_d16` / `check_d17`），双入口 import 同一份，**门禁数仍 20 道**。配套：执行顺序表由 5 条叙述行改状态机表、事实源存量补留痕指针 6 份、`DESKTOP-KQABATS.md` 留痕缺口按铁律 6 登记统辖索引待修项 + 双入口基线棘轮挂账；自检新增 3 个逐维隔离用例（`plan-status-invalid` / `plan-evidence-missing` / `fact-no-record-ref`），并断言「拦下它的必须是 D16/D17 自己」 | 用户 2026-11-07 指令「先将 P0、P1 落实」（ERP 调研后的计划闭环与变更留痕缺口；P2 月度自动盘点因 WorkBuddy 换机障碍明确暂缓）。P1 实测抓出真缺口：`b964f18`（SIWPAN 文件夹化）发起方当日未在记录区留痕，已按新判据补记 `交接 2026-11.md` §一百三十八 |
+| 2026-11-07 | v1.8 | 新增 **§3.9 计划闭环（D16）** 与 **§3.10 事实源留痕（D17）**：D16 判 `事实源/组合分级决策索引.md` 执行顺序状态机表的状态列闭集（五态）+ ✅/⚠/⏸ 行证据列必须指向 `记录/`；D17 判事实源 md（README 除外）**日期最新时点块**必须含 `记录/` 指针（无时点块豁免，历史块不判）。承载体扩到 D1–D18，判据唯一实现仍在 `governance/runtime/docs_contract.py`（`check_d16` / `check_d17`），双入口 import 同一份，**门禁数仍 20 道**。配套：执行顺序表由 5 条叙述行改状态机表、事实源存量补留痕指针 6 份、`DESKTOP-KQABATS.md` 留痕缺口按铁律 6 登记统辖索引待修项 + 双入口基线棘轮挂账；自检新增 3 个逐维隔离用例（`plan-status-invalid` / `plan-evidence-missing` / `fact-no-record-ref`），并断言「拦下它的必须是 D16/D17 自己」 | 用户 2026-11-07 指令「先将 P0、P1 落实」（ERP 调研后的计划闭环与变更留痕缺口；P2 月度自动盘点因 WorkBuddy 换机障碍明确暂缓）。P1 实测抓出真缺口：`b964f18`（SIWPAN 文件夹化）发起方当日未在记录区留痕，已按新判据补记 `交接 2026-11.md` §一百三十八 |
 | 2026-09-28 | v1.0 | 首版：四分类、目录契约、ASCII 别名并置、命名与头部契约、编号区间、新增 SOP | 用户拍板「大修 + 方案一/二并置执行」 |
 | 2026-10-26 | v1.1 | §3.1 目录树新增 `记录/决策/` 子类（安放冻结 ADR）；同步 §11 修订记录 | 三仓整合：原 `allin-platform` 的 2 份 ADR 需要一个不被误读为现行权威的落点，按 §2 判据它们属「记录」且需与「专题/调研报告」区分 |
 | 2026-11-01 | v1.2 | ① §3.1 目录树补 `记录/记忆/` 子类（该子类 2026-10-28 已建并登记 INDEX，**当时漏改本契约**）；② 新增 **§3.5**：补 **D9 章节锚点 / D10 区间随文 / D11 两处计数** 三项判据，承载体扩到 D1–D11，判据唯一实现落 `governance/runtime/docs_contract.py`（两个入口 import 同一份） | 用户 2026-11-01 拍板「结构缺口当然要补；有盲区自然需要补齐门禁，消除盲区」。三处盲区均为实测漏网：章节序一改留 6 处失效指针（`g19` 不查锚点）、卷首区间长期停在 `~ 10-16` 而正文已到 10-31、INDEX 头部 54 / §四 标题 53 |

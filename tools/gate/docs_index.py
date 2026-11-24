@@ -321,6 +321,7 @@ def run(root: str, args) -> Report:
     docs_contract.check_d15(docs, files, rep)
     docs_contract.check_d16(docs, rep)
     docs_contract.check_d17(docs, files, rep)
+    docs_contract.check_d18(docs, files, rep)
     return rep
 
 

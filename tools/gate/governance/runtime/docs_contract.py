@@ -867,6 +867,46 @@ def check_d17(docs: str, files: list[str], rep) -> None:
                       "（补一行 `> **留痕**` 指向交接卷条目 / 记录文件）" % f)
 
 
+#: D18 —— 交接卷按机标注（2026-11-25 起，SPEC-206 / 交接 README「格式规范」）：
+#: 交接卷是多机共持的**传递文档**，按「以机器标识为顶层」组织。若新节的标题不标归属，
+#: 这份索引就只是入口的装饰、正文仍是一锅粥 —— 所以把格式约定升成判据。
+#: **只判最新一节**（与 D17 同一精神：不逼迫改写历史，只约束从今往后）；
+#: 存量未标机的历史节保留原样。合法标记：`@SIWPAN` / `@DESKTOP-KQABATS` /
+#: `@DESKTOP-8RSV60V` / `@跨机`（跨机共识、机制、发布、纪律）。
+_MACHINE_TAG = re.compile(r"@`?(SIWPAN|DESKTOP-KQABATS|DESKTOP-8RSV60V|跨机)`?")
+_NOT_A_SECTION = ("按机索引", "会话交接")
+
+_D18_EFFECTIVE_FROM = "2026-11"   # 判据生效月：此前的历史卷与专题文件不判
+
+
+def check_d18(docs: str, files: list[str], rep) -> None:
+    """**交接卷按机标注**（只判最新一节）。范围：`记录/交接/YYYY-MM.md` 月卷。
+
+    ⚠ 三重限定（否则会把历史卷一起判红，2026-11-25 首跑实测 08/09/10 卷当场报 4 条）：
+    ① 只认 `YYYY-MM.md` 形式的**月卷**（专题/方案文件不判）；
+    ② 只判 `>= _D18_EFFECTIVE_FROM` 的卷（生效月之前的历史卷不判）；
+    ③ 每卷只判**最新一节**（存量历史节不判）。
+    """
+    for f in files:
+        name = f.rsplit("/", 1)[-1]
+        if not f.startswith("记录/交接/") or not re.fullmatch(r"\d{4}-\d{2}\.md", name):
+            continue
+        if name[:7] < _D18_EFFECTIVE_FROM:
+            continue
+        text = read_text(os.path.join(docs, f.replace("/", os.sep)))
+        heads = [ln for ln in text.splitlines()
+                 if ln.startswith("## ") and not any(k in ln for k in _NOT_A_SECTION)]
+        if not heads:
+            continue
+        last = heads[-1]
+        if _MACHINE_TAG.search(last):
+            rep.exempt("D18-tagged")
+        else:
+            rep.block("D18", "%s 最新节标题未标归属机：「%s」—— 交接卷以机器标识为顶层，"
+                      "新节须写 @SIWPAN / @DESKTOP-KQABATS / @DESKTOP-8RSV60V / @跨机"
+                      "（存量历史节不判）" % (f, last[3:40].strip()))
+
+
 # ---------------------------------------------------------------- 自检
 def _fixture(kind: str, base: str) -> str:
     """造一个迷你枢纽（只含新判据所需的结构）。
@@ -1003,6 +1043,7 @@ def selfcheck_extra() -> dict[str, int]:
             check_d15(docs, _mini_files(docs), rep)
             check_d16(docs, rep)
             check_d17(docs, _mini_files(docs), rep)
+            check_d18(docs, _mini_files(docs), rep)
             if rep.blocking:
                 caught += 1
                 if kind in d15_cases and any(c != "D15" for c, _ in rep.blocking):
@@ -1035,6 +1076,7 @@ def selfcheck_extra() -> dict[str, int]:
         check_d15(docs, _mini_files(docs), rep)
         check_d16(docs, rep)
         check_d17(docs, _mini_files(docs), rep)
+        check_d18(docs, _mini_files(docs), rep)
         if rep.blocking:
             misreports += 1
             print("MISREPORT clean-case failed: %s -- %s" % (kind, [m for _, m in rep.blocking][:3]))
