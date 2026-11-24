@@ -341,4 +341,22 @@
 
 ---
 
-*本文件是 `DESKTOP-KQABATS` 这台的**唯一**事实源。改前先复测，并把旧值以"（原 …）"形式留在同格内。*
+## 10. 本机事件台账（指针；2026-11-25 由 SIWPAN 侧**从交接卷代为归档**，本机复验后可订正）
+
+> 归档说明：以下条目的**完整经过**住交接卷（括号内节号），此处只存指针与一句话摘要。
+> 本机复验后如有出入，**直接改本节**（铁律 6：本机事实本机写）；代归档内容以交接卷原文为准。
+
+| 日期 | 事件 | 详录 |
+| --- | --- | --- |
+| 2026-11-22 | `bootstrap.sh` 首跑 exit 1：本机无 `pwsh` ⇒ `cmd mklink /J` 兜底，中文真身目录（规范/事实源/记录）经 Git Bash→cmd 编码转换必败（UTF-8 按 cp936 解读）；ASCII 路径同命令成功（隔离复证） | 交接卷 §181 |
+| 2026-11-22 | `bootstrap.sh` 修复后 exit 0：Windows 分支改 **pwsh → powershell 5.1 → mklink** 三级回落（4 junction 全建） | 交接卷 §181 |
+| 2026-11-22 | `g20-facts` 红：本机分区文件称发布区 **137** 目录、实测 **138** ⇒ 按门禁自述路径追加本机时点块后转绿 | 交接卷 §181 |
+| 2026-11-22 | `publish_area_gate` 红：本机发布区 **blocking=50**（57→0 的整改修在 SIWPAN 的发布区副本，各仓独立未同步）⇒ 属环境事实未代改；`platform check-repos` 另抓到 `docx-converter` / `piano` 缺检出，补 clone 转绿（发布区 140 目录） | 交接卷 §181 |
+| 2026-11-23 | `publish_area_gate` **50 → 0**（README 缺段补写 25 仓 / 许可 19 处 / 依赖 6 仓 / 旧根路径清洗 96 文件 / `3dworld` 版本升齐 / `photo` 16 wheel 解除跟踪）；`console smoke` / `console:plugins` / `console:lifecycle` 真跑全过 | 交接卷 §182 |
+| 2026-11-23 | Electron 零输出瞬退的**误诊作废**：真因是托管会话里 `env -u` 被宿主吞掉（隔离复证），内建 `unset` 才有效；`ELECTRON_RUN_AS_NODE` 用 `$env:… = $null` 清 | 交接卷 §182 |
+| 2026-11-24 | `allin` 仓根不在 `repos/` 下（`E:\projects\allin`）⇒ 发布区用 **junction** 挂载 `<发布区>\allin`（LinkType=Junction 可遍历；junction 不入库，换机需重建） | 指南 FAQ 25 |
+| 2026-11-24 | `console smoke`/`plugins`/`lifecycle` 在宿主托管会话内无法真跑（Electron 被沙箱隔离），留待真机终端复验 | 交接卷 §181 |
+
+---
+
+*本文件是 DESKTOP-KQABATS 这台的**唯一**事实源。改前先复测，并把旧值以"（原 …）"形式留在同格内。*
