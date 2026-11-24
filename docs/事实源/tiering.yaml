@@ -887,6 +887,8 @@ tiering:
   action: 收敛合并：已退役（2026-10-28 README 退役横幅），0–100 轴规则被主仓 counter 模型取代；内容已并入 `sin-virtue-cordis-host`（cards→`plugins/cards.js`、前端→`public/runner.html`）
   archive_target: sin-virtue-cordis-host
   note: 已退役；2026-10-29 目录已实际移入归档区（目录名 `sin-virtue-game-retired-20261029`，盘符随机器），30
+  retired_at: 2026-11-24
+  retired_note: gitee 早于本轮已 404、本地无检出；2026-11-24 GitHub 侧删除前先克隆留档（4d5d132 / 2 提交）并 `git bundle --all` + verify 通过，再 DELETE 并匿名复核 404（交接卷 §197.7）
     文件 / HEAD `4d5d132` / `fsck` 通过；归档区唯一落点见 `机器/DESKTOP-8RSV60V/DESKTOP-8RSV60V.md` §2.2，历史保全
 - repo: music-prompt-generator
   seq: 124
