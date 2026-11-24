@@ -58,6 +58,14 @@ ROOT = Path(__file__).resolve().parents[2]
 #: 历史遗留 tag：保留不删（铁律 70 禁止改写/删后重建），逐条给出理由。
 LEGACY_TAGS = {
     "nothing": "2026-08-27 把 misc 分支转成 tag 的历史产物，非发布 tag，保留不删",
+    # 2026-11-24 全链复跑实抓：新 tag 判据上线后，5 个 archive/* 存档 tag
+    # 被误当发布 tag 判红（不符合 `<包名>-vX.Y.Z`）。它们是 pre-rebase / stash
+    # 的历史保全（铁律 70 禁 force push 改写已有 tag），逐条登记豁免、保留不删。
+    "archive/keep-pre-rebase-1030-20261103": "2026-10-30 pre-rebase 存档 tag（2026-11-03 建），非发布 tag，保留不删",
+    "archive/keep-pre-rebase-20261029-20261103": "2026-10-29 pre-rebase 存档 tag（2026-11-03 建），非发布 tag，保留不删",
+    "archive/keep-pre-rebase-part-20261103": "2026-10-30 pre-rebase 分叉保全 tag（2026-11-03 建），非发布 tag，保留不删",
+    "archive/keep-reposcan-fix-20261028-20261103": "2026-10-28 reposcan 修复存档 tag（2026-11-03 建），非发布 tag，保留不删",
+    "archive/stash-2026-11-17-discipline-70": "2026-11-22 纪律 70 stash 存档 tag，非发布 tag，保留不删",
 }
 
 #: 迟于这个日期的 tag，其指向的 commit 必须在 origin/master 上。

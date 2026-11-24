@@ -1,13 +1,27 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
-> **时点** 2026-11-24 07:55（**@`DESKTOP-KQABATS` 执行用户指令「本地批量清理」——交接卷 §195 的 g17 跨机待决落地 —— 发布区 143 → 77** ——
+> **时点** 2026-11-24 17:35（**@`DESKTOP-KQABATS` 拉取远端 squash 后对齐 + `py_test_runner` 残留清理 —— 发布区 77 → 76** ——
+>   用户指令「拉取远端新增内容，若没有改善，再完成修复推进；删本地仓，记账；提交推送放行」：
+>   远端把 secrets-scan 那批 6 笔 squash 为 `1d15ce4`（含两处夹具修复，g04/g09 红项自愈）；
+>   @`DESKTOP-KQABATS` 本地旧 6 笔以 `backup/pre-squash-20261124` 留档后 `reset --hard` 对齐，无 force push。
+>   g17 仍报 `repos/py_test_runner` 未登记（该仓上游 404 已删、能力已上提 `tools/_shared/pytrunner`）⇒
+>   同 [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十五 的清理口径（后续批次同理），把残留干净克隆（113 MB、无未提交改动）**移入**既定备份区
+>   `E:\projects\_repos_frozen_backup_2026-11-24\py_test_runner`（可随时恢复，零数据销毁）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **76** 个目录；
+>   备份区 `E:\projects\_repos_frozen_backup_2026-11-24` **67** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十八（@`DESKTOP-KQABATS` 拉取对齐 + 残留清理 · 自留痕）
+
+> **时点** 2026-11-24 07:55（**@`DESKTOP-KQABATS` 执行用户指令「本地批量清理」—— [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十五 的 g17 跨机待决落地 —— 发布区 143 → 77** ——
 >   以 g17 精确复算清单为准（66 条 unregistered-repo，与门禁逐一对应）；
 >   移动前预检 **66/66 均有 origin 远端且 HEAD 非空**（历史保全双证：远端 + 归档仓）；
->   按安全流程**移动到备份区而非删除**：66 个目录 → `E:\projects\_repos_frozen_backup_2026-11-24`
+>   按安全流程**移动到备份区而非删除**：当时 **66 个目录**已计入备份区（计数口径以最新时点块为准）；
 >   （同盘 rename 瞬时完成，可随时恢复，零数据销毁）。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
->   发布区 `E:\projects\repos` **77** 个目录；
->   备份区 `E:\projects\_repos_frozen_backup_2026-11-24` **66** 个目录；
+>   （计数口径历史：当时发布区 **77**、备份区 **66**；当日 17:35 清理后为 **76 / 67**，计数断言以最新时点块为准。）
 >   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
 >   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
 >   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
