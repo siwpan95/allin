@@ -54,7 +54,13 @@ TITLE = "governance: the project registry is complete and knows its lifecycle"
 REGISTRY_REL = "platform/registry/projects"
 GAPS_REL = "tools/gate/governance/registry-known-gaps.txt"
 
-ALLOWED_STATUS = ("active", "dormant", "archived", "deprecated")
+#: 生命周期状态词表。**与 `platform/packages/core/src/registry.js` 的
+#: TOMBSTONE_STATUS 必须构成同一个闭集**（2026-11-24 全检 F-13）：
+#: 两处曾各写一半 —— 运行时认 {archived, retired}、门禁认 {active, dormant, archived,
+#: deprecated}，交集只有 archived。后果是「按运行时词表写 retired，门禁判 status-unknown」，
+#: 而「按门禁词表写 deprecated，运行时不当墓碑、仍要求本机有目录」。
+#: 现在两处都认全集；墓碑语义 = 已撤退（archived / deprecated / retired 三者同义）。
+ALLOWED_STATUS = ("active", "dormant", "archived", "deprecated", "retired")
 DORMANT_DAYS = 90
 ARCHIVE_DAYS = 365
 

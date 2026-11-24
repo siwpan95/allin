@@ -261,7 +261,12 @@ export const GAMEPLAY_ALLOWED_CATEGORIES = ['game', 'engine', 'prototype', 'cont
 // （如 write-agent 在 @DESKTOP-8RSV60V 新建并推送，@SIWPAN 本机尚未检出）。
 // 「本机没这个目录」不等于「治理缺陷」；显式声明后同样只豁免存在性，形状校验照旧。
 // 与墓碑同族但语义不同：墓碑 = 已撤退，remote-only = 活跃但在别机。
-const TOMBSTONE_STATUS = new Set(['archived', 'retired'])
+// 2026-11-24 全检 F-13：词表与门禁 `tools/gate/governance/gates/g17_registry.py` 的
+// ALLOWED_STATUS 必须是**同一个闭集**。此前这里是 {archived, retired}、门禁是
+// {active, dormant, archived, deprecated}，交集只有 archived —— 于是「按这边写 retired
+// 会被门禁判 status-unknown」，「按门禁写 deprecated 在这边不当墓碑、仍要求本机有目录」。
+// 现在两边都认全集，墓碑语义统一为「已撤退」：archived / deprecated / retired 同义。
+const TOMBSTONE_STATUS = new Set(['archived', 'deprecated', 'retired'])
 
 export function isTombstone(entry) {
   return TOMBSTONE_STATUS.has(String(entry.status ?? '').trim().toLowerCase())

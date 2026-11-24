@@ -511,6 +511,20 @@ run "$PY" tools/gate/check_readme_refs.py --selfcheck
 #    曾静默存活近月，此后同类漂移跑批即红。2026-11-10 深度审计 H-5 补第七项：
 #    SVG 里的 allin-governance 版本声明必须与 pyproject.toml 相等。
 run "$PY" tools/gate/check_arch_assets.py
+# ⑧b Tag 纪律（2026-11-24 全检残留项收口）：命名 / annotated / 版本对账 / 指向已推送主线。
+#    这条纪律此前只写在四份文档里（SPEC-004 铁律 70、SPEC-102、SPEC-103、指南 §3.2），
+#    没有任何一条能被机器判 —— 打错名字、轻量 tag 冒充发布、tag 指向没推的本地提交、
+#    tag 版本与 pyproject 对不上，四类都静默通过。
+#    默认跑离线判据（不需要网络，任何机器都能跑）；`ALLIN_TAGS_REMOTE=1` 追加
+#    `git ls-remote` 比对（检测「本地有远端无」与「已被移动」，CI 里用这个）。
+#    注意：这里**不用 note_skip** —— 远程比对是可选加强，不是环境性缺失；
+#    记成 SKIP 会把每次本地跑批的 status 从 clean 降成 incomplete。
+if [ "${ALLIN_TAGS_REMOTE:-0}" = "1" ]; then
+  run "$PY" tools/gate/check_tags.py --remote
+else
+  run "$PY" tools/gate/check_tags.py
+  echo "    [note] tag-check 走离线判据；远端不可变性比对请用 ALLIN_TAGS_REMOTE=1"
+fi
 # ⑨ 月度治理盘点器自身逻辑回归（ERP P2 备用路线，2026-11-07）：真跑由
 #    ALLIN-monthly-audit 计划任务负责（每台机器本地 JSONL），这里只跑夹具自测，
 #    每次跑批顺带证明「月度幂等守卫 / 表内自洽 / 发布区软观测」没被改坏。
