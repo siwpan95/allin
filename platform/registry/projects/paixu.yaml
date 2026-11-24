@@ -1,0 +1,19 @@
+id: paixu
+name: paixu · 按拼音排序文本行
+category: tool
+version: 0.1.0
+path: repos/paixu
+manual: true
+note: >-
+  中文名单/文本行按拼音排序：剥行首编号（1. / 2、/ (3) / 一、/ A)）与前导标点，
+  输出保留原文；四种输出格式（text/json/ndjson/csv），退出码 0/1/2。
+  无 pypinyin 时降级按 Unicode 码位排序（--require-pinyin 可强制失败）。
+launch:
+  # 不起服务、不开窗口的东西：launch 只用来「证明装完能跑」，故用 --help（退出 0、无副作用）。
+  # 别写裸 `python -m paixu` —— 那是交互工作区模式，会在当前目录建 input/ 与 output/。
+  command: python -m paixu --help
+publish:
+  repo: siwpan/paixu
+  branch: master
+verify:
+  command: python -m pytest -q

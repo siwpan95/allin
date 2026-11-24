@@ -167,9 +167,17 @@ def _retry_after(hdr: dict, fallback_idx: int) -> int:
     return RATE_BACKOFF[min(fallback_idx, len(RATE_BACKOFF) - 1)]
 
 
-def git(args, cwd=None, timeout=300):
+def git(args, cwd=None, timeout=300, check=False):
+    """跑一条 git 命令。
+
+    `check` 只为接口一致性而存在：调用方写 `check=False` 表达「失败也继续」的意图
+    （如 remote set-url 前先 add）。**不接受它会让整条子命令 TypeError** ——
+    2026-11-24 实战（paixu 建仓推送）实测：`github remote` 就是这么崩的，
+    而当时只有 `--version` 和 import 被验证过。签名与调用点必须一起看。
+    """
     return subprocess.run(["git"] + list(args), cwd=cwd, capture_output=True,
-                          text=True, encoding="utf-8", errors="replace", timeout=timeout)
+                          text=True, encoding="utf-8", errors="replace", timeout=timeout,
+                          check=check)
 
 
 def local_repos(root) -> list:

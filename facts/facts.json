@@ -769,6 +769,15 @@
       "source_file": "platform/registry/projects/ollama-generator.yaml"
     },
     {
+      "project_id": "paixu",
+      "name": "paixu · 按拼音排序文本行",
+      "category": "tool",
+      "version": "0.1.0",
+      "path": "repos/paixu",
+      "publish_repo": "siwpan/paixu",
+      "source_file": "platform/registry/projects/paixu.yaml"
+    },
+    {
       "project_id": "paotuan",
       "name": "跑团模拟器（镜中之失）",
       "category": "game",

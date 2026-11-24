@@ -163,9 +163,10 @@ allin docs portfolio --apply
 - **`PORTFOLIO.md` 会过期**：它由 `tools/build_portfolio.py` 从 Gitee API 生成（是索引，
   不是源码镜像）。仓数变化后刷新：`python tools/build_portfolio.py --apply`；
   去掉 `--apply` 是干跑，只打印数字、不写盘。
-  〔2026-11-24 复核：干跑报 **85** 仓（公开 85 / 私有 0），与 `system-architecture.svg` /
-  `SPEC-204` 三处一致，`check_arch_assets.py` 全绿。**同日 08:06 的「66 冻结仓移入备份区」
-  使这条数字从 143 变成 85** —— 时点值一律按复核当日重测，不要沿用旧数。〕
+  〔**别在散文里记这个数**：它是活值，且一天内变过三次（143 → 85 → 77，都是清理动作
+  的真实结果）。本行故意不写数字 —— 要看当前值就读 `PORTFOLIO.md` 首部「共 N 个仓库」，
+  三处一致性由 `check_arch_assets.py` 逐次对账（`system-architecture.svg` 与 `SPEC-204`
+  必须同值）。2026-11-24 复核时 `--apply` 与 Gitee API 分页实测均为 77。〕
 - **monorepo 下不能对仓根裸跑体检器**：`tools/` `packages/` `console/` `kernel/` 等是仓内
   中间目录、不是独立仓。裸跑 `repocheck .` 会把它们当成 11 个「项目」逐个判
   「缺 `.git` / 缺 README」，健康分掉到 6.0（2026-11-24 实测）。正确口径：
