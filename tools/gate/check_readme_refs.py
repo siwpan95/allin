@@ -44,6 +44,7 @@ packages/allin-governance/build/** 是打包产物、.venv/** 是第三方环境
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import tempfile
@@ -150,6 +151,22 @@ def read_pkg_version(pyproject_text: str) -> str | None:
     m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject_text, re.M)
     return m.group(1) if m else None
 
+def _installed_pkg_version() -> str | None:
+    """版本真值 = 已安装的 allin-governance。
+
+    `ALLIN_README_TRUTH_VERSION` 是**自检夹具的注入点**：提仓后真值不再来自本仓文件，
+    夹具无法靠造一个假 pyproject 来表达"期望版本"，故留这个显式覆盖（仅测试用）。
+    """
+    override = os.environ.get("ALLIN_README_TRUTH_VERSION")
+    if override:
+        return override
+    try:
+        import allin_governance
+        return allin_governance.__version__
+    except Exception:  # noqa: BLE001
+        return None
+
+
 
 def load_docs(root: Path) -> dict[str, str]:
     """按 SCAN_GLOBS 展开并读取判定面文档，返回 rel(相对仓根，posix) → 文本。"""
@@ -203,11 +220,9 @@ def run_on(root: Path, quiet: bool = False) -> int:
     readme = root / "README.md"
     # 环境校验：真值来源与门面必须可读，否则整条门禁不可信 → exit 3。
     # 真值 = 已安装的 allin-governance 版本（公共核已提仓，见模块头注释）。
-    try:
-        import allin_governance
-        pkg_version = allin_governance.__version__
-    except Exception as exc:  # noqa: BLE001
-        print(f"ENV-ERROR: 读不到已安装的 allin-governance 版本（{exc}）——先 pip install")
+    pkg_version = _installed_pkg_version()
+    if not pkg_version:
+        print("ENV-ERROR: 读不到已安装的 allin-governance 版本 —— 先 pip install")
         return 3
     if not readme.is_file():
         print(f"ENV-ERROR: 仓根门面不存在 {readme}")
@@ -260,7 +275,7 @@ def selfcheck() -> int:
     恢复真值后必须全绿 exit 0；并额外断言「噪声免疫」（IP / 日期 / 章节号 /
     端口 / 第三方版本 / DSH 分发版版本都不被当成 allin-governance 版本号）。
     """
-    truth = "0.0.0a5"
+    truth = _installed_pkg_version() or "0.0.0a5"   # 2026-11-25：真值来自已装包
     with tempfile.TemporaryDirectory(prefix="check_readme_refs_selfcheck_") as td:
         root = Path(td)
         (root / "packages" / "allin-governance").mkdir(parents=True)

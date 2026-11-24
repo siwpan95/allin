@@ -391,11 +391,9 @@ run "$PY" -m allin_governance repocheck . --profile monorepo --exclude tools,ven
 # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
 # packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
 # 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。
-# packages/ 当前只有一个包；新增包时要在这里补一行（或改成循环）。
-if [ -d packages/allin-governance ]; then
-  run "$PY" -m allin_governance repocheck packages/allin-governance \
-      --profile component --exclude src,tests --fail-on error
-fi
+# 2026-11-25 公共核提仓：packages/allin-governance 源码已迁至独立仓
+# （D:/projects/repos/allin-governance）。本仓只留旧路径指针 README，不是可体检项目，
+# 该段移除；公共核自身由包仓 CI 负责。
 
 # --- 2026-11-01 补齐三项此前未接进自动化的辅助门禁 ---
 # 起因：README §本仓自检口径承诺 A/B/C 三条，脚本却只跑了 A) 与 C)，
