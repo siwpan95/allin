@@ -841,15 +841,6 @@
       "source_file": "platform/registry/projects/portal.yaml"
     },
     {
-      "project_id": "py-test-runner",
-      "name": "测试运行器",
-      "category": "tool",
-      "version": "1.0.0",
-      "path": "repos/py_test_runner",
-      "publish_repo": "siwpan/py_test_runner",
-      "source_file": "platform/registry/projects/py-test-runner.yaml"
-    },
-    {
       "project_id": "pyinstaller",
       "name": "打包器",
       "category": "tool",
