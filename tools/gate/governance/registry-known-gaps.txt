@@ -4,17 +4,10 @@
 # 声明即负债：P0-4 之后每条都要补审批人与到期日，过期自动转红。
 deepseek-harness-master | 上游 DeepSeek Harness 的源码快照（无 origin，非本工作区项目），仅作阅读与参照
 calculator | 本机检出但尚未纳入工作区组合治理的临时仓（2026-11-08 深度审核发现）；声明为缺口而非静默豁免，待维护者确认后补 registry 条目或删除
-# 2026-11-24 本机 DESKTOP-8RSV60V 跨机差异（待全哥裁决，非豁免）：
-# 上游 a7883dd / 4f45360 在 @KQABATS 机把这 9 个仓当作「远端已删除」清掉 registry 条目，
-# 但本机逐仓 git ls-remote origin 实测远端**仍存在**（非 404）——快照判断与实况不符。
-# 按铁律 6 不代改他机文件、也不凭旧快照清理这些仓；先声明缺口让 g17 如实记录负债，
-# 待裁决「补回 registry 条目」或「确认远端退役后按冻结仓流程清理两侧」。
-diablo | 本机实测 gitee origin 仍存在（2026-11-24 ls-remote exit 0），上游按旧快照判已删并移除 registry；待裁决补登记或退役
-god-hand- | 同上：远端存在，registry 条目被上游清理；待裁决
-lonely-desert-road | 同上：远端存在，registry 条目被上游清理；待裁决
-mathematical-formula-renderer | 同上：远端存在，registry 条目被上游清理；待裁决
-random-dungeon- | 同上：远端存在，registry 条目被上游清理；待裁决
-sign-in-simulator | 同上：远端存在，registry 条目被上游清理；待裁决
-table-hanging-machine | 同上：远端存在，registry 条目被上游清理；待裁决
-test | 同上：远端存在，registry 条目被上游清理；待裁决
-under-withered-limbs | 同上：远端存在，registry 条目被上游清理；待裁决
+# 2026-11-24 已结案（原 9 条缺口声明移除）：
+# diablo / god-hand- / lonely-desert-road / mathematical-formula-renderer /
+# random-dungeon- / sign-in-simulator / table-hanging-machine / test / under-withered-limbs
+# 全哥裁决：这 9 仓 README 均带「已归档（Archived — 仅作参考）」标记，指明已迁入
+# game-prototypes / media-prototypes / dev-toolkit 且远端 refs/heads/archive/<name>
+# 分支实测存在 ⇒ 独立入口属冗余，与 58 个冻结仓同性质，三侧（gitee/本地/GitHub）已删除。
+# 不再是缺口，故从本文件移除；删除证据见交接卷 §197.5。
