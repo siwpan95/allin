@@ -32,5 +32,10 @@ if (found.status !== 0 || !runTs) {
   process.exit(3);
 }
 
-const r = spawnSync("node", [runTs, ...process.argv.slice(2)], { stdio: "inherit" });
+// run.ts 内部会自己找解释器（优先取 DSH_GOVERNANCE_PYTHON）；不指定的话它会用 PATH 上的
+// python3 —— 那里可能装着**另一份** allin-governance（旧版 run.ts），导致路径推导错位。
+const r = spawnSync("node", [runTs, ...process.argv.slice(2)], {
+  stdio: "inherit",
+  env: { ...process.env, DSH_GOVERNANCE_PYTHON: PY },
+});
 process.exit(r.status === null ? 1 : r.status);

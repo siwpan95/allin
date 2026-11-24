@@ -116,6 +116,47 @@ ANCHOR_RE = re.compile(
 )
 
 # 允许不校验的路径前缀（第三方 / 构建产物 / 仓外）
+#: 2026-11-25 公共核提仓：这批前缀下的源码已迁至独立仓 `allin-governance`。
+#: 历史审计报告（`docs/记录/审计/`）里的锚点引用的是**当时**的事实 —— 记录只增不改，
+#: 所以命中这些前缀时判「已迁走」而**不是**「路径写错」。运维提示：查对应内容请去
+#: 已安装包 `allin_governance/_{gatesuite,repocheck,facts,...}` 或那个仓。
+
+_PKG_NAMES: set[str] | None = None
+
+
+def _names_in_package() -> set[str]:
+    """已安装公共核里的全部文件名 —— 用于识别「裸文件名锚点指向已迁走的文件」。
+
+    历史审计报告常写 `govlib.py:191` 这种裸名；迁走前靠仓内同名解析，迁走后
+    只剩包内那一份。判「已迁走」而不是「路径写错」，才不会把历史记录判成造假。
+    """
+    global _PKG_NAMES
+    if _PKG_NAMES is None:
+        names: set[str] = set()
+        try:
+            import allin_governance
+            base = os.path.dirname(allin_governance.__file__)
+            for _root, _dirs, files in os.walk(base):
+                names.update(files)
+        except Exception:  # noqa: BLE001  包未装时不做这个豁免
+            pass
+        _PKG_NAMES = names
+    return _PKG_NAMES
+
+
+#: 2026-11-25 提仓时**废弃**（不是迁走）的脚本 —— 历史报告引用它们同样合法。
+RETIRED_FILES = ("check_pkg_parity.py",)
+
+MIGRATED_PREFIXES = (
+    "tools/gate/governance/",
+    "tools/repocheck/",
+    "tools/_shared/",
+    "tools/facts/",
+    "tools/github/",
+    "tools/secret_scan/",
+    "packages/allin-governance/",
+)
+
 SKIP_PREFIXES = (
     "vendor/", "node_modules/", "build/", "dist/", ".venv/",
     "site-packages/", "http://", "https://",
@@ -376,6 +417,15 @@ def check_anchors(doc: Path, text: str, findings: list[Finding]) -> None:
             # 简称解析：文件名唯一时可定位到真实路径
             resolved, note = _resolve_short_name(rel)
             if resolved is None:
+                if any(rel.startswith(p) for p in MIGRATED_PREFIXES):
+                    # 已迁走：历史记录的锚点合法，只是文件不在本仓了
+                    continue
+                base_name = os.path.basename(rel).split(":")[0]
+                if base_name in RETIRED_FILES:
+                    continue   # 已废弃脚本：历史锚点合法
+                if base_name in _names_in_package():
+                    # 裸文件名锚点：包内有同名文件 ⇒ 指向的正是迁走的那份
+                    continue
                 if cross_repo:
                     # 跨仓盘点文档（如「硬编码路径盘点 / 修复计划」）盘点的就是
                     # 其他仓库的文件，带目录前缀的锚点天然不在本仓；逐个维护

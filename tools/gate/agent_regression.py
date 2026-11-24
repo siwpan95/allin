@@ -47,7 +47,18 @@ LEDGER = ROOT / "tools" / "gate" / "ledger"
 GOLDEN = LEDGER / "agent_regression_golden.json"
 BASELINE = LEDGER / "agent_regression_baseline.json"
 PRESET = ROOT / "preset" / "allin" / "allin.patch.yml"
-REGISTRY = ROOT / "tools" / "gate" / "governance" / "registry.json"
+# 2026-11-25 公共核提仓：门禁清单 / gates 脚本随包走（allin-governance 仓）。
+# 从已安装包里解析；包未装时回退旧路径（只为给出可读错误，不是长期双源）。
+def _pkg_gatesuite() -> "Path":
+    try:
+        import allin_governance
+        return Path(allin_governance.__file__).resolve().parent / "_gatesuite"
+    except Exception:  # noqa: BLE001
+        return ROOT / "tools" / "gate" / "governance"
+
+
+GATESUITE = _pkg_gatesuite()
+REGISTRY = GATESUITE / "registry.json"
 MCP = ROOT / "platform" / "apps" / "mcp" / "src" / "index.js"
 NODE = "node"
 
@@ -131,7 +142,7 @@ def case_mcp_selftest():
 
 def case_carrier_parity():
     """样例 5 · 多载体一致：preset 治理段、SKILL.md 与 agent.cordis.yml 说的是同一套事实。"""
-    gate = ROOT / "tools" / "gate" / "governance" / "gates" / "g16_skill_preset_parity.py"
+    gate = GATESUITE / "gates" / "g16_skill_preset_parity.py"
     if not gate.is_file():
         return False, f"g16 门禁脚本不存在：{gate}"
     code, _ = run([sys.executable, str(gate), "--quiet"])

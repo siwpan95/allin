@@ -33,7 +33,17 @@ import { decideRoute, DETERMINISTIC_FALLBACK_TASKS } from './model_route.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.join(__dirname, '..', '..', '..', '..')
-const GOVERNANCE = path.join(REPO, 'tools', 'gate', 'governance')
+// 2026-11-25 公共核提仓：门禁套件（registry.json / exceptions.yml / RULES.md / gates/）
+// 随包迁到独立仓 allin-governance，本仓不再有源码。这里问一次已装包的位置并缓存。
+// 回退旧路径只为「包未装时给出可读错误」，不是长期双源。
+const GOVERNANCE = (() => {
+  const py = process.env.ALLIN_PYTHON || path.join(REPO, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
+  const r = spawnSync(py, ['-c',
+    'import allin_governance,os,sys;sys.stdout.write(os.path.join(os.path.dirname(allin_governance.__file__),"_gatesuite"))'],
+    { encoding: 'utf8' })
+  const p = (r.stdout || '').trim()
+  return p && p.length > 0 && r.status === 0 ? p : path.join(REPO, 'tools', 'gate', 'governance')
+})()
 const REGISTRY_DIR = path.join(REPO, 'platform', 'registry', 'projects')
 const AUDIT_DIR = path.join(REPO, 'tools', 'gate', 'audit')
 const MEMORY_DIR = path.join(REPO, 'docs', '记录', '记忆')

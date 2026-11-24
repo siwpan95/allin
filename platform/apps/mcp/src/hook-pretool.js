@@ -25,7 +25,17 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.join(__dirname, '..', '..', '..', '..')
-const GATES = path.join(REPO, 'tools', 'gate', 'governance', 'gates')
+// 2026-11-25 公共核提仓：门禁脚本随包走（allin-governance 仓），本仓无源码。
+// 问一次已装包位置并缓存；包未装时回退旧路径（只为给出可读错误）。
+const GATES = (() => {
+  const py = process.env.ALLIN_PYTHON
+    || path.join(REPO, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
+  const r = spawnSync(py, ['-c',
+    'import allin_governance,os,sys;sys.stdout.write(os.path.join(os.path.dirname(allin_governance.__file__),"_gatesuite","gates"))'],
+    { encoding: 'utf8' })
+  const p = (r.stdout || '').trim()
+  return p && r.status === 0 ? p : path.join(REPO, 'tools', 'gate', 'governance', 'gates')
+})()
 const FAST_GATES = ['g01_paths.py', 'g03_credentials.py']
 
 function pythonBin() {
