@@ -22,9 +22,10 @@
 | git 身份 | **全局未配**；各仓按**仓库级**配 `user.name=siwpan` / `user.email=siwpan@users.noreply.gitee.com` |
 | 关联文档 | `docs/规范/SPEC-101-推送流程.md`（推送篇，含「绕过确认」9 手段 + 三层验收）；`docs/规范/SPEC-103-社区协作规范.md`（社区协作 / 分支 / 命名 / 卫生 / 许可证） |
 
-> ⚠ 旧路径 `G:\私人令牌.txt`、`E:\Python314`、`/Users/13122/*` 在新机**均不存在**（新机是 `DESKTOP-8RSV60V` / 用户 `psw`）。
-> 本机现为 C / D / F / G 四卷：C 内置、D 外置 exFAT(save)、F 外置 NTFS(trash)、G 外置 NTFS(allin)。
-> 本表为**落点事实源**；跨机搬运后须按 §6 复核再照抄。
+> ⚠ 旧路径与盘位**随机器而异**（曾有机型上原型机所写的 `G:\私人令牌.txt`、`E:\Python314`、`/Users/13122/*` 全部不存在）——照抄必失败。
+> 本表是**某台原型机的落点示例**（供对照结构，不是通用事实）；各机现值用
+> `allin-governance facts measure`（≥1.1.0）查询，各机历史落点住 `docs/事实源/机器/`。
+> 跨机搬运后须按 §6 复核再照抄。
 
 ---
 
