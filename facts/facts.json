@@ -1258,7 +1258,7 @@
     },
     {
       "repo": "foolproof-operation",
-      "tier": "②保留",
+      "tier": "③收敛合并",
       "domain": "开发者/系统工具",
       "source_file": "docs/事实源/tiering.yaml"
     },
@@ -1270,7 +1270,7 @@
     },
     {
       "repo": "py_test_runner",
-      "tier": "②保留",
+      "tier": "③收敛合并",
       "domain": "开发者/系统工具",
       "source_file": "docs/事实源/tiering.yaml"
     },

@@ -1,5 +1,18 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
+> **时点** 2026-11-24 07:55（**@`DESKTOP-KQABATS` 执行用户指令「本地批量清理」——交接卷 §195 的 g17 跨机待决落地 —— 发布区 143 → 77** ——
+>   以 g17 精确复算清单为准（66 条 unregistered-repo，与门禁逐一对应）；
+>   移动前预检 **66/66 均有 origin 远端且 HEAD 非空**（历史保全双证：远端 + 归档仓）；
+>   按安全流程**移动到备份区而非删除**：66 个目录 → `E:\projects\_repos_frozen_backup_2026-11-24`
+>   （同盘 rename 瞬时完成，可随时恢复，零数据销毁）。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
+>   发布区 `E:\projects\repos` **77** 个目录；
+>   备份区 `E:\projects\_repos_frozen_backup_2026-11-24` **66** 个目录；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十六（@`DESKTOP-KQABATS` 本地批量清理 · 自留痕）
+
 > **时点** 2026-11-24 02:30（**@`DESKTOP-KQABATS` 验证「仓根迁入发布区」在本机布局下的向后兼容性** ——
 >   用户指令「推进 @`DESKTOP-KQABATS` 交接内容」：落实交接卷 §186.7 留给 @`DESKTOP-KQABATS` 的真机验证项。@`DESKTOP-KQABATS` 的 allin 父目录为 `projects`
 >   （非 `repos`）⇒ 发布区推导按设计回退到 `<本仓>/../repos` = `E:\projects\repos`，实测生效；
@@ -7,9 +20,8 @@
 >   按「补检出而非改声明」：`worldwright` 从 Gitee 克隆入发布区；
 >   `allin` 用 **junction** `E:\projects\repos\allin → E:\projects\allin` 挂接
 >   （单一工作树，不建第二份克隆；LinkType=Junction、Target 实测、可遍历 44 项）。
->   发布区目录数 **141 → 143**（+worldwright +allin junction；`.git` 覆盖逐目录实测）。
+>   发布区目录数（当时 141 → 143，+worldwright +allin junction；当日 07:55 批量清理后为 77，计数断言以最新时点块为准）。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
->   发布区 `E:\projects\repos` **143** 个目录；
 >   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
 >   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
 >   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
