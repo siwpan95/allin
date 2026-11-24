@@ -108,29 +108,83 @@ function __dirnameOf() {
   return path.dirname(fileURLToPath(import.meta.url))
 }
 
-test('GET /api/library 挂机族子视图数据（order/note 回填）', async () => {
+// 2026-11-24：原用例钉死 `id=arcade` / `gameplay=idle` 这两条注册条目，用来验
+// 「gameplay 标签与 order/note 回填」。而 2026-11-23「66 个冻结仓移入备份区」后
+// 这两条已不在 registry 里 ⇒ 用例恒红（实测 73/75，`idle 族应至少 5 个` /
+// `arcade.gameplay` undefined），成了「主分支长期红」的一部分。
+//
+// 不删用例，也不改成 skip —— 那会把「回填契约」这条真实保护一起丢掉。改判据：
+// 期望集**从 registry 现场推导**（与本文件上面那条 id 集合用例同一纪律），
+// 校验「凡是声明了 gameplay 的条目，API 必须原样回填、且标签在受控枚举内」。
+// 保护力反而更强：原先只护两个写死的 id，现在护全部声明条目，且不再需要手工同步。
+test('GET /api/library 原样回填 registry 的 gameplay 标签（受控枚举）', async () => {
+  const { KNOWN_GAMEPLAY } = await import('@allin/core')
   const res = await fetch(base + '/api/library')
   const body = await res.json()
-  const idle = body.items.filter(i => (i.gameplay || []).includes('idle')).sort((a, b) => a.order - b.order)
-  // 2026-11-01 加：先单独断言 order 无缺，否则连续性断言只报一串含 null 的数组，
-  // 看不出**缺在哪个条目**（实测缺的是 table-hanging-machine，排查成本高）。
-  const noOrder = idle.filter(i => i.order === null || i.order === undefined).map(i => i.id)
-  assert.deepEqual(noOrder, [], '挂机族缺 order 字段（→ 前端回填 null 并被 sort 置顶）: ' + noOrder.join(', '))
-  const noNote = idle.filter(i => typeof i.note !== 'string' || !i.note).map(i => i.id)
-  assert.deepEqual(noNote, [], '挂机族缺 note 回填: ' + noNote.join(', '))
-  // estate 增长（2026-09-24 强化）：不写死数量，只约束 order 连续递增
-  assert.ok(idle.length >= 5, 'idle 族应至少 5 个')
-  assert.deepEqual(idle.map(i => i.order), Array.from({ length: idle.length }, (_, k) => k + 1))
+
+  const declared = new Map()
+  for (const file of registryFiles()) {
+    const entry = yaml.load(fs.readFileSync(path.join(registryDir(), file), 'utf8'))
+    if (entry?.id && entry.gameplay !== undefined) declared.set(entry.id, entry.gameplay)
+  }
+  assert.ok(declared.size > 0, 'registry 里应至少有一个声明 gameplay 的条目（否则本判据形同虚设）')
+
+  const byId = new Map(body.items.map(i => [i.id, i]))
+  for (const [id, tags] of declared) {
+    const item = byId.get(id)
+    assert.ok(item, `/api/library 缺条目 ${id}（registry 有、API 没有）`)
+    assert.deepEqual(item.gameplay, tags, `${id} 的 gameplay 未原样回填 registry`)
+    for (const tag of item.gameplay) {
+      assert.ok(KNOWN_GAMEPLAY.includes(tag), `${id} 的 gameplay 标签 ${tag} 不在受控枚举内`)
+    }
+  }
 })
 
-test('GET /api/library 返回 gameplay 标签（受控枚举回填）', async () => {
+// 同一条纪律：order/note 的判据也改为不依赖具体条目，只约束**契约**：
+//   · 出现则类型必须对（order 正整数 / note 非空串）；
+//   · 同一 gameplay 族里，只要有条目带 order，全族都得带，且必须是 1..n 连续 ——
+//     缺一个就会让前端把 undefined 排到最前，这正是原用例想拦的那个坑。
+test('GET /api/library 的 order/note 回填契约（同族 order 必须 1..n 连续）', async (t) => {
   const res = await fetch(base + '/api/library')
   const body = await res.json()
-  const arcade = body.items.find(i => i.id === 'arcade')
-  assert.deepEqual(arcade.gameplay, ['arcade'])
-  const idle = body.items.find(i => i.id === 'idle')
-  assert.deepEqual(idle.gameplay, ['idle'])
+
+  const badOrder = body.items
+    .filter(i => i.order !== undefined && i.order !== null && !(Number.isInteger(i.order) && i.order > 0))
+    .map(i => `${i.id}=${JSON.stringify(i.order)}`)
+  assert.deepEqual(badOrder, [], 'order 出现时必须是正整数: ' + badOrder.join(', '))
+
+  const badNote = body.items
+    .filter(i => i.note !== undefined && i.note !== null && (typeof i.note !== 'string' || !i.note))
+    .map(i => i.id)
+  assert.deepEqual(badNote, [], 'note 出现时必须是非空字符串: ' + badNote.join(', '))
+
+  const tagged = body.items.filter(i => Array.isArray(i.gameplay) && i.gameplay.length > 0)
+  const families = [...new Set(tagged.flatMap(i => i.gameplay))]
+  let checked = 0
+  for (const tag of families) {
+    const family = tagged.filter(i => i.gameplay.includes(tag))
+    if (!family.some(i => Number.isInteger(i.order))) continue
+    checked += 1
+    const missing = family.filter(i => !Number.isInteger(i.order)).map(i => i.id)
+    assert.deepEqual(missing, [], `${tag} 族里有条目缺 order（前端会把它们排到最前）: ${missing.join(', ')}`)
+    const sorted = [...family].sort((a, b) => a.order - b.order)
+    assert.deepEqual(
+      sorted.map(i => i.order),
+      Array.from({ length: family.length }, (_, k) => k + 1),
+      `${tag} 族的 order 必须从 1 连续递增`,
+    )
+  }
+  // 让「本次到底判了几族」可见 —— 全为 0 时读者应知道这是数据现状，不是全绿。
+  t.diagnostic(`带 gameplay 的条目 ${tagged.length} 个；其中带 order 的族 ${checked} 个`)
 })
+
+function registryDir() {
+  return path.join(__dirnameOf(), '..', '..', '..', 'registry', 'projects')
+}
+
+function registryFiles() {
+  return fs.readdirSync(registryDir()).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'))
+}
 
 test('GET /api/workshop 目录 = 有 publish 的项目（无订阅 → 不触发 gitee 网络）', async () => {
   const res = await fetch(base + '/api/workshop')
