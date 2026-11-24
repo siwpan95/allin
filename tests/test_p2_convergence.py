@@ -33,8 +33,13 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-FACTS = ROOT / "tools" / "facts"
-REPOCHECK = ROOT / "tools" / "repocheck"
+
+# 2026-11-25 公共核提仓：判据实现随包迁出本仓，测试改读**已安装包**里的真身。
+import allin_governance as _agov
+
+_PKG = Path(_agov.__file__).resolve().parent
+FACTS = _PKG / "_facts"
+REPOCHECK = _PKG / "_repocheck"
 GATE = ROOT / "tools" / "gate"
 TOOLS = ROOT / "tools"
 
@@ -319,7 +324,7 @@ def test_broken_auth_cli_nonzero(tmp_path, name, mode):
     """4 个单权威源 builder：坏权威 YAML 下 --check 与默认路径都必须非 0。"""
     bad = tmp_path / "broken.yaml"
     bad.write_text("x: [unclosed" + chr(10) + "  y: : :" + chr(10), encoding="utf-8")
-    script = ROOT / "tools" / "facts" / (name + ".py")
+    script = FACTS / (name + ".py")
     args = [sys.executable, str(script), "--auth", str(bad)]
     if mode == "--check":
         args.append("--check")
@@ -339,7 +344,7 @@ def test_build_projects_broken_registry_nonzero(tmp_path):
     reg = tmp_path / "registry"
     reg.mkdir()
     (reg / "oops.yaml").write_text("id: x" + chr(10) + "name: [unclosed" + chr(10), encoding="utf-8")
-    script = ROOT / "tools" / "facts" / "build_projects.py"
+    script = FACTS / "build_projects.py"
     r = subprocess.run([sys.executable, str(script), "--registry", str(reg)],
                        capture_output=True, text=True, encoding="utf-8",
                        errors="replace", cwd=str(ROOT), timeout=60)
@@ -350,7 +355,7 @@ def test_build_projects_broken_registry_nonzero(tmp_path):
 @pytest.mark.parametrize("name", ["build_ports", "build_tiering"])
 def test_absent_auth_still_skips(tmp_path, name):
     """文件不存在（缺席）仍允许 SKIP / rc=0 —— 证明四态没被一刀切成 BLOCK。"""
-    script = ROOT / "tools" / "facts" / (name + ".py")
+    script = FACTS / (name + ".py")
     r = subprocess.run([sys.executable, str(script), "--check", "--auth", str(tmp_path / "nope.yaml")],
                        capture_output=True, text=True, encoding="utf-8",
                        errors="replace", cwd=str(ROOT), timeout=60)

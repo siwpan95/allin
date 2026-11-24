@@ -21,8 +21,12 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "facts"))
-import cli as F  # noqa: E402
+# 2.0.0 起随包分发：装包 → 用包内那份；未装包（裸 clone）→ 回退仓内真身。
+try:
+    from allin_governance._facts import cli as F  # noqa: E402
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "facts"))
+    import cli as F  # noqa: E402
 
 GATE = "facts-parity"
 EXIT_OK, EXIT_BLOCKING, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3

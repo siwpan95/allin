@@ -47,8 +47,13 @@ import tempfile
 # 新判据只写 `governance/runtime/docs_contract.py` 这一个地方，两个入口都 import 它。
 # 理由（`SPEC-004` 调试铁律 64 的同一教训）：「两份必须一致」只写在文档里必然漂移，
 # 而两份都能跑、都"看着对"，差异只有人工 diff 才看得见 ⇒ 结构上杜绝，不靠记得同步。
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "governance", "runtime"))
-import docs_contract  # noqa: E402
+# 2.0.0 起判据随包分发（公共核已提仓 allin-governance）：
+# 装包 → 用包内那份；未装包（裸 clone / 开发期）→ 回退仓内真身。
+try:
+    from allin_governance._gatesuite.runtime import docs_contract  # noqa: E402
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "governance", "runtime"))
+    import docs_contract  # noqa: E402
 
 EXIT_OK, EXIT_FAIL, EXIT_USAGE, EXIT_ENV = 0, 1, 2, 3
 
@@ -326,9 +331,9 @@ def run(root: str, args) -> Report:
 
 
 def baseline_path(root: str) -> str:
-    # B 类台账：2026-11-24 三层分域从 tools/gate/audit/ 迁到 tools/gate/governance/ledger/
-    # （audit/ 只留可重生的运行留痕；基线要评审、要追溯，不该和留痕混住）。
-    return os.path.join(root, "tools", "gate", "governance", "ledger", "docs_index_baseline.txt")
+    # B 类台账：2026-11-24 从 tools/gate/audit/ 迁出；2026-11-25 公共核提仓后
+    # 落在 tools/gate/ledger/（判据随包走，**台账留本仓** —— B 层实例数据不进公共核）。
+    return os.path.join(root, "tools", "gate", "ledger", "docs_index_baseline.txt")
 
 
 def load_baseline(root: str) -> set[str]:

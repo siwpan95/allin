@@ -29,8 +29,12 @@ try:
 except ImportError:
     yaml = None  # 仅 ports.yaml 判据需要；其他判据仍可用
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "facts"))
-import cli as F  # noqa: E402
+# 2.0.0 起随包分发：装包 → 用包内那份；未装包（裸 clone）→ 回退仓内真身。
+try:
+    from allin_governance._facts import cli as F  # noqa: E402
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "facts"))
+    import cli as F  # noqa: E402
 
 GATE = "facts-drift"
 EXIT_OK, EXIT_BLOCKING, EXIT_ENV = 0, 1, 3

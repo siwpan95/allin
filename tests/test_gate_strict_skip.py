@@ -15,8 +15,13 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GATES_DIR = ROOT / "tools" / "gate" / "governance" / "gates"
-RUNTIME_DIR = ROOT / "tools" / "gate" / "governance" / "runtime"
+
+# 2026-11-25 公共核提仓：判据实现随包迁出本仓，测试改读**已安装包**里的真身。
+import allin_governance as _agov
+
+_PKG = Path(_agov.__file__).resolve().parent
+GATES_DIR = _PKG / "_gatesuite" / "gates"
+RUNTIME_DIR = _PKG / "_gatesuite" / "runtime"
 if str(RUNTIME_DIR) not in sys.path:
     sys.path.insert(0, str(RUNTIME_DIR))
 

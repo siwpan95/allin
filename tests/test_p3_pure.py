@@ -35,6 +35,18 @@ def _load(name: str, relpath: str):
 def _src(relpath: str) -> str:
     return (ROOT / relpath).read_text(encoding="utf-8")
 
+# 2026-11-25 公共核提仓：gates/ 与 docs_contract 随包迁出本仓。
+# 这些测试判的是**包内实现**的委托关系，故新增包内读取；仓内文件用 _src。
+import allin_governance as _agov
+
+_PKG_ROOT = Path(_agov.__file__).resolve().parent
+
+
+def _pkg(rel: str) -> str:
+    """读包内文件（rel 相对包根，如 `_gatesuite/runtime/docs_contract.py`）。"""
+    return (_PKG_ROOT / rel).read_text(encoding="utf-8")
+
+
 
 # ---------------------------------------------------------------------------
 # L-4：sha256util 三族单一实现
@@ -108,14 +120,13 @@ def test_l4_file_sha256_lf_normalized_full_width(sha256util, tmp_path):
 
 def test_l4_consumers_delegate():
     """四个消费点都改为委托，本地不再内联 hashlib.sha256(...).hexdigest()。"""
-    for rel in ("tools/facts/cli.py", "deploy/netbox/sync_from_git.py",
-                "deploy/dolt/import_from_git.py", "tools/check_pkg_parity.py"):
+    # 2026-11-25 公共核提仓：`tools/facts/cli.py` 随包迁出、`tools/check_pkg_parity.py` 废弃
+    # （跨目录映射取消后无对账对象），两者的委托断言随之移除 —— 本测试只判**仍在仓内**的消费点。
+    for rel in ("deploy/netbox/sync_from_git.py", "deploy/dolt/import_from_git.py"):
         src = _src(rel)
         assert "hashlib.sha256(" not in src, f"{rel} 仍内联 sha256"
-    assert "from sha256util import digest_obj" in _src("tools/facts/cli.py")
     assert "from sha256util import digest_obj as _digest_obj" in _src("deploy/netbox/sync_from_git.py")
     assert "from sha256util import digest_text as _digest_text" in _src("deploy/dolt/import_from_git.py")
-    assert "from sha256util import file_sha256" in _src("tools/check_pkg_parity.py")
 
 
 def test_l4_dolt_sql_sha256_via_helper():
@@ -133,7 +144,7 @@ def test_l4_dolt_sql_sha256_via_helper():
 # L-5：read_text 单一实现（薄委托）
 # ---------------------------------------------------------------------------
 def test_l5_read_text_delegates():
-    for rel in ("tools/gate/docs_index.py", "tools/gate/governance/gates/g15_docs_contract.py"):
+    for rel in ("tools/gate/docs_index.py",):   # g15 已随包，改由下方 _pkg 断言
         src = _src(rel)
         # 本地包装已彻底删除（真正的「合并重复」），调用点直连唯一实现
         assert "def read_text" not in src, f"{rel} 仍保留本地 read_text 包装"
@@ -144,14 +155,14 @@ def test_l5_read_text_delegates():
 
 
 def test_l5_docs_contract_owns_impl():
-    block = _src("tools/gate/governance/runtime/docs_contract.py").split(
+    block = _pkg("_gatesuite/runtime/docs_contract.py").split(
         "def read_text(path: str) -> str:", 1)[1].split("\n\n", 1)[0]
     assert 'errors="replace"' in block and 'newline=""' in block
 
 
 def test_l5_delegation_runtime(tmp_path):
     """委托后读入行为不变（UTF-8 + replace + 保留换行）。"""
-    contract = _load("allin_p3_dc", "tools/gate/governance/runtime/docs_contract.py")
+    contract = _load("allin_p3_dc", str(_PKG_ROOT / "_gatesuite/runtime/docs_contract.py"))
     p = tmp_path / "x.md"
     p.write_bytes("标题\r\n正文\r\n".encode("utf-16"))  # 故意坏编码，验证 errors=replace 不抛
     out = contract.read_text(str(p))  # gov-python: allow — 动态加载的 docs_contract.read_text 已内建 encoding
@@ -223,9 +234,10 @@ def test_l6_registry_disambiguation():
     cases = {
         "platform/packages/core/src/registry.js": "分义",
         "platform/harness/registry.mjs": "分义",
-        "tools/gate/governance/registry.json": "Scope note (audit L-6)",
-        "packages/allin-governance/src/allin_governance/init.py": "分义（审计 L-6）",
         "kernel/registry.py": "分义（审计 L-6）",
     }
     for rel, marker in cases.items():
         assert marker in _src(rel), f"{rel} 缺分义注释"
+    # 2026-11-25 公共核提仓：另两处已随包迁出，改读包内
+    assert "Scope note (audit L-6)" in _pkg("_gatesuite/registry.json")
+    assert "分义（审计 L-6）" in _pkg("init.py")

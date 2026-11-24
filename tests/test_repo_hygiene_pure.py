@@ -45,7 +45,9 @@ def _load_local(name: str, path: Path):
     return mod
 
 
-_load_shared("scanctx", REPOCHECK / "scanctx.py")
+# 2026-11-25 公共核提仓：scanctx 随包分发，直接从包里导入（不再是仓内文件）。
+# 旧写法 `_load_shared("scanctx", REPOCHECK / "scanctx.py")` 会 FileNotFoundError。
+import allin_governance._repocheck.scanctx  # noqa: E402,F401  （repo_hygiene 内部按模块名找它）
 rh = _load_local("repo_hygiene", TOOLS / "repo_hygiene.py")
 
 

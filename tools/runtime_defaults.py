@@ -67,7 +67,9 @@ MIGRATIONS: tuple[tuple[str, int, str], ...] = (
     ("tools/security/venv_security.py", 900, "subprocess_install"),    # CAEmSignG3.apply  pip --force-reinstall
     # 第二阶段（2026-11-11）单列 PR：行为变更组消费方迁移 + 语义明确的剩余 timeout。
     ("tools/tier_archive/push_archives.py", 3600, "subprocess_archive_push"),  # git push archive/*
-    ("tools/facts/cli.py", 60, "subprocess_default"),                          # offline-check 自检子进程
+    # ⚠ 2026-11-25 公共核提仓：`tools/facts/cli.py` 已迁至 allin-governance 仓
+    #   （包内 `_facts/cli.py`）。本表只判**本仓内**文件的迁移落地，
+    #   该文件的迁移检查随之转由包仓自检负责，故从此表移除。
     ("tools/gate/watchdog.py", 300, "git_fsck"),                               # git fsck 全库对象
     ("tools/gate/watchdog.py", 120, "git_lsremote"),                           # git ls-remote 对端
     ("tools/gate/watchdog.py", 180, "subprocess_long"),                        # ps() PowerShell 片段默认

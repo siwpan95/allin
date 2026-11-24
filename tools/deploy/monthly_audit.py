@@ -282,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
 
     root = Path(args.repo_root).resolve() if args.repo_root else default_root()
     required = ("tools/facts/verify_facts.py", "tools/gate/docs_index.py",
-                "tools/repocheck/main.py", str(PORTFOLIO_REL))
+                "-m", "allin_governance", "repocheck", str(PORTFOLIO_REL))
     missing = [rel for rel in required if not (root / rel).is_file()]
     if missing:
         print("ENV ERROR: 仓根缺判据文件 %s（--repo-root 是否指到仓库根？）" % ", ".join(missing),
@@ -302,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
                  [py, "tools/facts/verify_facts.py", "--json"], root, sum_verify),
         run_tool("docs_index", [py, "tools/gate/docs_index.py"], root, sum_generic),
         run_tool("repocheck",
-                 [py, "tools/repocheck/main.py", ".", "--exclude",
+                 [py, "-m", "allin_governance", "repocheck", ".", "--exclude",
                   "tools,vendor,preset,packages,scripts,website",
                   "--skip-rules", "1,7", "--fail-on", "error", "--no-color"],
                  root, sum_generic),

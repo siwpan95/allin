@@ -87,7 +87,13 @@ def check_adr_index(rep: Report) -> None:
 
 def check_svg_gates(rep: Report) -> None:
     """B. SVG 门禁数 ↔ gates/ 目录实际文件。"""
-    gates_dir = os.path.join(ROOT, "tools", "gate", "governance", "gates")
+    # 2026-11-25 公共核提仓：gates/ 随包迁出本仓。门禁数对账改为读**已安装包**里的 gates 目录；
+    # 包未装时明确 SKIP（不静默通过，也不假装红）。
+    try:
+        import allin_governance
+        gates_dir = os.path.join(os.path.dirname(allin_governance.__file__), "_gatesuite", "gates")
+    except Exception:  # noqa: BLE001
+        gates_dir = ""
     ids = sorted(
         m.group(1)
         for name in os.listdir(gates_dir)
@@ -119,12 +125,14 @@ def check_svg_version(rep: Report) -> None:
     `packages/allin-governance（PyPI，x.y.z…）` 这一声明，要求两者**恰好相等**；
     不等或任一侧解析不到都 blocking（图内旧版本号此前是六项对账的唯一盲区）。
     """
-    pyproject = _read("packages/allin-governance/pyproject.toml")
-    m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.M)
-    if not m:
-        rep.block('packages/allin-governance/pyproject.toml 缺 `version = "..."` 声明 —— 版本对账失去基准')
+    # 2026-11-25 公共核提仓：真值改为**已安装的包**版本（与 check_readme_refs 同一口径）。
+    # 读不到就 blocking —— 版本对账失去基准这件事本身要红，不能静默略过。
+    try:
+        import allin_governance
+        pkg_version = allin_governance.__version__
+    except Exception as exc:  # noqa: BLE001
+        rep.block(f"读不到已安装的 allin-governance 版本（{exc}）—— 版本对账失去基准，先 pip install")
         return
-    pkg_version = m.group(1)
     svg = _read("architecture/system-architecture.svg")
     decl = re.search(r"packages/allin-governance（PyPI[，,]\s*([^）)]+?)\s*[）)]", svg)
     if not decl:

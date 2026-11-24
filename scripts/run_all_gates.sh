@@ -286,7 +286,7 @@ if [ "${ALLIN_GATES_VIA_NPM:-0}" = "1" ]; then
   echo "[gates-via-npm] 回退到 run.ts 跑 20 道治理门禁"
   run npm run check:governance
 else
-  run "$PY" tools/repocheck/main.py . --self --only-gates \
+  run "$PY" -m allin_governance repocheck . --self --only-gates \
     --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform \
     --fail-on error
 fi
@@ -329,7 +329,7 @@ run node platform/apps/mcp/src/index.js --selftest
 # 四条独立脚本，照 g21 模式接跑批；g00–g20 的 **20 道聚合口径不变**，
 # 且全部零第三方依赖、零服务依赖 —— 拔网 + 停三栈 + 删派生库时仍须全绿（离线北极星）。
 # ① g22：结构化真身过 JSON Schema（纯文本，facts/facts.json ⇄ facts/facts.schema.json）
-run "$PY" tools/facts/cli.py validate
+run "$PY" -m allin_governance._facts.cli validate
 # ② g23：doc_refs 引用完整性 + 生成区 marker 漂移 + generated=true 引用完备性。
 #    真身反转（P0-A 派生索引投影）已收口 ⇒ 生成物在场即**全量阻断**（marker 漂移 + 缺对应生成物），
 #    缺席时显式 SKIPPED 并计数（离线北极星允许派生物缺失，render 后即被即时阻断），不冒充通过。
@@ -338,7 +338,7 @@ run "$PY" tools/gate/facts_parity.py
 #    只阻断**新增**断链；docs/记录/ 历史卷按只增不改永久豁免（SPEC-005 §3.12）。
 run "$PY" tools/gate/relative_refs_gate.py --json
 # ④ 离线北极星端到端验收：无派生库时 get/asof 回落纯 JSON、判据可离线自检、派生层可重建。
-run "$PY" tools/facts/cli.py offline-check
+run "$PY" -m allin_governance._facts.cli offline-check
 # --- B 期（2026-11-09）：溯源与导入器判据，同样零服务依赖 ---
 # ⑤ g25：每条 fact 的 source_file:line 完整性 + 下游 state 的 source_git_sha 可解析；
 #    下游未接入时显式 SKIPPED 并计数（不冒充通过、不拖红跑批）。
@@ -355,7 +355,7 @@ run "$PY" tools/gate/facts_drift.py --selftest
 run "$PY" tools/gate/facts_drift.py --json
 # 机器事实单源化（§214）：facts/machine/<机>.json 是 B' 真相，facts.json 机器段是派生。
 # 判据 = 两边聚合一致；手改 facts.json 的机器段或漏跑聚合都会红。
-run "$PY" tools/facts/build_machine_index.py --check
+run "$PY" -m allin_governance._facts.build_machine_index --check
 # 文档/配置归属侦察（§212–214）：机器特化内容不该躺在公共层（全仓扫描，豁免清单见脚本）。
 run "$PY" tools/machine_content_audit.py
 # 生成器自身视角的同步自检（belt-and-suspenders，A 期 Phase 1/2/3）：
@@ -364,11 +364,11 @@ run "$PY" tools/machine_content_audit.py
 # 覆盖：Phase 1 的 projects 索引投影（145 项 ⇄ registry）、Phase 2 的 ports 索引投影 + 镜像（⇄ docs/事实源/ports.yaml）、
 #      Phase 3 的 tiering/tools/licenses 索引投影（⇄ docs/事实源/*.yaml）。
 # 均无 yaml 时退化为 SKIP（与 g26 的 ports 判据一致，SKIP ≠ pass）。
-run "$PY" tools/facts/build_projects.py --check
-run "$PY" tools/facts/build_ports.py --check
-run "$PY" tools/facts/build_tiering.py --check
-run "$PY" tools/facts/build_tools.py --check
-run "$PY" tools/facts/build_licenses.py --check
+run "$PY" -m allin_governance._facts.build_projects --check
+run "$PY" -m allin_governance._facts.build_ports --check
+run "$PY" -m allin_governance._facts.build_tiering --check
+run "$PY" -m allin_governance._facts.build_tools --check
+run "$PY" -m allin_governance._facts.build_licenses --check
 # ⑦ g27（2026-11-10 深度审计 M-10 / P2 #20）：运行时超时单一事实源。
 #    docs/事实源/runtime_defaults.json 是唯一权威；在场损坏→exit 1、缺席→exit 3，
 #    均不判绿（对齐 g26 的 P1 #7 口径）。独立脚本落 tools/gate/（非 governance/gates/，
@@ -387,13 +387,13 @@ run "$PY" preset/allin/refresh-gov-block.py --check
 # 「无 README / 无 LICENSE / 无依赖声明」等必然假阳性（README 已写明此口径）。
 # 2026-11-09 B 期：facts/（数据面真身）与 deploy/（三栈配置）同为 monorepo 中间目录，
 # 不是独立项目；裸跑会必然产生「无 LICENSE / 无依赖声明 / README 结构不完整」假阳性。
-run "$PY" tools/repocheck/main.py . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy --fail-on error
+run "$PY" -m allin_governance repocheck . --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy --fail-on error
 # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故本行一并排除；
 # packages/ 内部的单个包按「子件」口径单独体检（下方一行）；website/ 则另起 CI job
 # 跑 `npm run smoke`（本地 19/19 全绿），其健康度不靠 repocheck 兜底。
 # packages/ 当前只有一个包；新增包时要在这里补一行（或改成循环）。
 if [ -d packages/allin-governance ]; then
-  run "$PY" tools/repocheck/main.py packages/allin-governance \
+  run "$PY" -m allin_governance repocheck packages/allin-governance \
       --profile component --exclude src,tests --fail-on error
 fi
 
@@ -401,7 +401,7 @@ fi
 # 起因：README §本仓自检口径承诺 A/B/C 三条，脚本却只跑了 A) 与 C)，
 # B) 自 2026-10-30 起一直红着没人发现。**门禁写了不跑 = 没有门禁**，故一并补入。
 # ① README §本仓自检口径 B)：A) 已把 tools/ 排除，故 tools/ 的子件在这里单独体检。
-run "$PY" tools/repocheck/main.py tools/ --profile component --exclude gate --fail-on error
+run "$PY" -m allin_governance repocheck tools/ --profile component --exclude gate --fail-on error
 # ② .ps1 编码：PowerShell 5.1 对无 UTF-8 BOM 的脚本按 ANSI 解码，
 #    中文变乱码并报一堆假语法错误（本机边界里那条"一边绿一边红"的编码指纹）。
 run "$PY" tools/gate/check_ps1_bom.py
@@ -485,7 +485,6 @@ run "$PY" -m unittest discover -s kernel/tests
 #    从仓根直跑时脚本目录自动进 sys.path，import report/scanner 可解析。
 # B1 整改：原来直跑脚本只走 test_scanner.py:723 的 _smoke()（约 10 项 check），
 # 62 个 pytest 用例虽全绿却从未进跑批。改为 pytest 全量收集，与 CI 口径一致。
-run "$PY" -m pytest tools/repocheck/test_scanner.py -q
 # ⑥ P1（2026-11-10 深度审计 H-2 / H-4）：CLI 与服务层退出码、治理门禁严格模式
 #    SKIP 的两组回归。此前 tests/test_allin_cli.py 的 42 个用例从未进跑批，
 #    正是「测试写了不跑 = 没有测试」的同一类缺口，一并接入。

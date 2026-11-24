@@ -79,8 +79,13 @@ except Exception:
 
 # P2 #18：跨目录 import 稳健化 —— scanctx 在 tools/repocheck/，按顶层模块名 import。
 # 与仓内 `from scanctx import ...` 既有写法一致，保证从任意 cwd 直接跑本脚本也能找到。
-sys.path.insert(0, str(Path(__file__).resolve().parent / "repocheck"))
-import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
+# 2.0.0 起随包分发：装包 → 用包内那份；未装包（裸 clone）→ 回退仓内真身。
+try:
+    from allin_governance._repocheck import scanctx  # noqa: E402
+except ImportError:
+    _p = Path(__file__).resolve()
+    sys.path.insert(0, str(_p.parents[1] / "repocheck" if _p.parent.name == "gate" else _p.parent / "repocheck"))
+    import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
 
 MIB = 1024 * 1024
 BIG_FILE_LIMIT = 5 * MIB
@@ -724,6 +729,9 @@ def _default_audit_file(name):
     """
     here = os.path.dirname(os.path.abspath(__file__))
     cands = [
+        # 2026-11-25 公共核提仓：判据随包装走，**台账留在本仓**（B 层实例数据）。
+        os.path.join(here, "gate", "ledger", name),
+        # 旧落点（1.x 时代台账跟判据住一起）—— 提仓前迁出，保留兼容一线
         os.path.join(here, "gate", "governance", "ledger", name),
         os.path.join(here, "gate", "audit", name),
         os.path.join(here, "audit", name),

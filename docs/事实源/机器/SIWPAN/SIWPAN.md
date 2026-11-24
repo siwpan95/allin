@@ -15,8 +15,8 @@ epos` **75** 目录 / 含 `.git` **74** / 含 `origin` **74**；远端 **85** �
 > **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十三（工具随包分发与测试规则族）
 > **时点** 2026-11-24 10:20（**@`SIWPAN` foolproof-operation 并入 allin** —— 全哥指令「并入 allin，
 > 移除远端和本地，仅保留 pypi；扫盘能力上提增强治理；傻瓜式依赖增强 venv 建设」。
-> 两项能力上提为 `tools/_shared/scan_repos.py`（发布区扫盘：项目指纹 / 重复检出 / 迁移残留）与
-> `tools/_shared/deps_doctor.py`（依赖体检：声明·实装·import 三者对账）；**未搬**其 764 个包的分类清单
+> 两项能力上提为 `scan` / `deps` 子命令（2026-11-25 起随 `allin-governance` 包分发；当时位于 `tools/_shared/`）（发布区扫盘：项目指纹 / 重复检出 / 迁移残留）与
+> `deps` 子命令（依赖体检：声明·实装·import 三者对账）；**未搬**其 764 个包的分类清单
 > （那是可选推荐库，与治理无关）。完整历史 33 提交存
 > `D:\projects\_archived\foolproof-operation-20261124.bundle`（bundle verify 通过）；
 > 远端 DELETE HTTP 204、本地删除；PyPI `foolproof-operation` 1.1.2 保留不动。

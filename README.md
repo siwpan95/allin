@@ -24,17 +24,18 @@
    - [`platform/`](platform/README.md) —— Node 零依赖集成平台（门户 + 注册表 + 门禁）。
    - [`console/`](console/README.md) —— 治理控制台（Electron 45）把 151 条登记变成可点操作面：
      项目启停走 `@allin/core` 共享 pid 表，插件经 cordis-js 加命令/面板（[`SPEC-205`](docs/规范/SPEC-205-allin-console契约.md)）。
-   - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条仓体规则 + 20 条可选治理门禁规则，零第三方依赖）。
-   - [`tools/_shared/scan_repos.py`](tools/_shared/scan_repos.py) —— 发布区扫盘：项目指纹、重复检出、迁移残留（只报告不处置）。**随包分发**为 `allin-governance scan`。
-   - [`tools/_shared/deps_doctor.py`](tools/_shared/deps_doctor.py) —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。**随包分发**为 `allin-governance deps`。
-   - [`tools/secret_scan/`](tools/secret_scan/) —— **自研离线凭据扫描**：21 条高精度规则（只认已知提供方的固定格式）+ 按字符集分档的熵闸（hex 3.0 / alnum 3.5 / 其它 4.0）+ 占位符与形态降噪，随包分发为 `allin-governance secrets-scan`。**不依赖 gitleaks 二进制**，也不需要出网（不做在线验证 —— 那要把密钥发给服务商）。
+   - `allin-governance repocheck` —— 离线仓库体检器（30 条仓体规则 + 20 条可选治理门禁规则，零第三方依赖）。
+   - `allin-governance scan` —— 发布区扫盘：项目指纹、重复检出、迁移残留（只报告不处置）。**随包分发**为 `allin-governance scan`。
+   - `allin-governance deps` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。**随包分发**为 `allin-governance deps`。
+   - `allin-governance secrets-scan` —— **自研离线凭据扫描**：21 条高精度规则（只认已知提供方的固定格式）+ 按字符集分档的熵闸（hex 3.0 / alnum 3.5 / 其它 4.0）+ 占位符与形态降噪，随包分发为 `allin-governance secrets-scan`。**不依赖 gitleaks 二进制**，也不需要出网（不做在线验证 —— 那要把密钥发给服务商）。
    - [`tools/docs_backlinks.py`](tools/docs_backlinks.py) —— 文档反向链接 / 影响面（改一篇文档前先看波及谁）。
    - [`tools/gitee_release.py`](tools/gitee_release.py) —— Gitee 建仓 / 转公开 / 发版 / 附件（令牌走 GITEE_TOKEN → GCM）。
-   - [`tools/github/`](tools/github/) —— GitHub 建仓 / 转公开 / SSH 增量推送 / 独立复核 + 三端增量巡检（**gitee 远端为权威**，单向 gitee → 本地 → GitHub）。随包分发为 `allin-governance github`；SOP 见 [`github-sync-audit`](.workbuddy/skills/github-sync-audit/SKILL.md)。
+   - `allin-governance github` —— GitHub 建仓 / 转公开 / SSH 增量推送 / 独立复核 + 三端增量巡检（**gitee 远端为权威**，单向 gitee → 本地 → GitHub）。随包分发为 `allin-governance github`；SOP 见 [`github-sync-audit`](.workbuddy/skills/github-sync-audit/SKILL.md)。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `1.1.2`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   公共核已独立成仓 **[`allin-governance`](https://gitee.com/siwpan/allin-governance)**（PyPI 包同名，
+当前版本 `2.0.0`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 
@@ -85,7 +86,7 @@ bash scripts/run_all_gates.sh --with-platform  # 额外跑 platform 的 check/te
 ```bash
 npm run check:governance          # 20 道治理门禁（g00-meta…g20-facts）
 npm run check:docs                # 文档索引契约 D1–D17
-python tools/repocheck/main.py <目录>   # 离线仓库体检（无参数 = GUI）
+allin-governance repocheck <目录>       # 离线仓库体检
 ```
 
 > **门禁入口（2026-11-23 起）**：`scripts/run_all_gates.sh` 默认用 repocheck 的
@@ -124,7 +125,7 @@ website 默认端口 9042，同样以 ports.yaml 登记为准。
 
 ```bash
 # 离线体检某个发布区目录（有 error 级问题即失败，可进 CI）
-python tools/repocheck/main.py <发布区> --fail-on error
+allin-governance repocheck <发布区> --fail-on error
 
 # allin-governance 包：生成最小治理骨架 / 体检 / 复核快照
 allin-governance init <目标目录>
@@ -139,7 +140,7 @@ allin docs portfolio --apply
 
 生成骨架包含 14 道门禁的出厂子集（仓内注册表共 20 道，`init` 按「纯标准库即可运行」裁剪）；
 子命令语义以 `allin-governance --help` 与
-[`packages/allin-governance/README.md`](packages/allin-governance/README.md) 为准。
+[`allin-governance` 仓的 README](https://gitee.com/siwpan/allin-governance) 为准（该包已独立成仓）。
 
 ## 关键配置说明
 
@@ -148,7 +149,7 @@ allin docs portfolio --apply
 | [`kernel/configs/cordis.allin.yml`](kernel/configs/cordis.allin.yml) | Cordis 服务图挂载配置：docs / platform / preset / tools 四大支柱经此装配 |
 | `kernel/registry.py` 的 `SERVICES` 白名单 | 把 entry name 钉死为代码边界，防止「配置即代码」评审绕过 |
 | [`preset/allin/allin.patch.yml`](preset/allin/allin.patch.yml) | DSH agent preset 治理段（`config.id: allin`）；改后须重跑 `make-bundle.ps1` 刷新 bundle，`refresh-gov-block.py --check` 门禁会拦截落后副本 |
-| [`tools/gate/governance/exceptions.yml`](tools/gate/governance/exceptions.yml) | 门禁例外台账（g18 解析，需解释器带 PyYAML） |
+| `allin-governance` 包内 `_gatesuite/exceptions.yml` | 门禁例外台账（g18 解析，需解释器带 PyYAML）；随包分发，本仓不再内嵌 |
 | [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md) | 多机检出时，各机仓根 / 发布区落点的**唯一事实源**；本 README 只写跨机共识，不写单一机器路径 |
 | `PLATFORM_REPOS_ROOT` 环境变量 | 覆盖 platform 注册表的发布区根；默认解析规则 `repos/<仓名>` → 仓的上一级 |
 
@@ -241,7 +242,7 @@ ls "$LOCALAPPDATA/allin-toolkit/print"        # 期望：cache/ 与 user_dict.js
 
   ```bash
   # 只查子项目，跳过仓根（仓体卫生的日常口径）
-  python tools/repocheck/main.py . --profile monorepo \
+  allin-governance repocheck . --profile monorepo \
     --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform
 
   # 连仓根一起查（--self 是 2026-11-23 新增：默认项目发现只认一级子目录，

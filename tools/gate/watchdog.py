@@ -63,8 +63,13 @@ from pathlib import Path
 # P2 #18：跨目录 import 稳健化 —— tools/ 下不是单一包，scanctx 在 tools/repocheck/。
 # 显式把该目录插入 sys.path 后按顶层模块名 import，与仓内 `from scanctx import ...` /
 # `import cli as F` 的既有写法一致；保证从任意 cwd 直接跑本脚本（含 --selftest）也能找到。
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "repocheck"))
-import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
+# 2.0.0 起随包分发：装包 → 用包内那份；未装包（裸 clone）→ 回退仓内真身。
+try:
+    from allin_governance._repocheck import scanctx  # noqa: E402
+except ImportError:
+    _p = Path(__file__).resolve()
+    sys.path.insert(0, str(_p.parents[1] / "repocheck" if _p.parent.name == "gate" else _p.parent / "repocheck"))
+    import scanctx  # noqa: E402  —— 唯一一份只读 git 封装（P2 #18）
 # 第二阶段（2026-11-11）：长操作超时收敛到单一事实源；tools/ 根与上面 repocheck 相邻，
 # 这里显式补 tools/ 自身，确保 runtime_defaults 从任意 cwd 都能解析（不写死盘符）。
 _TOOLS_ROOT = str(Path(__file__).resolve().parents[1])

@@ -161,7 +161,7 @@ def test_migrations_landed():
     r = _py(_S_MIGRATED)
     assert r.returncode == 0, (r.stdout[-900:], r.stderr[-900:])
     # 17（P2 首批 8 + venv_security 9）+ 7（第二阶段：push_archives / facts cli / watchdog 3 / gitee_release 2）
-    assert "MIGRATIONS_OK 24" in r.stdout
+    assert "MIGRATIONS_OK 23" in r.stdout  # 2026-11-25 提仓：tools/facts/cli.py 迁出，迁移点 24 → 23
 
 
 def test_no_bare_timeout_literals_in_migrated_files():

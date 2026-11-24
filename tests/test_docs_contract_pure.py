@@ -18,7 +18,12 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-DOC = ROOT / "tools" / "gate" / "governance" / "runtime" / "docs_contract.py"
+
+# 2026-11-25 公共核提仓：判据实现随包迁出本仓，测试改读**已安装包**里的真身。
+import allin_governance as _agov
+
+_PKG = Path(_agov.__file__).resolve().parent
+DOC = _PKG / "_gatesuite" / "runtime" / "docs_contract.py"
 
 
 def _load_docs_contract():

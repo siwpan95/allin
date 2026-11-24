@@ -6,7 +6,7 @@ r"""publish_area_gate.py —— 发布区（repos/）治理门禁（rule 4/7/10/
     门禁全绿而 138 个被管仓有 error 级问题）。
 
     本脚本把 ``tools/repocheck`` 对发布区的体检**接入门禁体系**，并带一套
-    **逐项豁免台账**（``tools/gate/governance/ledger/publish_area_exemptions.csv``）：
+    **逐项豁免台账**（``tools/gate/ledger/publish_area_exemptions.csv``）：
       · 台账每条带 check / repo / path / reason / recorded_at / status；
       · status = ``accepted-exemption`` ⇒ 已实证裁决，可豁免；
       · status = ``pending-review``   ⇒ 登记待裁决，**同样不阻断**，但会在汇总里
@@ -46,9 +46,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent          # 本仓的 tools/ 目录（位置随检出而变）
-REPOCHECK = TOOLS / "repocheck" / "main.py"
-DEFAULT_EXEMPTIONS = TOOLS / "gate" / "governance" / "ledger" / "publish_area_exemptions.csv"
-# 运行留痕仍留 audit/（C 层：可重生）；豁免台账 2026-11-24 随三层分域迁到 governance/ledger/
+# 2026-11-25 公共核提仓：体检器随包走。走 **CLI**（`allin_governance repocheck`）而不是
+# `-m _repocheck.main` —— 后者会撞包内 flat import（`import report`），CLI 的包装层已注入路径。
+REPOCHECK_ARGS = ["-m", "allin_governance", "repocheck"]
+DEFAULT_EXEMPTIONS = TOOLS / "gate" / "ledger" / "publish_area_exemptions.csv"
+# 运行留痕仍留 audit/（C 层：可重生）；豁免台账 2026-11-25 提仓后留在本仓 tools/gate/ledger/
 RUNS_LOG = TOOLS / "gate" / "audit" / "publish-area-runs.jsonl"
 
 #: 纳入门禁的规则（其余 warn/info 级不阻断，但保留在体检报告里）
@@ -77,7 +79,7 @@ def run_repocheck(repos_root: Path, python: str) -> dict:
     os.close(fd)
     out = Path(tmp_name)
     try:
-        cmd = [python, str(REPOCHECK), str(repos_root),
+        cmd = [python, *REPOCHECK_ARGS, str(repos_root),
                "--workers", "8", "--format", "json", "--output", str(out)]
         proc = subprocess.run(cmd, capture_output=True, text=True,
                               encoding="utf-8", errors="replace", timeout=900)

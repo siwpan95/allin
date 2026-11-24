@@ -11,8 +11,8 @@ agent_created: true
 
 # 三端增量巡检 SOP（GitHub / gitee / 本地）
 
-> 执行器：`tools/github/github_release.py`（建仓/转公开/推 GitHub/独立复核）
-> 巡检器：`tools/github/sync_repos.py`（盘点/从 gitee 快进/推 GitHub/drift 只读，建仓与复核委托前者）
+> 执行器：`allin-governance github`（建仓/转公开/推 GitHub/独立复核）
+> 巡检器：`allin-governance github`（巡检子命令）（盘点/从 gitee 快进/推 GitHub/drift 只读，建仓与复核委托前者）
 > 统一入口：`allin tools github-release <...>` / `allin tools github-sync <...>`
 > 本技能讲**判定口径与踩坑**，脚本负责执行。参照 `venv-security-audit` 的「判据单一实现」纪律：
 > **建仓逻辑只在 github_release.py 一份**，巡检器不得自带第二份。
@@ -66,7 +66,7 @@ agent_created: true
 
 ```bash
 cd /g/allin
-ALLIN_REPOS_ROOT=/g/repos .venv/Scripts/python.exe tools/github/github_release.py verify
+ALLIN_REPOS_ROOT=/g/repos allin-governance github verify
 ```
 
 以独立前台命令输出的 `VERIFY_SUMMARY total=75 ok=75 bad=0` 为准（2026-11-24 清理后的基线；

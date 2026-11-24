@@ -51,7 +51,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent  # tools/gate/ → 仓根
 README = ROOT / "README.md"
-PYPROJECT = ROOT / "packages" / "allin-governance" / "pyproject.toml"
+# 2026-11-25 公共核提仓：包已迁出本仓。版本真值改从**已安装的包**读 ——
+# 比指向另一个仓的 pyproject 更稳：装的是什么就是什么，换机/换版本都自动跟。
+# 读不到（包未装）时明确 ENV-ERROR，不静默放宽。
 
 # R2 判定面：只核「现行事实声明」类文档（显式白名单 glob，不隐式 glob 全仓）。
 # 刻意排除 CHANGELOG.md、docs/记录/**、audit-fragments/**、docs/事实源/**、
@@ -198,15 +200,14 @@ def run_on(root: Path, quiet: bool = False) -> int:
 
     quiet 只抑制「干净态摘要」，违例明细始终打印（便于注入探针留证据）。
     """
-    pyproject = root / "packages" / "allin-governance" / "pyproject.toml"
     readme = root / "README.md"
     # 环境校验：真值来源与门面必须可读，否则整条门禁不可信 → exit 3。
-    if not pyproject.is_file():
-        print(f"ENV-ERROR: 真值来源不存在 {pyproject}")
-        return 3
-    pkg_version = read_pkg_version(pyproject.read_text(encoding="utf-8"))
-    if not pkg_version:
-        print(f"ENV-ERROR: 无法从 {pyproject} 解析 version")
+    # 真值 = 已安装的 allin-governance 版本（公共核已提仓，见模块头注释）。
+    try:
+        import allin_governance
+        pkg_version = allin_governance.__version__
+    except Exception as exc:  # noqa: BLE001
+        print(f"ENV-ERROR: 读不到已安装的 allin-governance 版本（{exc}）——先 pip install")
         return 3
     if not readme.is_file():
         print(f"ENV-ERROR: 仓根门面不存在 {readme}")
