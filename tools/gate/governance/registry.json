@@ -113,7 +113,8 @@
         "ops-P2",
         "ops-C3",
         "ops-C4",
-        "ops-G3"
+        "ops-G3",
+        "three-layer-boundary"
       ],
       "platforms": [
         "nt",
@@ -125,7 +126,7 @@
       ],
       "baseline": "governance/baseline/g05-hygiene.txt",
       "selfcheck": true,
-      "remediation": "被跟踪的产物/字节码→git rm --cached + 补 .gitignore 覆盖面；缺根三件套→补 LICENSE/README/.gitignore；超限大文件→先对账必要性再移出索引；归档目录补 README/MANIFEST。"
+      "remediation": "被跟踪的产物/字节码→git rm --cached + 补 .gitignore 覆盖面；缺根三件套→补 LICENSE/README/.gitignore；超限大文件→先对账必要性再移出索引；归档目录补 README/MANIFEST；**三层分域 C 层入索引**（boundary）→ 一律 `git rm --cached` 并确认 .gitignore 覆盖，因为这类产物删掉即重生；若它其实是事实源，正确动作是**挪到 B/B' 那一侧**（如机扫基线就该住 `facts/machine/<machine_id>/`），而不是留在产物目录里靠豁免过日子。"
     },
     {
       "id": "g06-numbering",

@@ -17,6 +17,13 @@ Checks:
   a generated schema just over 2 MB, so 5 MiB leaves real headroom.
 * ``archive``     -- a tracked ``archive``/``archived`` directory outside the
   upstream-governed Agent Notes carries a README or MANIFEST naming what it holds.
+* ``boundary``    -- the **C layer** of the three-layer split (公共核 / 事实源 /
+  运行产物) stays out of the index. Those trees are rebuildable by definition
+  (scan output, derived DBs, portal tokens, gate run logs), so indexing them buys
+  nothing and costs a permanent source of meaningless diffs.
+  Deliberately a **path whitelist**, not a directory-name rule: ``facts/machine/``
+  looks similar to ``platform/data/`` but is B' — a machine's only record of
+  itself — and MUST stay tracked. Judging by name would kill both.
 
 Exit codes follow the governance vocabulary: 0 clean, 1 blocking finding,
 2 usage error, 3 environment error.
@@ -62,6 +69,26 @@ ARTIFACT_SUFFIXES = (".tsbuildinfo", ".pyc", ".pyo", ".log", ".egg-info", ".dist
 EXEMPT_PREFIXES = (".agents/notes/archived/", "vendor/")
 
 ANNOTATION = "gov-hygiene: allow"
+
+#: C 层（本机运行产物）的落点 —— 2026-11-24 三层分域（公共核 / 事实源 / 运行产物）。
+#:
+#: 元素是 ``(前缀, 后缀或 None)``：``None`` 表示该前缀下的一切都是产物；
+#: 给了后缀就只拦那种后缀（用于同一目录里混住两类东西的情形）。
+#:
+#: 为什么 `tools/gate/audit/` 只拦 `.jsonl`：首跑这条判据就抓出该目录里还住着
+#: `agent_regression_baseline.json` / `docs_index_baseline.txt` / `*_exemptions.csv` 等
+#: **被核准的基线台账** —— 它们属 B 类事实源，只是历史原因住进了「运行留痕」目录。
+#: 一律拦会误杀证据；一律放行则真产物（`gate-runs.jsonl`）继续混进来。
+#: ⇒ 判据按后缀收窄，同时把「基线住错目录」作为待迁项登记（见交接卷 §203）。
+#:
+#: 也刻意不是「目录名叫 data / observed 就拦」：`facts/machine/` 与 `platform/data/` 长得像，
+#: 但前者是 B'（某台机唯一的自述记录，必须入库、只该该机写），后者是 C（删了即重生）。
+BOUNDARY_PATHS = (
+    ("platform/registry/observed/", None),  # discover_repos.mjs --apply 的机扫产出
+    ("facts/generated/", None),             # facts.json 的派生库（SQLite 视图等，可重建）
+    ("platform/data/", None),               # 门户令牌 / running.json / divergence-events.jsonl
+    ("tools/gate/audit/", ".jsonl"),        # 只拦运行留痕；该目录下的基线台账属 B，不在此列
+)
 
 
 def staged_blob_sizes(root: Path) -> dict[str, int]:
@@ -112,6 +139,14 @@ def is_artifact_path(path: str) -> str:
     return ""
 
 
+def is_boundary_violation(path: str) -> str:
+    """Return the C-layer prefix this tracked path violates, or an empty string."""
+    for prefix, suffix in BOUNDARY_PATHS:
+        if path.startswith(prefix) and (suffix is None or path.endswith(suffix)):
+            return prefix
+    return ""
+
+
 def scan(root: Path, *, limit: int = BIG_BLOB_LIMIT) -> Report:
     """Judge the tracked surface of ``root``."""
     report = Report(title=TITLE)
@@ -139,6 +174,14 @@ def scan(root: Path, *, limit: int = BIG_BLOB_LIMIT) -> Report:
             continue
         if path.endswith(ARTIFACT_SUFFIXES):
             report.block("artifact", path, 0, "tracked build or bytecode artifact")
+            continue
+        boundary = is_boundary_violation(path)
+        if boundary:
+            report.block(
+                "boundary", path, 0,
+                f"C 层运行产物被索引（{boundary}）：删掉即重生，不该入库。"
+                "若它其实是事实源，说明该挪到 B/B' 那一侧，而不是留在产物目录里",
+            )
             continue
         if size > limit:
             report.block("big-blob", path, 0, f"{size / MIB:.1f} MiB exceeds the {limit / MIB:.0f} MiB ceiling")
@@ -196,6 +239,29 @@ def selfcheck() -> int:
         check.detects("a tracked coverage artifact", "scripts/coverage/report.txt" in blocked)
         check.quiet("legitimate sources stay clean",
                     "scripts/build.ts" in blocked or "scripts/release/bump.ts" in blocked)
+
+    # 三层分域的 C 层：产物入库要红；同样长得像的 B'（机器事实）**不许**被误杀。
+    # 一个只判「产物入库」的夹具不够 —— 它证明不了判据没有把 B' 一起吃掉。
+    with govlib.Sandbox() as sandbox:
+        sandbox.write("LICENSE", "MIT\n")
+        sandbox.write("README.md", "# repo\n")
+        sandbox.write(".gitignore", ".env\n*.pem\n*.key\n__pycache__/\n")
+        sandbox.write("platform/registry/observed/lab.json", "{}\n")
+        sandbox.write("platform/data/portal.token", "tok\n")
+        sandbox.write("tools/gate/audit/gate-runs.jsonl", "{}\n")
+        sandbox.write("facts/machine/SIWPAN/scan-snapshot.json", "{}\n")
+        sandbox.write("facts/facts.json", "{}\n")
+        report = scan(sandbox.path)
+        blocked = {finding.path for finding in report.findings}
+        check.detects("a tracked scan output in the C layer",
+                      "platform/registry/observed/lab.json" in blocked)
+        check.detects("a tracked runtime token in the C layer",
+                      "platform/data/portal.token" in blocked)
+        check.detects("a tracked gate run log in the C layer",
+                      "tools/gate/audit/gate-runs.jsonl" in blocked)
+        check.quiet("machine facts (B') stay tracked",
+                    "facts/machine/SIWPAN/scan-snapshot.json" in blocked)
+        check.quiet("the shared fact source stays tracked", "facts/facts.json" in blocked)
 
     with govlib.Sandbox() as sandbox:
         sandbox.write("LICENSE", "MIT\n")
