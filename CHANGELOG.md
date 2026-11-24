@@ -3,7 +3,36 @@
 > 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
 
+## `allin-governance` 1.0.2 —— 2026-11-24
+
+**1.0.0 缺陷线的收口版。** 1.0.1 已修掉「sdist 装不上」，但那一版是同日**另一次构建**
+发布的，不含下面这几项；本版把剩下的补齐。
+
+### 与已发布的 1.0.1 的差别（实测口径）
+
+| 项 | 1.0.1（已发布） | 1.0.2（本版） |
+|---|---|---|
+| sdist 自包含 | ✅（109 条目 / 80 项映射树，实测装得上） | ✅（preflight 逐棵核对） |
+| `verify` 拒绝越界清单 | ❌ 清单里 `..` 仍会读仓外文件并回「快照未被改动」 | ✅ fail closed（exit 3）+ 回归用例 |
+| license 元数据 | ❌ `license = { text = … }`（setuptools 77 起弃用） | ✅ SPDX 表达式 + `license-files` |
+| 发版前置校验 | ❌ 无 | ✅ `scripts/release_preflight.py`（`--install` 双产物各装一次） |
+| sdist 自包含回归测试 | ❌ 无 | ✅ `tests/test_dist_artifacts.py` |
+| 版本护栏 | ❌ 仍断言「必须是 `0.0.0aN`」 | ✅ 改为 pyproject ↔ `__init__` 对账 |
+
+> 为什么不是「重传 1.0.1」：PyPI 的版本号不可覆盖也不可删除。1.0.1 已被占用且内容与
+> 本仓当前树不同，只能顺延。
+
+### 验证（本机 `@SIWPAN`，2026-11-24）
+
+- `python scripts/release_preflight.py --install` → `PREFLIGHT ok=8 fail=0 skip=0` / `RESULT: CLEAN`
+- 负对照：从 sdist 摘掉 `_repocheck/` → `[FAIL] sdist 自包含` + `BLOCKED`，同次 `twine check` 仍 `[ok]`
+- 包测试 47 passed；全仓 pytest 385 collected / 0 failed；platform 75/75；SAST 0 条
+
 ## `allin-governance` 1.0.1 —— 2026-11-24
+
+> ⚠ **事后订正（同日）**：本版由仓外另一次构建发布，**不含**下面「1.0.1 改了什么」里
+> 第 2–5 项（`verify` 越界防线、SPDX 元数据、回归测试、版本护栏）。那四项实际由
+> 上方 `1.0.2` 承载。原文保留，方便对照计划与实物。
 
 **修 1.0.0 的一个发布缺陷：sdist 装不上。** wheel 不受影响。
 

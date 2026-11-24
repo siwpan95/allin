@@ -31,7 +31,7 @@
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.1`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.2`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 

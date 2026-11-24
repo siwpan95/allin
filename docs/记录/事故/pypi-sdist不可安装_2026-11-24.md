@@ -1,6 +1,6 @@
 # allin-governance 1.0.0 sdist 不可安装（SEV2）
 
-> **T0** 2026-11-24 09:03（+0800）｜ **发现途径** 发布前全检：比对本地构建物与 PyPI 发布物体积 ｜ **状态** 已恢复（1.0.1 待放行上传）
+> **T0** 2026-11-24 09:03（+0800）｜ **发现途径** 发布前全检：比对本地构建物与 PyPI 发布物体积 ｜ **状态** 已恢复（1.0.1 已发布，仓外另一次构建；本仓修复随 1.0.2 收口）
 > **影响面**
 > - **受影响**：一切从 **sdist** 安装 `allin-governance==1.0.0` 的路径 —— `pip install --no-binary :all:`、
 >   目标平台无匹配 wheel、离线镜像 / 内网索引、以及 `pip download --no-binary` 后转装。
@@ -44,6 +44,8 @@
 | 09:20 | 修复开工 | ① 版本护栏改单一来源对账；② 新增 `scripts/release_preflight.py`；③ 新增 sdist 自包含回归测试；④ 版本升 1.0.1 |
 | 09:35 | 负对照 | 人为摘掉 1.0.1 sdist 里的 `_repocheck/` → `[FAIL] sdist 自包含` + `RESULT: BLOCKED`，而 `twine check` 仍 `[ok]` ⇒ 判据能判红，且复现了当初的盲区 |
 | 09:40 | 构建 1.0.1 并全绿 | `PREFLIGHT ok=8 fail=0 skip=0 / RESULT: CLEAN`（sdist + wheel 各装一次、五个子命令全 exit 0） |
+| 10:07 | 复核 PyPI 上已出现的 1.0.1 | sdist 109 条目 / 80 项映射树、干净 venv 装得上、`init` exit 0 ⇒ **1.0.0 的「装不上」已解除**；但该版不含 `verify` 越界防线、SPDX 元数据与自包含回归测试（源码比对：`生成清单含指向目标目录之外的条目` 计数 0、`license = { text = … }` 仍在） |
+| 10:12 | 版号顺延 | PyPI 版本不可覆盖，1.0.1 已被占用且内容与本仓树不同 ⇒ 本仓顺延 **1.0.2**，把剩余修复收口 |
 
 ## 已做（动作 + 退出码 / 复现命令）
 
@@ -105,9 +107,10 @@ pytest packages/allin-governance -q                            # 46 passed
 | 4 | 版本 1.0.1 + CHANGELOG/README 同步 | 完成 | `CHANGELOG.md` 1.0.1 节；preflight「版本单一来源」项 ok |
 | 5 | SOP 补 sdist 分支 | 完成 | `.workbuddy/skills/pypi-publish-prep/SKILL.md` §4b |
 | 6 | yank 1.0.0 | 放弃（写理由） | yank 按整版生效，会连可用 wheel 一起隐藏；收益为负 |
-| 7 | 上传 1.0.1 | 待办（等放行） | —— |
-| 8 | 上传后双端点 + 直链复核 | 待办 | —— |
+| 7 | 发布 1.0.1 | 完成（仓外另一次构建，2026-11-24T01:08Z） | PyPI JSON：1.0.1 sdist 321,887 B / 109 条目；干净 venv `init` exit 0 |
+| 8 | 上传后双端点 + 直链复核（1.0.1） | 完成 | `/pypi/allin-governance/1.0.1/json` 有记录；直链下载 sha256 `5b125d15…` |
 | 9 | CI 增加「构建 sdist 并装一次」job | 待办（本次不做，需双平台验证） | —— |
+| 10 | 发布 **1.0.2**（本仓树的收口版） | 进行 | preflight CLEAN；待推送+上传 |
 
 ## 预防
 
