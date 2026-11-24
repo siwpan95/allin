@@ -276,7 +276,7 @@ def selfcheck() -> int:
         sandbox.write("src/app.ts", "export const app = 1\n")
         config = sandbox.path / ".git" / "config"
         config.write_text(config.read_text(encoding="utf-8")
-                          + "[remote \"origin\"]\n\turl = https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git\n",
+                          + "[remote \"origin\"]\n\turl = https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git\n",  # gov-credentials: allow（自检夹具）
                           encoding="utf-8")
         report = scan(sandbox.path, remote="origin", branch="main", offline=False)
         check.detects("a credential in the remote URL blocks",
@@ -337,7 +337,7 @@ def selfcheck() -> int:
         config = sandbox.path / ".git" / "config"
         config.write_text(config.read_text(encoding="utf-8")
                           + "[remote \"origin\"]\n\turl = https://gitee.com/owner/name.git\n"
-                          + "[remote \"mirror\"]\n\tpushurl = https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git\n",
+                          + "[remote \"mirror\"]\n\tpushurl = https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git\n",  # gov-credentials: allow（自检夹具）
                           encoding="utf-8")
         report = scan(sandbox.path, remote="origin", branch="main", offline=True)
         check.detects("a credential hidden in a pushurl is blocked",

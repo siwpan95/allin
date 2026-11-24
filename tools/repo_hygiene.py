@@ -509,7 +509,7 @@ def check_h5_credentials(repo, tracked, ctx):
             # 形态②（URL 内嵌凭据）：**主机名**若是 RFC 2606/6761 保留域，则必然不是真实服务。
             # 结构判定（2026-09-28，DSH 实证）：g04_push_evidence.py 的自检夹具写的是
             # `https://svc:8f14e45f…@host.invalid/x.git` —— `.invalid` 是保留的无效 TLD，
-            # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。
+            # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。  # gov-credentials: allow（自检夹具）
             # 用户名:口令 的形态在这里无法靠"值像不像"判，但**主机名能**。
             if index == URL_CREDENTIAL_PATTERN_INDEX:
                 tail = data[m.end(): m.end() + 96]
@@ -970,7 +970,7 @@ def selfcheck():
         # H5 正例二：提及令牌文件名的**同一窗口里有 32+ hex** → 仍须检出（豁免不能吃掉真问题）
         def _cred_mention_value(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "docs/令牌说明.md", "私人令牌.txt 里第一行是 8f14e45fceea167a5a36dedd4bea2543（示例）。\n")  # repo-hygiene: allow
+            wr(d, "docs/令牌说明.md", "私人令牌.txt 里第一行是 8f14e45fceea167a5a36dedd4bea2543（示例）。\n")  # repo-hygiene: allow  # gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_mention_value", _cred_mention_value)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 文件名声明旁的密钥值被检出: {}  [{}]".format("✔" if h5 else "✘", len(h5)))
@@ -1093,7 +1093,7 @@ def selfcheck():
         # 必然不是真实服务；但真实主机仍须检出。
         def _cred_reserved(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/e.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git"\n')
+            wr(d, "t/e.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@host.invalid/x.git"\n')  # gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_res", _cred_reserved)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 保留域主机不判:   {}  [{}]".format("✔" if not h5 else "✘", len(h5)))
@@ -1101,7 +1101,7 @@ def selfcheck():
 
         def _cred_realhost(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/f.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@gitee.com/o/n.git"\n')
+            wr(d, "t/f.py", 'u = "https://svc:8f14e45fceea167a5a36dedd4bea2543@gitee.com/o/n.git"\n')  # gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_realh", _cred_realhost)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 真实主机仍判:     {}  [{}]".format("✔" if h5 else "✘", len(h5)))

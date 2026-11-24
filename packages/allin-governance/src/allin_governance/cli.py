@@ -178,6 +178,47 @@ def _cmd_deps(argv: list[str]) -> int:
     return deps_doctor.main(argv)
 
 
+def _secret_scan():
+    """取 `secret_scan` 模块（安装态走包内 `_secret_scan`，源码树走仓内路径）。
+
+    与 `_github_modules()` 同一纪律：映射目录只在 wheel 里存在，
+    源码树形态必须能跑 —— 否则 `pytest packages/allin-governance` 直接炸。
+    """
+    try:
+        from ._secret_scan import scanner  # type: ignore[import-not-found]
+        return scanner
+    except (ImportError, ValueError):
+        pass
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / "tools" / "secret_scan"
+        if candidate.is_dir() and (candidate / "scanner.py").is_file():
+            entry = str(parent / "tools")
+            added = entry not in sys.path
+            if added:
+                sys.path.insert(0, entry)
+            try:
+                from secret_scan import scanner as flat  # type: ignore[import-not-found]
+                return flat
+            finally:
+                if added:
+                    try:
+                        sys.path.remove(entry)
+                    except ValueError:
+                        pass
+    raise ImportError("找不到 secret_scan/scanner.py（安装态与源码态都不在）")
+
+
+def _cmd_secrets_scan(argv: list[str]) -> int:
+    """离线凭据扫描：21 条高精度规则 + 熵闸 + 仓库自有注解豁免。
+
+    与 `scripts/scan-secrets.sh` 的分工：那个负责「本次变更新增行」（CI 门禁），
+    这个负责「任意目录/历史快照的一次性体检」，不需要 gitleaks 二进制。
+    """
+    return _secret_scan().main(argv)
+
+
 def _github_dir() -> Path:
     """`tools/github` 的源码树落点（安装态下应走包内 `_github`，不会用到这里）。"""
     for parent in Path(__file__).resolve().parents:
@@ -244,6 +285,8 @@ SUBCOMMANDS: dict[str, tuple[str, object]] = {
     "scan": ("发布区扫盘：项目指纹 / 重复检出 / 迁移残留（只报告不处置）", _cmd_scan),
     "deps": ("依赖体检：requirements 声明 · 解释器实装 · 仓内 import 三者对账", _cmd_deps),
     "github": ("GitHub 建仓/推送/三端巡检（gitee 为权威）；github-sync 子命令走巡检器", _cmd_github),
+    "secrets-scan": ("离线凭据扫描：21 条高精度规则 + 按字符集分档的熵闸（不需要 gitleaks 二进制）",
+                     _cmd_secrets_scan),
 }
 
 

@@ -155,6 +155,37 @@ git status --short                            # 必须为空
 
 ---
 
+## 4.5 推送前必须先同步（2026-11-24 新增，铁律 71 的硬件）
+
+推送失败最常见的原因不是权限，是**不知道远端已经变了**。所以顺序固定为：
+`fetch → 判关系 → （落后则 ff-only 拉取）→ 提交 → 推送 → 逐端核对`。
+
+```bash
+bash scripts/sync-before-push.sh                  # 只读：报「领先 N / 落后 M」与结论
+bash scripts/sync-before-push.sh --apply          # 落后则 git pull --ff-only（脏工作区会被拒绝）
+bash scripts/sync-before-push.sh --apply --push   # 拉取 → 推送 → 逐端 ls-remote 核对 SHA
+```
+
+四种状态与处置：
+
+| 关系 | 脚本结论 | 处置 |
+|---|---|---|
+| 领先 0 / 落后 0 | 已同步 | 无事可做 |
+| 领先 N / 落后 0 | 本地领先 | 可推送 |
+| 领先 0 / 落后 M | 本地落后 | `--apply` 走 ff-only |
+| 领先 N / 落后 M | **已分叉** | **停下报人**：先看 `git log --oneline HEAD..origin/master`，人决定 rebase 还是合并；禁止 `push -f` |
+
+> ⚠ **核对必须逐端**：`origin` 配了多个 `pushurl`（Gitee + GitHub），但那**只对
+> `origin` 一个名字生效** —— 本仓另有独立 `github` remote。2026-11-24 实测：脚本只核
+> `origin` 时报「已同步」，而 GitHub 实际落后 4 个提交。现在**即使无待推提交也逐端核对**，
+> 另一端落后时单独补推。
+
+> 为什么不自动 rebase/merge：分叉意味着**两条线都改过同一批文件**，自动处理会在
+> 语义层面替人做决定（2026-11-24 的实例：两条线同时改 `pyproject.toml` 的版本号）。
+> 脚本能机械化的是「发现」，不是「裁决」。
+
+---
+
 ## 5. allin 专属：整仓推送约定
 
 - allin 是**单一索引大仓**，必须**整仓推送**，禁止只推送部分子目录/子项目（会破坏「整仓即事实」的治理模型）。

@@ -27,13 +27,14 @@
    - [`tools/repocheck/`](tools/repocheck/README.md) —— 离线仓库体检器（30 条仓体规则 + 20 条可选治理门禁规则，零第三方依赖）。
    - [`tools/_shared/scan_repos.py`](tools/_shared/scan_repos.py) —— 发布区扫盘：项目指纹、重复检出、迁移残留（只报告不处置）。**随包分发**为 `allin-governance scan`。
    - [`tools/_shared/deps_doctor.py`](tools/_shared/deps_doctor.py) —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。**随包分发**为 `allin-governance deps`。
+   - [`tools/secret_scan/`](tools/secret_scan/) —— **自研离线凭据扫描**：21 条高精度规则（只认已知提供方的固定格式）+ 按字符集分档的熵闸（hex 3.0 / alnum 3.5 / 其它 4.0）+ 占位符与形态降噪，随包分发为 `allin-governance secrets-scan`。**不依赖 gitleaks 二进制**，也不需要出网（不做在线验证 —— 那要把密钥发给服务商）。
    - [`tools/docs_backlinks.py`](tools/docs_backlinks.py) —— 文档反向链接 / 影响面（改一篇文档前先看波及谁）。
    - [`tools/gitee_release.py`](tools/gitee_release.py) —— Gitee 建仓 / 转公开 / 发版 / 附件（令牌走 GITEE_TOKEN → GCM）。
    - [`tools/github/`](tools/github/) —— GitHub 建仓 / 转公开 / SSH 增量推送 / 独立复核 + 三端增量巡检（**gitee 远端为权威**，单向 gitee → 本地 → GitHub）。随包分发为 `allin-governance github`；SOP 见 [`github-sync-audit`](.workbuddy/skills/github-sync-audit/SKILL.md)。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.2`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
+   发布为 PyPI 包 `allin-governance`（当前版本 `1.0.3`，版本演进以根 [`CHANGELOG.md`](CHANGELOG.md) 为准）。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 

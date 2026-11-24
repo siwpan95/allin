@@ -35,4 +35,6 @@ __all__ = ["__version__"]
 #:                `_github` 包映射；**不含**本线的 verify 越界防线 / SPDX 元数据 / 回归测试。
 #:   1.0.2        本线收口：`verify` 拒绝越界清单、license 改 SPDX、新增 release_preflight
 #:                与 sdist 自包含回归测试、版本护栏改单一来源。
-__version__ = "1.0.2"
+#:   1.0.3        新增第 7 个子命令 `secrets-scan`：自研离线凭据扫描（21 条高精度规则
+#:                + 按字符集分档的熵闸 + 仓库自有注解），不依赖 gitleaks 二进制。
+__version__ = "1.0.3"
