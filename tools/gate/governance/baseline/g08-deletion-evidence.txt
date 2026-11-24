@@ -1,3 +1,13 @@
 # Baseline ratchet for this gate. One finding key per line.
 # Refresh only after the remaining findings were reviewed in full:
 #   python governance/gates/<gate>.py --no-baseline --list-all
+#
+# 2026-11-24（@SIWPAN）：下面这条**不是**能力退役，是**迁移**。
+#   5 份基线台账由 git mv 从 `tools/gate/audit/` 移到 `tools/gate/governance/ledger/`，
+#   文件一个没少（`git status` 显示 5 条 R），只是旧路径消失。
+#   g08 的判据是「路径消失 ⇒ 必须给功能面 × 接任者表」，照判不误 —— 报告是对的，
+#   缺的是当时没把表写进提交信息。证据现补在两处：
+#     · docs/记录/交接/2026-11.md §205.2（迁了什么）/ §205.3（6 处读取方逐项）
+#     · 紧随其后的那笔提交信息（附同样的表）
+#   冻结它 = 「这条已复核、不再新增同类」，不是「以后不用写证据」。
+commit 4c8e5820|ffd3d49458ca98b1|deletion-without-evidence
