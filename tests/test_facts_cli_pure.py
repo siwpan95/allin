@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FACTS = ROOT / "tools" / "facts"
 
 # 只有子进程才注入 tools/facts —— 主进程 sys.path 保持原样
-_FACTS_HEADER = "import sys\nsys.path.insert(0, %r)\n" % FACTS.as_posix()
+_FACTS_HEADER = "import sys, allin_governance._facts.cli as _c; sys.modules['cli'] = _c"
 
 
 def _py(script: str, timeout: int = 90):

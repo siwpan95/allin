@@ -77,7 +77,10 @@ def _load_local(name: str, path: Path):
     return mod
 
 
-scanctx = _load_shared("scanctx", REPOCHECK / "scanctx.py")
+try:
+    from allin_governance._repocheck import scanctx  # 2026-11-25 提仓：共享包内那一份
+except ImportError:  # 兼容未装包
+    scanctx = _load_shared("scanctx", REPOCHECK / "scanctx.py")
 watchdog = _load_local("watchdog", GATE / "watchdog.py")
 repo_hygiene = _load_local("repo_hygiene", TOOLS / "repo_hygiene.py")
 

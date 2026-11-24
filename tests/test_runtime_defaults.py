@@ -178,7 +178,6 @@ def test_no_bare_timeout_literals_in_migrated_files():
         "tools/build_portfolio.py": {60},
         "tools/security/venv_security.py": {60, 120, 300, 900},
         "tools/tier_archive/push_archives.py": {3600},
-        "tools/facts/cli.py": {60},
         "tools/gate/watchdog.py": {300, 120, 180},
         "tools/gitee_release.py": {60, 1800},
     }
