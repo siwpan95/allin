@@ -104,15 +104,40 @@ def _run_repocheck(argv: list[str]) -> int:
                 pass
 
 
+def _root_to_positional(argv: list[str]) -> list[str]:
+    """把 `--root X` 归一成位置参数 X —— 统一子命令契约（SPEC-206 §3 A7）。
+
+    背景：`scan` / `deps` 原生用 `--root`，`repocheck` / `verify` 原生用位置参数。
+    同一套 CLI 里两种写法会让下游「按记忆猜」，2026-11-25 的换机 E2E 实测正是
+    照 plan 写 `scan <repos>` / `repocheck <repos>` 双双 exit 2。
+    这里让**两者都接受**：`--root` 只是位置参数的别名，不改变底层工具。
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--root" and i + 1 < len(argv):
+            out.append(argv[i + 1])
+            i += 2
+            continue
+        if a.startswith("--root="):
+            out.append(a.split("=", 1)[1])
+            i += 1
+            continue
+        out.append(a)
+        i += 1
+    return out
+
+
 def _cmd_repocheck(argv: list[str]) -> int:
-    return _run_repocheck(argv)
+    return _run_repocheck(_root_to_positional(argv))
 
 
 def _cmd_verify(argv: list[str]) -> int:
     """复核 `init` 生成的快照是否仍与 GENERATED.json 一致。"""
     from . import init as init_module
 
-    return init_module.verify_main(argv)
+    return init_module.verify_main(_root_to_positional(argv))
 
 
 def _cmd_init(argv: list[str]) -> int:

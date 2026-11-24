@@ -278,8 +278,16 @@ def _build_name_index() -> dict[str, list[str]]:
     """
     index: dict[str, list[str]] = {}
     skip_dirs = {".git", "node_modules", ".venv", "__pycache__", "build", "dist", ".pytest_cache"}
+    # ⚠ `packages/tools/` 是 setuptools 直接 `build` 时的**物化副本**（pyproject 的
+    # package-dir 把 ../../tools/* 复制过去），与仓根真身同名。它已被 .gitignore，
+    # 但物理残留会让 E1 锚点判成「同名文件有 2 个」——2026-11-25 实测出现过 11 条假红。
+    # 真身永远在仓根 tools/，这里整目录排除。
+    skip_prefixes = ("packages/tools/",)
     for p in ROOT.rglob("*"):
         if not p.is_file():
+            continue
+        rel_str = p.relative_to(ROOT).as_posix()
+        if any(rel_str.startswith(pref) for pref in skip_prefixes):
             continue
         rel_parts = p.relative_to(ROOT).parts
         if any(part in skip_dirs for part in rel_parts):

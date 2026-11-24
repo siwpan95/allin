@@ -180,6 +180,16 @@ def main(argv: list[str] | None = None) -> int:
     if not pyproject.is_file():
         raise fail(f"找不到 {pyproject}")
 
+    # 清掉「直接 build」留下的物化残留：setuptools 会把 package-dir 的 ../../tools/*
+    # 复制到 packages/tools/，与仓根真身同名 —— 已 gitignore，但物理残留会让
+    # docs audit-check 把锚点判成「同名歧义」（2026-11-25 实测 11 条假红）。
+    # 真身永远在仓根 tools/；本脚本用系统临时目录物化，不该在仓内留下任何副本。
+    stale_materialized = ROOT / "packages" / "tools"
+    if stale_materialized.exists():
+        shutil.rmtree(stale_materialized, ignore_errors=True)
+        print(f"已清理物化残留 {stale_materialized.relative_to(ROOT)}"
+              "（直接 build 的产物，会干扰 docs audit-check）")
+
     out_dir = Path(args.outdir).expanduser().resolve() if args.outdir else PROJECT / "dist"
     out_dir.mkdir(parents=True, exist_ok=True)
     for stale in out_dir.iterdir():
