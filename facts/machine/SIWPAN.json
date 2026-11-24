@@ -69,5 +69,19 @@
       "evidence_ref": null
     }
   ],
-  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**"
+  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**",
+  "repos": [
+    {
+      "id": "anatomy3d",
+      "checked_out": false,
+      "observed_at": "2026-11-24",
+      "note": "remote-only：由 KQABATS 建仓维护"
+    },
+    {
+      "id": "write-agent",
+      "checked_out": false,
+      "observed_at": "2026-11-07",
+      "note": "remote-only：由 8RSV60V 新建推送"
+    }
+  ]
 }

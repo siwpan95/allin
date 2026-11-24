@@ -66,7 +66,7 @@
   且 CI 无出网时会全部降级为 unknown。
 - **不做格式未知令牌的强判定**：那类只由泛化规则 + 熵兜底，标 `low`。
 
-### 验证（本机 `@SIWPAN`，2026-11-24）
+### 验证（2026-11-24）
 
 - 自造语料 40 个泄露样本（8 种文件类型 × 20 类）→ **40/40**；
 - Python 标准库 636 个 `.py`（纯负样本）→ **0 误报**，18.7 s；
@@ -128,7 +128,7 @@ TypeError: main() takes 0 positional arguments but 1 was given
 （与 `_repocheck_dir()` 同一纪律）。并补一条**逐个子命令**的 `--help` 回归测试 ——
 此前只测了 `repocheck --help`，剩下五个从未被「跑一下」。
 
-### 验证（本机 `@SIWPAN`，2026-11-24）
+### 验证（2026-11-24）
 
 - `python scripts/release_preflight.py --install` → `PREFLIGHT ok=8 fail=0 skip=0` / `RESULT: CLEAN`
 - 负对照：从 sdist 摘掉 `_repocheck/` → `[FAIL] sdist 自包含` + `BLOCKED`，同次 `twine check` 仍 `[ok]`

@@ -137,7 +137,7 @@ systemctl status allin-portal
 
 | 项 | 实测 |
 | --- | --- |
-| 时点 / 机器 | 2026-11-11，`@SIWPAN`（Windows） |
+| 时点 | 2026-11-11（当时验证机的具体型号/解释器见 `facts/machine/`） |
 | 启动 | `node apps/portal/src/index.js`（默认 `PORT=0`），输出 `[allin-platform portal] http://127.0.0.1:6501/` |
 | 端口发现 | `data/portal.port` = `6501`，与 `/api/status` 的 `boundPort` 一致 |
 | 首页 | `GET /` ⇒ `200`，marker `allin-platform` = `true` |

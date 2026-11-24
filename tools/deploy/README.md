@@ -96,7 +96,7 @@ python "<REPO_ROOT>\tools\deploy\monthly_audit.py" --repo-root "<REPO_ROOT>" --f
 | `repocheck` | 仓内自检口径（与 `scripts/run_all_gates.sh` 同参数） | 非 0 退出 |
 | `portfolio` | FACT-08 表内自洽（140 行编号 / 分层求和 / 合计 / `137 = 140 − 3`） | 任一算术或编号不自洽 |
 
-> **发布区目录数是观测项，不是判据**：`组合分级决策索引.md` 明写「工作区 repos 根按机器而异」（SIWPAN 实测 138、8RSV60V 实测 137）。拿一台机器的目录数硬判 137 会制造跨机假红，与 `verify_facts` 默认只判本机那份文件同一道理。实测值如实写进 JSONL 的 `deviations`，需要时加 `--strict-publish-area` 收紧为阻断。
+> **发布区目录数是观测项，不是判据**：`组合分级决策索引.md` 明写「工作区 repos 根按机器而异」（各机实测值见 `facts/machine/<机>.json`）。拿一台机器的目录数硬判 137 会制造跨机假红，与 `verify_facts` 默认只判本机那份文件同一道理。实测值如实写进 JSONL 的 `deviations`，需要时加 `--strict-publish-area` 收紧为阻断。
 
 **产物**：`tools/gate/audit/monthly-audit-runs.jsonl`（机器本地，`audit/*` 已被 `.gitignore` 覆盖；5MB 轮转同 `gate-runs.jsonl`），一行一次真跑，含 `period` / `host` / `commit` / 每项 `exit` 与 `ms` / `portfolio` 观测。文本日志按日落 `<ALLIN_LOG_DIR>\monthly-audit-<yyyy-MM-dd>.log`。**退出码 0 全绿或 skip，1 有阻断项，2 用法错，3 环境错** —— 非 0 由 `Get-ScheduledTaskInfo` 的 `LastTaskResult` 可见。
 

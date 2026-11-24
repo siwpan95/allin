@@ -87,6 +87,12 @@ EXEMPT = (
     "docs/规范/SPEC-005-文档枢纽契约.md", "docs/spec/SPEC-005-文档枢纽契约.md",
     "docs/历史/", "docs/md/",
     "docs/INDEX.md",
+    # deploy/netbox 的 `dcim.devices/SIWPAN` 是 NetBox 里的**设备记录名**（外部系统数据），
+    # 不是「某台机器的事实」—— 机器名恰好与主机名相同，改了反而错。
+    "deploy/netbox/",
+    # facts/machine/** 是各机机器事实**本尊**（B' 单源）；facts/facts.json 是它的派生聚合，
+    # 机器段留在里面是设计（_machine_section_derived 标记）。schema 里的 machine:SIWPAN 是示例值。
+    "facts/machine/", "facts/facts.json", "facts/facts.schema.json",
 )
 
 #: 行内「路径引用」形态（不算特化内容）：`机器/SIWPAN/...`、`(docs/...)`、别名路径等。
@@ -103,21 +109,31 @@ def is_path_reference(line: str, match: re.Match) -> bool:
     return bool(LINK_PAT.search(context))
 
 
+#: 全仓扫描时跳过的目录（产物 / 第三方 / 虚拟环境 / 别名树）
+SKIP_DIRS = {"node_modules", "vendor", "build", "dist", "dist-test", "dist-build", ".venv",
+             "__pycache__", ".git", "non-tools", "site-packages"}
+SCAN_SUFFIX = (".md", ".yaml", ".yml", ".json")
+
+
 def scan(root: Path) -> list[dict]:
+    """扫**全仓**（不只 docs/）：2026-11-25 按「用各机 @ 的那个找」把范围扩到
+    registry / CHANGELOG / DEPLOY 等 docs 之外的文档与配置 —— 机器特化同样会混进去
+    （实测：registry 条目里写「本机 @SIWPAN 未检出」、CHANGELOG 写「验证（本机 @SIWPAN）」）。"""
     hits: list[dict] = []
     # ⚠ docs/spec|facts|records|md 是 junction。rglob 会跟随 junction 把别名树里的
-    # 文件再扫一遍 —— 路径错位、计数翻倍（实测 0.4.0 版曾把别名下旧副本的行报成
-    # 主文件的行号）。所以目录层先解析真实路径，已扫过的跳过。
+    # 文件再扫一遍 —— 路径错位、计数翻倍。所以目录层先解析真实路径，已扫过的跳过。
     seen_dirs: set[str] = set()
     files: list[Path] = []
-    for d in (root / "docs").iterdir():
-        if not d.is_dir():
+    for path in root.rglob("*"):
+        rel_parts = path.relative_to(root).parts
+        if any(part in SKIP_DIRS for part in rel_parts):
             continue
-        real = str(Path(os.path.realpath(d)))
-        if real in seen_dirs:
+        if not path.is_file() or path.suffix not in SCAN_SUFFIX:
             continue
-        seen_dirs.add(real)
-        files.extend(d.rglob("*.md"))
+        real_dir = str(Path(os.path.realpath(path.parent)))
+        if real_dir in seen_dirs:
+            continue
+        files.append(path)
     for path in sorted(files):
         rel = path.relative_to(root).as_posix().replace("\\", "/")
         if any(rel.startswith(e) or rel == e for e in EXEMPT):

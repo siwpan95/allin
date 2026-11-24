@@ -16,5 +16,13 @@
   "volumes": [],
   "runtimes": [],
   "observation_runs": [],
-  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**"
+  "source": "由 build_machine_index.py --split 从 facts.json 拆出；此后本文件是该机的**单源**",
+  "repos": [
+    {
+      "id": "anatomy3d",
+      "role": "建仓并维护（M0–M4 全通）",
+      "observed_at": "2026-11-24",
+      "evidence": "交接卷 §188/§189"
+    }
+  ]
 }

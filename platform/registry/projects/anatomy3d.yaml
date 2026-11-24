@@ -3,9 +3,8 @@ name: anatomy3d · 开放数据人体解剖 3D 教育查看器
 category: tool
 version: 0.1.0
 path: repos/anatomy3d
-# 2026-11-24：本机（@SIWPAN）未检出该仓 —— 它在 @DESKTOP-KQABATS 上建仓并维护
-# （M0–M4 全通记录见交接卷 §188/§189）。registry 是全局清单，各机检出集不同，
-# 本机缺检出 ≠ 治理缺陷 ⇒ remote-only（与 write-agent 同口径）。
+# registry 是**全局清单**，各机检出集不同；缺检出 ≠ 治理缺陷 ⇒ checkout: remote-only。
+# 各机的检出/建仓经过住该机机器事实（facts/machine/<机>.json 的 repos 段），不写在这里。
 checkout: remote-only
 manual: true
 note: 人体解剖教育查看器（教学用途非临床）：Z-Anatomy/BodyParts3D 开放数据 + Blender 资产管线 + pyglet 查看器；代码 MIT / 数据 CC BY-SA 双轨授权（NOTICE）
