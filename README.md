@@ -152,6 +152,56 @@ allin docs portfolio --apply
 | [`docs/事实源/机器分区索引.md`](docs/事实源/机器分区索引.md) | 多机检出时，各机仓根 / 发布区落点的**唯一事实源**；本 README 只写跨机共识，不写单一机器路径 |
 | `PLATFORM_REPOS_ROOT` 环境变量 | 覆盖 platform 注册表的发布区根；默认解析规则 `repos/<仓名>` → 仓的上一级 |
 
+## 运行时可写位置：包内只读，状态落用户目录
+
+> 早期这里只有一句笼统的说法：「装在 Program Files 的程序往安装目录写 → 普通用户写失败 →
+> 回退 VirtualStore → 两份配置，非常迷惑」。那句话只描述了其中一种表现，机制与边界比它宽。
+
+### 症状有三种，不止一种
+
+| 环境 | 往安装目录写时会怎样 |
+| --- | --- |
+| Windows，**32 位**进程，受保护目录（`Program Files` / `Program Files (x86)` / `Windows` / 系统盘根） | **被静默重定向**到 `%LOCALAPPDATA%\VirtualStore\<原路径>`。程序读写自己的副本、看起来一切正常；资源管理器或管理员看到的是另一份。两份长期并存，权限一变旧副本就「突然生效」——最迷惑的一种 |
+| Windows，**64 位**进程（现代 Python 绝大多数） | **不重定向**，直接写失败（`PermissionError`）。表现是「保存不了」，比上面好查，但仍是错的 |
+| POSIX（`sudo pip install` 进 `/usr`） | 安装目录属 root，普通用户写失败；若有人用 `sudo` 跑过一次，会在安装目录留下 **root 属主**的缓存，之后普通用户读不了或读到旧值 |
+
+另有一个独立来源：**「始终以管理员身份运行」会让人以为自己修好了**——管理员与普通用户读的是不同位置的
+同一份配置，换种启动方式就变回默认。这不是权限没配好，是把可变状态放错了地方。
+
+### 根因一条
+
+**安装目录是只读的**——不是权限配置问题，是包规范（setuptools *Data Files Support*）：
+包内 data 会被多用户共享、被 zip 导入、被并行实例读取，所以**必须只读**；
+可变状态必须落在包外、属于具体用户的位置。
+
+### 正确划分（照系统 API 走，不自己拼路径）
+
+| 内容 | 落点（Windows） | 落点（POSIX） | 获取方式 |
+| --- | --- | --- | --- |
+| 程序文件 / 只读模板 | 安装目录 | 安装目录 | 随包分发（`package_data`） |
+| 每用户配置 | `%APPDATA%`（漫游）/ `%LOCALAPPDATA%` | `~/.config` | `SHGetKnownFolderPath(FOLDERID_RoamingAppData)` / `XDG_CONFIG_HOME` |
+| 每用户数据 / 缓存 / 日志 | `%LOCALAPPDATA%` | `~/.local/share`、`~/.cache` | `FOLDERID_LocalAppData` |
+| 多用户共享配置 | `%PROGRAMDATA%`（显式给 Users 读权限） | `/etc` | `FOLDERID_ProgramData` |
+| 跨平台统一 | — | — | [`platformdirs`](https://pypi.org/project/platformdirs/)（本仓不引入依赖，等价逻辑内联在 `print/config.py`） |
+
+### 本仓是怎么做的（`allin-toolkit` 的 `print`）
+
+- 可写根：`%LOCALAPPDATA%\allin-toolkit\print`（POSIX：`$XDG_DATA_HOME/allin-toolkit/print`）；
+- 索引缓存与用户学习词典（`user_dict.json`）都落这里，安装目录零写入；
+- 字典读取顺序：**包内只读优先 → 用户目录兜底**；`--auto-download` 与手动放置的字典写用户目录；
+- 旧版本写在安装目录的 `user_dict.json`（用户数据、不可重建）首次运行迁移过来；缓存不迁移（可重建）。
+
+### 怎么自证「没有往安装目录写」
+
+```bash
+# 装好后跑一遍工具，再看两处：安装目录应无 cache / 用户数据；用户目录应有
+python -c "import allin_toolkit,pathlib;print(pathlib.Path(allin_toolkit.__file__).parent)"
+ls "$LOCALAPPDATA/allin-toolkit/print"        # 期望：cache/ 与 user_dict.json
+```
+
+`dev-toolkit` 仓另带静态侦察脚本 `audit_write_paths.py`（「安装目录锚点 × 写调用」同文件命中即报告），
+用于持续发现同款代码——**判据是写目标，不是"能不能跑"**。
+
 ## 常见问题
 
 - **门禁报 PyYAML 相关错误**：解释器缺 PyYAML。用 `ALLIN_PYTHON=<解释器路径>` 显式指定，
