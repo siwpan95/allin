@@ -250,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
 
     verdict = _verdict(steps)
     head = _head()
+    na_n = sum(1 for s in steps if s["status"] == "not_applicable")
     print("----------------------------------------", flush=True)
     if args.json:
         print(json.dumps({
@@ -257,7 +258,6 @@ def main(argv: list[str] | None = None) -> int:
             "not_applicable": na_n,
             "steps": [{k: v for k, v in s.items() if k != "argv"} for s in steps],
         }, ensure_ascii=False), flush=True)
-    na_n = sum(1 for s in steps if s["status"] == "not_applicable")
     print(
         f"ALLIN_AUTO_FLOW_SUMMARY status={'finding' if verdict else 'clean'} "
         f"steps={len(steps)} fail={sum(1 for s in steps if s['status'] == 'finding')} "

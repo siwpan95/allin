@@ -77,6 +77,20 @@ def test_parser_flags():
     assert af.main(["--selfcheck"]) == af.EXIT_OK
 
 
+def test_main_json_with_finding_emits_summary(monkeypatch, capsys):
+    """回归：--json + 有 finding 时也必须打印汇总行（曾因 na_n 定义晚于使用而崩）。"""
+    def fake_sync(no_fetch):
+        return {"label": "sync", "exit": 2, "status": "finding", "ms": 1, "tail": []}
+    monkeypatch.setattr(af, "_sync_step", fake_sync)
+    monkeypatch.setattr(af, "_head", lambda: "testhead")
+    monkeypatch.setattr(af, "_append_run", lambda rec: None)
+    rc = af.main(["--quick", "--json"])
+    out = capsys.readouterr().out
+    assert rc == af.EXIT_BLOCKING
+    assert "ALLIN_AUTO_FLOW_SUMMARY status=finding" in out
+    assert '"verdict": "finding"' in out
+
+
 def test_no_push_in_source():
     """无人值守脚本不得包含 push 调用（源码级护栏）。"""
     src = (ROOT / "tools" / "auto_flow.py").read_text(encoding="utf-8")
