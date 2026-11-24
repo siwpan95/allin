@@ -40,8 +40,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "tools" / "gate" / "audit"
-GOLDEN = AUDIT / "agent_regression_golden.json"
-BASELINE = AUDIT / "agent_regression_baseline.json"
+# 黄金集与基线是**B 类台账**（被核准的判据），不是运行留痕 —— 2026-11-24 三层分域
+# 从 audit/ 迁到 governance/ledger/。audit/ 只留可重生的 *.jsonl 留痕。
+LEDGER = ROOT / "tools" / "gate" / "governance" / "ledger"
+GOLDEN = LEDGER / "agent_regression_golden.json"
+BASELINE = LEDGER / "agent_regression_baseline.json"
 PRESET = ROOT / "preset" / "allin" / "allin.patch.yml"
 REGISTRY = ROOT / "tools" / "gate" / "governance" / "registry.json"
 MCP = ROOT / "platform" / "apps" / "mcp" / "src" / "index.js"

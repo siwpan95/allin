@@ -53,7 +53,7 @@ exceptions:
   - id: EX-004
     kind: hygiene-exemption
     gate: g05-hygiene
-    target: tools/gate/audit/repo_hygiene_exemptions.csv（3 行豁免）
+    target: tools/gate/governance/ledger/repo_hygiene_exemptions.csv（3 行豁免；2026-11-24 随三层分域从 audit/ 迁入）
     reason: >-
       vendor/ 等 vendored 子树按其性质不应按独立仓自检，属有理由的例外。
     compensating: 豁免按规则 id + 仓名前缀限定作用域，不泛化。

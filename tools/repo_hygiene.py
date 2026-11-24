@@ -708,17 +708,26 @@ CHECKS = [
 
 
 def _default_audit_file(name):
-    """审计文件的默认位置：**兼容两份落点**（2026-09-28 修）。
+    """审计文件的默认位置：**兼容三份落点**（2026-09-28 修 / 2026-11-24 再修）。
 
+    · B 类台账（2026-11-24 三层分域迁入）：`<仓根>/tools/gate/governance/ledger/<name>`
+      —— 豁免表 / 基线这类「被核准的证据」的新家，与 `governance/baseline/` 同侧
     · 分发副本：`<仓根>/tools/repo_hygiene.py` → `<仓根>/tools/gate/audit/<name>`
     · 工作副本：`/tools/gate/repo_hygiene.py`   → `/tools/gate/audit/<name>`
 
-    原先写死第一种，于是工作副本会去找 `/tools/gate/gate/audit/…`（不存在）⇒
-    **基线/豁免表静默落空**（与 `--repos-root` 的默认值同一类缺陷）。
-    取**第一个已存在**的；都不存在时返回分发形态的路径（保持原行为，且能给出可读的路径）。
+    两条历史教训都指向同一件事：**路径写死一处 ⇒ 基线/豁免表静默落空**。
+    第一次是工作副本去找 `/tools/gate/gate/audit/…`（不存在）；
+    第二次是台账迁到 `governance/ledger/` 后本函数仍只看 `audit/`，
+    结果 `--exemptions` 拿到一个不存在的路径、豁免全失效，
+    报出 239 条「基线外新增」—— 看起来像发布区炸了，其实是豁免表没读到（2026-11-24 实测）。
+    取**第一个已存在**的；都不存在时返回最优先的落点（保持原行为，且能给出可读的路径）。
     """
     here = os.path.dirname(os.path.abspath(__file__))
-    cands = [os.path.join(here, "gate", "audit", name), os.path.join(here, "audit", name)]
+    cands = [
+        os.path.join(here, "gate", "governance", "ledger", name),
+        os.path.join(here, "gate", "audit", name),
+        os.path.join(here, "audit", name),
+    ]
     for c in cands:
         if os.path.isfile(c):
             return c

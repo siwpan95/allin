@@ -73,13 +73,14 @@ ANNOTATION = "gov-hygiene: allow"
 #: C 层（本机运行产物）的落点 —— 2026-11-24 三层分域（公共核 / 事实源 / 运行产物）。
 #:
 #: 元素是 ``(前缀, 后缀或 None)``：``None`` 表示该前缀下的一切都是产物；
-#: 给了后缀就只拦那种后缀（用于同一目录里混住两类东西的情形）。
+#: 给了后缀就只拦那种后缀。
 #:
-#: 为什么 `tools/gate/audit/` 只拦 `.jsonl`：首跑这条判据就抓出该目录里还住着
-#: `agent_regression_baseline.json` / `docs_index_baseline.txt` / `*_exemptions.csv` 等
-#: **被核准的基线台账** —— 它们属 B 类事实源，只是历史原因住进了「运行留痕」目录。
-#: 一律拦会误杀证据；一律放行则真产物（`gate-runs.jsonl`）继续混进来。
-#: ⇒ 判据按后缀收窄，同时把「基线住错目录」作为待迁项登记（见交接卷 §203）。
+#: 为什么 `tools/gate/audit/` 仍带 `.jsonl` 后缀限制：该目录的台账
+#: （`agent_regression_baseline.json` / `agent_regression_golden.json` /
+#: `docs_index_baseline.txt` / `*_exemptions.csv`）已于 2026-11-24 迁到
+#: `tools/gate/governance/ledger/`，本机现在**零 tracked 台账**，纯 C 层。
+#: 后缀限制是留给**尚未迁移的旧检出**（他机 / 旧分支）—— 那些机器上同样的文件
+#: 还在 audit/ 下，一律拦会误杀证据。等他机全部迁完，这条后缀限制可以去掉。
 #:
 #: 也刻意不是「目录名叫 data / observed 就拦」：`facts/machine/` 与 `platform/data/` 长得像，
 #: 但前者是 B'（某台机唯一的自述记录，必须入库、只该该机写），后者是 C（删了即重生）。

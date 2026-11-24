@@ -325,7 +325,9 @@ def run(root: str, args) -> Report:
 
 
 def baseline_path(root: str) -> str:
-    return os.path.join(root, "tools", "gate", "audit", "docs_index_baseline.txt")
+    # B 类台账：2026-11-24 三层分域从 tools/gate/audit/ 迁到 tools/gate/governance/ledger/
+    # （audit/ 只留可重生的运行留痕；基线要评审、要追溯，不该和留痕混住）。
+    return os.path.join(root, "tools", "gate", "governance", "ledger", "docs_index_baseline.txt")
 
 
 def load_baseline(root: str) -> set[str]:

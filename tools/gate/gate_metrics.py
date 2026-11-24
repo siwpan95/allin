@@ -48,7 +48,10 @@ TRAIL = AUDIT / "gate-runs.jsonl"
 AGENT_TRAIL = AUDIT / "agent-runs.jsonl"
 SNAPSHOTS = AUDIT / "exceptions-snapshots.jsonl"
 BASELINES = ROOT / "gate" / "governance" / "baseline"
-EXEMPTIONS = AUDIT / "repo_hygiene_exemptions.csv"
+# 豁免台账是 B 类（被核准的证据），与 BASELINES / EXCEPTIONS_YML 同类；
+# 2026-11-24 三层分域把它从 audit/ 迁到 governance/ledger/ —— audit/ 只留可重生的留痕。
+LEDGER = ROOT / "gate" / "governance" / "ledger"
+EXEMPTIONS = LEDGER / "repo_hygiene_exemptions.csv"
 EXCEPTIONS_YML = ROOT / "gate" / "governance" / "exceptions.yml"
 # 燃尽快照口径版本。旧快照（值 51）来自另一套计数，跨口径相减会得到假 delta。
 SNAPSHOT_SCHEMA = 2

@@ -50,7 +50,9 @@ TITLE = "governance: accepted risk is registered, reasoned, and expires"
 
 EXCEPTIONS_REL = "tools/gate/governance/exceptions.yml"
 BASELINE_DIR = "tools/gate/governance/baseline"
-EXEMPTIONS_REL = "tools/gate/audit/repo_hygiene_exemptions.csv"
+# 豁免台账与 BASELINE_DIR / GAPS_REL 同类（B 类：被核准的证据），2026-11-24 三层分域
+# 从 tools/gate/audit/ 迁到 governance/ledger/ —— 那里才是「基线/例外」的家。
+EXEMPTIONS_REL = "tools/gate/governance/ledger/repo_hygiene_exemptions.csv"
 GAPS_REL = "tools/gate/governance/registry-known-gaps.txt"
 
 REQUIRED_FIELDS = ("id", "kind", "gate", "target", "reason", "compensating", "approver", "expires", "status")
