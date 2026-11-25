@@ -1,6 +1,6 @@
 ---
 name: pluginplayer-win-build
-description: "Build the PluginPlayer Windows binary (siwpan/pluginplayer) from source on a fresh or migrated machine: pick the ABI-matching MinGW-w64 toolchain, prepare vendor/ (SDL3 + FFmpeg + stb + libass), run build.py --release, verify with the repo's own mechanical gates plus a headless selftest, then publish the dist/ as a Gitee release with tools/gitee_release.py. Use when the player exe is missing, when the repo moved to a new drive/machine, when a clean dist/ must be produced, or when a new release must be pushed to Gitee."
+description: "Build the PluginPlayer Windows binary (siwpan/pluginplayer) from source on a fresh or migrated machine: pick the ABI-matching MinGW-w64 toolchain, prepare vendor/ (SDL3 + FFmpeg + stb + libass), run build.py --release, verify with the repo's own mechanical gates plus a headless selftest, then publish the dist/ as a Gitee release with allin-governance gitee. Use when the player exe is missing, when the repo moved to a new drive/machine, when a clean dist/ must be produced, or when a new release must be pushed to Gitee."
 description_zh: "在全新/迁移后的机器上从源码构建 PluginPlayer（Windows），并把构建产物发成 Gitee 发行版"
 agent_created: true
 ---
@@ -171,7 +171,7 @@ grep -E "色彩:|显示端|已挂帧处理器|不支持 HDR" run.log
 
 ## 步骤 6：发布到 Gitee（可选）
 
-工具 `tools/gitee_release.py`（幂等，中断可重跑）。令牌只走 `--token-file` / `GITEE_TOKEN`，
+工具 `allin-governance gitee`（幂等，中断可重跑）。令牌只走 `--token-file` / `GITEE_TOKEN`，
 **绝不写进仓库**。
 
 **打包口径别自己发明** —— 直接用仓库自己的 `gen_third_party_notices.dist_payload()`
@@ -192,9 +192,9 @@ payload = n.dist_payload(dist=r"<repo>\dist")   # [(相对路径, 字节数)]
 
 ```bash
 TAG=v1.2.0        # 换成本次要发的版本
-python tools/gitee_release.py release --name pluginplayer --tag $TAG \
+allin-governance gitee release --name pluginplayer --tag $TAG \
     --title "PluginPlayer $TAG" --branch main --notes-file release-notes.md
-python tools/gitee_release.py attach --name pluginplayer --tag $TAG \
+allin-governance gitee attach --name pluginplayer --tag $TAG \
     --file pluginplayer-$TAG-win64.zip --file SHA256SUMS.txt
 ```
 

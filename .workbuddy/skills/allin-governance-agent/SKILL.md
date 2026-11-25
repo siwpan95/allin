@@ -145,11 +145,11 @@ python tools/gate/watchdog.py [--quick]   # 盘健康 + 仓完整性 + 同步漂
 ### 3.3 Gitee 推送 / 发版（SPEC-101/102 配套，幂等可重入）
 
 ```bash
-python tools/gitee_release.py whoami                              # 验证令牌
-python tools/gitee_release.py --name <仓> create                  # 建私有仓（已存在跳过）
-python tools/gitee_release.py --name <仓> public                  # 转公开（已公开跳过）
-python tools/gitee_release.py --name <仓> release --tag vX.Y.Z --title ... --notes-file ...
-python tools/gitee_release.py --name <仓> attach --tag vX.Y.Z --file dist.zip   # 单附件≤100MB，大载荷压一个 zip
+allin-governance gitee whoami                              # 验证令牌
+allin-governance gitee --name <仓> create                  # 建私有仓（已存在跳过）
+allin-governance gitee --name <仓> public                  # 转公开（已公开跳过）
+allin-governance gitee --name <仓> release --tag vX.Y.Z --title ... --notes-file ...
+allin-governance gitee --name <仓> attach --tag vX.Y.Z --file dist.zip   # 单附件≤100MB，大载荷压一个 zip
 ```
 令牌来源顺序：`--token HEX` → 环境变量 `GITEE_TOKEN` → `--token-file`（默认 `~/.git-credentials` 首段 hex）。
 **令牌/Key 绝不进仓、绝不回显**（铁律 0 例外面 + SPEC-006）。
@@ -222,7 +222,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 
 ### 5.2 推送 / 发版（高风险，逐项确认）
 - 先 `git status --short` 确认范围；`git diff --stat` 看改动面。
-- 用 `tools/gitee_release.py`（幂等可重入），**不要**手工在网页点。
+- 用 `allin-governance gitee`（幂等可重入），**不要**手工在网页点。
 - 发版后跑「新建仓收尾清单」：凭据残留扫描（`Select-String` 扫 `.git/config` 全文，不只 remote 段）、
   `HEAD` vs `ls-remote` 逐字符相等、`HEAD:<path>` blob sha 对照、`status --short` 干净。
 - **一次性 URL 推送不要加 `-u`**；若已加，务必修正 `branch.<名>.remote`。

@@ -2,10 +2,11 @@
 
 > **编号** SPEC-102 ｜ **效力** 操作规范 ｜ **状态** 生效
 > **生效** 2026-09-25 ｜ **最后修订** 2026-10-28 ｜ **适用面** 发行版（tag / release / 附件）的发布动作
-> **承载体** `tools/gitee_release.py`（分步、可重入、幂等）；发版门禁随 DSH 门禁聚合运行
+> **承载体** `allin-governance gitee`（2.2.0 起随包分发；分步、可重入、幂等）；发版门禁随 DSH 门禁聚合运行
 > **引用格式** SPEC-102 §一
 
-> 配套脚本：**本仓库 `tools/gitee_release.py`**（零三方依赖，分步、可重入、幂等），用法与平台坑见 `tools/README.md`；该脚本亦随 `gitee-repo-and-release-flow` skill 提供，两份内容一致。
+> 配套入口：**`allin-governance gitee`**（2.2.0 前是仓内脚本 `gitee_release.py`，现已随包分发；零三方依赖、分步、可重入、幂等）
+> 三条链路（gitee 权威 / github 镜像 / publish 发版）的完整流程见包根 `PUBLISHING.md`；该脚本亦随 `gitee-repo-and-release-flow` skill 提供，两份内容一致。
 > 推送篇见同目录 `docs/规范/SPEC-101-推送流程.md`；本篇只讲「发版 / 发行版」。
 > **令牌脱敏约定**：全文用 `<GITEE_TOKEN>` / `****` 表示，**绝不写进仓库、不回显**。
 
@@ -51,22 +52,22 @@
 
 ```bash
 # 0. 验令牌（最便宜的失败前置；须显式给令牌来源，本机无 store 文件可读）
-python tools/gitee_release.py --token "<HEX>" whoami
+allin-governance gitee --token "<HEX>" whoami
 #   → [OK] login=siwpan ...
 
 # 1. 打 tag（语义化版本，如 v1.2.0）—— 必须先有 tag 才能建 release
 git tag -a v1.2.0 -m "v1.2.0" && git push origin v1.2.0
 
 # 2. 建 release（API，见 §2 参数与坑）
-python tools/gitee_release.py --token "<HEX>" \
+allin-governance gitee --token "<HEX>" \
        release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
 
 # 3. 传附件（单附件 ≤100MB；压成一个 zip，附件名不带路径分隔符）
-python tools/gitee_release.py --token "<HEX>" \
+allin-governance gitee --token "<HEX>" \
        attach --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
 
 # 4.（如需）转公开：先私有后公开，避免半成品被看到
-python tools/gitee_release.py --token "<HEX>" public
+allin-governance gitee --token "<HEX>" public
 ```
 
 > 旧写法 `--token-file "$HOME/.git-credentials"` 在本机**必失败**（该文件不存在，凭据在 Windows 凭据管理器里）；
@@ -145,10 +146,10 @@ python tools/gitee_release.py --token "<HEX>" public
 export GITEE_TOKEN=<HEX>          # 或不入环境，直接给 --token <HEX>
 
 # —— 发版（幂等，中断可重跑）——
-python tools/gitee_release.py whoami
+allin-governance gitee whoami
 git tag -a v1.2.0 -m "v1.2.0" && git push origin v1.2.0
-python tools/gitee_release.py release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
-python tools/gitee_release.py attach  --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
+allin-governance gitee release --tag v1.2.0 --title "v1.2.0" --notes-file RELEASE_NOTES.md
+allin-governance gitee attach  --tag v1.2.0 --file dist.zip --file SHA256SUMS.txt
 
 # —— 三层验收（前两层足够）——
 git rev-parse HEAD                                  # ① 本地 HEAD

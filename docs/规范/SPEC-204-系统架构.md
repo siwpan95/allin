@@ -245,7 +245,7 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 路由到专项 skill 或亲自执行门禁命令 (scripts/run_all_gates.sh / check:governance / docs_index)
    │
    ▼  改动后过两道门禁：check:governance + docs_index（全绿才算过）
-推送 / 发版 → tools/gitee_release.py（幂等可重入；令牌绝不回显；一次性 URL 推送不加 -u）
+推送 / 发版 → allin-governance gitee（幂等可重入；令牌绝不回显；一次性 URL 推送不加 -u）
 ```
 
 ### 3.3 双形态同步链路

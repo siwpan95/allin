@@ -158,7 +158,7 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 ### 远端写入编排与逐项确认闸门（2026-11-13 第三轮）
 
 > **触发**：全哥指出「自动写远端目前应该已经基本具备前置条件才对」。盘点结论：**七项技术前置条件确已齐备** ——
-> ① `discover_repos.mjs --json` 识别「已登记 / 远端不存在」候选；② `tools/gitee_release.py` 的
+> ① `discover_repos.mjs --json` 识别「已登记 / 远端不存在」候选；② `allin-governance gitee` 的
 > `create`（幂等 SKIP）/ `public` / `status`；③ `git credential fill` 令牌链（与
 > `kernel/services/tools_service.py` 同源，实测可用）；④ `check_repos.mjs` 远端锚点验收；
 > ⑤ `origin` 双 pushurl + `g04-push-evidence`；⑥ `SPEC-001` 铁律 4 的两步建仓 / 三件套 / 匿名复验纪律；
@@ -168,7 +168,7 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 `platform/scripts/publish_repos.mjs` 是**执行层**，与采集层 `discover_repos.mjs` 分离：
 复用三面对账的 `declared_missing_remote`（已登记 / 远端不存在 / 非墓碑）候选，
 生成五步写入计划 `create → origin → push → public → verify`；复用
-`tools/gitee_release.py` 的 `create` / `public` 子命令（**不重写 Gitee API**，规避已沉淀的
+`allin-governance gitee` 的 `create` / `public` 子命令（**不重写 Gitee API**，规避已沉淀的
 PATCH 必带 `name`、406 需 JSON 正体等坑）；**不调用其 `remote` 子命令**（会无条件
 `git remote set-url` 覆盖本地 origin）—— 改为「无 origin 才 add / 已指向目标则跳过 /
 指向别处则拒绝覆盖」，实测既有 origin 未被改写。

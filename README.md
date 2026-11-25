@@ -29,13 +29,13 @@
    - `allin-governance deps` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。**随包分发**为 `allin-governance deps`。
    - `allin-governance secrets-scan` —— **自研离线凭据扫描**：21 条高精度规则（只认已知提供方的固定格式）+ 按字符集分档的熵闸（hex 3.0 / alnum 3.5 / 其它 4.0）+ 占位符与形态降噪，随包分发为 `allin-governance secrets-scan`。**不依赖 gitleaks 二进制**，也不需要出网（不做在线验证 —— 那要把密钥发给服务商）。
    - [`tools/docs_backlinks.py`](tools/docs_backlinks.py) —— 文档反向链接 / 影响面（改一篇文档前先看波及谁）。
-   - [`tools/gitee_release.py`](tools/gitee_release.py) —— Gitee 建仓 / 转公开 / 发版 / 附件（令牌走 GITEE_TOKEN → GCM）。
+   - [`allin-governance gitee`](allin-governance gitee) —— Gitee 建仓 / 转公开 / 发版 / 附件（令牌走 GITEE_TOKEN → GCM）。
    - `allin-governance github` —— GitHub 建仓 / 转公开 / SSH 增量推送 / 独立复核 + 三端增量巡检（**gitee 远端为权威**，单向 gitee → 本地 → GitHub）。随包分发为 `allin-governance github`；SOP 见 [`github-sync-audit`](.workbuddy/skills/github-sync-audit/SKILL.md)。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
    公共核已独立成仓 **[`allin-governance`](https://gitee.com/siwpan/allin-governance)**（PyPI 包同名，
-当前版本 `2.1.0`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
+当前版本 `2.2.0`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 

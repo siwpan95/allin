@@ -7,7 +7,7 @@
 
 > 维护时间：2026-09-25｜适用账户：`siwpan`｜适用仓库：`gitee.com/siwpan/*`
 > 本文是**本地推送 runbook**，重点讲「如何让推送全程不弹确认框、不手工点网页、不肉眼核对密钥」——
-> 即「绕过确认」的 9 个手段（见 §3）。配套自动化工单在 `gitee-repo-and-release-flow` skill 的 `tools/gitee_release.py`（零三方依赖）。
+> 即「绕过确认」的 9 个手段（见 §3）。配套自动化工单在 `gitee-repo-and-release-flow` skill 的 `allin-governance gitee`（零三方依赖）。
 >
 > **令牌红线**：令牌**绝不进仓库、绝不进提交**。本文出现令牌处一律 `****` 或 `<GITEE_TOKEN>` 占位；本地令牌路径已脱敏。
 
@@ -22,7 +22,7 @@
 | 凭据实际形态 | 系统级 `credential.helper=helper-selector`，全局 `credential.helper=…git-credential-manager.exe`，`credential.helperselector.selected=<no helper>`；令牌落在 **Windows 凭据管理器**内，文件式检查看不到（`~/.gcm/credentials` 等均无） |
 | git 身份 | **全局为空**；各仓按**仓库级**各配 `user.name=siwpan`、`user.email=siwpan@users.noreply.gitee.com`（新 clone 的仓须先补配，否则 `commit` 报 `Author identity unknown`） |
 | 推送凭据行为 | `git push` 由 GCM 直接取用，**实测不弹窗、可推**（2026-09-25 分支探针 15.6s 成功） |
-| 自动化脚本 | `/Python314/python.exe <仓库>/tools/gitee_release.py …`（任意 Python 3 均可，脚本零依赖） |
+| 自动化脚本 | `allin-governance gitee …`（原 `<仓库>/allin-governance gitee` 已于 2.2.0 迁入包；任何装了包的 Python 3 均可） |
 | ⚠ 脚本取令牌 | `gitee_release.py whoami` **不带 `--token-file` 会直接失败**（本机无 store 文件可读）。需显式给 `--token` / `--token-file` / `GITEE_TOKEN`；**`git push` 能推 ≠ 脚本能取令牌**，二者走的是不同链路 |
 | allin 远程状态 | 默认分支 `master` @ `31581683addf5ff193607fd0cf300d202e606c1e`；另有 tag `nothing`（勿动） |
 | Python | 本机 `/Python314/python.exe`（3.14.7）；托管 Python 3.13.12 跑纯逻辑 |
@@ -63,7 +63,7 @@
 ```bash
 # —— 本机落点（2026-09-25 实测；换机后先按 §8 复核）——
 PY="/Python314/python.exe"                  # E: 卷不存在；F: 盘上的 Python 3.14.7 在 PATH
-SKILL="/allin/tools/gitee_release.py"       # 脚本随 allin 仓分发，不再依赖 skill 目录
+SKILL="allin-governance gitee"                # 2.2.0 起随包分发（原 allin 仓的 gitee_release.py 已迁入）
 REPO="/repos/myproj"                        # ★ 目标仓：有副作用的子命令**必须**显式给 --repo
 
 # 0. 验令牌（本机无 store 文件可读，**必须显式给令牌**，否则直接报错）
@@ -215,7 +215,7 @@ bash scripts/sync-before-push.sh --apply --push   # 拉取 → 推送 → 逐端
 
 ```bash
 # 验令牌
-/Python314/python.exe /allin/tools/gitee_release.py --token-file "<凭据文件路径>" whoami
+allin-governance gitee --token-file "<凭据文件路径>" whoami
 
 # 推代码（本机 store helper 已配，自动取凭据；下面这条用于「不留 .git/config 凭据」）
 GIT_TERMINAL_PROMPT=0 git -c credential.helper= push "https://siwpan:****@gitee.com/siwpan/<repo>.git" main:main
