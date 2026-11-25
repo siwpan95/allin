@@ -89,23 +89,9 @@ jobs:
 
       - name: 本仓 monorepo 自检
         run: |
-          .venv/bin/python tools/repocheck/main.py . \
+          # 2026-11-25 公共核提仓：repocheck 已随包分发，改走 CLI（原 tools/repocheck/main.py 已删除）
+          .venv/bin/python -m allin_governance repocheck . \
             --profile monorepo --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy --fail-on error
-
-      # packages/ 与 website/ 都是 monorepo 的中间目录（与 tools/ 同类），故一并排除；
-      # packages/ 内部的单个包按「子件」口径单独体检（下一行）；website/ 另起 website-smoke
-      # job 跑 `npm run smoke`，不靠 repocheck 兜底（此前 website 无 LICENSE 让整批门禁变红，即 B2）。
-      - name: 可安装包自检（packages/allin-governance）
-        run: |
-          .venv/bin/python tools/repocheck/main.py packages/allin-governance \
-            --profile component --exclude src,tests --fail-on error
-
-      - name: 可安装包单测（allin-governance CLI 包装边界 + init 边界，含覆盖率）
-        run: |
-          .venv/bin/python -m pip install --quiet pytest-cov
-          .venv/bin/python -m pytest packages/allin-governance -q \
-            --cov=allin_governance --cov-branch \
-            --cov-report=term-missing --cov-report=xml:coverage-allin-governance.xml
 
       # kernel 单测覆盖率（2026-11-04 遗留项 T7 收口）：kernel 此前零行为测试、
       # 唯一冒烟不进 CI —— 现在既进 CI 又亮覆盖率，缺口数字直接看构建日志。
@@ -124,7 +110,7 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet packages/allin-governance
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.3.0"
           "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
@@ -189,7 +175,7 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet packages/allin-governance
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.3.0"
           "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
