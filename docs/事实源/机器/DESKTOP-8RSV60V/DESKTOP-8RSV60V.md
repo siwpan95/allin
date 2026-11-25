@@ -1,5 +1,20 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-25（**@`DESKTOP-8RSV60V` V1/V2 交接验证：六条 E2E 复跑 + 本机事件台账自验 + 月账落地** ——
+>   按交接卷 §二百二十 第二组接手本机待办；仓外干净 venv `G:/_8rsv60v_e2e_20261125`（Python 3.14.7）
+>   装线上 `allin-governance==2.0.2`，cwd 不在仓内跑六条 E2E：
+>   `facts measure` exit 0 · `init` exit 0 · `scan --root G:/repos` exit 1（finding 语义）·
+>   `repocheck --root G:/repos` exit 0 · `deps --root G:/repos` exit 1（finding 语义）·
+>   `verify --root skeleton` exit 0（一致 37 / 改动 0 / 缺失 0）⇒ **@`DESKTOP-8RSV60V` 第二台机验证成立**。
+>   **现场复测实例值（每行单事实）**：
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **75**。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **75**。
+>   @`DESKTOP-8RSV60V` registry 条目 **82**。
+>   @`DESKTOP-8RSV60V` 主 Python `G:/Python314/python.exe` 在位（3.14.7）；`E:` 卷已不存在。
+>   @`DESKTOP-8RSV60V` 全局 git 身份已配置（`siwpan` / `siwpan@users.noreply.gitee.com`）。
+>   @`DESKTOP-8RSV60V` 月账新建 `docs/事实源/机器/DESKTOP-8RSV60V/月账/2026-11.md`。
+>   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第二百二十五节（V1/V2 本机推进 + 定时任务切换）。
+> >
 > **时点** 2026-11-24（**@`DESKTOP-8RSV60V` 仓根迁入发布区 + 发布区两次清理收口** ——
 >   **@`DESKTOP-8RSV60V` 补做上游 `6d05645` 的交接项**：本仓由 `<工作区>/allin` 迁至 `<工作区>/repos/allin`。
 >   **迁移前快照**：HEAD `19ea3e6`、追踪文件 1085、体积 922 MB、工作区干净；迁移后三项逐一复测相同（零丢失）。
@@ -644,6 +659,18 @@ D: 侧                                          =  未记账（转移中）
   ② 保留非唯一事实（CPUID 签名 / 出厂占位符 / 型号·频率·日期等）；
   ③ 字节级保持 BOM 与行尾，只做定点替换并以计数断言防放大遗漏；
   ④ 推送前 `git grep -F` 遍历全历史逐标识核对，确认全部 absent。
+
+### 10.3 2026-11-25 复验订正（只增不改；上两节为当时快照，本节为现值）
+
+> @`DESKTOP-8RSV60V` 按交接卷 §二百二十 V2 要求对上两节逐条现场复测，四处已漂移，在此补现值；
+> 旧值不删、不回写上文（史实只增不改）。
+
+| # | 当时记值（§10.1 / §10.2） | 2026-11-25 实测现值 | 判读 |
+| --- | --- | --- | --- |
+| 1 | `E:/Python314/python.exe` 已在 PATH | `E:` 卷不存在；主解释器 `G:/Python314/python.exe`（3.14.7）在位，PATH 首位为 WorkBuddy 便携 3.13.12 | 换机后盘位重排，**不是文档笔误** |
+| 2 | 全局 `user.name` / `user.email` 为空，各仓靠仓库级配置 | 全局与仓库级同为 `siwpan` / `siwpan@users.noreply.gitee.com` | 全局身份已补配（何时补配未查，不臆断） |
+| 3 | `~/.git-credentials` 不存在且 Gitee helper 未配 | 两项实测仍不存在/未配；Gitee 认证实际走 GCM store 的其他落点 | 结论不变，但「取令牌必失败」的推论已过期（仓内推送实跑可用） |
+| 4 | registry 145 条目 / 发布区 138 仓（§10 归档时点） | registry **82** / 发布区 **75** 仓（75/75 含 `.git` 与 origin） | §11-24 两次清理（冻结 58 + 归档 9）后的新基线，见交接卷 §一百九十七 |
 
 ---
 

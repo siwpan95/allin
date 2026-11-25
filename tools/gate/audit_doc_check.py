@@ -319,6 +319,10 @@ def _build_name_index() -> dict[str, list[str]]:
     """
     index: dict[str, list[str]] = {}
     skip_dirs = {".git", "node_modules", ".venv", "__pycache__", "build", "dist", ".pytest_cache"}
+    # 2026-11-25（§225）：仓根迁入发布区后旧 `.venv` 以 `.venv.old-YYYYMMDD` 形式留存，
+    # 其中 site-packages 含 `tree.py` 等通用名 ⇒ E1 简称锚点「同名 4 份」报歧义。
+    # 归档 venv 与在用 `.venv` 同为环境产物，整类排除；真身唯一后判据照常判定（非豁免）。
+    skip_dir_prefixes = (".venv.old-",)
     # ⚠ `packages/tools/` 是 setuptools 直接 `build` 时的**物化副本**（pyproject 的
     # package-dir 把 ../../tools/* 复制过去），与仓根真身同名。它已被 .gitignore，
     # 但物理残留会让 E1 锚点判成「同名文件有 2 个」——2026-11-25 实测出现过 11 条假红。
@@ -332,6 +336,8 @@ def _build_name_index() -> dict[str, list[str]]:
             continue
         rel_parts = p.relative_to(ROOT).parts
         if any(part in skip_dirs for part in rel_parts):
+            continue
+        if any(part.startswith(skip_dir_prefixes) for part in rel_parts):
             continue
         index.setdefault(p.name, []).append(p.relative_to(ROOT).as_posix())
     return index

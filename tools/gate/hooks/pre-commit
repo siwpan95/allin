@@ -49,13 +49,17 @@ if [ -n "$staged_ps1" ]; then
     fi
 fi
 
-# 2) 治理门禁快速子集（--no-profile；清单见 package.json -> check:precommit）
+# 2) 治理门禁（入口清单见 package.json -> check:precommit）
+# 2026-11-25 修订（§225）：公共核提仓后，回退入口 `gates.mjs` 在包形态下有路径判据缺陷
+# （g00_meta 把 site-packages 门禁源码当未索引支持文件、g18/g19 找不到仓内旧路径，
+# 详见交接卷 §223.1）⇒ 改走权威入口 `scripts/run_all_gates.sh`（已验证能绿）。
+# 代价是提交时门禁耗时约 4~5 分钟；判据不放宽，用时间换「提交面必绿」。
 if ! command -v npm >/dev/null 2>&1; then
     echo "[pre-commit] FAIL: 找不到 npm —— 治理门禁跑不了（需要 Node.js >= 22.18），拒绝放行" >&2
     exit 1
 fi
 
-echo "[pre-commit] 跑治理门禁（快速子集；全量用 npm run check）…"
+echo "[pre-commit] 跑治理门禁（权威入口 scripts/run_all_gates.sh）…"
 if ! npm run --silent check:precommit; then
     echo "[pre-commit] FAIL: 治理门禁未通过（见上）。全量核查：npm run check" >&2
     exit 1

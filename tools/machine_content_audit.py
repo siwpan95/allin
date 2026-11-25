@@ -111,7 +111,11 @@ def is_path_reference(line: str, match: re.Match) -> bool:
 
 #: 全仓扫描时跳过的目录（产物 / 第三方 / 虚拟环境 / 别名树）
 SKIP_DIRS = {"node_modules", "vendor", "build", "dist", "dist-test", "dist-build", ".venv",
-             "__pycache__", ".git", "non-tools", "site-packages"}
+             "__pycache__", ".git", "non-tools", "site-packages",
+             # 2026-11-25（§225）：`.workbuddy/memory/automations/` 是 automation 自身历史
+             # （gitignore 运行时产物），机器名是历史事实不是公共文档污染。与 .venv /
+             # node_modules 同为产物目录，整类跳过；docs/ 下的公共文档仍照常判。
+             ".workbuddy"}
 SCAN_SUFFIX = (".md", ".yaml", ".yml", ".json")
 
 
