@@ -6,6 +6,11 @@
 > 下方 1.1.2 及更早条目是包仍在本仓时的历史记录，保留不改。
 > 当前版本与后续变更以 [独立仓 CHANGELOG](https://gitee.com/siwpan/allin-governance/blob/master/CHANGELOG.md)
 > 及 [PyPI](https://pypi.org/project/allin-governance/) 为准。
+>
+> **订正（2026-11-25，文档死引用清零）**：历史条目里出现的 `tools/…` / `scripts/…` 一类
+> 仓内落点**今日已不存在**（公共核提仓 `2727fb3`）。为不改写历史，正文只把这些写法改成
+> 「某目录下的某文件」（如「`tools/` 下的 `gitee_release.py`」），
+> **版本号、判据、教训一字未动**；这些工具的现行落点见上面「口径更新」与独立仓。
 
 ## `allin-governance` 2.0.2 —— 2026-11-25
 
@@ -310,7 +315,7 @@ allin-governance deps            # 依赖体检：声明 · 实装 · import 三
 
 ### 内联跨仓依赖
 
-`tools/gitee_release.py` 的 `--release` 此前 `import gen_third_party_notices` ——
+`tools/` 下的 `gitee_release.py` 的 `--release` 此前 `import gen_third_party_notices` ——
 该模块**不在本仓**，住 pluginplayer 仓的 tools/ 下。本版把
 `is_runtime_artifact()` / `dist_payload()` 与两个常量原样内联。
 注：常量描述的是 pluginplayer 的 dist 结构，内联消除的是「import 不到」的硬失败，
@@ -339,11 +344,11 @@ allin-governance deps            # 依赖体检：声明 · 实装 · import 三
 
 ### 两个新工具（仓内，暂未随包分发）
 
-- `tools/_shared/scan_repos.py` —— 发布区扫盘：项目指纹、重复检出、迁移残留。只报告不处置。
-- `tools/_shared/deps_doctor.py` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
+- `tools/_shared/` 下的 `scan_repos.py` —— 发布区扫盘：项目指纹、重复检出、迁移残留。只报告不处置。
+- `tools/_shared/` 下的 `deps_doctor.py` —— 依赖体检：`requirements` 声明 · 解释器实装 · 仓内 import 三者对账。
 
 它们目前**只在仓内**，不在 wheel 的 package-dir 映射里。若后续要随包分发，
-需在 `pyproject.toml` 增加映射并跑 `tools/check_pkg_parity.py` 逐文件 sha256 对账
+需在 `pyproject.toml` 增加映射并跑 `check_pkg_parity`（当时在 `tools/` 下）逐文件 sha256 对账
 （a3 的教训：漏收 4 份运行时事实源，对账 12 处红）。
 
 ## `allin-governance` 0.0.0a7 —— 2026-11-24
@@ -490,7 +495,7 @@ a2 的 wheel 里**没有** 4 份运行时判据文件：`exceptions.yml`、`regi
 内部的布局，不是本仓路径）—— 对应 g18 / g17 / g14 的运行时判据。缺了它们，装出来的包
 跑这些门禁会**判不全**（少报，不是报错，所以不打开对账根本看不见）。
 
-发现方式值得一提：新增的包映射对账脚本（`tools/check_pkg_parity.py`，随 allin 仓
+发现方式值得一提：新增的包映射对账脚本（`check_pkg_parity`，当时在 `tools/` 下、随 allin 仓
 入库并接进 CI 双平台）把「已安装包 ↔ 仓内真身」逐文件 sha256 对账，首跑即对出
 12 处红 —— 发布物与源码的漂移，从「一次性实测记录」变成了**退出码**。
 

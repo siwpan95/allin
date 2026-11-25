@@ -1,0 +1,34 @@
+id: allin-governance
+name: allin-governance · 治理内核仓（判据真身 + 门禁套件 + 离线体检器）
+category: tool
+version: 2.3.0
+path: repos/allin-governance
+status: active
+manual: true
+note: >-
+  2026-11-25 补登记：公共核提仓（allin 仓 `2727fb3`）把治理门禁套件、离线体检器、事实采集与
+  发布工具整体迁到本仓，allin 侧改为按 PyPI 版本消费 ⇒ 本仓成为「**判据真身**」，
+  allin 仓的 `tools/` 下不再有这些源码。搬走后 g17 完备性当场判出 `repos/allin-governance`
+  未登记，按判据补登 —— 与 2026-11-23 补登 `allin` 自身同型：仓先存在、推导修好后才看得见漏登记。
+  定位：20 道治理门禁（`g00-meta`–`g20-facts`，编号缺 `g02`，子包 `_gatesuite`）+
+  离线仓库体检器（`repocheck` 30 条规则 / 0–10 健康分，子包 `_repocheck`）+
+  机器事实采集与判定（`facts measure` 只采集 / `facts verify` 只判定，子包 `_facts`）+
+  发布链路（`gitee` / `github` / `publish` 三个子命令，见包根 `PUBLISHING.md`）+
+  随包工具（`_toolkit`：发布区扫盘 `scan_repos`、依赖体检 `deps_doctor`）与密钥扫描（`_secret_scan`）。
+  单一 CLI 入口 `allin-governance <子命令>`（`deps` / `facts` / `gitee` / `github` / `init` /
+  `ml` / `publish` / `repocheck` / `scan` / `secrets-scan` / `verify`），零第三方运行时依赖。
+  双远端：Gitee `https://gitee.com/siwpan/allin-governance.git`（`origin`）、
+  GitHub `git@github.com:siwpan95/allin-governance.git`（镜像）。
+  消费关系：allin 仓用 `scripts/gates.mjs`（薄壳从包内取 `_gatesuite/run.ts`）跑门禁、
+  用 `python -m allin_governance repocheck` 跑体检、用 `allin-governance facts measure|verify`
+  采判机器事实 —— **allin 不再持有任何判据副本**；改判据 = 改本仓 + 发版 + 消费仓升 pin。
+launch:
+  # 无常驻服务；唯一入口是单一 CLI（子命令见 note），本行只做存活核对
+  command: python -m allin_governance --version
+publish:
+  repo: siwpan/allin-governance
+  branch: master
+verify:
+  # 无副作用自检：不依赖 cwd、不写盘、不联网
+  commands:
+    - python -m allin_governance --version

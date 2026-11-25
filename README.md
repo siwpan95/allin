@@ -248,7 +248,7 @@ ls "$LOCALAPPDATA/allin-toolkit/print"        # 期望：cache/ 与 user_dict.js
 
   # 连仓根一起查（--self 是 2026-11-23 新增：默认项目发现只认一级子目录，
   # 仓根从不算「项目」，缺了它门禁规则族对 allin 自己恒不生效）
-  python tools/repocheck/main.py . --self --profile monorepo \
+  python -m allin_governance repocheck . --self --profile monorepo \
     --exclude tools,vendor,preset,packages,scripts,website,tests,facts,deploy,console,kernel,platform
   ```
 

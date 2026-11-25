@@ -10,13 +10,15 @@
  * 「allin console.exe」）不继承控制台句柄，stdout 会直接丢失 ——
  * 实测退出码 0 但一个字节都没打印。⇒ 探针结果写文件，由外部读取。
  *
- * 判据：探针文件里的 registry 条数 ≥ 100（预期 148）。
+ * 判据：探针文件里 registry 的条数**必须等于仓内源清单**（`platform/registry/projects/*.yaml` 的份数）。
+ *   （2026-11-25 改：原判据是「≥ 100（预期 148）」，与 `verify-package.mjs` 同一类魔数缺陷 ——
+ *    门槛与真实条数脱钩，且**判不到最该判的那类**：产物落后于源。详见下方第 4 段。）
  *
  * 用法：node scripts/verify-packaged.mjs
  */
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -90,11 +92,26 @@ child.on('exit', (code) => {
     process.exit(1)
   }
   const n = Number(m[1])
-  if (n < 100) {
-    console.error(`[packaged] ✗ registry 只读到 ${n} 条（预期 148）—— 打包产物的路径解析有问题`)
+  // 「对源对账」取代魔数阈值（2026-11-25）。为什么非改不可：
+  //   旧判据 `n >= 100` 在注册表 83 条时恒假红、涨过 100 后又恒真绿；
+  //   而它**判不到**"产物落后于源"这一类 —— 本机实测产物里 148 条、源清单 83 条，
+  //   旧判据面对 148 只说"通过"。运行时读到的条数必须与源清单**相等**，多一条少一条都红。
+  const SOURCE_REG = path.join(HERE, '..', '..', 'platform', 'registry', 'projects')
+  const declared = existsSync(SOURCE_REG)
+    ? readdirSync(SOURCE_REG).filter((f) => f.endsWith('.yaml')).length
+    : -1
+  if (declared < 0) {
+    console.error(`[packaged] ✗ 源清单读不到：${SOURCE_REG} —— 对账缺基准，不能判通过`)
     process.exit(1)
   }
-  log(`registry 条数 = ${n}`)
+  if (n !== declared) {
+    const how = n < declared
+      ? `少 ${declared - n} 条（产物落后于源，需重新打包）`
+      : `多 ${n - declared} 条（产物里还留着已删除的条目）`
+    console.error(`[packaged] ✗ registry 运行时读到 ${n} 条 ≠ 源清单 ${declared} 条 —— ${how}`)
+    process.exit(1)
+  }
+  log(`registry 条数 = ${n}（与源清单 ${declared} 条一致）`)
   log('打包产物运行验证通过')
   process.exit(0)
 })

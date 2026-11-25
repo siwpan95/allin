@@ -8,7 +8,8 @@
 2026-10-28 调研 Cordis 4.x（官方包 `@cordisjs/core` 4.0.x，ESM-first、Node ≥ 22）后，
 摆着一个诱人的选项：Cordis 的「一切皆插件 + Context 依赖注入 + Fiber 可逆副作用」
 与本仓治理内核的诉求高度同构，而本仓现在的治理内核是**自研 Python 运行时**
-（`tools/gate/governance/runtime/govlib.py`）。
+（`allin-governance` 包内的 `_gatesuite/runtime/govlib.py`；2026-11-25 公共核提仓前
+它在 `tools/gate/governance/runtime/` 下）。
 要不要把治理内核迁到 Node + Cordis，换取官方维护的插件生命周期与热重载？
 
 ## Decision

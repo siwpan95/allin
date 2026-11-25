@@ -85,7 +85,7 @@ epos` **75** 目录 / 含 `.git` **74** / 含 `origin` **74**；远端 **85** �
 > ⚠ 旧值「本机不补配 pushurl」作废 —— 那是 2026-10-29 对 `DESKTOP-KQABATS` 的交代，被错误外推到本机；
 > 各机推送配置以用户逐机指令为准。SSH 前提实测：`id_ed25519` 认证通过（`Hi siwpan95!`），
 > 双通道首推两行 up-to-date、双侧 ls-remote 与 HEAD 逐字符相等。）
-> **时点** 2026-10-30（**@`SIWPAN` 全量复测补录** —— `tools/facts/measure.py` 采集 + 人工裁决；
+> **时点** 2026-10-30（**@`SIWPAN` 全量复测补录** —— `allin-governance facts measure` 采集 + 人工裁决；
 >   本次补齐盘位卷标、工作区落点、仓数口径、运行时与解释器清单、推送口径，
 >   并按 [`机器分区索引.md`](../../机器分区索引.md) §0 归属规则只写本机事实。）
 >   ⚠ **订正（取代旧表述）**：commit `4e329c4` 的**提交信息**里写有
@@ -97,7 +97,7 @@ epos` **75** 目录 / 含 `.git` **74** / 含 `origin` **74**；远端 **85** �
 >   `C:\Users\psw`、`D:\deepseek-harness`、`.dsvault` 均不存在；`remote.origin.pushurl` = **0** 条。）
 > **时点** 2026-10-29（**@`SIWPAN` 实测登记** —— 该机与 `DESKTOP-KQABATS` 名对不上，按
 >   `机器分区索引.md` §3 纪律第 4 条**先求证后定性**：用户确认 = **第三台机器，且曾改名（现名 `SIWPAN`）**。）
-> **观测工具** `tools/facts/measure.py`（`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）、
+> **观测工具** `allin-governance facts measure`（`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）、
 >   `Get-CimInstance Win32_*`、`git rev-parse --show-toplevel`、Gitee API 匿名查询
 > **失效条件** 换机、加减盘、重装系统、换运行时版本后**立即失效**；每次涉及机器事实的动作前
 >   **现场复测**，不要照抄本文件。

@@ -75,11 +75,11 @@ printf 'all good\n' > "$OUT.c1"
 log_run "step:ok" 0 42 false "$OUT.c1"
 
 # 2 失败：引号 / 反斜杠路径 / 制表符 / CR / 百分号
-printf 'line1 "quoted"\r\npath C:\\Users\\x\\P\r\ntab\there\r\npct 100%%\r\nboom\r\n' > "$OUT.c2"
+printf 'line1 "quoted"\r\npath C:\\Users\\x\\P\r\ntab\there\r\npct 100%%\r\nboom\r\n' > "$OUT.c2"  # gov-python: allow —— printf 层转义（要产出字面反斜杠路径），非 Python 转义伪影
 log_run "step:bad" 1 99 false "$OUT.c2"
 
 # 3 失败：高置信度凭据 + 一条真实失败特征
-printf 'token=sk-ABCDEFGHIJKLMNOPQRSTUV\r\naws=AKIAABCDEFGHIJKLMNOP\r\nreal failure: assertion\r\n' > "$OUT.c3"
+printf 'token=sk-ABCDEFGHIJKLMNOPQRSTUV\r\naws=AKIAABCDEFGHIJKLMNOP\r\nreal failure: assertion\r\n' > "$OUT.c3"  # gov-credentials: allow —— 遮蔽逻辑的合成夹具（形状必须真，否则测不到遮蔽）
 log_run "step:secret" 1 7 false "$OUT.c3"
 
 # 4 失败：120 行，只应留最后 40 行
@@ -124,8 +124,10 @@ def test_log_run_tail_field(tmp_path):
     assert "\r" not in bad["tail"], "CR 应已被 splitlines 归一，不该残留 \\r"
 
     # ③ 脱敏：凭据遮蔽，真实特征保留（过度脱敏等于白花 IO）
-    assert "sk-ABCDEFGHIJKLMNOPQRSTUV" not in secret["tail"], "sk- 凭据未遮蔽"
-    assert "AKIAABCDEFGHIJKLMNOP" not in secret["tail"], "AKIA 凭据未遮蔽"
+    # 这两条断言里的字面量与 :82 的夹具**同一串**：形状必须是真的，否则断言永远成立（空壳）。
+    # 豁免按 g03 约定写在命中行，且本文件已登记 scripts/secret-scan-allowlist.txt（F-01）。
+    assert "sk-ABCDEFGHIJKLMNOPQRSTUV" not in secret["tail"], "sk- 凭据未遮蔽"  # gov-credentials: allow —— 同 :82 夹具的断言
+    assert "AKIAABCDEFGHIJKLMNOP" not in secret["tail"], "AKIA 凭据未遮蔽"  # gov-credentials: allow —— 同 :82 夹具的断言
     assert "REDACTED" in secret["tail"], "未出现遮蔽标记"
     assert "real failure" in secret["tail"], "真实失败特征被误删"
 

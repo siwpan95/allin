@@ -91,7 +91,7 @@ python "<REPO_ROOT>\tools\deploy\monthly_audit.py" --repo-root "<REPO_ROOT>" --f
 
 | 项 | 判据来源 | 阻断条件 |
 | --- | --- | --- |
-| `verify_facts` | g20（`tools/facts/verify_facts.py --json`） | 非 0 退出或 `findings` 非空 |
+| `verify_facts` | g20（`allin-governance facts verify --json`） | 非 0 退出或 `findings` 非空 |
 | `docs_index` | D1–D17（`tools/gate/docs_index.py`） | 非 0 退出 |
 | `repocheck` | 仓内自检口径（与 `scripts/run_all_gates.sh` 同参数） | 非 0 退出 |
 | `portfolio` | FACT-08 表内自洽（140 行编号 / 分层求和 / 合计 / `137 = 140 − 3`） | 任一算术或编号不自洽 |

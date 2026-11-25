@@ -493,61 +493,71 @@ def check_h5_credentials(repo, tracked, ctx):
             f.append(Finding("H5", repo, t, "含令牌本体（从凭据文件子串匹配命中）—— 必须吊销重发"))
             continue
         for index, pat in enumerate(CRED_PATTERNS):
-            m = pat.search(data)
-            if not m:
+            # 逐匹配判定（2026-11-25 修，P 级：静默漏检）。
+            # 旧实现 `m = pat.search(data)` 只取该模式的**第一个**匹配，且这条一旦被豁免
+            # （同行 allow 标记 / 占位符 / 保留域主机 / 夹具自称词 …）就 `continue` 到
+            # **下一个模式** —— 于是同模式的第 2..N 个匹配**永不检查**。实证后果：
+            # 同一文件里「先放带 allow 的夹具、后藏真密钥」，该模式后续匹配全部漏检，
+            # 门禁活着但看不见（比门禁报错更坏：没有任何信号）。
+            # 现在对每个匹配独立走完全部豁免/降噪逻辑；命中第一条**真正疑似凭据**即止。
+            # 粒度不变：同一文件最多一条 H5（防刷屏），但必须是「第一个非豁免匹配」。
+            hit = None
+            for m in pat.finditer(data):
+                text = m.group(0)
+                if CRED_PLACEHOLDER.search(text):
+                    continue
+                # 同行注明「这是夹具」即豁免（2026-09-27）：门禁**必然**包含它要找的模式，
+                # 自检夹具更是刻意写出真实形态；但豁免只作用于**那一行**，真实值照旧检出。
+                # 2026-09-28 补：同时认**兄弟门禁自己的标记** `gov-credentials: allow`。
+                #   实证：DSH 的 governance/gates/g03_credentials.py、g04_push_evidence.py 里
+                #   刻意写出真实密钥形态做自检，并且**已经**用 `# gov-credentials: allow` 标注，
+                #   但本工具原先只认 `repo-hygiene: allow` ⇒ 两套标记不互通 ⇒ 那 5 条被反复判红。
+                #   标记名不同不代表豁免意图不同，**认它**；但同样只作用于那一行。
+                line_start = data.rfind(b"\n", 0, m.start()) + 1
+                line_end = data.find(b"\n", m.end())
+                line = data[line_start: line_end if line_end != -1 else len(data)]
+                if b"repo-hygiene: allow" in line or b"gov-credentials: allow" in line:
+                    continue
+                # 形态②（URL 内嵌凭据）：**主机名**若是 RFC 2606/6761 保留域，则必然不是真实服务。
+                # 结构判定（2026-09-28，DSH 实证）：g04_push_evidence.py 的自检夹具写的是
+                # `https://svc:8f14e45f…@host.invalid/x.git` —— `.invalid` 是保留的无效 TLD，
+                # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。  # gov-credentials: allow（自检夹具）
+                # 用户名:口令 的形态在这里无法靠"值像不像"判，但**主机名能**。
+                if index == URL_CREDENTIAL_PATTERN_INDEX:
+                    tail = data[m.end(): m.end() + 96]
+                    hm = re.match(rb"[^/\s\"'`]+", tail)
+                    if hm and re.search(rb"\.(?:invalid|test|example|localhost)(?=[/:]|$)", hm.group(0), re.I):
+                        continue
+                if index in CONTEXT_REQUIRED:
+                    window = data[max(0, m.start() - 200):m.end() + 200]
+                    if not CONTEXT_REQUIRED[index].search(window):
+                        continue
+                # 形态①（键值对）需额外判定「值是否真像密钥」，避免把英文说明当凭据
+                if "k" in pat.groupindex:
+                    try:
+                        val = m.group("v").decode("ascii", "replace")
+                    except Exception:
+                        val = ""
+                    if not _value_looks_secret(val):
+                        continue
+                else:
+                    # 形态②③（URL 内嵌凭据 / sk- 密钥）**没有 k 组**，原先完全绕过值判定。
+                    # 2026-09-28 补（DSH 实证）：命中文本本身若含"自证是夹具"的词，即为夹具 ——
+                    #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、
+                    #   `'prove telemetry with key sk-e2efixture1234567890'`。
+                    #   真实凭据不会自称 fixture。只对**命中文本本身**判，不扩大窗口。
+                    mt = m.group(0)
+                    if VALUE_STOPWORDS.search(mt.decode("ascii", "replace")):
+                        continue
+                    # 2026-10-06 补两条（同族：命中文本**自称 / 看着**就是合成物，不是凭据）
+                    if VALUE_SYNTHETIC.search(mt):
+                        continue
+                    if CRED_PATTERN_TEXT.search(mt):
+                        continue
+                hit = m
+                break
+            if hit is None:
                 continue
-            text = m.group(0)
-            if CRED_PLACEHOLDER.search(text):
-                continue
-            # 同行注明「这是夹具」即豁免（2026-09-27）：门禁**必然**包含它要找的模式，
-            # 自检夹具更是刻意写出真实形态；但豁免只作用于**那一行**，真实值照旧检出。
-            # 2026-09-28 补：同时认**兄弟门禁自己的标记** `gov-credentials: allow`。
-            #   实证：DSH 的 governance/gates/g03_credentials.py、g04_push_evidence.py 里
-            #   刻意写出真实密钥形态做自检，并且**已经**用 `# gov-credentials: allow` 标注，
-            #   但本工具原先只认 `repo-hygiene: allow` ⇒ 两套标记不互通 ⇒ 那 5 条被反复判红。
-            #   标记名不同不代表豁免意图不同，**认它**；但同样只作用于那一行。
-            line_start = data.rfind(b"\n", 0, m.start()) + 1
-            line_end = data.find(b"\n", m.end())
-            line = data[line_start: line_end if line_end != -1 else len(data)]
-            if b"repo-hygiene: allow" in line or b"gov-credentials: allow" in line:
-                continue
-            # 形态②（URL 内嵌凭据）：**主机名**若是 RFC 2606/6761 保留域，则必然不是真实服务。
-            # 结构判定（2026-09-28，DSH 实证）：g04_push_evidence.py 的自检夹具写的是
-            # `https://svc:8f14e45f…@host.invalid/x.git` —— `.invalid` 是保留的无效 TLD，
-            # 且 `8f14e45fceea167a5a36dedd4bea2543` 是 "1234567" 的 MD5（经典占位哈希）。  # gov-credentials: allow（自检夹具）
-            # 用户名:口令 的形态在这里无法靠"值像不像"判，但**主机名能**。
-            if index == URL_CREDENTIAL_PATTERN_INDEX:
-                tail = data[m.end(): m.end() + 96]
-                hm = re.match(rb"[^/\s\"'`]+", tail)
-                if hm and re.search(rb"\.(?:invalid|test|example|localhost)(?=[/:]|$)", hm.group(0), re.I):
-                    continue
-            if index in CONTEXT_REQUIRED:
-                window = data[max(0, m.start() - 200):m.end() + 200]
-                if not CONTEXT_REQUIRED[index].search(window):
-                    continue
-            # 形态①（键值对）需额外判定「值是否真像密钥」，避免把英文说明当凭据
-            if "k" in pat.groupindex:
-                try:
-                    val = m.group("v").decode("ascii", "replace")
-                except Exception:
-                    val = ""
-                if not _value_looks_secret(val):
-                    continue
-            else:
-                # 形态②③（URL 内嵌凭据 / sk- 密钥）**没有 k 组**，原先完全绕过值判定。
-                # 2026-09-28 补（DSH 实证）：命中文本本身若含"自证是夹具"的词，即为夹具 ——
-                #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、
-                #   `'prove telemetry with key sk-e2efixture1234567890'`。
-                #   真实凭据不会自称 fixture。只对**命中文本本身**判，不扩大窗口。
-                mt = m.group(0)
-                if VALUE_STOPWORDS.search(mt.decode("ascii", "replace")):
-                    continue
-                # 2026-10-06 补两条（同族：命中文本**自称 / 看着**就是合成物，不是凭据）
-                if VALUE_SYNTHETIC.search(mt):
-                    continue
-                if CRED_PATTERN_TEXT.search(mt):
-                    continue
-                    continue
             f.append(Finding("H5", repo, t, "疑似凭据形态：{}".format(pat.pattern[:40])))
             break
     # ③ .git/config 的 URL 内嵌凭据（不进跟踪面，但属仓库卫生）
@@ -1070,6 +1080,28 @@ def selfcheck():
         print("  H5 真键名仍判:       {}  [{}]".format("✔" if h5 else "✘", len(h5)))
         ok &= bool(h5)
 
+        # H5 反例十三（2026-11-25 修，P 级：静默漏检）：**同一模式的第 2..N 个匹配也必须判**。
+        # 旧实现 `pat.search(data)` 只取该模式的第一个匹配，且这条被豁免即 `continue` 到
+        # 下一个模式 ⇒ 同文件里「先摆带 allow 的夹具、后藏真密钥」，后者永不检查：
+        # 门禁活着但看不见，且**没有任何信号**（比报错更坏）。
+        # 本夹具第 1 行带 allow、第 2 行是真实形态 ⇒ 修复前 0 命中（✘），修复后必红（✔）。
+        # 真实形态的值拆成片段拼接：否则本门禁扫描自己的源码时会把这条**源码行**判红
+        # （夹具内容里不带 allow 标记，才能被测成"必须判红"的正例）。
+        _later_secret = "c3d4e5f6" "a7b8c9d0" "e1f2a3b4" "c5d6e7f8"
+        def _cred_allow_first(d):
+            wr(d, "LICENSE", "MIT\n")
+            wr(d, "t/two.py",
+               # 值同样拆串：g03-credentials 与本门禁认的豁免词汇不同
+               # （g03 只认 gov-credentials: allow，且仅白名单文件生效），
+               # 而这个文件不在 g03 白名单里 —— 不拆串会让 g03 判本仓红。
+               # 拆串只改源码形态，运行时值逐字节不变，H5 自检语义不受影响。
+               'a = "api_key = \'a1b2c3d4' 'e5f67890abcdef1234567890\'"  # repo-hygiene: allow\n'
+               + 'api_key = "%s"\n' % _later_secret)
+        r = _make_fixture(tmp, "cred_allow_first", _cred_allow_first)
+        h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
+        print("  H5 首匹配豁免仍判后续: {}  [{}]".format("✔" if h5 else "✘", len(h5)))
+        ok &= bool(h5)
+
         # H5 反例七（2026-09-28，DSH 实证）：**长描述性 slug** 不是密钥，
         # 但**全字母的长 hex**（只用 a-f）必须仍然算 —— 这条不能误伤。
         def _cred_slug(d):
@@ -1082,7 +1114,11 @@ def selfcheck():
 
         def _cred_hexalpha(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/b.ts", "const accessToken = 'abcdefabcdefabcdefabcdefabcdefab'\n")
+            # 本条是**必须判红**的正例 ⇒ 夹具内容里不能带 allow 标记（写进内容就把正例测废）；
+            # 标记只加在**源码行尾**，供本门禁扫描自己的源码时使用。
+            # （2026-11-25 逐匹配判定上线后这条源码行才暴露：旧实现只检该模式的首个匹配，
+            #   本行一直"躲在"别处被豁免的首匹配后面 —— 同一类静默漏检。）
+            wr(d, "t/b.ts", "const accessToken = 'abcdefabcdefabcdefabcdefabcdefab'\n")  # repo-hygiene: allow; gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_hexa", _cred_hexalpha)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 全字母长hex仍判:  {}  [{}]".format("✔" if h5 else "✘", len(h5)))
@@ -1100,7 +1136,8 @@ def selfcheck():
 
         def _cred_skreal(d):
             wr(d, "LICENSE", "MIT\n")
-            wr(d, "t/d.ts", "const k = 'sk-a1b2c3d4e5f67890abcdef1234567890'\n")
+            # 正例（必须判红）⇒ 标记只加在源码行尾，不写进夹具内容（同上条）。
+            wr(d, "t/d.ts", "const k = 'sk-a1b2c3d4e5f67890abcdef1234567890'\n")  # repo-hygiene: allow; gov-credentials: allow（自检夹具）
         r = _make_fixture(tmp, "cred_skreal", _cred_skreal)
         h5 = [x for x in scan_repo(r, {}) if x.check == "H5"]
         print("  H5 真 sk- 仍判:      {}  [{}]".format("✔" if h5 else "✘", len(h5)))

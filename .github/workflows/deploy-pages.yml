@@ -60,10 +60,18 @@ jobs:
       - name: bootstrap（建别名，否则 g15 的 D6 会假红）
         run: bash scripts/bootstrap.sh
 
+      # 2026-11-25 公共核提仓：套件源码 tools/gate/governance/run.ts 已迁至独立仓
+      # allin-governance（随包分发为 _gatesuite/run.ts）。这里改走 scripts/gates.mjs ——
+      # 仓内既有的官方薄壳：它从**已安装的包**里解析 run.ts 路径再 spawn，跨平台一致
+      # （Windows 的 cmd.exe 下 `$(python -c …)` 不生效，所以不能在 run: 里内联解析）。
+      # 与 package.json 的 `check:governance` = `node scripts/gates.mjs --no-profile` 同一条
+      # 命令、与 Gitee 侧 pipeline.yml 的 run_gates step 同一条命令：判据不允许漂移。
+      # 参数口径不变：仍是 --no-profile（g14-preset 的 profile 探针读 DSH 部署面，CI 上不存在）。
+      # 不再保留任何已删路径的字面量 —— 薄壳找不到包时 exit 3 并打印装包指引。
       - name: 发布前复跑门禁（保证「发出去的」与「验过的」是同一份）
         env:
           ALLIN_PYTHON: ${{ github.workspace }}/.venv/bin/python
-        run: node tools/gate/governance/run.ts --no-profile
+        run: node scripts/gates.mjs --no-profile
 
       - name: 配置 Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0

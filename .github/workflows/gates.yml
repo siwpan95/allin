@@ -110,23 +110,19 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.3.0"
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.3.1"
           "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
-      # 包映射对账（ADR-0008）：装的就是刚构建的 wheel —— 逐文件 sha256 比对
-      # "发布物 ↔ 仓内真身"，把「SHA-256 逐字节相同」从一次性实测变成退出码。
-      - name: 可安装包映射对账（wheel ↔ 仓内源码 sha256）
-        run: |
-          "$RUNNER_TEMP/ag/bin/python" tools/check_pkg_parity.py
-
-      # 2026-11-08 整改：把「已写出的测试资产」接进执行面与覆盖率采集面（B1），
-      # 并让治理指标从日志装饰升级为可阻断的退出码（B9/B10）。
-      - name: repocheck 规则套件覆盖率（B1：62 个 pytest 用例进 CI）
-        run: |
-          .venv/bin/python -m pytest tools/repocheck/test_scanner.py -q \
-            --cov=tools/repocheck --cov-branch \
-            --cov-report=term-missing --cov-report=xml:coverage-repocheck.xml
+      # 2026-11-25 公共核提仓：此处原有两个 step 已删除，删除理由留档在此 ——
+      #   1. 「可安装包映射对账（wheel ↔ 仓内源码 sha256）」调 tools/check_pkg_parity.py：
+      #      该脚本与它的对账对象（tools/repocheck、tools/gate/governance 等）都已迁至
+      #      独立仓 allin-governance，本仓内两侧皆无。留着只会因「文件不存在」判红；
+      #      即便把脚本搬回来，对账的也是「包 ↔ 包」，空转无判据。
+      #   2. 「repocheck 规则套件覆盖率」调 tools/repocheck/test_scanner.py：源码与
+      #      测试随包迁出（_repocheck 子包），覆盖率的判据归包自己的仓，本仓不再声称覆盖它。
+      # 两者的替代物不是「静默删掉」：repocheck 的可执行判据仍在上面「本仓 monorepo 自检」
+      # step（走 `-m allin_governance repocheck`），跑的是同一个套件。
 
       - name: 治理指标（B9/B10：落退出码 + SKIP 单列 + 例外双口径）
         run: .venv/bin/python tools/gate/gate_metrics.py --snapshot --strict --json
@@ -175,15 +171,14 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.3.0"
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.3.1"
           "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
-      # 包映射对账（ADR-0008，同 Linux 侧）：改 gates.yml 前后双平台各验一次
-      - name: 可安装包映射对账（wheel ↔ 仓内源码 sha256）
-        shell: bash
-        run: |
-          "$RUNNER_TEMP/ag/Scripts/python.exe" tools/check_pkg_parity.py
+      # 2026-11-25 公共核提仓：Windows 侧的「包映射对账（wheel ↔ 仓内源码 sha256）」
+      # 已随 Linux 侧一并删除 —— tools/check_pkg_parity.py 与它的对账对象均已迁出本仓，
+      # 理由见 gates-posix 里同一位置的留档。删而不换：没有可对账的两侧，替换只会造出
+      # 一个恒绿的空 step。
 
       # 端到端三面冒烟（SC6 北极星）：CLI 前门→kernel 探测→portal 临时实例→website 临时实例
       # （9156，先查 ports.yaml）→g21 漂移判据，证据落 tools/gate/audit/e2e-runs.jsonl。

@@ -22,7 +22,7 @@
    `fact_version` → NetBox `changelog_message` → GraphRAG citation。
    `tools/gate/facts_provenance.py`（g25）校验每条 fact 的 `source_file:line` 与下游 state 里的 sha。
 3. **服务全挂 ≠ 门禁可以红**。三栈都不进 `run_all_gates.sh` 的阻断链前置；
-   `tools/facts/cli.py --source auto` 在派生库缺失时回落纯 JSON 真身，
+   `allin-governance facts --source auto` 在派生库缺失时回落纯 JSON 真身，
    `offline-check` 把「拔网 / 停三栈 / 删派生库」做成 6 项可复跑断言。
 
 ## 3. 命令速查（全部默认 dry-run）
@@ -51,7 +51,7 @@ python deploy/graphrag/build_input.py
 | g25 溯源判据自证 | `facts_provenance.py --selftest` | `PASS`（坏行号 / 缺文件 / 坏 sha 都被拦） |
 | 真机时间旅行 | `import_from_git.py --verify` | `AS OF 'HEAD'` / `AS OF 'HEAD~1'` 均可查（已验 4 行）；**历史值差异**尚需制造一次真实事实变更后再验 |
 | 服务缺席降级 | `bash scripts/run_all_gates.sh` | `ALLIN_GATE_SUMMARY status=clean`，三栈全停仍全绿 |
-| 离线北极星 | `python tools/facts/cli.py offline-check` | `6/6 PASS` |
+| 离线北极星 | `python -m allin_governance._facts.cli offline-check` | `6/6 PASS` |
 
 未完成的部署项（Docker / WSL2 / Dolt 二进制安装、NetBox 起栈、GraphRAG 索引）
 逐项登记在 `docs/记录/交接/2026-11.md` 的 B 期记账节，**不得从表里删行消红**。

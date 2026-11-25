@@ -29,7 +29,7 @@ allin 的「制度 + 文档枢纽 + 执行器」三合一治理体系中，**内
 
 ## 设计约束（铁律）
 
-- **路径零硬编码**：任何机器相关绝对路径（Windows 盘符 / POSIX `/Users` 等）一律不得写入源码；门禁 `g01_paths` 专门扫描并阻断（详见 `tools/gate/governance/gates/g01_paths.py`）。
+- **路径零硬编码**：任何机器相关绝对路径（Windows 盘符 / POSIX `/Users` 等）一律不得写入源码；门禁 `g01_paths` 专门扫描并阻断（套件 2026-11-25 迁出本仓，判据在 `allin-governance` 仓的 `_gatesuite/gates/g01_paths.py`）。
 - **入口白名单**：未在 `registry.py` / `cordis.allin.yml` 登记的入口不得加载。
 - **可审计**：内核所有变更须过治理门禁（`bash scripts/run_all_gates.sh`）。
 

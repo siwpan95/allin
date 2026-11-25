@@ -10,12 +10,28 @@ agent_created: true
 而是充当**治理大脑**：先把治理事实装进上下文，再用铁律/流程/门禁做放行判断，
 最后把具体活路由给对应专项 skill 或亲自执行门禁命令。
 
-> **一致性同步（重要）**：本 agent 的治理内核逐条对齐 `preset/allin/allin.patch.yml` 的
-> `GOVERNANCE:BEGIN/END` 段（DSH 侧唯一可执行治理载体 `config.id: allin`）。
-> 这是同一份治理事实的**双形态落地**——DSH 段是「创造模式」形态，本 skill 是 WorkBuddy 侧等价形态，
-> 这样无论在哪套 harness 里治理纪律都一致。**任一侧修改须同步另一侧**：
-> 用 `preset/allin/verify-mount.ps1` 的漂移层 + 本仓 `npm run check:governance` 作判据；
-> 改了任一侧记得把另一侧对齐，避免双形态漂移。
+> **单写者同步（2026-11-25 起）**：本 agent 的治理内核与 `preset/allin/allin.patch.yml` 的
+> `GOVERNANCE:BEGIN/END` 段（DSH 侧唯一可执行治理载体 `config.id: allin`）承载同一份治理事实，
+> 只是**双形态落地**——DSH 段是「创造模式」形态，本 skill 是 WorkBuddy 侧等价形态。
+> **DSH 段是唯一手改源**；本 skill 下方那个 `GOVERNANCE` 段由
+> `python preset/allin/refresh-gov-block.py --targets workbuddy` **渲染**，`--check` 判漂移并计入
+> `npm run check:preset-sync` 的退出码（落后 exit 3）——「任一侧修改须同步另一侧」从此是门禁，不是纪律。
+> 本 skill 的散文章节（§0–§8）不被工具覆盖，但不得与投影表打架：表内取值一律以规范段为准。
+>
+<!-- 下方本段由 refresh-gov-block.py 渲染，人工修改会被 --check 判红（2026-11-25 单写者合并）。 -->
+<!-- GOVERNANCE:BEGIN -->**治理事实投影（WorkBuddy 侧）** · 本段由 `python preset/allin/refresh-gov-block.py --targets workbuddy` 从 `preset/allin/allin.patch.yml` 的 `GOVERNANCE` 段渲染 —— **本段禁止手改**：改规范段后重跑 `--write`，`--check` 判漂移（落后 exit 3，已并入 `npm run check:preset-sync`）。
+
+下表是双端**必须同源**的事实子集：措辞可不同，取值只有一个来源（规范段）。表外内容不进本投影 —— DSH persona 前缀与 YAML 缩进是形态差异，路由表锚点由 `tools/gate/agent_parity.py` 三方对账，ReAct / 记忆回路的操作细节由下文各节展开。
+
+| 事实 | 取值（自规范段渲染） |
+| --- | --- |
+| 治理仓 | `allin`（2026-09-27 前名 `allin_push`）；**禁止硬编码盘符**（SPEC-001 铁律 5） |
+| 定位仓根（命中即用，按序） | 4 步：`ALLIN_ROOT` → `git rev-parse --show-toplevel` → `locate-root.ps1` → `tool-fs-search` |
+| 开卷必读四份（`<仓根>/` 下） | `docs/INDEX.md`、`docs/规范/SPEC-001-铁律.md`、`docs/规范/SPEC-002-协作工作流程.md`、`docs/事实源/机器分区索引.md` |
+| 铁律与规范编号 | 铁律 0/1/2（开源优先 / README 优先 / 协作流程）；规范编号 SPEC-001 · SPEC-002 · SPEC-003 · SPEC-006 · SPEC-204 |
+| 治理门禁与入口 | 共 20 道治理门禁（`g00-meta` … `g20-facts`）；入口 `bash scripts/run_all_gates.sh` · `npm run check:governance` · `docs_index.py` · `tools/gate/agent_regression.py` · `python preset/allin/refresh-gov-block.py --check` |
+| 派生副本（单写者） | 1 份正文 + 3 份派生副本（`preset/allin/agent.cordis.yml` · `preset/allin/bundle/cordis.patch.yml` · `$DSH_HOME/profiles/web/cordis.patch.yml`）；副本与本段同由 `python preset/allin/refresh-gov-block.py` 渲染，bundle 另跑 `make-bundle.ps1` |
+<!-- GOVERNANCE:END -->
 
 ---
 

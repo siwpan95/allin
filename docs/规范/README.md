@@ -62,7 +62,7 @@
 | --- | --- | --- | --- | --- |
 | [SPEC-201](SPEC-201-引擎接口契约.md) | 引擎（`allin_engine`）接口契约 | 准则 | 生效 | 统一引擎的入口、装配、fork、双写不变量与复用优先 |
 | [SPEC-202](SPEC-202-foolproof-operation契约.md) | foolproof-operation 契约 | 准则 | 生效 | Cordis 式内核 + USN 索引的黄金值与两条只读纪律 |
-| [SPEC-205](SPEC-205-allin-console契约.md) | allin-console 契约（治理控制台） | 准则 | 生效 | Electron 外壳 + CLI 总线 + JS cordis 插件；148 项目统一 CLI 对接，不做内核分支 |
+| [SPEC-205](SPEC-205-allin-console契约.md) | allin-console 契约（治理控制台） | 准则 | 生效 | Electron 外壳 + CLI 总线 + JS cordis 插件；83 项目统一 CLI 对接（2026-11-25 复测），不做内核分支 |
 
 ### 3.4 存档（`SPEC-9xx`）
 
@@ -87,10 +87,10 @@
 | `watchdog.py`（W1–W3） | 调试铁律 51 / 58 | 盘健康与 IO 重试、`.git/objects` 可读性、`ls-remote` 同步漂移。**2026-10-06 随仓入库**（默认仓根改为按约定工作区根推导，不写死盘符） |
 
 > **2026-11-09 增补 · 结构化事实源独立门禁**（照 `g21` 模式接 `scripts/run_all_gates.sh`，
-> **不占 g00–g20 的 20 道聚合口径**）：`tools/facts/cli.py validate`（Schema 强制）、
+> **不占 g00–g20 的 20 道聚合口径**）：`python -m allin_governance._facts.cli validate`（Schema 强制）、
 > `tools/gate/facts_parity.py`（doc_refs 引用完整性 + 生成物 marker 漂移）、
 > `tools/gate/relative_refs_gate.py`（文档内相对路径，基线棘轮只阻断新增）、
-> `tools/facts/cli.py offline-check`（离线北极星：拔网 / 停三栈 / 删派生库）。
+> `python -m allin_governance._facts.cli offline-check`（离线北极星：拔网 / 停三栈 / 删派生库）。
 > 契约见 `SPEC-005 §3.11` 与 `SPEC-005 §3.12`；架构见 `SPEC-204 §2.8`。
 > 生成物尚未启用时 g23 **显式 SKIPPED 并计数**，不冒充通过（未做项见交接卷 §一百四十六）。
 > **B 期增补（2026-11-09）**：`tools/gate/facts_provenance.py`（g25：事实引用 `source_file:line`
@@ -104,7 +104,8 @@
 > **口径提示（2026-10-28 对账补）**：本表是 **DSH 分发侧**的 18 条；**本仓侧** `tools/gate/governance/`
 > 现有 **20 道**（`g00-meta`…`g20-facts`），其中 `g16`–`g20` 是本仓扩展，**与上表 g16–g18 同号不同义**
 > （本仓：`g16-skill-preset-parity` / `g17-registry` / `g18-exceptions` / `g19-docs-refs`）。
-> 本仓侧权威清单以 `tools/gate/governance/registry.json` 为准，别用本表反推。
+> 本仓侧权威清单以包内 `_gatesuite/registry.json` 为准（门禁套件 2026-11-25 迁入
+> `allin-governance` 仓，随包分发），别用本表反推。
 > 另：`siwpan/deepseek-harness` 远端已于 2026-10-26 三仓整合后删除，治理内核并入本仓。
 
 | 门禁 | 覆盖规范 | 拦什么 |

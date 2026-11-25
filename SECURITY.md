@@ -23,7 +23,7 @@
 |---|---|---|
 | `kernel/`（治理内核） | [kernel/SECURITY.md](kernel/SECURITY.md) | 入口白名单、路径零硬编码、凭据不进仓 |
 | `platform/`（集成平台） | [platform/SECURITY.md](platform/SECURITY.md) | 门户 Host 围栏、进程启停边界 |
-| `tools/repocheck/` | [tools/repocheck/SECURITY.md](tools/repocheck/SECURITY.md) | 扫描器规则与评分边界 |
+| `repocheck`（2026-11-25 起随包 `allin-governance`，源码在独立仓） | 策略文件随源码在 `allin-governance` 仓的 `_repocheck/SECURITY.md`（本仓不再保留副本） | 扫描器规则与评分边界 |
 | `website/`（官网） | 本文件 + `website/README.md` §6（尤其 §6.6 备份纪律） | AES-256-GCM 信封加密、会话、上传面、密钥与密文分离 |
 | `packages/allin-governance`（PyPI 包） | 本文件 | 打包映射完整性、门禁出厂口径 |
 | CI 凭据防线 | `scripts/secret-scan-allowlist.txt` | 增量扫描与全树门禁共用的注解白名单 |

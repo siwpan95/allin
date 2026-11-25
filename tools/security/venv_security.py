@@ -279,7 +279,7 @@ def standalone_uv_version():
     if not exe:
         return None
     try:
-        r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_default"))
+        r = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_default"))
     except Exception:
         return None
     m = re.search(r"(\d+\.\d+\.\d+)", (r.stdout or "") + (r.stderr or ""))
@@ -308,15 +308,26 @@ def uv_baseline_status(uv_ver):
 
 def probe(py):
     try:
-        r = subprocess.run([py, "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_default"))
+        r = subprocess.run([py, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_default"))
         return r.returncode == 0
     except Exception:
         return False
 
 
 def pip_works(py):
+    # 编码必须钉死 UTF-8（2026-11-25 修，与仓内 scripts/release_preflight.py、tools/sarif.py 同口径）：
+    # `text=True` 而无 `encoding=` 时按**本机控制台代码页**解码（中文 Windows = cp936）。
+    # 实测后果（本机 cp936 + PYTHONUTF8=0，子进程输出含 cp936 解不了的字节）：
+    #   读线程 `_readerthread` 解码时抛 UnicodeDecodeError → 线程死掉 → `r.stdout` 被吞成
+    #   **空串**（returncode 仍是 0，run() 本身不抛）。于是所有「靠 stdout 解析出结论」的判据
+    #   都拿到空输入：`PipCertifiUvBaseline.verify` 的 `re.search(r"pip (\d+\.\d+\.\d+)",
+    #   r.stdout)` → None ⇒ 低于安全基线的 pip **静默不报**；`standalone_uv_version()` → None
+    #   ⇒ uv 基线被记成 not-found/skipped。输出量大时（ensurepip / pip install 会超过管道
+    #   缓冲）子进程写阻塞 ⇒ TimeoutExpired 被下面的 `except Exception` 吞成 False ⇒ 上游改判
+    #   「pip 坏了」⇒ quarantine_broken_pip() 把**健康**的 pip 改名 pip.bak。
+    # 两条路同一个根因：本函数只该回答「pip 能否跑」，不该被「能否解码输出」左右。
     try:
-        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
+        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_pip"))
         return r.returncode == 0
     except Exception:
         return False
@@ -475,12 +486,12 @@ class PipBootstrap(Check):
         if not py or pip_works(py):
             return None
         r = subprocess.run([py, "-m", "ensurepip", "--upgrade"],
-                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_ensurepip"))
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_ensurepip"))
         if pip_works(py):
             return "pip bootstrapped via ensurepip"
         moved = quarantine_broken_pip(venv)
         r = subprocess.run([py, "-m", "ensurepip", "--upgrade"],
-                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_ensurepip"))
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_ensurepip"))
         if pip_works(py):
             return "pip bootstrapped (quarantined: %s)" % (",".join(moved) or "none")
         tail = (r.stderr or r.stdout or "").strip().splitlines()[-1:]
@@ -545,11 +556,16 @@ class PipCertifiUvBaseline(Check):
         py = ctx["py"]
         if not py or not probe(py):
             return ["interpreter broken"]
-        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
+        r = subprocess.run([py, "-m", "pip", "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_pip"))
         if r.returncode != 0:
             issues.append("pip broken/missing")
         else:
-            m = re.search(r"pip (\d+\.\d+\.\d+)", r.stdout)
+            # 版本号必须同时吃**两段与三段**（2026-11-25 修）：现代 pip 打印
+            # `pip 26.3 from …`（**两段**），旧正则 `(\d+\.\d+\.\d+)` 只认三段 ⇒
+            # 两段且低于基线的 pip **静默不报**（安全基线静默跳过，与同批的
+            # `text=True` 缺 encoding 是同一根因的另一面：门禁绿得没有信号）。
+            # `ver_tuple()` 已把版本补齐为定长 3 元组（26.3 → (26,3,0)），故比较逻辑不动。
+            m = re.search(r"pip (\d+(?:\.\d+)+)", r.stdout)
             if m:
                 t = ver_tuple(m.group(1))
                 if t is not None and t < FLOORS["pip"]:
@@ -559,7 +575,7 @@ class PipCertifiUvBaseline(Check):
                 "p=pathlib.Path(certifi.where());"
                 "t=p.read_text(errors='replace');"
                 "print(certifi.__version__, t.count('emSign ECC Root CA - G3'))")
-        r2 = subprocess.run([py, "-c", code], capture_output=True, text=True, timeout=_rd.timeout("subprocess_pip"))
+        r2 = subprocess.run([py, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_pip"))
         if r2.returncode == 0 and r2.stdout.strip():
             parts = r2.stdout.split()
             t0 = ver_tuple(parts[0])
@@ -584,7 +600,7 @@ class PipCertifiUvBaseline(Check):
         if not targets:
             return None
         r = subprocess.run([py, "-m", "pip", "install", "--upgrade"] + targets,
-                           capture_output=True, text=True, timeout=_rd.timeout("subprocess_install"))
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_install"))
         if r.returncode != 0:
             tail = (r.stderr or r.stdout or "").strip().splitlines()[-3:]
             return "upgrade failed: " + " | ".join(tail)
@@ -615,7 +631,7 @@ class CAEmSignG3(Check):
         if not py or not pip_works(py):
             return "活跃 G3 残留，但 pip 不可用，无法强制重装"
         subprocess.run([py, "-m", "pip", "install", "--upgrade", "--force-reinstall", "pip"],
-                       capture_output=True, text=True, timeout=_rd.timeout("subprocess_install"))
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_rd.timeout("subprocess_install"))
         leftovers = [b for b in scan_bundles(venv) if b[1] > 0 and b[3] == "active"]
         if leftovers:
             return "强制重装 pip 后活跃 G3 仍残留: " + ", ".join(b[0] for b in leftovers)

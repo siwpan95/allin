@@ -107,8 +107,9 @@ C 运行产物    可重建、可删除、不入库（observed / data / dist / �
 # 1) 包里有没有机器特化 / 实例数据（应为 0）
 python tools/machine_content_audit.py
 
-# 2) 包映射与仓内真身是否一致（防止「进了 wheel 但没人核对」）
-python tools/check_pkg_parity.py
+# 2) 包映射与仓内真身是否一致 —— 该对账已于 2026-11-25 随公共核提仓退役：
+#    映射两侧（tools/repocheck、门禁套件）都在 allin-governance 仓，本仓已无对象可对账。
+#    现行等价判据在 CI「可安装包 init 端到端」：装 wheel → 与仓无关的目录 init → 门禁 exit 0。
 
 # 3) 包内是否被运行时写入（安装目录只读，见 README「运行时可写位置」）
 #    跑一遍工具后看安装目录有无 cache / 用户数据
@@ -131,7 +132,7 @@ python -m venv /tmp/v && /tmp/v/Scripts/python -m pip install allin-governance
 | `platform/` 代码 | 留仓内 | 门户/CLI/MCP 总线服务于本仓治理台；可移植性已单独整改，但复用量不足 Q1 |
 | 门禁夹具 | 随包（属 A1） | 判据的自证必须在包内可跑，否则「装完包跑不了门禁」 |
 | `publish_area_*.py`（7 个检查器） | **暂不上提** | **Q1 不足**：只有治理中枢自己（1 个消费者）需要「查发布区的仓是否合规」；别的项目不查发布区。等第二个消费者出现（如某项目要自检自己的发布区）再上提。2026-11-25 按本规范复核时纠正了「仍值得入包」的旧判断 |
-| `tools/facts/bootstrap_legacy_yaml.py` | 随包（属 A2） | 采集器的**历史兼容迁移**，与 `facts measure` 同属一次采集体检 |
+| `_facts/bootstrap_legacy_yaml.py`（包内） | 随包（属 A2） | 采集器的**历史兼容迁移**，与 `facts measure` 同属一次采集体检 |
 
 ---
 

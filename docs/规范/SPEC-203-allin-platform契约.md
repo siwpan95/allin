@@ -77,9 +77,10 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 | **模式层（不动）** | `docs/规范/`（SPEC-001 / 002 / 005 / 006 / 105 / 203）、`tools/gate/` 判据、`platform/packages/core/` 与 `platform/scripts/` 的校验逻辑、`scripts/run_all_gates.sh` | 原样保留 |
 | **实例层（整体替换 / 重建）** | `platform/registry/projects/*.yaml`、`facts/facts.json` 的 projects / tiering / tools / licenses 投影、`PORTFOLIO.md`、`docs/事实源/组合分级决策索引.md` 与 `组合分级后续路线.md` | 按新发行区重建；旧组合材料按「只增不改」归档，不作现值 |
 
-⚠ 现有 **148 / 140 / 141** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
-（2026-11-22 重测：registry **148 条** / 唯一名 **142**（含 1 条仓内条目）/ 远端 **141 仓** /
-本机发布区检出 **140 目录**。上一版的 145 / 140 / 138 是 2026-11-13 的值。）
+⚠ 现有 **83 / 77 / 78** 都是**当前组合的实例值**，不是判据常量；`g17` 动态扫 registry，不写死数量。
+（2026-11-25 复测：registry **83 条** / 唯一 id **83**（含 1 条仓内条目）/ 远端 `siwpan` **78 仓** /
+本机发布区检出 **77 个 git 工作树**。此前 148 / 142 / 141 / 140 是 2026-11-22 的值、
+145 / 140 / 138 是 2026-11-13 的值 —— 注册表与发布区经清理后落到现值，**任何引用一律以本条为最新口径**。）
 📌 **口径补充（2026-11-13 二次实测，取代本轮首版）**：145 份 YAML 中 **1 条是仓内条目**（`portal.yaml`，`path: platform`，`publish.repo: siwpan/allin`）；其余 144 份发行区条目归并后 **139 个唯一发行仓名**（`musickit` 主仓 + `mixer` + `remix`、`foolproof-operation` 双入口、`magic-tower` / `magictowel`、`radio` / `video` ⇒ **一仓多条目是既有设计，不是重复登记**）。加上治理仓自身共 **140 个仓名** 参与远端对账。组合分级的「140 决策对象」又是另一套语义 —— 三处数值撞车，一律不得混用。扫描器同时输出 `entries` / `uniqueNames` / `internalEntries` 三个数。
 
 ### 发现参数（唯一来源）
@@ -108,7 +109,7 @@ data/          运行时状态（gitignored）：tasks.log / running.json / work
 > 本机 145 份手抄条目从未被扫描碰过，实战证据来自临时异组合而非本机发行区。
 > 本节把扫描登记从「补新仓」推进到「跑满本机、逐仓对账、落盘可复核快照」。
 >
-> 📌 **2026-11-22 现值**（本节下方 138 / 145 为该轮时点快照，非现值）：
+> 📌 **2026-11-22 时点值**（本节下方 138 / 145 为该轮时点快照，非现值；最新复测见本节开头 83 / 83 / 77 / 78）：
 > registry **148 条** / 唯一名 **142** / 本机检出 **140** / 远端 **141**；
 > `local_only=0`、`remote_undeclared=0`、`declared_missing_local=3`（墓碑或 `remote-only` 豁免）。
 
@@ -198,7 +199,7 @@ PATCH 必带 `name`、406 需 JSON 正体等坑）；**不调用其 `remote` 子
 2. `node platform/scripts/discover_repos.mjs --json` 看三方差集；确认后 `--offline --apply` 扫描登记（默认 dry-run，先看 `registration.generated` / `needs_manual_review`）。
    已有条目用 `npm run repos:scan` 做全量对账（跑满本机、只判机器字段、人工字段保留），
    `npm run repos:verify` 核对快照；两者不覆盖手抄条目。
-3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `tools/facts/build_projects.py` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
+3. 重建实例层：registry YAML（补齐 launch / stop / health）→ `python -m allin_governance._facts.build_projects` 重建 `facts.json.projects` → `tools/build_portfolio.py --owner <账号> --apply` 重建 PORTFOLIO → 组合分级按新组合重做。
 4. `node platform/scripts/check.mjs` / `check_repos.mjs` 对账；`npm run check:governance` 与 `scripts/run_all_gates.sh` 复跑。
 5. **（可选）远端写入**：仅当新组合含「已登记 / 远端不存在」的仓时才需要。先看
    `node platform/scripts/publish_repos.mjs` 的 dry-run 计划，再 `--rehearse --only <仓> --confirm`

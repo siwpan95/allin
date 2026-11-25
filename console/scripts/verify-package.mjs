@@ -72,13 +72,34 @@ if (asarPkg) {
 }
 
 // —— 4. registry 资源 ——
+// 2026-11-25 改「对源对账」：原来判的是 `n < 100（预期 148）` 这种魔数阈值 ——
+// 门槛与真实条数脱钩，注册表涨到 148 之前它一直假红、涨过之后又永远真绿，
+// 两种都不是我们想判的东西。它本来要判的是**打包有没有漏**，那就直接跟源比：
+// 仓内 `platform/registry/projects/*.yaml` 的条数 N vs 产物里资源条数 M，要求 M === N。
+// 数字不再手写进代码，注册表怎么长都不用回来改这个文件。
+const REPO_ROOT = path.join(HERE, '..', '..')
+const SOURCE_REG = path.join(REPO_ROOT, 'platform', 'registry', 'projects')
+
+function countYaml(dir) {
+  if (!existsSync(dir)) return -1
+  return readdirSync(dir).filter((f) => f.endsWith('.yaml')).length
+}
+
 const regDir = path.join(UNPACKED, 'resources', 'registry', 'projects')
-if (!existsSync(regDir)) {
-  problems.push(`registry 资源缺失：${regDir}`)
+const declared = countYaml(SOURCE_REG)
+const packed = countYaml(regDir)
+
+if (packed < 0) {
+  problems.push(`registry 资源缺失：${regDir}（源 ${declared < 0 ? '未知' : declared} 条）`)
 } else {
-  const n = readdirSync(regDir).filter((f) => f.endsWith('.yaml')).length
-  notes.push(`registry 资源 ${n} 条`)
-  if (n < 100) problems.push(`registry 资源只有 ${n} 条（预期 148）`)
+  notes.push(`registry 资源 ${packed} 条（源清单 ${declared < 0 ? '未读到' : `${declared} 条`}）`)
+  if (declared < 0) {
+    // 判红而不是跳过：没有基准的「通过」是本仓明令禁止的假绿形态。
+    problems.push(`registry 源清单读不到：${SOURCE_REG} —— 对账缺基准，不能判通过`)
+  } else if (packed !== declared) {
+    const diff = packed < declared ? `漏 ${declared - packed} 条` : `多 ${packed - declared} 条`
+    problems.push(`registry 打包与源不一致：产物 ${packed} 条 ≠ 源 ${declared} 条（${diff}）`)
+  }
 }
 
 // —— 5. 门禁留痕位置说明（不随包分发，但要确认配置能指向它）——

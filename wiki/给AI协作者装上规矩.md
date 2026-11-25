@@ -159,8 +159,8 @@ Windows CI 的默认控制台编码是 cp1252，装不下中文。
   "generated_at": "2026-10-31 10:39:18 +0800",
   "gates": ["g00-meta", "g01-paths", "..."],
   "files": {
-    "tools/gate/governance/run.ts": "sha256:...",
-    "tools/gate/governance/gates/g05_hygiene.py": "sha256:..."
+    "<骨架根>/tools/gate/governance/run.ts": "sha256:...",
+    "<骨架根>/tools/gate/governance/gates/g05_hygiene.py": "sha256:..."
   }
 }
 ```
@@ -213,10 +213,10 @@ governance: 14/14 gate(s) clean
 - `registry.json` 注册表 + `RULES.md` 规则映射
 - 每道门禁一个空的基线文件（棘轮只能单向收紧）
 
-跑聚合命令需要 Node ≥ 22.18；不想装 Node 也能逐道单跑：
+跑聚合命令需要 Node ≥ 22.18；不想装 Node 也能逐道单跑（脚本随包走，`--root` 指你要判的仓根）：
 
 ```bash
-python tools/gate/governance/gates/g05_hygiene.py
+python -m allin_governance._gatesuite.gates.g05_hygiene --root .
 ```
 
 两个可选动作：
@@ -268,7 +268,7 @@ allin-governance verify my-repo                   # 按清单复核快照：0 �
 这是最容易被跳过、也最值钱的一步。自检的意思是：**往沙箱里注入一个必然违规的样本，验证这道门禁真的会红。**
 
 ```bash
-python tools/gate/governance/gates/g01_paths.py --selfcheck
+python -m allin_governance._gatesuite.gates.g01_paths --selfcheck
 # selfcheck ok for g01-paths: caught 3, quiet on 6, misreports 0
 ```
 

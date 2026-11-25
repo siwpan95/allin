@@ -32,10 +32,10 @@
   治理事实源 │  docs/ 规范(SPEC-*) · 事实源(机器分区) · 记录(审计/决策) │◄── 开卷必读
             │         INDEX.md 总目录                              │
             └─────────────────────────────────────────────────────┘
-                              ▲ 双形态同步判据 (verify-mount.ps1 + check:governance)
+                              ▲ 单写者渲染判据 (refresh-gov-block.py --check exit 3 / check:preset-sync)
             ┌─────────────────────────────────────────────────────┐
-  治理大脑   │  .workbuddy/skills/allin-governance-agent  ⇄          │
-   (Agent)  │  preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END   │
+  治理大脑   │  preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END  │
+   (Agent)  │        ──渲染──▶ .workbuddy/skills/…/SKILL.md         │
             │  + 15 个专项 skill 路由表                             │
             └─────────────────────────────────────────────────────┘
                  │ 调度/放行                       │ 治理段文本注入(非运行时耦合)
@@ -79,8 +79,14 @@
 - **WorkBuddy 侧**：`.workbuddy/skills/allin-governance-agent/SKILL.md`（本仓项目级 skill）。
 - **DSH 侧**：`preset/allin/allin.patch.yml` 的 `GOVERNANCE:BEGIN/END` 段（`config.id: allin`，
   插入 `@deepseek-ai/dsh-agent-preset`）。
-- **同一份治理事实的双形态**：任一侧修改须同步另一侧。漂移判据 =
-  `preset/allin/verify-mount.ps1` 漂移层 + 本仓 `npm run check:governance`。
+- **DSH 治理段是唯一手改源，WorkBuddy 侧是它的事实投影**（2026-11-25 单写者口径，取代旧的「任一侧修改须同步另一侧」）：
+  `GOVERNANCE:BEGIN/END` 段**只**在 `preset/allin/allin.patch.yml` 里手改；`.workbuddy/skills/…/SKILL.md`
+  的治理段由 `preset/allin/refresh-gov-block.py --targets workbuddy` **渲染**而来 —— 它不是字节拷贝，
+  而是**事实子集**（仓名 / 定位仓根 / 开卷必读四份 / 铁律与规范编号 / 门禁道数与入口 / 派生副本清单 6 条），
+  散文不被覆盖但不得与投影表矛盾。四种形态合起来是 **三份字节副本**（agent 存档 / npm bundle / 挂载层，
+  靠 `reindent` 对齐缩进）+ **一份事实投影**（WorkBuddy 侧，渲染而来、不需要 `reindent`）。
+  漂移判据 = `preset/allin/refresh-gov-block.py --check`（落后 **exit 3**），已并入 `npm run check:preset-sync`；
+  `preset/allin/verify-mount.ps1` 的「同源层」仍在，但它只对**挂载层**记 WARN，不再是双端一致性的判据。
 - **路由表**：本仓已有 15 个专项 skill（`dsh-deploy-repair` / `c-drive-scan-clean` /
   `cordis-v4-integration` / `electron-portable-gitee-release` / `gitee-blocked-file-fetch` /
   `gitee-push-from-extracted-dir` / `github-release-source-archive-download` /
@@ -139,13 +145,13 @@
 
 #### 2.3.1 治理控制台 —— `console/`（2026-11-22 起，platform 的**客户端**）
 
-不是第四条执行面，而是 `platform` 的可视客户端：把 148 条登记从命令行搬到可点操作面。
+不是第四条执行面，而是 `platform` 的可视客户端：把 83 条登记从命令行搬到可点操作面。
 契约见 [`SPEC-205`](SPEC-205-allin-console契约.md)。
 
 - **复用不复制**：项目清单读 `@allin/core` 的 `loadRegistry`；启停走 `startEntry` / `stopEntry`，
   **不自建 pid 表 / 端口表 / 项目清单** —— 与门户、CLI 共享 `running.json`，console 重启后状态自动恢复。
 - **CLI 是唯一总线**：`info` / `version` / `selfcheck` / `launch` / `stop` / `logs`，子命令白名单收口在主进程；
-  148 条规则里只有 31 个真实现了 `info`（其余属 B0′/B3 待补批次）。
+  83 条规则里只有 31 个真实现了 `info`（该覆盖数为 2026-11-22 口径，本轮未复测；其余属 B0′/B3 待补批次）。
 - **插件**：`packages/cordis-js`（`@cordisjs/core` 3.18.1）只开三个扩展点
   `console.command` / `console.panel` / `console.on`，能力经 `ctx.deps` 注入。
   ⚠ 与 `kernel/` 的 cordis-py 4.0.0 **不是同一条版本线**，也不共用插件。
@@ -155,13 +161,13 @@
   主进程独占 spawn。P1 的多标签位已预留，尚未接。
 
 ### 2.4 治理门禁（监工）—— `tools/gate/`
-- **20 道治理门禁** `g00-meta` … `g20-facts`：`tools/gate/governance/run.ts` 聚合，
+- **20 道治理门禁** `g00-meta` … `g20-facts`：`node scripts/gates.mjs` 聚合（薄壳从 `allin-governance` 包取 `_gatesuite/run.ts`；套件源码 2026-11-25 已迁出本仓），
   `npm run check:governance` 驱动，全绿 `exit 0`；`check:governance:selfcheck` 自证。
   ⚠ **20 道聚合口径不变**：2026-11-09 起新增的 `facts`/`docs_index` 之外的独立对账门禁
   （`g21` 三方对账、`cli.py validate` / `facts_parity.py` / `relative_refs_gate.py` / `offline-check`）
   一律照 `g21` 模式以**独立脚本**接 `scripts/run_all_gates.sh`，不占 g00–g20 编号，也不改八处「20 道」自述。
 - **文档索引契约** `docs_index.py`：D1–D19（随 SPEC-005 演进；份数/登记/头部/别名/锚点/计数/计划闭环/事实源留痕…）。
-- **仓库体检** `repocheck/main.py`：30 规则，0–10 健康分，text/json/csv/html 导出。
+- **仓库体检** `allin-governance repocheck`（原 `repocheck/main.py`，2026-11-25 随公共核迁出本仓）：30 规则，0–10 健康分，text/json/csv/html 导出。
 - **仓库卫生** `repo_hygiene.py`：H1–H8 基线棘轮（`--all` 跑全量）。
 
 ### 2.5 治理模式载体 —— `preset/allin/`
@@ -173,9 +179,11 @@
 ### 2.6 可安装产物 —— `packages/allin-governance`（2026-10-31 起）
 - PyPI 包 `allin-governance`（现版本 1.0.1，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
-- **一份源码两处消费**：`pyproject.toml` 的 `package-dir` 把仓内 `tools/repocheck` 与
-  `tools/gate/governance` 映射进包（`_repocheck` / `_gatesuite`），不复制；
-  映射一致性由 sha256 对账门禁固化（ADR-0008，`tools/check_pkg_parity.py` + CI）。
+- **一份源码一处真身**：`tools/repocheck` 与治理门禁套件已于 2026-11-25 整体迁入独立仓
+  `allin-governance`（PyPI 包 2.3.0，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
+  不再保留源码副本；因此「包 ↔ 仓内真身逐文件 sha256」的对账对象已然消失，
+  ADR-0008 那条对账脚本随之退役，现行判据是 CI 的「可安装包 init 端到端」（装 wheel →
+  与仓无关的目录 init → 门禁 exit 0）。
 
 ### 2.7 对外站点 —— `website/`（2026-11-02 起）
 - Node/Express + `node:sqlite`，默认端口 9042；四页导航 + 注册/登录/会话 +
@@ -248,12 +256,13 @@ GET /api/alerts            → 前端工坊页订阅分歧事件（订阅方）
 推送 / 发版 → allin-governance gitee（幂等可重入；令牌绝不回显；一次性 URL 推送不加 -u）
 ```
 
-### 3.3 双形态同步链路
+### 3.3 双形态派生链路
 ```text
-.workbuddy/skills/allin-governance-agent/SKILL.md   ⇄   preset/allin/allin.patch.yml  GOVERNANCE 段
-        │                                                │
-        └── 文本注入式（治理论述被注入 Agent 上下文），非运行时耦合 ──┘
-            漂移判据：verify-mount.ps1 漂移层 + npm run check:governance
+preset/allin/allin.patch.yml  GOVERNANCE 段  ──渲染──▶  .workbuddy/skills/allin-governance-agent/SKILL.md
+        （唯一手改源）              refresh-gov-block.py          （事实投影，非字节副本）
+        │                                                              │
+        └──────── 文本注入式（治理论述被注入 Agent 上下文），非运行时耦合 ────────┘
+            漂移判据：preset/allin/refresh-gov-block.py --check（落后 exit 3），已并入 npm run check:preset-sync
 ```
 
 ### 3.4 数据面单向流（2026-11-09 新增）
@@ -314,7 +323,7 @@ facts/facts.json   ← 唯一写入权威（Git 文本，SPEC-005 §3.11）
 | G2 门禁留痕上板 | `tools/gate/audit/gate-runs.jsonl` → portal `/api/gate-history` → website 管理台 | kernel→platform→website，只读 |
 | G3 跨面 CLI 汇总 | `allin status` 纯文件只读 running.json / gate-runs.jsonl / g21-runs.jsonl，platform 离线可降级（退出码 0 缺失 / 1 损坏 / 2 `--strict`） | 文件事实源 ← kernel，只读 |
 | G4 编排健康可视化 | `tools/orchestration/routes.yaml` + g21 产物 `tools/gate/audit/g21-runs.jsonl`（JSONL 尾行，行内自含 routes 数组）→ portal `/api/orchestration` → website 编排健康卡 | 台账→portal→website，只读 |
-| G5 事实查询面（2026-11-09） | `facts/facts.json` → `tools/facts/cli.py` → MCP `facts.get` / `facts.asof` 与同源 CLI 子命令 | 数据面→查询面，只读；`--source auto` 可离线回落纯 JSON |
+| G5 事实查询面（2026-11-09） | `facts/facts.json` → `python -m allin_governance facts` → MCP `facts.get` / `facts.asof` 与同源 CLI 子命令 | 数据面→查询面，只读；`--source auto` 可离线回落纯 JSON |
 | G6 溯源对账（2026-11-09） | `source_git_sha` ⇄ Git HEAD / Dolt `dolt_log` / NetBox `changelog_message` / GraphRAG citation | 四系统对齐，只读；`request_id` 与 commit hash 语义不对等，不得 naive join |
 
 - **编排事实源**：`tools/orchestration/routes.yaml`（15 条专项 skill 路由，受控 YAML 子集）；

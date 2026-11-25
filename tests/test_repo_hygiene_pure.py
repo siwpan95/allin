@@ -119,3 +119,63 @@ def test_is_exempted_no_match(repo, check, path, why):
 
 def test_is_exempted_empty_table():
     assert rh.is_exempted(_finding("allin", "D9", "INDEX.md"), []) is False
+
+
+# ------------------------------------------------ H5 逐匹配判定（2026-11-25 修）
+#: 真实形态的密钥（数字+字母混合、无停用词、非顺序串），按**片段拼接**给出 ——
+#: 免得本测试源码自己成为门禁的命中面（也就无需再靠 allow 标记豁免自己）。
+_SEC_REAL = "c3d4e5f6" "a7b8c9d0" "e1f2a3b4" "c5d6e7f8"
+#: 首条匹配用的夹具值（`repo-hygiene: allow` 会豁免它）
+_SEC_FIXTURE = "a1b2c3d4" "e5f67890" "abcdef12" "34567890"
+
+
+def _cred_file(tmp_path, rel, content):
+    p = tmp_path / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(content, encoding="utf-8")
+    return rel
+
+
+def _h5(tmp_path, *tracked):
+    return [x for x in rh.check_h5_credentials(str(tmp_path), list(tracked), {})
+            if x.check == "H5"]
+
+
+def test_h5_reports_later_match_after_exempted_first(tmp_path):
+    """负对照：同文件**第一条**匹配带 `repo-hygiene: allow`、**第二条**是真实形态密钥 ⇒ 仍须判红。
+
+    旧实现 `pat.search(data)` 只取该模式的第一个匹配，一旦这条被豁免就 `continue` 到
+    下一个模式 —— 同模式的后续匹配**永不检查**。于是「夹具挡在前面、真密钥藏在后面」
+    会静默漏检：这是最坏的一类缺陷（门禁活着，但看不见）。
+    本条在旧实现下**失败**、在逐匹配判定下**通过**。
+    """
+    # ① 只有被豁免的匹配 ⇒ 零发现（豁免语义必须保持）
+    only_fixture = _cred_file(
+        tmp_path, "t/only_fixture.py",
+        'a = "api_key = \'%s\'"  # repo-hygiene: allow\n' % _SEC_FIXTURE)
+    assert _h5(tmp_path, only_fixture) == [], "豁免仍在生效，不该有发现"
+    # ② 首匹配被豁免 + 后随真密钥 ⇒ 必须判红
+    two = _cred_file(
+        tmp_path, "t/two.py",
+        'a = "api_key = \'%s\'"  # repo-hygiene: allow\n' % _SEC_FIXTURE
+        + 'api_key = "%s"\n' % _SEC_REAL)
+    assert _h5(tmp_path, two), "首匹配被豁免后，同文件后续匹配未被检查（静默漏检）"
+
+
+def test_h5_all_matches_exempt_stays_clean(tmp_path):
+    """豁免语义不变：**每一行**都带 allow 标记 ⇒ 零发现（不能因为逐匹配而变成「必报」）。"""
+    rel = _cred_file(
+        tmp_path, "t/all_ok.py",
+        'a = "api_key = \'%s\'"  # repo-hygiene: allow\n' % _SEC_FIXTURE
+        + 'b = "secret = \'%s\'"  # gov-credentials: allow\n' % _SEC_REAL)
+    assert _h5(tmp_path, rel) == []
+
+
+def test_h5_at_most_one_finding_per_file(tmp_path):
+    """同一模式同文件报一条即可（防刷屏）：三条真实形态只产出一条 H5。"""
+    rel = _cred_file(
+        tmp_path, "t/three.py",
+        'api_key = "%s"\n' % _SEC_REAL
+        + 'secret = "%s"\n' % _SEC_FIXTURE
+        + 'token = "%s"\n' % _SEC_REAL)
+    assert len(_h5(tmp_path, rel)) == 1

@@ -12,8 +12,8 @@
 | `build_portfolio.py` | 从 Gitee API 生成 [`../PORTFOLIO.md`](../PORTFOLIO.md) | `python tools/build_portfolio.py --apply` |
 | `repo_hygiene.py` | 仓库卫生巡检 | 见文末 |
 | `gate/` | 工作区门禁集合（文档索引契约等） | 见 `gate/README.md` |
-| **`facts/`** | **机器事实的采集与判定**（`measure.py` 只采集 / `verify_facts.py` 只判定），补 `g07`/`g19`/`g01` 三者都没覆盖的「事实源断言过期」 | `python tools/facts/verify_facts.py --selftest` |
-| **`repocheck/`** | **离线仓库体检（30 规则 / 0–10 分 / 四格式导出）** | `python tools/repocheck/main.py` |
+| ~~`facts/`~~ | **2026-11-25 迁入包**：机器事实的采集与判定（`allin-governance facts measure` 只采集 / `facts verify` 只判定），补 `g07`/`g19`/`g01` 三者都没覆盖的「事实源断言过期」 | `allin-governance facts verify --selftest` |
+| ~~`repocheck/`~~ | **2026-11-25 迁入包**：离线仓库体检（30 规则 / 0–10 分 / 四格式导出） | `python -m allin_governance repocheck` |
 | **`security/venv_security.py`** | **venv 安全巡检与加固（通用检查框架，7 项）** | `allin tools venv-audit scan /repos` |
 | **`verify_projects.py`** | **逐项无头验证 registry 项目（T1 `verify.command` / T2 启动命令 / T3 包导入，其余 T4）** | `python tools/verify_projects.py --workers 8` |
 | **`reposcan/`** | **发布区仓库领域×技术栈分类工具链（判定表随源码入库，渲染产物本机重跑再生）** | `python tools/reposcan/scan_repos.py` |
@@ -22,7 +22,7 @@
 
 ## Gitee 建仓 / 发版 → 已迁入包
 
-原 `tools/gitee_release.py` 于 **2026-11-25（包 2.2.0）迁入** `allin-governance`，
+原 Gitee 发版脚本（`gitee_release.py`，当时在 `tools/` 下）于 **2026-11-25（包 2.2.0）迁入** `allin-governance`，
 与包内 `_github/`（镜像端）、`_publish/`（PyPI 发版）构成统一发布链路。
 
 ```bash
