@@ -1,7 +1,7 @@
 ---
 name: github-sync-audit
 description: >
-  G:\repos 本地仓 ↔ GitHub(siwpan95) ↔ gitee 主源(origin) 三端增量巡检的唯一 SOP：
+  `<REPOS_ROOT>` 本地仓 ↔ GitHub(siwpan95) ↔ gitee 主源(origin) 三端增量巡检的唯一 SOP：
   三端差集判定、先私后公建仓、SSH 通道、shallow clone 拒推、凭据走 GCM 不入库、
   GitHub 限流退避、高风险动作默认 dry-run。触发词：GitHub 增量巡检、三端同步、
   三端对账、批量推 GitHub、GitHub 建仓、github-sync、github-release、repos 巡检、
@@ -16,11 +16,24 @@ agent_created: true
 > 统一入口：`allin tools github-release <...>` / `allin tools github-sync <...>`
 > 本技能讲**判定口径与踩坑**，脚本负责执行。参照 `venv-security-audit` 的「判据单一实现」纪律：
 > **建仓逻辑只在 github_release.py 一份**，巡检器不得自带第二份。
+>
+> **路径占位符（本文件不写死任何本机路径，SPEC-001 铁律 5）**：
+> `<REPOS_ROOT>` = 发布区根，取值优先级 `--repos-root` 参数 → `ALLIN_REPOS_ROOT` 环境变量
+> （工具两者都不给就拒绝运行，不猜）；`<仓根>` = 本治理仓根，取法见
+> `.workbuddy/skills/allin-governance-agent/SKILL.md` 的「定位仓根」四步。
+> 本机现值查 `docs/事实源/机器分区索引.md`——**换机不失效的原因就是这里不写盘符**。
+>
+> **登记状态（2026-11-25 纳入治理路由台账）**：`lastVerified: 2026-11-24` —— 沿用本 SOP
+> 自述的当日实测基线（§二「2026-11-24 实测」与 §五 `VERIFY_SUMMARY total=75`），
+> **登记时未重跑**：重跑要 GitHub/gitee 令牌 + 人在场放行（§四-5 默认 dry-run）。
+> 该字段的正确读法是「最后一次**人工实测**日期」，不是「文件最后改动的日期」；
+> 超过 90 天 `tools/gate/agent_parity.py` 会记 W301（黄不红），届时须真跑一次再回来刷新
+> `tools/orchestration/routes.yaml` 里这一条的 `lastVerified` —— 填今天凑数等于自欺。
 
 ## 一、为什么上提
 
 原 automation「GitHub 135仓增量巡检」的 cwd 在 WorkBuddy 临时工作区
-（`C:\Users\psw\WorkBuddy\2026-10-27-20-12-32`），工具无版本化、无治理、无门禁覆盖。
+（某次会话的临时工作区，路径因机而异、**不写死**），工具无版本化、无治理、无门禁覆盖。
 2026-11-24 上提到 allin，参照两次既有范式：
 - `venv-audit`（automation `362347e7`）：工具 + 技能 + `allin tools` 入口 + automation 改指
 - `foolproof-operation`（commit `1228432`）：上提判据工具、不搬无关资产、原仓处置先做冗余三查
@@ -65,8 +78,8 @@ agent_created: true
 沿用 venv-audit 的教训：**后台任务不跨轮存活**，所以「任务报告成功」不算完成。必须：
 
 ```bash
-cd /g/allin
-ALLIN_REPOS_ROOT=/g/repos allin-governance github verify
+cd <仓根>
+ALLIN_REPOS_ROOT=<REPOS_ROOT> allin-governance github verify
 ```
 
 以独立前台命令输出的 `VERIFY_SUMMARY total=75 ok=75 bad=0` 为准（2026-11-24 清理后的基线；

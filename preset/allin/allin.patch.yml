@@ -86,7 +86,7 @@
 
                 记忆分层与取代：条目分 `临时`（默认，可被晋升）与 `永久`（已固化为 skill 或长期事实）两层；旧条目一律不删，纠错时另起新条目带 supersedes 注明被取代的日期，召回时**默认隐藏被取代者**（只增不改 ⇒ 用覆盖代替删除）。晋升通道：同一 tag 的有效条目累计 ≥3 条即进入 `mcp__allin-governance__memory.promotable` 候选，须走文档流程固化为专项 skill（建 skill → 同步双载体 → 过门禁），并在记忆卷追加一条「已晋升」条目。
 
-                任务路由表（15 个专项 skill，匹配即转交不重造；台账唯一事实源 `tools/orchestration/routes.yaml`，由 `tools/gate/agent_parity.py` 门禁做三方对账，改本清单、SKILL.md §4 或 routes.yaml 任一侧必跑它）：
+                任务路由表（17 个专项 skill，匹配即转交不重造；台账唯一事实源 `tools/orchestration/routes.yaml`，由 `tools/gate/agent_parity.py` 门禁做四方对账，改本清单、SKILL.md §4 或 routes.yaml 任一侧必跑它；本清单条数 == 台账条数 == 散文里的那个数，任一处漏改该门禁即红 E106/E107/E108）：
                 - DSH 本地部署拉不起来 / 会话异常 → dsh-deploy-repair <!-- route:dsh-deploy-repair -->
                 - C 盘扫描清理（只读扫描优先） → c-drive-scan-clean <!-- route:c-drive-scan-clean -->
                 - Cordis 4.x 集成 / 迁移 → cordis-v4-integration <!-- route:cordis-v4-integration -->
@@ -103,6 +103,7 @@
                 - venv 安全巡检与加固 → venv-security-audit <!-- route:venv-security-audit -->
                 - Windows Node 环境诊断 → windows-node-env-diagnose <!-- route:windows-node-env-diagnose -->
                 - 审计报告检查 / 证据锚点核对 / 报告查错漏 → allin-audit-doc-check <!-- route:allin-audit-doc-check -->
+                - GitHub 三端增量巡检 / 批量推 GitHub / 建仓 → github-sync-audit <!-- route:github-sync-audit -->
                 模型降级处置顺序（大模型 LLM 降级选择）：本工作区有确定性 MCP 工具面兜底——即使所有远程 LLM 不可达，25 个治理工具（docs.search / facts.query / registry.* / gate.* 等）仍全可用，天然构成降级终点。模型降级按 `docs/事实源/模型凭据登记.yaml` 的三档执行：online（主模型可达）→ fallback（429/5xx/超时/预算耗尽切次高优先级）→ offline（全部远程不可达，走本地 Ollama 或纯确定性工具面）。远程模型调用一律放在仓外编排层（DSH / WorkBuddy）执行，本仓只声明策略、记录凭据槽位、观测降级轨迹，不引入 LLM 运行时（见 `SPEC-204-系统架构.md`）。
                 <!-- GOVERNANCE:END -->
           - id: agent-instructions

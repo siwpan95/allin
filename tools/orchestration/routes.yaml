@@ -1,14 +1,20 @@
-# tools/orchestration/routes.yaml —— 15 专项 skill 路由表 · 机器可读唯一事实源
+# tools/orchestration/routes.yaml —— 17 专项 skill 路由表 · 机器可读唯一事实源
 #
-# 对账三方（g21 · tools/gate/agent_parity.py）：
+# 对账四方（g21 · tools/gate/agent_parity.py）：
 #   本文件 ⇄ .workbuddy/skills/allin-governance-agent/SKILL.md（workbuddy 形态锚点）
 #        ⇄ preset/allin/allin.patch.yml GOVERNANCE 段（dsh 形态锚点，<!-- route:<id> -->）
+#        ⇄ .workbuddy/skills/*/（**真身**目录集）⇄ 三处散文里的「N 个专项 skill」声明数
 # 改任一侧文本必跑：python tools/gate/agent_parity.py
-# schema 纪律（受控子集，g21 fail-loud）：version 恒 1；条目单行 flow map；
-#   字段固定 id/skill/entry/forms/trigger/lastVerified；entry 为仓根相对 POSIX 路径（禁盘符）；
-#   trigger ≤120 字（人写措辞不要求与 SKILL.md 逐字一致，对账靠锚点不靠文本相等）；
-#   lastVerified = 最近一次人工实测验证日期（>90 天仅 WARN 不红）。
+# schema 纪律（受控子集，g21 fail-loud）：version 恒 1；**router 必填**（路由者自身的 skill 名，
+#   它不进 routes、也不算「专项 skill」——排除项由本字段声明，门禁不写死名单，改名只改这里）；
+#   条目单行 flow map；字段固定 id/skill/entry/forms/trigger/lastVerified；
+#   entry 为仓根相对 POSIX 路径（禁盘符）；trigger ≤120 字（人写措辞不要求与 SKILL.md 逐字一致，
+#   对账靠锚点不靠文本相等）；lastVerified = 最近一次人工实测验证日期（>90 天仅 WARN 不红）。
+# 计数纪律（2026-11-25 起可判）：散文里「N 个专项 skill」必须 == len(routes)（ADR-0011 §D2）；
+#   新增/退役 skill 的完整动作 = 建/删目录 + 本文件增删条目 + 双形态锚点 + 回填三处数字，
+#   任一漏掉 python tools/gate/agent_parity.py 会红（E106/E107/E108），不再靠人记得。
 version: 1
+router: allin-governance-agent
 routes:
   - { id: dsh-deploy-repair, skill: dsh-deploy-repair, entry: .workbuddy/skills/dsh-deploy-repair/SKILL.md, forms: [workbuddy, dsh], trigger: DSH 本地部署拉不起来 / 会话异常, lastVerified: "2026-11-04" }
   - { id: c-drive-scan-clean, skill: c-drive-scan-clean, entry: .workbuddy/skills/c-drive-scan-clean/SKILL.md, forms: [workbuddy, dsh], trigger: C 盘扫描清理（只读扫描优先）, lastVerified: "2026-11-04" }
@@ -26,3 +32,4 @@ routes:
   - { id: venv-security-audit, skill: venv-security-audit, entry: .workbuddy/skills/venv-security-audit/SKILL.md, forms: [workbuddy, dsh], trigger: venv 安全巡检与加固, lastVerified: "2026-11-07" }
   - { id: windows-node-env-diagnose, skill: windows-node-env-diagnose, entry: .workbuddy/skills/windows-node-env-diagnose/SKILL.md, forms: [workbuddy, dsh], trigger: Windows Node 环境诊断, lastVerified: "2026-11-04" }
   - { id: allin-audit-doc-check, skill: allin-audit-doc-check, entry: .workbuddy/skills/allin-audit-doc-check/SKILL.md, forms: [workbuddy, dsh], trigger: 审计报告检查 / 证据锚点核对 / 报告查错漏, lastVerified: "2026-11-10" }
+  - { id: github-sync-audit, skill: github-sync-audit, entry: .workbuddy/skills/github-sync-audit/SKILL.md, forms: [workbuddy, dsh], trigger: GitHub 三端增量巡检 / 批量推 GitHub / 建仓, lastVerified: "2026-11-24" }

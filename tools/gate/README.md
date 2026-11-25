@@ -276,3 +276,26 @@ git config core.hooksPath tools/gate/hooks
 > 双向实测（2026-10-06）：暂存只有 `.txt` ⇒ 放行；暂存"缺 BOM 的中文 `.ps1`" ⇒ `[pre-commit] FAIL` 且**提交未发生**。
 > 顺带实证：**`pathlib` 的 `Read/WriteText(encoding="utf-8")` 往返会保留 BOM**，而编辑工具会剥掉
 > ⇒ 批量改 `.ps1` 能用脚本就用脚本。
+
+## 12. registry 之外的判据（例外必须显式、可读、单点维护）
+
+`governance/registry.json`（包内 `<site-packages>/allin_governance/_gatesuite/registry.json`）
+描述的是**「判仓库」的 20 道套件契约**（g00–g20，缺 g02）。有些判据**不在这份契约里**，
+但它们确实在跑、确实会红 —— 不能靠"代码里没写"来当成"不存在"（那正是死门的生成方式）。
+
+本节是它们**唯一的清单**。`tools/gate/check_blind_gates.py` 直接**从本节的机器可读块读取**，
+不硬编码任何一条 —— 以后新增 registry 外的判据，只有这一处要改。
+
+<!-- registry-external-gates:begin -->
+# 格式：每行 `id | 入口文件（相对本目录） | 为什么不在 registry`；# 开头为注释，空行忽略。
+g21-agent-parity | agent_parity.py | 编排层判据：routes.yaml ⇄ SKILL.md 锚点 ⇄ GOVERNANCE 段锚点三方对账 + skill 入口存在性。它判的是**载体之间**是否一致，不是判仓库；registry 是「判仓库」的 20 道套件契约，装不下它。已由 run_all_gates.sh 与 npm run check 两处接线（本轮改动接进 npm check）
+check_blind_gates | check_blind_gates.py | 元判据：判的是那 20 道门禁**有没有真的量了东西**（scanned 0 + exit 0 + 无 SKIP ⇒ 判红），以及它们的自检是否两半都验。判据对象是门禁自己，不是被管仓；不占 g 编号 —— 给它编号会让「20 道」这个被 README / ADR / SVG 多份文档引用的计数漂移，一个为了防漂移而引入的漂移源是净负收益
+<!-- registry-external-gates:end -->
+
+**为什么 g21 不登记进 registry**：登记会把"20 道"改成 21，牵连 SPEC-204 架构图、SVG 对账、
+`g00` 契约与多处文档数字 —— 为一个归属问题制造一轮大涟漪，不值得。**归属靠本节显式列出即可，
+不靠编号。** 代价是要接受一条纪律：新增 registry 外判据必须在本节登记，否则
+`check_blind_gates.py` 无法称它"已接线"（它只认本节声明过的条目）。
+
+**为什么 `check_blind_gates.py` 不占 g 编号**：g00–g20 判被管仓，它判门禁自己，属编排层。
+把它编进 g 序列，等于把「判据的判据」混进「判据」的清单。

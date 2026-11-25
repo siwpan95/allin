@@ -1,12 +1,12 @@
 ---
 name: allin-governance-agent
-description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/机器分区索引.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 20 道治理门禁（g00–g20）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、把具体任务路由到本仓 15 个既有项目级 skill，并带 ReAct 行动范式与记忆月账自学习回路。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查、记忆召回。
+description: allin 工作区治理仓（仓根随机器而异，本机现值见 `docs/事实源/机器分区索引.md`）的专属治理 agent。承载「制度 + 文档枢纽 + 执行器」三位一体：开卷读四事实源、按 SPEC-001/002/003/006 铁律与协作流程放行、跑 20 道治理门禁（g00–g20）+ 文档索引契约 + repocheck 仓库体检 + 仓库卫生门禁、调度 allin cordis CLI 与 platform 集成平台、把具体任务路由到本仓 17 个既有项目级 skill，并带 ReAct 行动范式与记忆月账自学习回路。触发词：allin、工作区治理、治理仓、仓库体检、门禁、文档索引、推送发版、建仓、repocheck、repo_hygiene、check:governance、docs_index、治理门禁、巡检、盘位、敏感信息红线、冗余三查、记忆召回。
 agent_created: true
 ---
 
 # allin 工作区治理 agent
 
-本 skill 是 **allin 治理仓的总控 agent**。它的定位不是重复既有 15 个专项 skill 的能力，
+本 skill 是 **allin 治理仓的总控 agent**。它的定位不是重复既有 17 个专项 skill 的能力，
 而是充当**治理大脑**：先把治理事实装进上下文，再用铁律/流程/门禁做放行判断，
 最后把具体活路由给对应专项 skill 或亲自执行门禁命令。
 
@@ -186,7 +186,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 
 ## 4. 任务路由表（具体活交给专项 skill）
 
-本仓已有 15 个专项 skill（`<仓根>/.workbuddy/skills/`）。匹配到就**转交**，不要重造：
+本仓已有 17 个专项 skill（`<仓根>/.workbuddy/skills/`）。匹配到就**转交**，不要重造：
 
 | 任务特征 | 路由到的 skill |
 | --- | --- |
@@ -206,9 +206,11 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 | venv 安全巡检与加固 | `venv-security-audit` <!-- route:venv-security-audit --> |
 | Windows Node 环境诊断 | `windows-node-env-diagnose` <!-- route:windows-node-env-diagnose --> |
 | 审计报告检查 / 证据锚点核对 / 报告查错漏 | `allin-audit-doc-check` <!-- route:allin-audit-doc-check --> |
+| GitHub 三端增量巡检 / 批量推 GitHub / 建仓 | `github-sync-audit` <!-- route:github-sync-audit --> |
 
 > 路由台账唯一事实源：`tools/orchestration/routes.yaml`（机器可读，锚点 `<!-- route:<id> -->`
-> 由 `tools/gate/agent_parity.py` 门禁三方对账——改本表、routes.yaml 或 preset 治理段任一侧，必跑该门禁）。
+> 由 `tools/gate/agent_parity.py` 门禁四方对账——本表、routes.yaml、preset 治理段、`.workbuddy/skills/`
+> 目录真身与散文里的「N 个专项 skill」数字，改任一处必跑该门禁；漏登记一条目录即红 E107）。
 
 本 agent 自己负责：治理放行判断、四事实源阅读、门禁总调度、文档新增流程、推送/发版/建仓的纪律把守。
 

@@ -371,6 +371,60 @@ fi
 # 「门禁被改坏却 CI 常绿」的盲区（S2 · 2026-11-08 审查闭环）。与 check:governance
 # 同源调用链（run.ts --selfcheck-all），不引入新依赖、不触外部资源。
 run npm run check:governance:selfcheck
+
+# --- ⑩ 盲门元判据（编排层，**不占 g 编号**）------------------------------------
+# 「跑了、绿了、什么都没量」在退出码上与「跑了、绿了、量了没问题」完全同形 ——
+# 20 道门禁里没有任何一道能判它自己。本步逐道复跑 20 道门禁，把
+# `scanned 0 + exit 0 + 无任何 SKIP 标记` 判红。
+#
+# 依据（已进 ADR 记账的两条外部证据 + 一个本仓正实例）：
+#   · *A gate that only ever passes is no gate* —— 判据有三种静默失效：死门（从不
+#     被调用）、环境坏门（跑了但错误被吞成 0）、**盲门**（跑完、退 0、什么都没量）。
+#     前两种本仓已有对策（编排层接线 + g00 逐道 --selfcheck + selfcheck-all），
+#     第三种此前完全无人判 —— 这一层补的就是它。
+#   · *A check that cannot fail tells you nothing* —— 「没跑」与「没发现问题」必须
+#     可区分（pytest 无用例收集退 5、Jest 默认无测试即失败，都是这个立场）。
+#   · 正实例：上一轮 `repocheck --only-gates` 注册 0 条规则却退 0，还打印「82% 通过」。
+#
+# 关于「不可判定」：本步**不放行**。`undetermined` 是一等结论（ADR-0011 D3-H），
+# 与 measured / blind 并列计数、单列打印，且一律不退 0。
+#   历史：g15-docs-contract 曾不渲染 `scanned`，一度用 `--allow-undetermined` 过渡放行
+#   （见下方「已兑现」那段）。放行开关已删 —— 让一道门禁长期以「不可判定」混在批里，
+#   等于发永久免检证，而且它不会自己消失，因为没人被它挡过。
+#
+# 成本：本步会重新跑一遍 20 道门禁（本机约 2 分钟）。这是「不做盲门」的价格 ——
+# 复用聚合退出码会让一道盲门被其余 19 道盖住，那正是要防的事。
+#
+# 踩坑教训：绝不能让「跳过」成为新的免检章。工具要求 scanned 0 且报绿时**必须**同时
+# 有显式 SKIP 标记，并把 SKIP 理由原文打出来（今天 g06-numbering 就是这一档：
+# 实测仓里 0 个 *.zh.md、0 个 vN.* 序号文件 ⇒ 它的 SKIP 为真；理由同屏，才可复核）。
+#
+# `--coverage-delta`（⑩b，2026-11-25 ADR-0011 验收现场补）：语料来自 `git ls-files`
+# ⇒ **未入索引的新文件不在任何门禁的扫描面里**。现场实录：新建 ADR-0011 后跑 g19 得
+# `scanned 88 / blocking 0`，看着是绿，但 scanned 与建文件之前一模一样 —— 那不是
+# 「新文件没问题」，是「新文件没被看见」。故本步额外打两件事：
+#   ① 未入索引的新文件逐条列出（硬信号：语料来源的事实，可证伪）；
+#   ② 与上一个**不同提交**的留痕比 scanned：本区间新增了已跟踪文件而某道 scanned 不增
+#      ⇒ 覆盖未跟进（软信号，只提示）。②只作提示是因为 scanned 不变也可能只是新文件
+#      不在该道语境内，要变成硬判据得先在 registry 里声明每道门的扫描域。
+# 结构根因更狠：govlib.Report.exit_code() **从不读 scanned**，g00 也不看它 ——
+# 整条链上没有任何一处对「你读到了东西吗」有判据。
+#
+# g15 已于 2.4.0 补 scanned（实测 `scanned 141 file(s); blocking 0` → measured），本步为**严格模式**；
+# 原 `TODO(2.4.0): g15 补 scanned 后删除 --allow-undetermined（见 ADR-0011 D3）` 已兑现。
+#   前提：`.venv` 里要装到含该修复的版本。若装的是修复前的 2.3.1，g15 仍不印 scanned
+#   ⇒ 本步会红，那是「修复未部署」而不是「第二道不可判定」—— 补装即可，别加回放行开关。
+run "$PY" tools/gate/check_blind_gates.py --root "$ROOT" \
+  --coverage-delta --record tools/gate/audit/blind-gates.jsonl
+
+# --- ⑪ 两半自检的元判据（同上，编排层）---------------------------------------
+# 每道门禁的 `--selfcheck` 报 `SELFCHECK {"caught":N,"clean":M,"misreports":K}`：
+# caught 验「红得出来」，clean 验「静得下来」。只覆盖一半的自检是有偏的 ——
+# 只验静无法证明会红（「不能失败的检查什么都没告诉你」），只验红无法证明不误报。
+# govlib.SelfCheck.finish() 已把 caught==0 / clean==0 判红，但门禁可以绕过它手搓
+# 这一行（g15 就是），所以这条判据不能只依赖 govlib 的行为，必须逐道核输出。
+run "$PY" tools/gate/check_blind_gates.py --root "$ROOT" --two-halves
+
 run "$PY" tools/gate/docs_index.py
 # docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。

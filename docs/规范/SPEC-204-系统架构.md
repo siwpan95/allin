@@ -36,7 +36,7 @@
             ┌─────────────────────────────────────────────────────┐
   治理大脑   │  preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END  │
    (Agent)  │        ──渲染──▶ .workbuddy/skills/…/SKILL.md         │
-            │  + 15 个专项 skill 路由表                             │
+            │  + 17 个专项 skill 路由表                             │
             └─────────────────────────────────────────────────────┘
                  │ 调度/放行                       │ 治理段文本注入(非运行时耦合)
         ┌───────────────────┐         ┌──────────────────────────────────┐
@@ -87,14 +87,17 @@
   靠 `reindent` 对齐缩进）+ **一份事实投影**（WorkBuddy 侧，渲染而来、不需要 `reindent`）。
   漂移判据 = `preset/allin/refresh-gov-block.py --check`（落后 **exit 3**），已并入 `npm run check:preset-sync`；
   `preset/allin/verify-mount.ps1` 的「同源层」仍在，但它只对**挂载层**记 WARN，不再是双端一致性的判据。
-- **路由表**：本仓已有 15 个专项 skill（`dsh-deploy-repair` / `c-drive-scan-clean` /
+- **路由表**：本仓已有 17 个专项 skill（`dsh-deploy-repair` / `c-drive-scan-clean` /
   `cordis-v4-integration` / `electron-portable-gitee-release` / `gitee-blocked-file-fetch` /
   `gitee-push-from-extracted-dir` / `github-release-source-archive-download` /
   `lab-tournament-daily-automation` / `multilang-board-engine-lab` / `pluginplayer-win-build` /
   `pyglet-app-package-dist` / `pypi-publish-prep` / `repo-sync-remote-to-local` /
-  `venv-security-audit` / `windows-node-env-diagnose`），匹配到即转交，不重造。
+  `venv-security-audit` / `windows-node-env-diagnose` / `allin-audit-doc-check` /
+  `github-sync-audit`），匹配到即转交，不重造。**本段的数字与名单都是受判据管的**：
+  `python tools/gate/agent_parity.py` 核「这里写的 N == `routes.yaml` 条数 == `.workbuddy/skills/`
+  目录数 − 1（路由者自身，由台账 `router:` 字段声明）」——数字漏改、名单漏登记都会红（E106/E107）。
   **2026-11-05 起该路由表有机器可读台账**（`tools/orchestration/routes.yaml`）与
-  **g21 三方对账门禁**（`tools/gate/agent_parity.py`，锚点计数=1，已接 `run_all_gates.sh`；详见 §6）。
+  **g21 四方对账门禁**（`tools/gate/agent_parity.py`，锚点计数=1 + 目录真身 + 声明数，已接 `run_all_gates.sh`；详见 §6）。
 - Agent 自身负责：治理放行判断、四事实源阅读、门禁总调度、文档新增流程、推送/发版纪律把守。
 
 ### 2.2 执行面 A —— allin Cordis CLI（`kernel/` + `allin_cli.py`）
@@ -180,7 +183,7 @@
 - PyPI 包 `allin-governance`（现版本 1.0.1，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
 - **一份源码一处真身**：`tools/repocheck` 与治理门禁套件已于 2026-11-25 整体迁入独立仓
-  `allin-governance`（PyPI 包 2.3.1，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
+  `allin-governance`（PyPI 包 2.4.0，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
   不再保留源码副本；因此「包 ↔ 仓内真身逐文件 sha256」的对账对象已然消失，
   ADR-0008 那条对账脚本随之退役，现行判据是 CI 的「可安装包 init 端到端」（装 wheel →
   与仓无关的目录 init → 门禁 exit 0）。
@@ -326,9 +329,11 @@ facts/facts.json   ← 唯一写入权威（Git 文本，SPEC-005 §3.11）
 | G5 事实查询面（2026-11-09） | `facts/facts.json` → `python -m allin_governance facts` → MCP `facts.get` / `facts.asof` 与同源 CLI 子命令 | 数据面→查询面，只读；`--source auto` 可离线回落纯 JSON |
 | G6 溯源对账（2026-11-09） | `source_git_sha` ⇄ Git HEAD / Dolt `dolt_log` / NetBox `changelog_message` / GraphRAG citation | 四系统对齐，只读；`request_id` 与 commit hash 语义不对等，不得 naive join |
 
-- **编排事实源**：`tools/orchestration/routes.yaml`（15 条专项 skill 路由，受控 YAML 子集）；
-  **g21 门禁**（`tools/gate/agent_parity.py`，Python 标准库）做三方对账
-  （routes.yaml ⇄ SKILL.md `<!-- route:<id> -->` 锚点 ⇄ GOVERNANCE 段锚点，计数=1），
+- **编排事实源**：`tools/orchestration/routes.yaml`（17 条专项 skill 路由，受控 YAML 子集；
+  顶层 `router:` 声明路由者自身，故 17 = 18 个 skill 目录 − 1）；
+  **g21 门禁**（`tools/gate/agent_parity.py`，Python 标准库）做四方对账
+  （routes.yaml ⇄ SKILL.md `<!-- route:<id> -->` 锚点 ⇄ GOVERNANCE 段锚点，计数=1；
+  外加「目录真身 ⇄ 台账 ⇄ 散文声明数」），
   与 verify-mount（正文↔安装）、refresh-gov-block（正文↔副本）失败域分离。
 - **写路径唯一**：website admin+CSRF → BFF 代理 → portal 既有启停端点；浏览器零新增暴露面
   （只认 website 单源），portal Host 围栏/loopbackOnly 代码零改动。
