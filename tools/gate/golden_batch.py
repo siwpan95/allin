@@ -80,12 +80,18 @@ def _f_pkg_deps():
 
 @fact("pkg_optional_deps_keys")
 def _f_pkg_optdeps():
-    t = FACTS["_read"](FACTS["_pkg_pyproject"]())
-    i = t.find("[project.optional-dependencies]")
-    if i < 0:
+    """可选依赖组名（从已安装元数据的 `Provides-Extra` 读）。
+
+    2026-11-25 CI 实测：初版读同级包仓的 pyproject.toml —— 与本文件里
+    `pkg_dependencies` 同一处错误（CI 上无同级仓）。两者必须一起改，
+    否则修一个漏一个，CI 会以「每次剩 1 条」的形式反复红。
+    """
+    import importlib.metadata as md
+    try:
+        extras = md.metadata("allin-governance").get_all("Provides-Extra") or []
+    except Exception:  # noqa: BLE001
         return ""
-    tail = t[i:]
-    return ",".join(re.findall(r"^([a-zA-Z][\w-]*)\s*=\s*\[", tail, re.M))
+    return ",".join(sorted({e for e in extras if e}))
 
 
 @fact("ml_toplevel_torch_import")
