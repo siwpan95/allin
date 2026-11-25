@@ -35,7 +35,7 @@
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
 3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
    公共核已独立成仓 **[`allin-governance`](https://gitee.com/siwpan/allin-governance)**（PyPI 包同名，
-当前版本 `2.3.0`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
+当前版本 `2.3.1`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 

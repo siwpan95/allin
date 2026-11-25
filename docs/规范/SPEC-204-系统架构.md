@@ -180,7 +180,7 @@
 - PyPI 包 `allin-governance`（现版本 1.0.1，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
 - **一份源码一处真身**：`tools/repocheck` 与治理门禁套件已于 2026-11-25 整体迁入独立仓
-  `allin-governance`（PyPI 包 2.3.0，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
+  `allin-governance`（PyPI 包 2.3.1，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
   不再保留源码副本；因此「包 ↔ 仓内真身逐文件 sha256」的对账对象已然消失，
   ADR-0008 那条对账脚本随之退役，现行判据是 CI 的「可安装包 init 端到端」（装 wheel →
   与仓无关的目录 init → 门禁 exit 0）。

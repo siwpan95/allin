@@ -543,8 +543,8 @@ def check_h5_credentials(repo, tracked, ctx):
                 else:
                     # 形态②③（URL 内嵌凭据 / sk- 密钥）**没有 k 组**，原先完全绕过值判定。
                     # 2026-09-28 补（DSH 实证）：命中文本本身若含"自证是夹具"的词，即为夹具 ——
-                    #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、
-                    #   `'prove telemetry with key sk-e2efixture1234567890'`。
+                    #   实证 `sk-e2efixture1234567890`（`const FIXTURE_SECRET = 'sk-e2efixture…'`）、  # gov-credentials: allow（说明性引用，非凭据）
+                    #   `'prove telemetry with key sk-e2efixture1234567890'`。  # gov-credentials: allow（说明性引用，非凭据）
                     #   真实凭据不会自称 fixture。只对**命中文本本身**判，不扩大窗口。
                     mt = m.group(0)
                     if VALUE_STOPWORDS.search(mt.decode("ascii", "replace")):
