@@ -183,18 +183,93 @@ rotate_if_large() {
 
 log_run() {
   # $1=label $2=exit code $3=耗时(ms) $4=是否 SKIP（true/false，缺省按真跑 false）
+  # $5=失败输出文件路径（可选；仅失败时传，供 tail 字段取末尾）
   # 恒定写 `skipped` 字段保持结构稳定：真跑 false / SKIP true。旧行无此字段 ⇒
   # 消费方按真跑兼容回放（gate_metrics.py / status_service / portal / mcp 同口径）。
   # SKIP 不计入 failed / escapeRate / lastOkAt，整批全 SKIP 也不得算全绿。
   local skipped="${4:-false}"
+  local tail_src="${5:-}"
   mkdir -p "$(dirname "$GATE_RUNS")" 2>/dev/null || true
   rotate_if_large "$GATE_RUNS"
   # 标签里的反斜杠（Windows 解释器路径）会写成像 \P 这样的非法 JSON 转义，
   # 让整行解析失败、指标少算一条 —— 统一折成正斜杠再落盘。
-  local label
+  local label ts
   label="$(printf '%s' "$1" | tr '\\' '/')"
-  printf '{"ts":"%s","batch":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s,"skipped":%s}\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" "$skipped" >> "$GATE_RUNS" 2>/dev/null || true
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  # 失败尾部（P1，2026-11-25）：只记 exit≠0 且给了输出文件的行。
+  #
+  # 为什么值得多这几个字节：gate-runs.jsonl 此前只有「哪条命令挂了 + 退出码」，
+  # 失败长什么样完全丢失（stdout 只进了当次终端，CI 里更是只能看到通用 exit 1）。
+  # 下游两件事都卡在这里：
+  #   · 「失败归因」类断言无法写 —— 判据只能是 exit≠0，说不出是哪类错；
+  #   · 任何失败分类器都没有特征来源（§229 的 TextCNN 语料只有标签+退出码，
+  #     所以只能学到类别大小，val_acc 0.302 < 基线 0.317）。
+  # 这一字段是那两件事的**唯一前置**，不加则训练/归因都免谈。
+  #
+  # 为什么交给 Python 而不是继续用 printf 拼：上面那条注释已经写明本仓吃过
+  # 「反斜杠拼坏 JSON」的亏。tail 是从门禁真实输出里截的任意文本——含引号、
+  # 反斜杠、制表符、CR、以及 Windows 路径，printf 无论如何拼都不安全。
+  # 成本只在失败时付（成功路径仍走上面的 printf），一次 Python 启动可忽略。
+  if [ -n "$tail_src" ] && [ -f "$tail_src" ] && [ "$2" != "0" ]; then
+    LOG_LABEL="$label" LOG_TS="$ts" LOG_EXIT="$2" LOG_MS="$3" LOG_SKIP="$skipped" \
+    LOG_TAIL_SRC="$tail_src" LOG_RUN_ID="$RUN_ID" LOG_COMMIT="$HEAD_SHA" \
+    "$PY" - >> "$GATE_RUNS" 2>/dev/null <<'PYEOF' || true
+import json, os, re, sys
+
+# Windows 下 stdout 默认是 locale 编码（cp936）；tail 里一旦有该编码表外的字符
+# （emoji、生僻字、被 errors='replace' 读进来的替换符），print 会抛 UnicodeEncodeError。
+# 那个异常会被外层 except 吞掉 ⇒ 整条留痕静默丢失，而门禁判绿 —— 「记账失败」
+# 被伪装成「没有失败」。统一钉成 utf-8 + replace。（与 run-python-sast.sh:281-285 同口径）
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+# 尾部窗口：行数与字符数双限。行数保证「看得到最后几步」，字符数防单行超长
+# （例如整份 traceback 里夹了一行几万字符的 JSON）把 JSONL 撑爆。
+TAIL_LINES = 40
+TAIL_CHARS = 4000
+
+# 门禁输出里可能带凭据（例如某道门禁回显被扫文件的内容、或命令行里带 token）。
+# 只遮蔽高置信度形态，不做泛化脱敏 —— 过度遮蔽会把真正的失败特征一起抹掉，
+# 那等于花了 IO 换一堆 *** 回来。
+SENSITIVE = re.compile(
+    r'(?i)(sk-[A-Za-z0-9]{16,}'
+    r'|ghp_[A-Za-z0-9]{20,}'
+    r'|gh[opsu]_[A-Za-z0-9]{20,}'
+    r'|AKIA[0-9A-Z]{16}'
+    r'|-----BEGIN [A-Z ]*PRIVATE KEY-----)'
+)
+
+try:
+    with open(os.environ['LOG_TAIL_SRC'], encoding='utf-8', errors='replace') as f:
+        lines = f.read().splitlines()
+    tail = '\n'.join(lines[-TAIL_LINES:])
+    if len(tail) > TAIL_CHARS:
+        # 截尾不截头：失败原因通常在最后几行（traceback 的末段、断言位置）。
+        tail = tail[-TAIL_CHARS:]
+    tail = SENSITIVE.sub('***REDACTED***', tail)
+    rec = {
+        'ts': os.environ.get('LOG_TS', ''),
+        'batch': os.environ.get('LOG_RUN_ID', ''),
+        'commit': os.environ.get('LOG_COMMIT', 'unknown'),
+        'label': os.environ.get('LOG_LABEL', ''),
+        'exit': int(os.environ.get('LOG_EXIT', '1')),
+        'ms': int(os.environ.get('LOG_MS', '0')),
+        'skipped': os.environ.get('LOG_SKIP', 'false') == 'true',
+        'tail': tail,
+    }
+    print(json.dumps(rec, ensure_ascii=False, separators=(',', ':')))
+except Exception:
+    # 留痕失败不改变门禁结论（本函数向来 `|| true`）：宁可少一条 tail，
+    # 也不能因为「记账失败」把一次真实跑批的判定污染成 infra 红。
+    pass
+PYEOF
+  else
+    printf '{"ts":"%s","batch":"%s","commit":"%s","label":"%s","exit":%s,"ms":%s,"skipped":%s}\n' \
+      "$ts" "$RUN_ID" "$HEAD_SHA" "$label" "$2" "$3" "$skipped" >> "$GATE_RUNS" 2>/dev/null || true
+  fi
 }
 
 # GitHub Actions 的 ::error:: workflow command 会把失败项写进 check-run annotations，
@@ -217,7 +292,9 @@ run() {
   out="$(mktemp "${TMPDIR:-/tmp}/allin-gate-XXXXXX")"
   if "$@" > "$out" 2>&1; then rc=0; else rc=$?; fi
   cat "$out"
-  log_run "$*" "$rc" "$(( $(now_ms) - t0 ))" false
+  # 第 5 参数把本次输出文件交给留痕：exit=0 时它不会被读（见 log_run 分支），
+  # 失败时由它截出 tail。$out 在下面的 rm 之前仍存在，顺序不能调。
+  log_run "$*" "$rc" "$(( $(now_ms) - t0 ))" false "$out"
   if [ "$rc" -eq 0 ]; then
     echo "    [ok]"
   else
