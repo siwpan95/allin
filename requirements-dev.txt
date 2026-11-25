@@ -28,9 +28,11 @@ PyYAML>=6.0
 # 不是门禁的硬前提。
 watchdog>=4.0
 
-# pytest —— packages/allin-governance 的单测用（2026-10-31 补）。
-# 那个包是「包装层」，最容易被写坏的是「吞掉退出码」「吃掉参数」这类边界，
-# 而这类错误不写测试根本发现不了 —— 所以它的测试是门禁的一部分，不是可选项。
+# pytest —— 本仓单测用（kernel/tests、tools/repocheck/test_scanner.py、tests/）。
+# 2026-11-25 公共核提仓：包自己的测试已随源码迁至独立仓，本仓不再收集
+# packages/allin-governance/tests（该路径已不存在，Gitee 侧 pipeline 曾因它红）。
+# 留下这些测试的理由没变 —— 最容易被写坏的是「吞掉退出码」「吃掉参数」这类边界，
+# 而这类错误不写测试根本发现不了。
 pytest>=8.0
 
 # pytest-cov —— 覆盖率报告（2026-11-04 工程审查遗留项 T7 收口）。
