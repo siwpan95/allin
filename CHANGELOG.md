@@ -1,7 +1,22 @@
 # 变更记录（CHANGELOG）
 
-> 面向**消费本仓产物的人**（尤其 PyPI 上的 `allin-governance`），不是面向仓内开发。
+> 面向**消费本仓产物的人**，不是面向仓内开发。
 > 仓内的决策与审计留在 `docs/记录/`，这里只记「用户会感知到什么变了」。
+> 口径更新（2026-11-25）：`allin-governance` 已迁至独立仓，本仓不再发行该包；
+> 下方 1.1.2 及更早条目是包仍在本仓时的历史记录，保留不改。
+> 当前版本与后续变更以 [独立仓 CHANGELOG](https://gitee.com/siwpan/allin-governance/blob/master/CHANGELOG.md)
+> 及 [PyPI](https://pypi.org/project/allin-governance/) 为准。
+
+## `allin-governance` 2.0.2 —— 2026-11-25
+
+**公共核已独立成仓，本仓改为按版本消费；PyPI 当前版本为 `2.0.2`。**
+
+- 源码、门禁套件与发版链路迁至 <https://gitee.com/siwpan/allin-governance>；
+  本仓 `packages/allin-governance/` 仅留旧路径指针，不再内嵌源码。
+- 本仓通过 `pip install allin-governance==<版本>` 消费公共核；README 的「当前版本 `2.0.2`」、
+  独立仓 `VERSION` / `pyproject.toml` / `__init__.py` 与 PyPI `info.version` 五处一致。
+- 2.0.2 的实际变更（包内形态门禁入口修复、台账不随包分发）见独立仓 CHANGELOG；
+  PyPI 发布序列从 `1.1.2` 直接到 `2.0.2`，**没有 2.0.1**。
 
 ## `allin-governance` 1.1.2 —— 2026-11-25
 
