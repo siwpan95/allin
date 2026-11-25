@@ -1,13 +1,15 @@
 id: anatomy3d
 name: anatomy3d · 开放数据人体解剖 3D 教育查看器
 category: tool
-version: 0.1.0
+version: 1.0.0
 path: repos/anatomy3d
-# registry 是**全局清单**，各机检出集不同；缺检出 ≠ 治理缺陷 ⇒ checkout: remote-only。
+# registry 是**全局清单**，各机检出集不同；缺检出 ≠ 治理缺陷。
+# 2026-11-25 订正：开发主仓已双端同步（gitee + GitHub），声明态 remote-only → local（交接卷 §224）。
+# 机器观测态（哪台机实际检出）住 facts/machine/<机>.json，不在本文件。
 # 口径：checkout 是**声明态**（这个仓在本体系里算本地仓还是仅远端）；
 #       各机**实际有没有检出**是观测态，住 facts/machine/<机>.json 的 repos.checked_out。
 #       两者不是双源：声明可被机器推翻（该机检出就变 local 的候选），观测不可被声明覆盖。
-checkout: remote-only
+checkout: local
 manual: true
 note: 人体解剖教育查看器（教学用途非临床）：Z-Anatomy/BodyParts3D 开放数据 + Blender 资产管线 + pyglet 查看器；代码 MIT / 数据 CC BY-SA 双轨授权（NOTICE）
 launch:
