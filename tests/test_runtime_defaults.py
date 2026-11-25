@@ -161,7 +161,8 @@ def test_migrations_landed():
     r = _py(_S_MIGRATED)
     assert r.returncode == 0, (r.stdout[-900:], r.stderr[-900:])
     # 17（P2 首批 8 + venv_security 9）+ 7（第二阶段：push_archives / facts cli / watchdog 3 / gitee_release 2）
-    assert "MIGRATIONS_OK 23" in r.stdout  # 2026-11-25 提仓：tools/facts/cli.py 迁出，迁移点 24 → 23
+    # 2026-11-25 提仓：tools/facts/cli.py 迁出（24→23）；gitee_release.py 迁入包（23→21）
+    assert "MIGRATIONS_OK 21" in r.stdout
 
 
 def test_no_bare_timeout_literals_in_migrated_files():
@@ -179,7 +180,6 @@ def test_no_bare_timeout_literals_in_migrated_files():
         "tools/security/venv_security.py": {60, 120, 300, 900},
         "tools/tier_archive/push_archives.py": {3600},
         "tools/gate/watchdog.py": {300, 120, 180},
-        "tools/gitee_release.py": {60, 1800},
     }
     rex = re.compile(r"timeout\s*=\s*(\d+)")
     for rel, banned in targets.items():

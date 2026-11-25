@@ -20,18 +20,30 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "tools" / "gitee_release.py"
+# 2026-11-25（包 2.2.0）：gitee_release.py 已迁入 allin-governance。
+# 本测试改为**从已安装的包**加载同一模块，判据（纯函数行为）不变。
+# 长期归属：该测试应随之迁进包仓；此处暂留以便 allin 门禁继续覆盖其纯函数。
+SCRIPT = None
 
 
 def _load_gitee_release():
-    uid = "_p2b_tests_gitee_release"
-    if uid in sys.modules:
-        return sys.modules[uid]
-    spec = importlib.util.spec_from_file_location(uid, SCRIPT)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[uid] = mod
-    spec.loader.exec_module(mod)
-    return mod
+    """优先从已安装包取模块；包未装时回退仓内旧路径（只为给出可读错误）。"""
+    import sys
+    try:
+        from allin_governance._gitee import release as mod
+        return mod
+    except ImportError:
+        if SCRIPT is None or not SCRIPT.is_file():
+            raise
+        uid = "_p2b_tests_gitee_release"
+        if uid in sys.modules:
+            return sys.modules[uid]
+        spec = importlib.util.spec_from_file_location(uid, SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[uid] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
 
 
 gr = _load_gitee_release()

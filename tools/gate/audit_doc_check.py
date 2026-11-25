@@ -145,6 +145,10 @@ def _names_in_package() -> set[str]:
 
 
 #: 2026-11-25 提仓时**废弃**（不是迁走）的脚本 —— 历史报告引用它们同样合法。
+#: 2026-11-25 迁入包**且改了文件名**的脚本 —— 历史报告写的是旧名，包内叫新名，
+#: 「包内同名」识别抓不到，故显式登记（映射：旧名 → 包内位置，供人查）。
+MIGRATED_RENAMED = {"gitee_release.py": "allin_governance/_gitee/release.py"}
+
 RETIRED_FILES = ("check_pkg_parity.py",)
 
 MIGRATED_PREFIXES = (
@@ -429,6 +433,8 @@ def check_anchors(doc: Path, text: str, findings: list[Finding]) -> None:
                 base_name = os.path.basename(rel).split(":")[0]
                 if base_name in RETIRED_FILES:
                     continue   # 已废弃脚本：历史锚点合法
+                if base_name in MIGRATED_RENAMED:
+                    continue   # 迁入包并改名：历史锚点合法（新位置见 MIGRATED_RENAMED）
                 if base_name in _names_in_package():
                     # 裸文件名锚点：包内有同名文件 ⇒ 指向的正是迁走的那份
                     continue

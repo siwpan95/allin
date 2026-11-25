@@ -73,8 +73,6 @@ MIGRATIONS: tuple[tuple[str, int, str], ...] = (
     ("tools/gate/watchdog.py", 300, "git_fsck"),                               # git fsck 全库对象
     ("tools/gate/watchdog.py", 120, "git_lsremote"),                           # git ls-remote 对端
     ("tools/gate/watchdog.py", 180, "subprocess_long"),                        # ps() PowerShell 片段默认
-    ("tools/gitee_release.py", 60, "url_open"),                                # api() urllib opener 默认
-    ("tools/gitee_release.py", 1800, "http_upload"),                           # upload_file 大附件流式上传
 )
 
 # 第二阶段（2026-11-11）评估后的**显式豁免**（值不变、语义无现成 key 或属上游锁源，
@@ -83,7 +81,8 @@ MIGRATIONS: tuple[tuple[str, int, str], ...] = (
 #                              仅在 selfcheck 里做 argv 拼装字符串），留作预留 key 待构建脚本接入。
 #   tools/tier_archive/push_archives.py:36  timeout=300 —— 归档后 ls-remote 远端分支核对，
 #                              与 watchdog 的实时探活(git_lsremote=120)语义不同、值不同，保留显式值。
-#   tools/gitee_release.py:495  timeout=120 —— 创建 release 的 POST，与 api() 默认(url_open=60)
+#   （2.2.0 起 gitee_release 已迁入 allin-governance 包：它的两处 timeout 随之归包仓自检，
+#    本表只判**本仓内**文件的迁移落地）
 #                              不同语义；值无现成 key，保留显式值。
 #   tools/gate/watchdog.py:176  timeout=30 —— fsutil dirty 本地探测，短于最小 key(60)，保留显式值。
 #   vendor/cordis/src/cordis/create.py:98/153/242 —— 上游锁源 a3d0c17（VENDOR.md），

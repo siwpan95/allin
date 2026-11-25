@@ -177,10 +177,6 @@ def test_l1_no_bare_read_open():
     # （断言完整链式形态，避免误伤注释里提到的文件名或 with open(...) 新写法）
     checks = {
         "tools/gate/check_ps1_bom.py": ['open(path, "rb").read()'],
-        "tools/gitee_release.py": [
-            'open(token_file, encoding="utf-8", errors="replace").read()',
-            'open(args.notes_file, encoding="utf-8").read()',
-        ],
         "tools/repo_hygiene.py": [
             'open(cfg, "rb").read()', 'open(real, "rb").read()',
             'open(p, encoding="utf-8", errors="replace").read()',

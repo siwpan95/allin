@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import http.client
 import importlib.util
+import pathlib
 import json
 import shutil
 import subprocess
@@ -63,7 +64,11 @@ def _load(name: str, relpath: str):
     return mod
 
 
-gitee_release = _load("_p2sec_gitee_release", "tools/gitee_release.py")
+# 2026-11-25（包 2.2.0）：gitee_release 已迁入包，改为从已装包导入（判据不变）。
+try:
+    from allin_governance._gitee import release as gitee_release
+except ImportError:  # 包未装时回退旧路径（只为给出可读错误）
+    gitee_release = _load("_p2sec_gitee_release", "tools/gitee_release.py")
 verify_projects = _load("_p2sec_verify_projects", "tools/verify_projects.py")
 
 _MISSING = object()
@@ -144,7 +149,9 @@ def test_upload_still_sends_authorization_header(tmp_path, monkeypatch):
 
 
 def test_no_token_concatenation_left_in_source():
-    src = (ROOT / "tools" / "gitee_release.py").read_text(encoding="utf-8")
+    # 2026-11-25：源码已随包分发，读包内那份（同一实现）
+    from allin_governance._gitee import release as _gr
+    src = pathlib.Path(_gr.__file__).read_text(encoding="utf-8")
     assert "access_token=" not in src
     assert "attach_files?access_token" not in src
     assert "token=" not in src
