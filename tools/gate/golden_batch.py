@@ -65,12 +65,17 @@ def assert_(name: str, *, use: tuple[str, ...], rule: str = "eq",
 # ============================================================ A 公共核纪律
 @fact("pkg_dependencies")
 def _f_pkg_deps():
-    """包声明的运行时依赖。**必须是空列表** —— 零依赖是跨机复跑的根本。"""
-    t = FACTS["_read"](FACTS["_pkg_pyproject"]())
-    m = re.search(r"^dependencies\s*=\s*\[(.*?)\]", t, re.S | re.M)
-    if not m:
-        return "<无 dependencies 段>"
-    return re.sub(r"\s+", "", m.group(1))
+    """包的**运行时依赖**（从已安装元数据读，不读源码仓 pyproject）。
+
+    2026-11-25 CI 实测踩坑：初版读 `../allin-governance/pyproject.toml`，
+    而 CI 上只有 allin 仓、没有同级包仓 ⇒ 5 条 A 类断言全假红。
+    **本机布局不能当通用假设** —— 改成只依赖已安装包。
+    """
+    import importlib.metadata as md
+    reqs = md.requires("allin-governance") or []
+    # 只要"无 extra 条件"的那些（`foo>=1; extra == "ml"` 属可选，不算运行时依赖）
+    base = [r for r in reqs if "extra ==" not in r]
+    return ",".join(base)
 
 
 @fact("pkg_optional_deps_keys")
@@ -98,18 +103,16 @@ def _f_ml_top_torch():
 
 @fact("pkg_versions")
 def _f_pkg_versions():
-    """包版本三处（pyproject / __init__ / VERSION）—— 必须完全一致。"""
+    """已安装包的版本 **与** 源码仓 VERSION 文件（若同级仓存在）。
+
+    只用「元数据里的版本」做硬判据；源码仓的 pyproject/VERSION 只在仓存在时参与，
+    不存在就不参与比较（CI 上无同级仓，这是常态不是异常）。
+    """
+    import importlib.metadata as md
+    out = [md.version("allin-governance")]
     root = Path(FACTS["_pkg_root"]())
-    out = []
-    pt = FACTS["_read"](root / "pyproject.toml")
-    m = re.search(r'^version\s*=\s*"([^"]+)"', pt, re.M)
-    out.append(m.group(1) if m else "?")
-    ip = root / "src" / "allin_governance" / "__init__.py"
-    it = FACTS["_read"](ip)
-    m = re.search(r'^__version__\s*=\s*"([^"]+)"', it, re.M)
-    out.append(m.group(1) if m else "?")
-    vf = root / "VERSION"
-    out.append(FACTS["_read"](vf).strip() if Path(vf).is_file() else "?")
+    if (root / "VERSION").is_file():
+        out.append(FACTS["_read"](root / "VERSION").strip())
     return "|".join(out)
 
 
@@ -303,7 +306,7 @@ def _register_all():
             rule="has", why="[ml] 组必须存在，且不得进 dependencies")
     assert_("_ml 顶层不 import torch", use=("ml_toplevel_torch_import", "empty"),
             why="延迟导入纪律：没装 torch 时骨架仍可 import")
-    assert_("包版本三处一致", use=("pkg_versions", "all_same"), rule="all_same",
+    assert_("包版本一致（元数据/源码 VERSION）", use=("pkg_versions", "all_same"), rule="all_same",
             why="pyproject / __init__ / VERSION 必须同一个值")
     assert_("README 版本 = 安装版本", use=("readme_version", "installed_pkg_version"),
             why="消费仓 README 写的版本要等于实际装上的")

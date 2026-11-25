@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "commit": "6dac30e",
-  "ts": "2026-11-25T08:36:39Z",
+  "commit": "eeedb1f",
+  "ts": "2026-11-25T08:52:57Z",
   "total": 24,
   "passed": 24,
   "pass_rate": 1.0,
@@ -9,7 +9,7 @@
     "包零依赖": true,
     "torch 在可选依赖里": true,
     "_ml 顶层不 import torch": true,
-    "包版本三处一致": true,
+    "包版本一致（元数据/源码 VERSION）": true,
     "README 版本 = 安装版本": true,
     "CLI 五大子命令齐全": true,
     "gitee 子命令齐全": true,
