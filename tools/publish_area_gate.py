@@ -93,6 +93,54 @@ def run_repocheck(repos_root: Path, python: str) -> dict:
             pass
 
 
+
+def _registered_repo_names() -> set[str]:
+    """registry 里已登记的仓名（`path: repos/<name>` 的 <name>）。
+
+    读不到就返回空集 —— 那时「非仓目录」判定退化为「有没有 .git」，
+    仍比把所有目录当项目强。
+    """
+    import re as _re
+    names: set[str] = set()
+    reg = TOOLS.parent / "platform" / "registry" / "projects"
+    if not reg.is_dir():
+        return names
+    for f in reg.glob("*.yaml"):
+        try:
+            text = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        m = _re.search(r"^path:\s*repos/(\S+)", text, _re.M)
+        if m:
+            names.add(m.group(1))
+    return names
+
+
+def _non_repo_dirs(root: Path) -> set[str]:
+    """发布区里**不是仓**的一级目录。
+
+    判据（两者同时成立才算）：无 `.git` 且未在 registry 登记。
+
+    为什么要有这一层（2026-11-25）：`anatomy3d-demo` 是一次性录制脚本的目录，
+    被当成项目扫了 4 条阻断（无 .git / 无 README / 无 LICENSE）。
+    发布区的治理对象是**仓**；一个没有 `.git` 也没登记过的目录本来就不是仓，
+    对它做仓体检只会产生噪音，还会掩盖真正的仓级问题。
+    反例仍然保留：**登记了但没 .git** 是真问题，照常阻断。
+    """
+    registered = _registered_repo_names()
+    out: set[str] = set()
+    if not root.is_dir():
+        return out
+    for d in root.iterdir():
+        if not d.is_dir() or d.name.startswith("."):
+            continue
+        if (d / ".git").exists():
+            continue
+        if d.name in registered:
+            continue     # 登记了却没 .git ⇒ 交给正常流程判红，不算「非仓」
+        out.add(d.name)
+    return out
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="发布区治理门禁")
     ap.add_argument("--repos-root", default=os.environ.get("PROJECTS_ROOT", ""))
@@ -115,7 +163,13 @@ def main(argv: list[str] | None = None) -> int:
     blocking: list[dict] = []
     exempted: list[dict] = []
     pending: list[dict] = []
+    non_repo = _non_repo_dirs(rp)
+    skipped_non_repo: set[str] = set()
     for proj in report.get("projects", []):
+        if proj.get("name", "") in non_repo:
+            # 非仓目录：整目录跳过，末尾只出一条提示（不是 N 条阻断）
+            skipped_non_repo.add(proj.get("name", ""))
+            continue
         for f in proj.get("findings", []):
             if f.get("status") == "pass" or f.get("severity") not in BLOCKING_SEVERITIES:
                 continue
@@ -182,6 +236,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  未豁免阻断    : {len(blocking)}")
         print(f"  待裁决(已登记): {len(pending)}")
         print(f"  已裁决豁免    : {len(exempted)}")
+        print(f"  跳过非仓目录  : {len(skipped_non_repo)}")
         if pending:
             print("\n待全哥裁决（不阻断，已登记台账）：")
             for item in pending:
@@ -190,6 +245,10 @@ def main(argv: list[str] | None = None) -> int:
             print("\n未豁免阻断：")
             for item in blocking:
                 print(f"  [{item['rule']}] {item['repo']}: {item['detail'][:80]}")
+        if skipped_non_repo:
+            print("\n跳过（非仓目录：无 .git 且未登记 registry，不做仓体检）：")
+            for name in sorted(skipped_non_repo):
+                print(f"  - {name}")
         print(f"\nPUBLISH_AREA_GATE verdict={result['verdict']} "
               f"blocking={len(blocking)} pending={len(pending)}")
 
