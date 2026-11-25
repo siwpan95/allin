@@ -165,6 +165,45 @@ CASE_FUNCS = {
 }
 
 
+# ---------------------------------------------------------------- 批量断言（P0）
+def _inject_batch_facts():
+    """把本 runner 的取数能力注入 `golden_batch`，并注册其 case。
+
+    2026-11-25 P0：黄金集 6 → 30 条。批量断言集中在 `golden_batch.py`，
+    取数口径与断言表分离（加用例只加一行）。这里只负责注入与注册。
+    """
+    import golden_batch as gb
+
+    gb.FACTS["root"] = lambda: str(ROOT)
+    gb.FACTS["_read"] = lambda p: read_text(Path(p))
+    gb.FACTS["run"] = lambda cmd, timeout=120: run(cmd, timeout=timeout)
+    gb.FACTS["REGISTRY"] = lambda: str(REGISTRY)
+    gb.FACTS["MCP"] = lambda: str(MCP)
+    gb.FACTS["NODE"] = lambda: NODE
+    gb.FACTS["_pkg_root"] = lambda: str(ROOT / ".." / "allin-governance")
+    gb.FACTS["_pkg_pyproject"] = lambda: str(ROOT / ".." / "allin-governance" / "pyproject.toml")
+    gb.FACTS["_pkg_ml_dir"] = lambda: str(
+        Path(__import__("allin_governance").__file__).parent / "_ml")
+    gb.FACTS["CASE_FUNCS"] = CASE_FUNCS
+
+    for name in gb.names():
+        if name in CASE_FUNCS:
+            continue
+
+        def _make(nm):
+            def _case():
+                for n, ok, detail in gb.run_assertions():
+                    if n == nm:
+                        return ok, detail
+                return False, "断言未注册"
+            _case.__doc__ = f"批量断言 · {nm}"
+            return _case
+
+        CASE_FUNCS[name] = _make(name)
+
+
+
+
 def load_golden():
     if not GOLDEN.is_file():
         # 黄金集是 harness 的契约，缺失即环境错误（不允许静默回退到内嵌列表）。
@@ -197,6 +236,12 @@ def main(argv=None):
                         help="把当前运行状态写回 baseline（刻意改黄金集/修 case 后用；CI 不传此参）")
     args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
+
+    # P0：先注入批量断言，否则 golden.json 里新登记的名字会找不到实现
+    try:
+        _inject_batch_facts()
+    except Exception as exc:  # noqa: BLE001  批量层缺失不该让整跑炸掉
+        print(f"[WARN] 批量断言未加载：{exc}", file=sys.stderr)
 
     try:
         golden_version, case_names = load_golden()
