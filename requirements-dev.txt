@@ -64,3 +64,10 @@ pip-audit>=2.7
 #
 # 需要完整能力时手动装：
 #   pip install license_expression markdown_it openpyxl
+
+# allin-governance —— 公共核（2026-11-25 提仓后从 PyPI 装，本仓不再内嵌源码）。
+# **门禁的硬前提**：run_all_gates.sh 里 13 处调用走 `-m allin_governance`，
+# 缺它时全部报 "No module named allin_governance" —— CI 上实测过一次
+# （2026-11-25，三个 job 全红，28 项失败，根因就是 .venv 没装它）。
+# 版本 pin 到 README 自述的当前版本，换版本时两处一起改（check_readme_refs 会核对）。
+allin-governance==2.3.0
