@@ -34,7 +34,7 @@
 # 失败时怎么办：先看是哪一道门禁红了，再对照 **已安装包**里的
 # `allin_governance/_gatesuite/RULES.md` 那道门禁的「判定依据」列 —— 那里写清了它到底在判什么、
 # 基线在哪。（2026-11-25 公共核提仓：套件源码不再在本仓，故不再写 `tools/gate/governance/RULES.md`
-# 这个仓内路径；包由 requirements-dev.txt 钉版 2.4.0，路径固定在该包目录下。）
+# 这个仓内路径；包由 requirements-dev.txt 钉版 2.4.1，路径固定在该包目录下。）
 
 version: "1.0"
 name: allin-governance-gates
@@ -56,12 +56,12 @@ stages:
           # 双源：清华为主、腾讯云兜底。不是「多多益善」，是因为实测过两家的同步差：
           # 2026-11-25 用 curl 直连三家 simple 索引核对，`allin-governance` 在
           #   清华 = 最高 2.3.0（且无 sdist）；腾讯云 = 最高 2.3.0（whl + sdist 齐）；
-          #   官方 PyPI = 2.4.0（本仓 pin 的版本）。**两家国内镜像此刻仍滞后一版**，
+          #   官方 PyPI = 2.4.1（本仓 pin 的版本）。**两家国内镜像此刻仍滞后一版**，
           # 故 2026-11-25 起追加官方源作**末位兜底**（见下方 install 行）。
-          # requirements-dev.txt 钉的是 ==2.4.0（单一版本真相，不为迁就镜像而放宽）。
+          # requirements-dev.txt 钉的是 ==2.4.1（单一版本真相，不为迁就镜像而放宽）。
           # 只走国内镜像会让 install_deps 在解析阶段就红 —— 后面三个 step 连上场机会都没有，
           # 而日志只报 "No matching distribution"，看上去像代码坏了，实为镜像滞后。
-          # 镜像追上 2.4.0 后，官方兜底可保留（多一个源不改变语义），但**不要**据此放宽 pin。
+          # 镜像追上 2.4.1 后，官方兜底可保留（多一个源不改变语义），但**不要**据此放宽 pin。
           - .venv/bin/python -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple --extra-index-url https://pypi.org/simple -r requirements-dev.txt
         settings: []
         caches: []
@@ -188,7 +188,7 @@ stages:
         displayName: 可安装包 init 端到端（生成骨架 → 跑门禁）
         pythonVersion: "3.13"
         commands:
-          - python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple --extra-index-url https://pypi.org/simple "allin-governance==2.4.0" && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
+          - python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple --extra-index-url https://pypi.org/simple "allin-governance==2.4.1" && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
         settings: []
         caches: []
         notify: []
