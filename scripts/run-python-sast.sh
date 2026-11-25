@@ -61,10 +61,17 @@ PY="${ALLIN_PYTHON:-python3}"
 # 刻意不写 `find . -name '*.py'`：那会把 vendor/（入库 64 个 .py）、node_modules/、
 # .venv/、docs/、site/ 等一并扫进来，扫描面由「当前磁盘状态」而不是「受评审的
 # 清单」决定。白名单逐项在 validate_surface 里断言「存在且至少含一个 .py」。
+#
+# 2026-11-25 移除 "packages"：P2 已把 allin-governance 源码迁至独立仓
+# （本仓 packages/allin-governance/ 只剩一个迁仓 README，`.py` 计数为 0），
+# 白名单仍列着它 ⇒ validate_surface 判「空扫描面」return 3 ⇒ --selfcheck 的
+# 「② 真实白名单(正向,应通过)」恒红。白名单的语义是「本仓受评审的源码树」，
+# 迁出的包不在此列；该包的 SAST 由它自己仓的 CI 承担。
+# 复活条件：若将来有 Python 包重新入库到 packages/ 下，必须把目录加回本白名单，
+# 否则它的源码**不会被扫**且没有任何报错（漏扫是静默的，比空扫描面更危险）。
 # ---------------------------------------------------------------------------
 SAST_SURFACE=(
   "kernel"
-  "packages"
   "scripts"
   "tools"
   "preset"
