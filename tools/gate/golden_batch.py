@@ -248,18 +248,18 @@ def _f_mcp_tools():
 
 @fact("skill_tool_count")
 def _f_skill_tools():
-    """SKILL.md 里**列出的**工具名条数（表格行 `| `tool.name` |`）。
+    """SKILL.md 里自述的工具总数（`共 **N** 工具` / `共 N 工具`）。
 
-    2026-11-25 实测：SKILL 没有"N 个工具"的总数自述，所以数实际列出的名字 ——
-    断言改为「MCP 暴露数 >= SKILL 列出数」，抓的是「加了工具却没写进 SKILL」。
+    2026-11-25 实测：SKILL **有**这个自述，写的是 12，而 MCP 实际 27 —— 漂移 15 个。
+    此前我断言写成「实际 >= 列出」（27>=2 恒真），等于没判；现在改等值比较。
     """
     root = Path(FACTS["root"]())
     for p in (root / ".workbuddy" / "skills").glob("allin-governance-agent/SKILL.md"):
-        names = set(re.findall(r"`(gate\.\w+|docs\.\w+|memory\.\w+|registry\.\w+|model\.\w+|"
-                               r"project\.\w+|metrics\.\w+|exceptions\.\w+|record\.\w+)`",
-                               FACTS["_read"](p)))
-        return str(len(names))
-    return "0"
+        t = FACTS["_read"](p)
+        m = re.search(r"共\s*\*{0,2}(\d+)\*{0,2}\s*工具", t) or re.search(r"(\d+)\s*个工具", t)
+        if m:
+            return m.group(1)
+    return "<SKILL 无工具数自述>"
 
 
 # ============================================================ D 记账制度
@@ -330,8 +330,10 @@ def _register_all():
     # 强行相等会假红；测下限能抓「文档判据节被误删」。
     assert_("SPEC-005 判据节数 >= check_d* 数", use=("d_criteria_selfclaim", "d_criteria_implemented"),
             rule="gte", why="文档承诺的判据节不能少于代码里显式命名的 check_d*（口径差异见注释）")
-    assert_("MCP 工具数 >= SKILL 列出数", use=("mcp_tool_count", "skill_tool_count"),
-            rule="gte", why="SKILL 列出的工具名不能多于实际暴露的（防文档写不存在的工具）")
+    # 2026-11-25 实测教训：此前写 `rule="gte"`（实际 27 >= 列出 2）恒真，等于没判。
+    # 改成等值 —— 它立刻抓出「SKILL 写 12、实际 27」这个 15 个工具的漂移。
+    assert_("MCP 工具数 = SKILL 自述", use=("mcp_tool_count", "skill_tool_count"),
+            why="工具面变化必须同步 SKILL；恒真断言等于没判（实测过）")
     # D 记账制度
     assert_("月账覆盖三台机", use=("monthly_ledger_hosts", "3"),
             why="SIWPAN / KQABATS / 8RSV60V 都该有月账")

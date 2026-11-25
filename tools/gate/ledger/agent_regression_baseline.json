@@ -1,17 +1,11 @@
 {
   "version": 2,
-  "commit": "0354d83",
-  "ts": "2026-11-25T08:21:58Z",
+  "commit": "6dac30e",
+  "ts": "2026-11-25T08:36:39Z",
   "total": 24,
   "passed": 24,
   "pass_rate": 1.0,
   "cases": {
-    "定位仓根": true,
-    "门禁数自述一致": true,
-    "MCP 工具面": true,
-    "MCP 自检": true,
-    "多载体一致": true,
-    "文档枢纽": true,
     "包零依赖": true,
     "torch 在可选依赖里": true,
     "_ml 顶层不 import torch": true,
@@ -26,9 +20,15 @@
     "INDEX 份数自述一致": true,
     "门禁数自述 = registry": true,
     "SPEC-005 判据节数 >= check_d* 数": true,
-    "MCP 工具数 >= SKILL 列出数": true,
+    "MCP 工具数 = SKILL 自述": true,
     "月账覆盖三台机": true,
     "月账有归属声明": true,
-    "黄金集条数 = 实现 case 数": true
+    "黄金集条数 = 实现 case 数": true,
+    "定位仓根": true,
+    "门禁数自述一致": true,
+    "MCP 工具面": true,
+    "MCP 自检": true,
+    "多载体一致": true,
+    "文档枢纽": true
   }
 }

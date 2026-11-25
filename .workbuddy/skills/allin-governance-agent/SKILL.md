@@ -75,7 +75,7 @@ agent_created: true
 **长期记忆回路**：记忆月账在 `docs/记录/记忆/`（按月分卷 `YYYY-MM.md`，条目**只增不改**）。
 
 - **召回**：会话开始与动手前——DSH 侧用 `mcp__allin-governance__memory.read`
-  （allin MCP server 共 12 工具：10 读 2 写），WorkBuddy 侧直接读当月卷。
+  （allin MCP server 共 **27** 工具），WorkBuddy 侧直接读当月卷。
 - **记账**：门禁红、修复完成、踩坑、或用户要求记住时——DSH 侧用
   `mcp__allin-governance__memory.append`（写操作，需 `confirm=true`，只追加**已登记**的当月卷），
   WorkBuddy 侧直接编辑当月卷追加一条带日期的条目。
@@ -262,7 +262,7 @@ node apps/cli/src/index.js list        # CLI（list/search/status/start/stop/...
 - 每个声明必须带**可复现证据**：命令 + 实际退出码 / 输出 / `file:line`，禁止「看起来能跑」「应该没问题」。
 - 门禁全绿才算过；门禁报红先修或显式记偏差（带实测依据），不静默跳过。
 - **改配置/提示词/工具面前后各跑一次 agent 行为回归样例集**：`python tools/gate/agent_regression.py`
-  （6 条固定样例：定位仓根 / 门禁数自述一致 / MCP 工具面 / MCP 自检 / 双载体一致 / 文档枢纽），
+  （**24 条**固定样例：原有 6 条 + 2026-11-25 新增 18 条批量断言，见 `tools/gate/golden_batch.py`），
   两次都绿才算没有行为漂移 —— 门禁判得了仓库，判不了 agent 行为，这一层由样例集补。
 - 跨机/CI 用 `PLATFORM_PATH_CHECK=absolute` 之类只校验形状的模式，不要 fail-loud 误杀。
 

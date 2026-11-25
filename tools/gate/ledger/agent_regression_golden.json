@@ -2,12 +2,6 @@
   "version": 2,
   "description": "agent 行为回归黄金集 —— 与 runner (agent_regression.py) 分离，便于版本化追踪。改 case 集须显式改本文件并同步 commit 基线（agent_regression.py --commit-baseline）。判据来源：docs/规范/SPEC-001-铁律.md 与 .workbuddy/skills/allin-governance-agent/SKILL.md §2.1。\n\n2026-11-25 P0（6 → 24 条）：新增 18 条批量断言，实现见 `tools/gate/golden_batch.py`。选取基准是「门禁 20 道 + MCP --selftest 结构上管不到」的四类：公共核纪律（零依赖/延迟导入/版本三处）、发布链路（gitee/github/publish/ml 子命令齐全）、跨文件语义（INDEX 份数/门禁数/判据节数/工具数自述一致）、记账制度（月账三机/归属声明）。取数口径与断言表分离：加用例只加一行。",
   "cases": [
-    "定位仓根",
-    "门禁数自述一致",
-    "MCP 工具面",
-    "MCP 自检",
-    "多载体一致",
-    "文档枢纽",
     "包零依赖",
     "torch 在可选依赖里",
     "_ml 顶层不 import torch",
@@ -22,9 +16,15 @@
     "INDEX 份数自述一致",
     "门禁数自述 = registry",
     "SPEC-005 判据节数 >= check_d* 数",
-    "MCP 工具数 >= SKILL 列出数",
+    "MCP 工具数 = SKILL 自述",
     "月账覆盖三台机",
     "月账有归属声明",
-    "黄金集条数 = 实现 case 数"
+    "黄金集条数 = 实现 case 数",
+    "定位仓根",
+    "门禁数自述一致",
+    "MCP 工具面",
+    "MCP 自检",
+    "多载体一致",
+    "文档枢纽"
   ]
 }
