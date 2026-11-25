@@ -242,24 +242,8 @@ stages:
         strategy:
           retry: "0"
 
-      # 2026-11-24 全检残留项：与 GitHub `release-artifact` job **同一条命令**。
-      # 此前两侧 CI 都不验证「发布物装得上」，1.0.0 的 sdist 就是这样漏出去的。
-      # 判据只有一份（scripts/release_preflight.py），两侧绿不会说两套话。
-      - step: build@python
-        name: release_artifact
-        displayName: 发布物自包含与可安装（sdist + wheel，与本地发版同命令）
-        pythonVersion: "3.13"
-        env:
-          PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
-        commands:
-          - python3 -m pip install --upgrade pip build twine
-          - python3 scripts/build_dist.py
-          - python3 scripts/release_preflight.py --install
-        settings: []
-        caches: []
-        notify: []
-        strategy:
-          retry: "0"
+      # 发布物构建 / preflight 已随 allin-governance 迁至独立仓；本仓不再发行该包。
+      # tag 纪律仍属本仓，保留下方 tag_discipline 步骤。
 
       # Tag 纪律远端面：检测「本地有远端无」与「已推 tag 被移动」（铁律 70）。
       - step: build@python

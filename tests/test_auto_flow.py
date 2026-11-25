@@ -67,6 +67,34 @@ def test_classify_preflight_incomplete(monkeypatch):
     assert step["status"] == "finding"
 
 
+def test_preflight_step_is_not_applicable_not_ok(capsys):
+    """发版预检已随公共核迁仓：标 not_applicable，不冒充 ok，也不判红。"""
+    step = af._preflight_step()
+    capsys.readouterr()
+    assert step["status"] == "not_applicable"
+    assert step["exit"] != af.EXIT_OK
+    assert "独立仓" in step["tail"][0]
+    assert "未验证 ≠ 通过" in step["tail"][0]
+
+
+def test_main_full_preflight_not_applicable(monkeypatch, capsys):
+    """全流程汇总：not_applicable=1 且 verdict=clean，理由随汇总行如实单列。"""
+    def fake_step(label):
+        return {"label": label, "exit": 0, "status": "ok", "ms": 1, "tail": []}
+    monkeypatch.setattr(af, "_sync_step", lambda no_fetch: fake_step("sync"))
+    monkeypatch.setattr(af, "_gate_step", lambda with_platform: fake_step("gates"))
+    monkeypatch.setattr(af, "_run", lambda label, argv, **kw: fake_step(label))
+    monkeypatch.setattr(af, "_head", lambda: "testhead")
+    monkeypatch.setattr(af, "_append_run", lambda rec: None)
+    rc = af.main(["--json"])
+    out = capsys.readouterr().out
+    assert rc == af.EXIT_OK
+    assert "ALLIN_AUTO_FLOW_SUMMARY status=clean" in out
+    assert '"not_applicable": 1' in out
+    assert "未验证 ≠ 通过" in out
+    assert "ALLIN_AUTO_FLOW_SUMMARY status=finding" not in out
+
+
 def test_selfcheck_all_green():
     assert af._selfcheck() == af.EXIT_OK
 

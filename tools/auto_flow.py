@@ -8,7 +8,7 @@ allin 的治理流程散落在四个独立入口里，定时任务要「一条�
 
     同步核对  bash scripts/sync-before-push.sh          （只读：fetch + ahead/behind）
     门禁全跑  bash scripts/run_all_gates.sh             （20 道门禁 + 测试 + 自检）
-    发版预检  python scripts/release_preflight.py       （静态：版本/产物对账）
+    发版预检  （已随 allin-governance 迁至独立仓，本仓标 not_applicable）
     状态汇总  python allin_cli.py status --json --strict（三面只读）
 
 本脚本把四步串成一个**可重入、退出码语义清晰、结果可机读**的单一命令，
@@ -21,6 +21,8 @@ allin 的治理流程散落在四个独立入口里，定时任务要「一条�
 - fetch 只更新远端跟踪引用（SPEC-002 §七：非实质改动），工作树脏时同步步骤
   只报告不处置；发现 DIVERGED 记为 finding（exit 1），不自动 rebase/merge。
 - SKIP ≠ pass：门禁原样透传其退出码（0 clean / 1 failed / 2 incomplete）。
+- 发版专属检查随公共核迁出后**如实标 not_applicable**：不判红，也绝不冒充已验证；
+  发版预检的判据与执行地在独立仓 allin-governance。
 - 每一步均有结构化留痕（tools/gate/audit/auto-flow-runs.jsonl，已被 .gitignore
   覆盖）， machine-readable 汇总行 `ALLIN_AUTO_FLOW_SUMMARY` 供自动化判定。
 
@@ -200,6 +202,25 @@ def _verdict(steps: list[dict]) -> int:
     return EXIT_OK
 
 
+def _preflight_step() -> dict:
+    """发版预检已随公共核迁出，本仓不再发行该包 —— 如实标 not_applicable。
+
+    这不是放宽判据：脚本所假定「包在本仓 packages/ 下」的结构已不存在，
+    继续调用只会得到 ENV ERROR。判据与执行地在独立仓 allin-governance；
+    本仓既未验证，也不把「不适用」说成「通过」。
+    """
+    reason = (
+        "allin-governance 已迁至独立仓，本仓不再发行该包；"
+        "发版静态预检与 --install 安装实测均不适用，未验证 ≠ 通过"
+    )
+    print("==> [preflight] 已随公共核迁至独立仓（本仓不适用，不执行）", flush=True)
+    print(f"    [not_applicable] preflight exit={EXIT_ENV} 0ms —— {reason}", flush=True)
+    return {
+        "label": "preflight", "argv": [], "exit": EXIT_ENV, "ms": 0,
+        "status": "not_applicable", "tail": [reason],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="auto-flow", description="allin 全流程自动推进（定时任务友好，绝不 push）"
@@ -224,17 +245,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.quick:
         steps.append(_gate_step(args.with_platform))
-        preflight = ROOT / "scripts" / "release_preflight.py"
-        if preflight.is_file():
-            steps.append(_run(
-                "preflight", [sys.executable, "scripts/release_preflight.py"],
-                release_preflight=True,
-            ))
-        else:
-            steps.append({
-                "label": "preflight", "argv": [], "exit": EXIT_ENV, "ms": 0,
-                "status": "error", "tail": [f"ENV ERROR: 缺少 {preflight}"],
-            })
+        steps.append(_preflight_step())
 
     status_cli = ROOT / "allin_cli.py"
     if status_cli.is_file():
@@ -267,7 +278,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"场景不适用 {na_n} 项（非已验证通过）：", flush=True)
         for s in steps:
             if s["status"] == "not_applicable":
-                print(f"  - {s['label']}（发版专属检查，定时任务不执行）", flush=True)
+                detail = "；".join(s.get("tail") or []) or "发版专属检查，本场景不执行"
+                print(f"  - {s['label']}：{detail}", flush=True)
     _append_run({
         "ts": _ts(), "head": head, "quick": args.quick,
         "verdict": "finding" if verdict else "clean",

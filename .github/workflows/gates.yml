@@ -400,16 +400,12 @@ jobs:
           GITLEAKS_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: bash scripts/scan-secrets.sh
 
-  # 2026-11-24 全检残留项：**此前没有任何 CI 步骤验证「发布物装得上」**。
-  # allin-governance 1.0.0 的 sdist 就是在这种情况下发出去的：构建成功、twine check
-  # PASSED、干净 venv 装 wheel 能跑 —— 三条检查各看一半，缺的正是「从 sdist 装一次」。
-  # 本 job 把那条实验搬进 CI：构建 → 双产物各在独立 venv 装一次 → 六个子命令逐个跑。
-  # 与本地发版用的是**同一条命令**（scripts/release_preflight.py --install），
-  # 判据只此一份；CI 绿与本地绿不会说两套话。
-  release-artifact:
-    name: 发布物自包含与可安装（sdist + wheel · 同本地发版命令）
+  # 发布物构建与 preflight 已随 allin-governance 迁至独立仓（本仓不再发行该包）。
+  # 原 release-artifact job 里与本仓仍相关的只剩 tag 纪律，单独保留，避免顺手丢检查。
+  tag-discipline:
+    name: Tag 纪律（远端不可变性）
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -419,15 +415,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: 构建（物化 7 棵映射树 → sdist 自包含）
-        run: |
-          python -m pip install --quiet --upgrade pip build twine
-          python scripts/build_dist.py
-
-      - name: 放行前校验（版本一致 / dist 干净 / 自包含 / 双产物各装一次 + 子命令）
-        run: python scripts/release_preflight.py --install
-
-      # Tag 纪律的远端面：检测「本地有远端无」与「已推 tag 被移动」。
+      # 检测「本地有远端无」与「已推 tag 被移动」。
       # 这一条在 CI 上才有意义 —— 本地跑时 origin 可能不可达，故默认只跑离线段。
       - name: Tag 纪律（远端不可变性）
         env:

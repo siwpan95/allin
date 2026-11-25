@@ -287,7 +287,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not PYPROJECT.is_file():
-        print(f"ENV ERROR: 找不到 {PYPROJECT}", file=sys.stderr)
+        print(
+            f"ENV ERROR: 找不到 {PYPROJECT}\n"
+            "发版预检已随 allin-governance 迁至独立仓 "
+            "<https://gitee.com/siwpan/allin-governance>；本仓不再发行该包，"
+            "请到独立仓根执行 scripts/release_preflight.py。未验证 ≠ 通过。",
+            file=sys.stderr,
+        )
         return EXIT_ENV
 
     result = Result()

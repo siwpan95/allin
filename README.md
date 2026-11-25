@@ -112,7 +112,8 @@ allin tools auto-flow --json          # 机读输出
 汇总行 `ALLIN_AUTO_FLOW_SUMMARY status=clean|finding ... not_applicable=N` 是机器判定
 准出；门禁的 `incomplete`（SKIP）按 finding 透传，不冒充通过。发版专属的两项
 （twine check / `--install` 安装实测）在无人值守场景记为 `not_applicable` 单列，
-既不判红、也不声称已验证 —— 发版前仍须人在场跑 `release_preflight.py --install`。
+既不判红、也不声称已验证 —— 公共核的发版预检与安装实测已随
+[`allin-governance`](https://gitee.com/siwpan/allin-governance) 迁出，真要发版在该仓执行。
 
 **平台门户**：按需启动（默认 `PORT=0`，由系统分配临时端口；固定端口 9000 已在 [`docs/事实源/ports.yaml`](docs/事实源/ports.yaml) 记为 `status: retired`，仅手动模式可选）；
 website 默认端口 9042，同样以 ports.yaml 登记为准。

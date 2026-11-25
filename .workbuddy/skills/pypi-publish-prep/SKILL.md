@@ -118,7 +118,7 @@ flat 老项目转 PyPI 最常见的坏包形态是**可选依赖耦合**：`rend
 
 ```bash
 # 两个产物各建一个 clean venv，各装一次，各跑一遍真实命令
-python scripts/release_preflight.py --install   # allin 仓内已封装（含五个子命令冒烟）
+python scripts/release_preflight.py --install   # 在 allin-governance 独立仓根执行
 ```
 
 自己写判据时注意：`dist/` 里同时存在多个版本时，`twine upload dist/*` 会把旧版本
