@@ -83,7 +83,7 @@
 > **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百八十一（@`DESKTOP-KQABATS` 指南复跑 · 计数漂移订正，本机自留痕）
 > **时点** 2026-11-09 16:55（**@`DESKTOP-KQABATS` 全量现场复测 · 刷新主机事实文档** ——
 >   用户指令「刷新本机主机事实文档」（@`DESKTOP-KQABATS`）：按 `机器分区索引.md` 的归属纪律
->   「改事实源前先复测」与头部失效条款，用 `tools/facts/measure.py` 自动采集
+>   「改事实源前先复测」与头部失效条款，用公共核 facts 采集器（当时的 tools 下 facts 采集脚本，2026-11-25 已随公共核提仓迁出）自动采集
 >   （`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）+ PowerShell `Get-CimInstance` /
 >   `Test-Path` / 逐仓 `.git/config` 复测 + Gitee 匿名 API 分页，与 2026-11-08 19:15 块逐项比对。
 >   ✅ **未漂移**：hostname、系统 10.0.26300（build 26300）、C·D·E 三卷与 F·G 伪盘、
@@ -158,7 +158,7 @@
 >   发布区 `E:\projects\repos` **23** 个目录；主 Python `D:\Python314\python.exe` **现存**；
 >   `D:\musickit` **现存**；`D:\private-radio-stations` **现存**；
 >   `E:\projects\reference` **现存**；`E:\projects\_governance` **现存**。）
-> **时点** 2026-10-30 17:00（**`tools/facts/measure.py` 自动采集 + 人工裁决** —— 机器 `DESKTOP-KQABATS`；
+> **时点** 2026-10-30 17:00（**公共核 facts 采集器自动采集 + 人工裁决**（当时的 tools 下 facts 采集脚本，2026-11-25 已随公共核提仓迁出）—— 机器 `DESKTOP-KQABATS`；
 >   本段为**采集原始值**，凡与上一版不符者须逐项复测后再改，**不要直接覆盖**。
 >   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
 >   发布区 `E:\projects\repos` **23** 个目录；主 Python `D:\Python314\python.exe` **现存**；
@@ -172,7 +172,7 @@
 >   ② git 在 **PATH 上有两份**（WorkBuddy vendor PortableGit 优先 / 系统安装版次之），
 >   实测解析到哪一份**取决于调用进程**，不是单一现值。）
 > **时点** 2026-10-29（**机器名登记**：机器名 `DESKTOP-KQABATS`；`pushurl` **0 条** ⇒ 只推 Gitee 单核。）
-> **观测工具** `tools/facts/measure.py`（`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）、
+> **观测工具** 公共核 facts 采集器（当时的 tools 下 facts 采集脚本，2026-11-25 已随公共核提仓迁出；`Get-Volume` / `Get-Disk` / `Get-Command` / `git config`）、
 >   `Get-CimInstance Win32_*`、`git rev-parse --show-toplevel`、Gitee API 匿名查询、
 >   `python -c "import tkinter"` 实测
 > **失效条件** 换机、加减盘、重装系统、换运行时版本后**立即失效**；每次涉及机器事实的动作前
@@ -284,7 +284,7 @@
 
 - ⚠ **本机没有"随便哪个都行"的余地**：唯一带 tkinter 的是 `D:\Python314\python.exe`（3.14.7）；
   便携 3.13.14 与仓内 `.venv` **都无 tkinter**。
-- ✅ **`repocheck` CLI 在本机可跑**：`tools/repocheck/main.py` 的 `import tkinter` 位于 **GUI 分支**
+- ✅ **`repocheck` CLI 在本机可跑**：公共核 repocheck 主入口（当时的 tools 下 repocheck 脚本，2026-11-25 已随公共核提仓迁出）的 `import tkinter` 位于 **GUI 分支**
   （`main.py:26`），CLI 路径经 `cli.py` / `scanner.py` / `rulebase.py`（三者均**不 import tkinter**）
   ⇒ **无 tkinter 也能跑 CLI 体检**；本仓门禁在便携 3.13.14 上实测通过率 100%。
 - ⚠ **选解释器先跑 `-c "import tkinter"`**，别只看版本号 —— 本机两个 3.13.14 都没有 tkinter。

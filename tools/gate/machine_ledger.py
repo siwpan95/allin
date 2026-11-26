@@ -130,7 +130,7 @@ TAG_PAT = re.compile(r"@`?(SIWPAN|DESKTOP-KQABATS|DESKTOP-8RSV60V|KQABATS|8RSV60
 #: 原型机承载痕迹：**盘符 + 顶层目录名**的形态（`repos` / `archive` / `nodejs`）。承载 ≠ 产出。
 #:
 #: 2026-11-26 从 `[FG]:…`（两个具体盘符）改成形态识别，两个理由：
-#: ① 盘符是**接线事实**、不是归属事实：原型盘今天接在 F:/G:，明天可能换（`E:`/`H:` 同样成立）；
+#: ① 盘符是**接线事实**、不是归属事实：原型盘今天接在 F:/G:，明天可能换  # gov-paths: allow gov-python: allow — 形态举例，非硬编码盘符（`E:`/`H:` 同样成立）；
 #:    把盘符写进判据，等于让判据随机器搬线而失效。
 #: ② 原写法在源码里留下形如「盘符:\\目录」的**字面量**，被 `scan_hardcoded.ps1` 判成
 #:    "硬编码绝对路径且根不存在" —— 它判得对（那确实指向不存在的根）；
@@ -440,7 +440,7 @@ def classify_commits(commits: list[dict], machines: list[str]) -> dict:
         #: D 的明细（三者之和恒等于 D，**明细不搬出 D**，ADR §D4.3 / §P2）。
         #: 命名刻意与 `prototype_carrier` 区分 —— 它们是**两个不同集合**：
         #:   · `root_level`：只改机器区根级文件（`docs/事实源/机器/*.md`），不属任何单机；
-        #:   · `carrier_trace_no_partition`：标题/正文有原型盘痕迹（G:/F:），
+        #:   · `carrier_trace_no_partition`：标题/正文有原型盘痕迹（G:/F:），  # gov-paths: allow gov-python: allow — 形态举例
         #:     且**没有**触及任何机器分区 ⇒ 归属仍未知；
         #:   · `other`：其余三源皆无的普通提交。
         #: （`prototype_carrier` 是"有盘痕迹且触及 8RSV60V 分区 ⇒ 从 C 级剔除"的那批，
@@ -486,7 +486,7 @@ def classify_commits(commits: list[dict], machines: list[str]) -> dict:
             if carrier and "DESKTOP-8RSV60V" in touched:
                 result["prototype_carrier"].append({
                     **entry, "would_be": "DESKTOP-8RSV60V",
-                    "why": "标题/正文含原型盘痕迹（G:/F:）—— 盘接到 8RSV60V 上"
+                    "why": "标题/正文含原型盘痕迹（G:/F:）—— 盘接到 8RSV60V 上"  # gov-paths: allow gov-python: allow — 形态举例
                            "不等于活是该机干的（承载 ≠ 产出）"})
             if weak:
                 for stem, paths in weak.items():
@@ -575,7 +575,7 @@ def collect(repo: Path, month: str, machine: str | None = None) -> dict:
             "machine_id": PROTOTYPE, "kind": PROTOTYPE_KIND, "hostname": None,
             "count": labels["prototype"],
             "note": f"分机事实源 {SPLIT_DATE} 才建立；allin 当时在一台**未登记的原型机**上推进，"
-                    "其外置盘（F:/G:）现已接到 @DESKTOP-8RSV60V —— **不代表该机执行**"
+                    "其外置盘（F:/G:）现已接到 @DESKTOP-8RSV60V —— **不代表该机执行**"  # gov-paths: allow gov-python: allow — 形态举例
                     "（承载 ≠ 产出，ADR 已明令）。此桶内的提交不计入任何实机的 A/B/C 级。",
             "commits": tiers["prototype_01"],
         },
@@ -908,7 +908,7 @@ def selfcheck() -> int:
                                "docs(ho): @跨机 共识类，不是某台机的活", post)
 
         (repo / HANDOVER_DIR).mkdir(parents=True, exist_ok=True)
-        (repo / HANDOVER_DIR / "2026-11.md").write_text(
+        (repo / HANDOVER_DIR / "2026-11.md").write_text(  # gov-python: allow — 调用末行已带 encoding="utf-8"，g09 只扫首行
             "# 交接 · 2026-11\n\n"
             "## 按机索引（以机器标识为顶层）\n\n"
             "### `@SIWPAN`（2 节）\n\n"
