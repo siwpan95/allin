@@ -1,0 +1,59 @@
+#!/bin/sh
+# ═══════════════════════════════════════════════════════════════════════════════
+# 先例：从 git 历史中剔除单个臃肿文件 —— `目录索引.txt`
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# ## 用途
+# `git filter-branch --index-filter` 的过滤器：把 `目录索引.txt` 从**每一个提交的索引**
+# 里移除，使历史中不再有它的任何版本。**非一次性脚本** —— 留作「仓库被某个大文件撑爆」
+# 这类问题的可复用先例（改掉末尾的文件名即可）。
+#
+# ## 为什么需要它（2026-09-25 实测）
+# 该文件曾逐次提交，**17 个历史版本累计 568.2 MB**（4 个各 ~48.5 MB），
+# 把 `G:\allin` 的 `.git` 撑到 **10,718 MB**（主 pack 4,226 MB），
+# 而**全仓其它内容合计仅 4 MB**。后果：`git push` **挂起 17 分钟不动**
+# （无临时包、无 443 连接、CPU 0.1s、pack 目录零变化）；调大
+# `http.postBuffer=500MB` + 强制 HTTP/1.1 **同样挂起**。
+#
+# ## 完整执行链（照抄可用）
+# ```sh
+# # 0) 先确保 git rm 的 --force-remove/--ignore-unmatch 语义正确：
+# #    本条脚本在临时索引上单独验过（GIT_INDEX_FILE=... git read-tree HEAD; sh 本脚本）
+# # 1) 重写全部 ref 的历史
+# git filter-branch --force \
+#   --index-filter 'sh "G:/tools/filter-drop-dir-index.sh"' \
+#   --prune-empty -- --all          # → 93 提交变 84（去掉 9 个仅含该文件的空提交），0.9 分钟
+# # 2) 清掉 filter-branch 的备份 refs（否则旧对象仍算可达，gc 回收不掉）
+# git for-each-ref --format='%(refname)' refs/original/ | xargs -n1 git update-ref -d
+# git reflog expire --expire=now --all
+# # 3) 回收 —— 这一步才是真正瘦身
+# git gc --prune=now                # → .git 10,718 MB 变 14 MB，6.5 分钟
+# # 4) 校验完整性
+# git fsck --no-progress            # → exit 0
+# # 5) 推送（历史已重写，必须 force；lease 值写死以免误覆盖远端新提交）
+# git push --force-with-lease=master:<远端原SHA> origin master
+# ```
+#
+# ## 两个坑（都实测踩过）
+# 1. **`git update-index --force-remove` 与 `--ignore-unmatch` 不能同用** —— 会报语法错、
+#    filter-branch 直接 `index filter failed` 退出。改用 `git rm --cached --ignore-unmatch -f`。
+# 2. **不要把过滤命令内联写在 PowerShell 的命令行里** —— PowerShell 传参时会吞掉引号，
+#    **中文文件名尤其易碎**（本脚本文件名就是中文）。落成文件、用 `sh <路径>` 调用最稳。
+#
+# ## 附带认知（反直觉，务必知道）
+# `git filter-branch` 会**连同远端跟踪 ref 一起重写** —— `refs/remotes/origin/master`
+# 会被改成"改写后"的版本，所以**「远端 = 回滚点」这个假设在重写瞬间失效**。
+# 真正的回滚点在 **`refs/original/refs/remotes/origin/master`**（filter-branch 自动留的）。
+# 正确处置：先 `git update-ref refs/remotes/origin/master <远端原SHA>` 修回真值，再推。
+#
+# ## 结果（2026-09-25）
+# `.git` 10,718 MB → **14.3 MB**；远端 clone `.git` **1.4 MB**；提交 93 → 85；
+# 历史中该文件 **0 个提交涉及**；`git fsck` 无错误。
+# 详见 `G:\allin\docs\冗余清理与盘位归位_2026-09-24.md` §十二。
+#
+# ## 用法
+# 直接作为 `--index-filter` 的值；若要去掉别的文件，改下面那行的文件名即可。
+# ═══════════════════════════════════════════════════════════════════════════════
+
+git rm --cached --ignore-unmatch -f "目录索引.txt" >/dev/null 2>&1 || true
+exit 0

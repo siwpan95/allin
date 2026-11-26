@@ -1,0 +1,331 @@
+# -*- coding: utf-8 -*-
+"""重建 G:\\allin\\目录索引.txt —— 从「全盘文件快照」改为「项目目录文档化索引」。
+
+设计（2026-09-24 用户拍板）：
+- 以 README 为唯一事实源：每个项目一条记录 = 标题 + 首段摘要(≤120字) + README 相对链接
+- **不复制 README 正文**（避免制造第二份事实源）；要详情点进 README
+- 覆盖：G:\\repos(108) + G:\\local 的实质项目 + G:\\platform + G:\\tools + G:\\allin
+- 排除归档/备份/构建输出/注册目录（它们不是项目）
+- 缺 README 的项目**如实列出**（不静默跳过）—— 这是"如果没有需要补齐"的判据
+
+用法：
+  python build_dir_index.py            # 干跑，打印条目与统计，不写文件
+  python build_dir_index.py --apply    # 写 G:\\allin\\目录索引.txt
+
+产物去向（2026-09-25 用户拍板：**不入库**）：
+  `G:\\allin\\.gitignore` 已含 `/目录索引.txt`。
+  理由：该文件曾逐次提交，**17 个历史版本累计 568 MB**，把 `.git` 撑到 **10.7 GB**
+  —— `git push` 因此**挂起 17 分钟不动**。已用 `G:\\tools\\filter-drop-dir-index.sh`
+  从全部历史剔除，剔除 + `git gc --prune=now` 后 `.git` 降到 **14 MB**。
+  索引可随时由本脚本重生成（命中体量缓存时 0.1 s），**无需版本化**。
+  纪律：**改项目请改它的 README**；索引由本脚本产出，**不手改、不提交**。
+"""
+import io
+import json
+import os
+import re
+import sys
+import datetime
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+OUT = r"G:\allin\目录索引.txt"
+
+# 要扫描的根（有序）：(显示名, 绝对路径, 是否每个子目录都是一个项目)
+ROOTS = [
+    ("repos",     r"G:\repos",     True),
+    ("local",     r"G:\local",     True),
+]
+SINGLES = [
+    ("allin-platform", r"G:\allin-platform", "README.md"),
+    ("tools",     r"G:\tools",     "README.md"),
+    ("allin",     r"G:\allin",     "README.md"),
+]
+
+# 明确排除的目录名（归档/备份/构建/注册/临时 —— 不是项目）
+EXCLUDE_DIRS = {
+    "archived", "backup", "tools-archive", "tools-backup", "tools-category-readmes",
+    "tools-migration", "media-archive", "_pp", "mdviewer_build", "_poc_radio",
+    "node_modules", ".git", "__pycache__", ".venv", "dist", "build", ".pytest_cache",
+    ".mypy_cache", ".idea", ".vscode",
+}
+README_NAMES = ("README.md", "readme.md", "README.MD", "README.markdown",
+                "README.txt", "readme.txt", "README", "Readme.md")
+
+
+def read_readme(dirpath):
+    for n in README_NAMES:
+        p = os.path.join(dirpath, n)
+        if os.path.isfile(p):
+            try:
+                t = io.open(p, encoding="utf-8-sig", errors="replace").read()
+            except Exception:
+                return None, None, n
+            return t, p, n
+    return None, None, None
+
+
+#: 元信息行（仓库链接/许可/占位符说明/端口登记/日期/作者/版本）—— 不是项目介绍
+META_LINE = re.compile(
+    r"^(仓库\s*[:：]|许可\s*[:：]|注\s*[:：]|端口登记|作者\s*[:：]|版本\s*[:：]|"
+    r"license\s*[:：]|repo\s*[:：]|<https?://|https?://\S+\s*[｜|]\s*(许可|license))",
+    re.I)
+
+
+def _is_meta(s):
+    return bool(META_LINE.match(s)) or "｜" in s and ("许可" in s or "license" in s.lower())
+
+
+def extract(text):
+    """返回 (标题, 首段摘要)。
+
+    先把文档切成「块」（段落 / 引用块 / 围栏 / 标题 / 表格 / 分隔线），
+    再按统一判据挑出标题与首段：
+      - 标题 = 首个 H1；无 H1 时退化为首个**非元信息**的非空行；
+      - 摘要 = 第一个「真正文块」—— 段落块，或**去掉元信息行后仍有正文的引用块**。
+    跳过：围栏（含内容）、表格、分隔线、纯元信息引用块、徽章行。
+    """
+    lines = text.split("\n")
+    # ── 切块（**必须带围栏状态**：围栏内的行属于 fence 块，绝不落成 para）──
+    blocks = []          # (kind, [lines])   kind: para|quote|fence|head|table|rule|list|badge
+    in_fence = False
+    for raw in lines:
+        s = raw.rstrip()
+        st = s.strip()
+        if st.startswith("```") or st.startswith("~~~"):
+            in_fence = not in_fence
+            if blocks and blocks[-1][0] == "fence":
+                blocks[-1][1].append(st)
+            else:
+                blocks.append(("fence", [st]))
+            continue
+        if in_fence:
+            if blocks and blocks[-1][0] == "fence":
+                blocks[-1][1].append(st)
+            else:
+                blocks.append(("fence", [st]))
+            continue
+        if not st:
+            blocks.append(("blank", [])); continue
+        if st.startswith("#"):
+            blocks.append(("head", [st])); continue
+        if st.startswith("|") or re.match(r"^\|?[\s:-]*\|", st):
+            blocks.append(("table", [st])); continue
+        if st.startswith("---") or st.startswith("***") or st.startswith("___"):
+            blocks.append(("rule", [st])); continue
+        if st.startswith(">"):
+            blocks.append(("quote", [st.lstrip("> ").strip()])); continue
+        if re.match(r"^([-*+]|\d+\.)\s", st):
+            blocks.append(("list", [st])); continue
+        if re.match(r"^\[?!\[", st):
+            blocks.append(("badge", [st])); continue
+        blocks.append(("para", [st]))
+
+    # ── 合并同类型的连续块（表/列表/围栏各自成块，段落与引用按块聚合）──
+    merged = []
+    for kind, ls in blocks:
+        if not ls:
+            merged.append((kind, [])); continue
+        if merged and merged[-1][0] == kind and kind in ("para", "quote", "list", "fence", "table"):
+            merged[-1] = (kind, merged[-1][1] + ls)
+        else:
+            merged.append((kind, ls))
+
+    # ── 标题 ──
+    title = None
+    t_pos = -1
+    for i, (kind, ls) in enumerate(merged):
+        if kind == "head":
+            title = ls[0].lstrip("#").strip()
+            t_pos = i
+            break
+    if title is None:                       # 无 H1：退化到首个非元信息非空行
+        for i, (kind, ls) in enumerate(merged):
+            if kind in ("para", "quote", "head"):
+                cand = " ".join(ls).strip()
+                if cand and not _is_meta(cand):
+                    title = cand
+                    t_pos = i
+                    break
+                if cand and title is None:
+                    title = cand              # 实在没有，就用它（如 magic-tower 的单行引用）
+                    t_pos = i
+                    break
+    if title is None:
+        return None, None
+
+    # ── 摘要：标题之后的第一个真正文块 ──
+    # 注意：紧跟 list 块的 para 块是**列表续行**（markdown 里缩进续行常见），不是正文段落。
+    for pos, (kind, ls) in enumerate(merged[t_pos + 1:], start=t_pos + 1):
+        if kind == "para":
+            prev = merged[pos - 1][0] if pos > 0 else None
+            if prev == "list":
+                continue                      # 列表项的续行 → 跳过（修 musickit 残片）
+            cand = " ".join(ls)
+        elif kind == "quote":
+            keep = [x for x in ls if not _is_meta(x)]
+            if not keep:
+                continue                      # 纯元信息引用块 → 跳过
+            cand = " ".join(keep)
+        else:
+            continue
+        cand = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", cand)   # 链接/图片 → 保留文字
+        cand = re.sub(r"<([^>]+)>", r"\1", cand)                  # <url> → url
+        cand = cand.replace("**", "").replace("`", "").strip()
+        if not cand:
+            continue
+        if len(cand) > 120:
+            cand = cand[:120].rstrip() + "…"
+        return title, cand
+
+    return title, None
+
+
+CACHE = r"G:\tools\.dirsize-cache.json"
+
+
+def dir_size(p, memo=None, cache=None):
+    """目录体量与文件数。带进程内 memo + 跨次运行的 JSON 缓存（按 mtime 失效）。
+
+    为什么要缓存：全量 walk 每个项目目录要分钟级；而索引只需粗粒度体量，
+    绝大多数项目在两次生成之间没变。缓存放 G:\\tools（脚本区，非文档枢纽）。
+    """
+    memo = memo if memo is not None else {}
+    if p in memo:
+        return memo[p]
+    try:
+        mt = os.path.getmtime(p)
+    except OSError:
+        return (0, 0)
+    if cache is not None:
+        hit = cache.get(p)
+        if hit and abs(hit[0] - mt) < 1e-6:
+            memo[p] = (hit[1], hit[2])
+            return memo[p]
+    cnt = 0
+    sz = 0
+    for dp, dn, fn in os.walk(p):
+        dn[:] = [d for d in dn if d not in EXCLUDE_DIRS]
+        for f in fn:
+            try:
+                sz += os.path.getsize(os.path.join(dp, f))
+                cnt += 1
+            except Exception:
+                pass
+    memo[p] = (cnt, sz)
+    if cache is not None:
+        cache[p] = [mt, cnt, sz]
+    return memo[p]
+
+
+def main():
+    apply = "--apply" in sys.argv
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    try:
+        cache = json.load(io.open(CACHE, encoding="utf-8"))
+    except Exception:
+        cache = {}
+    print(f"  体量缓存: {len(cache)} 条")
+    entries = []      # (组, id, 路径, 标题, 摘要, README相对)
+    missing = []      # (组, id, 路径)
+
+    for group, root, per_sub in ROOTS:
+        if not os.path.isdir(root):
+            continue
+        for d in sorted(os.listdir(root)):
+            p = os.path.join(root, d)
+            if not os.path.isdir(p) or d in EXCLUDE_DIRS:
+                continue
+            text, path, name = read_readme(p)
+            rel = f"{d}/{name}" if name else None
+            if text is None:
+                # 允许向下一层找（如 12test/cordis-host）
+                sub = [x for x in sorted(os.listdir(p))
+                       if os.path.isdir(os.path.join(p, x)) and x not in EXCLUDE_DIRS]
+                got = False
+                for s in sub:
+                    sp = os.path.join(p, s)
+                    t2, p2, n2 = read_readme(sp)
+                    if t2 is not None:
+                        t, su = extract(t2)
+                        entries.append((group, f"{d}/{s}", sp, t, su, f"{d}/{s}/{n2}", *dir_size(sp, cache=cache)))
+                        got = True
+                        break
+                if not got:
+                    missing.append((group, d, p))
+                continue
+            t, su = extract(text)
+            entries.append((group, d, p, t, su, rel, *dir_size(p, cache=cache)))
+
+    for group, root, rname in SINGLES:
+        rp = os.path.join(root, rname)
+        if not os.path.isfile(rp):
+            missing.append((group, os.path.basename(root), root))
+            continue
+        t, su = extract(io.open(rp, encoding="utf-8-sig", errors="replace").read())
+        entries.append((group, os.path.basename(root), root, t, su, rname, *dir_size(root, cache=cache)))
+
+    # ── 输出 ──
+    buf = []
+    buf.append("# G:\\ 目录索引 —— 项目目录文档化索引（以 README 为准绳）")
+    buf.append("#")
+    buf.append("# 形态：每个项目一条 = 标题 + 首段摘要 + README 相对链接 + 体量")
+    buf.append("# 事实源：各项目自己的 README（本文件不复制正文，只做索引；改项目请改它的 README）")
+    buf.append(f"# 生成时间：{now}    生成器：G:\\tools\\build_dir_index.py")
+    buf.append(f"# 条目：{len(entries)} 个项目    缺失 README：{len(missing)} 个")
+    buf.append("#")
+    buf.append("# 说明：本索引替代原「全盘文件快照」形态（原 48.53 MB / 555,220 行，"
+               "含 Temp/assets/node_modules 等非项目行）。")
+    buf.append("#")
+    cur = None
+    for g, i, p, t, su, rel, cnt, sz in entries:
+        if g != cur:
+            cur = g
+            buf.append("")
+            buf.append(f"## {g}/  （{sum(1 for e in entries if e[0] == g)} 个项目）")
+            buf.append("")
+            buf.append("| 项目 | 标题 | 摘要 | README | 文件数 | 体量 |")
+            buf.append("| --- | --- | --- | --- | --- | --- |")
+        mb = sz / 1024 / 1024
+        size = f"{sz/1024:.0f} KB" if mb < 1 else (f"{mb:.1f} MB" if mb < 1024 else f"{mb/1024:.2f} GB")
+        b = f"`{i}`"
+        buf.append(f"| {b} | {t or '—'} | {su or '—'} | [`{rel}`]({rel}) | {cnt} | {size} |")
+
+    if missing:
+        buf.append("")
+        buf.append(f"## ⚠ 缺 README 的目录（{len(missing)} 个，待补齐）")
+        buf.append("")
+        buf.append("| 组 | 目录 | 路径 |")
+        buf.append("| --- | --- | --- |")
+        for g, i, p in missing:
+            buf.append(f"| {g} | `{i}` | `{p}` |")
+
+    buf.append("")
+    out = "\n".join(buf) + "\n"
+
+    print(f"  条目: {len(entries)} 个项目")
+    print(f"  缺 README: {len(missing)}" + (" → " + ", ".join(f"{g}/{i}" for g, i, _ in missing) if missing else " ✅"))
+    print(f"  输出行数: {len(buf)}    输出体量: {len(out.encode('utf-8'))/1024:.1f} KB")
+    print(f"  （原索引 48.53 MB / 555,220 行）")
+    print()
+    print("  --- 每个组的条目数 ---")
+    groups = {}
+    for g, *_ in entries:
+        groups[g] = groups.get(g, 0) + 1
+    for g, n in groups.items():
+        print(f"      {g:<12} {n}")
+
+    if apply:
+        io.open(OUT, "w", encoding="utf-8", newline="\n").write(out)
+        io.open(CACHE, "w", encoding="utf-8").write(json.dumps(cache))
+        print(f"\n  已写入 {OUT}" + f"（体量缓存 {len(cache)} 条 → {CACHE}）")
+    else:
+        print("\n  （干跑；加 --apply 落盘）")
+        print("  --- 前 12 行预览 ---")
+        for l in buf[:12]:
+            print("      " + l[:150])
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
