@@ -1,5 +1,16 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
+> **时点** 2026-11-26（**@`DESKTOP-8RSV60V` 对齐远端后现场复测：发布区双仓迁入 + 公共核钉版升 2.4.2** ——
+>   @`DESKTOP-8RSV60V` 拉取远端 43 笔至 `34df901`，双远端同 SHA、0/0、工作树干净；
+>   @`DESKTOP-8RSV60V` 公共核仓 `G:/repos/allin-governance` 拉取 14 笔至 `fa6b813`，VERSION 2.4.2。
+>   **现场复测实例值（每行单事实，避免路径与正反断言同行）**：
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **77**。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **77**。
+>   @`DESKTOP-8RSV60V` registry 条目 **83**。
+>   @`DESKTOP-8RSV60V` 仓内 venv 已装 `allin-governance` **2.4.2**（与 `requirements-dev.txt` 钉值一致）。
+>   @`DESKTOP-8RSV60V` `facts/machine/DESKTOP-8RSV60V.json` 的 `repos` 段复验通过：`write-agent` 仍在位、双远端。
+>   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第二百二十五节（状态结论）· [@`DESKTOP-8RSV60V` 月账](月账/2026-11.md)（复测流水）。
+> >
 > **时点** 2026-11-25（**@`DESKTOP-8RSV60V` V1/V2 交接验证：六条 E2E 复跑 + 本机事件台账自验 + 月账落地** ——
 >   按交接卷 §二百二十 第二组接手本机待办；仓外干净 venv `G:/_8rsv60v_e2e_20261125`（Python 3.14.7）
 >   装线上 `allin-governance==2.0.2`，cwd 不在仓内跑六条 E2E：
