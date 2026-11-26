@@ -61,7 +61,7 @@ g00–g20 是**判仓库**的门禁，判据对象是被管的仓。本文件判
 退出码：0 全部有量（或有据可查的 SKIP）/ 1 存在盲门 / 2 存在不可判定（未加
 `--allow-undetermined` 时）/ 3 环境错（找不到 registry、解释器不可用）。
 
-## 五段判据（同一份文件，各自可单独跑）
+## 六段判据（同一份文件，各自可单独跑）
 
 | 段 | CLI | 判什么 |
 | --- | --- | --- |
@@ -69,11 +69,19 @@ g00–g20 是**判仓库**的门禁，判据对象是被管的仓。本文件判
 | 之二 | `--two-halves` | 每道门禁的 `--selfcheck` 是否 caught/clean 两半都验 |
 | 之三 | `--coverage-delta` | 未入索引的新文件（不在任何扫描面）+ scanned 是否跟进 |
 | 之四 | 主判定附带 | registry **之外**的判据是否已登记（`README §12` 清单） |
-| **之五** | **`--external`** | **不分语言**：外部脚本判据（npm/node/pwsh）成功时有没有可解析读数 |
-| 自检 | `--selfcheck` | 用假判据证明上面每一段都会红（负对照，87 例） |
+| 之五 | `--external` | **不分语言**：外部脚本判据（npm/node/pwsh）成功时有没有可解析读数 |
+| **之六** | **`--python-external`** | **registry 外 Python 判据**：从 `README §12` 清单推出，回查 `§12.2` 读数契约表 + 探针（`self` 行由 selfcheck 覆盖，不探针） |
+| 自检 | `--selfcheck` | 用假判据证明上面每一段都会红（负对照，113 例） |
 
 之五是 2026-11-25 补的：前四段只覆盖 Python，「判据可以没有读数」这件事在外部脚本上
 整类无人判。详见下方「元判据之五」段的推导与清单方向说明。
+
+之六是 2026-11-26 补的：之五的推导方向（接线 run 行第一段**不是** Python）刻意把
+Python 判据留给 registry 管 —— 但 §12 清单里还有五支 registry 外的 Python 判据
+（`check_conflict_markers` / `check_machine_ledger` / `check_machine_trailer` /
+`check_blind_gates` / `agent_parity`），registry 装不下它们，读数约束也就够不着它们。
+之六从 §12 清单反推这一类，回查 §12.2 的读数契约表；`check_blind_gates` 自己那行
+显式标 `self`（探针跑自己 = 递归，改由 `--selfcheck` 覆盖）。
 """
 
 from __future__ import annotations
@@ -592,12 +600,12 @@ REGISTRY_EXTERNAL_BEGIN = "<!-- registry-external-gates:begin -->"
 REGISTRY_EXTERNAL_END = "<!-- registry-external-gates:end -->"
 
 
-def judge_registry_external(
-    text: str, registry_ids: set[str], wiring_text: str | None, exists
-) -> tuple[list[dict], list[str]]:
-    """解析并核验「registry 之外的判据」清单。纯函数（`exists` 可注入）以便自检。
+def parse_registry_external_block(text: str) -> tuple[list[dict], list[str]]:
+    """解析 §12 的 `registry-external-gates` 块（行解析，不含接线/存在性核验）。纯函数。
 
-    返回 (entries, findings)。findings 非空即判红 —— 例外的可见性本身是一条判据。
+    抽出来有两个消费者：`judge_registry_external`（清单核验）与元判据之六
+    （从这份清单反推 registry 外 Python 判据，再回查 §12.2 契约表）。两处必须
+    同源解析，否则「清单核验看到的」与「契约表对账看到的」会是两份事实。
     """
     findings: list[str] = []
     entries: list[dict] = []
@@ -618,8 +626,23 @@ def judge_registry_external(
         if len(parts) < 2:
             findings.append(f"清单行格式不合法（应为 `id | 入口文件 | 为什么不在 registry`）：{line[:80]}")
             continue
-        entry = {"id": parts[0], "entry": parts[1], "why": parts[2] if len(parts) > 2 else ""}
-        entries.append(entry)
+        entries.append({"id": parts[0], "entry": parts[1], "why": parts[2] if len(parts) > 2 else ""})
+    if not entries and not findings:
+        findings.append("清单块存在但没有任何条目：要么补条目，要么删块（空清单等于没清单）")
+    return entries, findings
+
+
+def judge_registry_external(
+    text: str, registry_ids: set[str], wiring_text: str | None, exists
+) -> tuple[list[dict], list[str]]:
+    """解析并核验「registry 之外的判据」清单。纯函数（`exists` 可注入）以便自检。
+
+    返回 (entries, findings)。findings 非空即判红 —— 例外的可见性本身是一条判据。
+    """
+    findings: list[str] = []
+    entries, parse_findings = parse_registry_external_block(text)
+    findings.extend(parse_findings)
+    for entry in entries:
         if not exists(entry["entry"]):
             findings.append(f"{entry['id']}：清单声明的入口不存在（{entry['entry']}）")
         if entry["id"] in registry_ids:
@@ -631,8 +654,6 @@ def judge_registry_external(
                 f"{entry['id']}：清单声明它已接线，但 `scripts/run_all_gates.sh` 里找不到 {entry['entry']}"
                 "（声明与事实不一致 = 死门候补）"
             )
-    if not entries and not findings:
-        findings.append("清单块存在但没有任何条目：要么补条目，要么删块（空清单等于没清单）")
     return entries, findings
 
 
@@ -1208,6 +1229,246 @@ def run_external(root: Path, timeout: int) -> int:
         print(f"  not a pass：{no_pass} 支（已登记无扫描语义 / 探针未跑 / 显式 SKIP / 环境缺解释器）")
     if red:
         print(f"  判红：{len(red)} 支 —— 见上方 EXTERNAL_RED 段")
+    code = external_exit_code(rows)
+    if findings and code == EXIT_OK:
+        code = EXIT_BLOCKING
+    return code
+
+
+# --------------------------------------------------------------------------- #
+# 元判据之六（`--python-external`）：registry 外 **Python** 判据的读数契约
+# --------------------------------------------------------------------------- #
+#
+# 之五管的是「接线脚本里第一段不是 Python」的外部判据；但 §12 清单里还有五支
+# registry 外的 **Python** 判据（check_conflict_markers / check_machine_ledger /
+# check_machine_trailer / check_blind_gates / agent_parity）。它们不进 registry
+# （registry 是「判仓库」的 20 道契约），也就不受 govlib.Report 的 scanned 约束；
+# 而之五的推导方向又**刻意**够不着它们（run 行第一段是 Python 的行被当作
+# registry 管辖而排除）。于是「判据可以没有读数」在这一类上整类无人判。
+#
+# 方向沿用之五的「反方向清单」：先从 §12 的 registry-external-gates 块推出全部
+# registry 外判据（入口文件以 .py 结尾的即本类），再逐条回查 §12.2 的读数契约表
+# —— 新加一支没登记的，当场红；契约表里登记了清单里没有的，表陈旧，也红。
+#
+# 探针列三种取值（§12.2 表的语法，成本规则与之五同一纪律）：
+#   `<命令>`      —— 每批真跑一次核读数。只登记便宜的（实测 ~1s 量级才登记；
+#                    贵的写 `none:<理由>`，理由过短视为没写）。
+#   `self`        —— 本判据是 check_blind_gates 自己：探针跑自己 = 递归，
+#                    **不探针**，改由 `--selfcheck` 覆盖。显式声明，不是漏登记。
+#   `none:<理由>` —— 不跑（成本/环境），不算通过。
+#
+# 判定词汇沿用之五与 `RULES.md`（同一本账，不自造「非 0 即失败」）：
+#   exit 0 + 读数可解析 ⇒ ext-measured（唯一算通过）；
+#   exit 1 ⇒ ext-failed（判据自己已红，不重复计数）；
+#   exit 2/3 ⇒ ext-env（拒绝判定：不判红、也绝不是通过）；
+#   有退出码但读数解析不出 ⇒ ext-unmeasured（红）；
+#   清单里有、契约表里没有 ⇒ ext-unregistered（红）；
+#   `self` 行 ⇒ self-coverage（not a pass，**单列不折叠**：「谁验它」与
+#   「它算不算通过」是两件事）。
+# --------------------------------------------------------------------------- #
+
+PYTHON_BEGIN = "<!-- python-criteria-readings:begin -->"
+PYTHON_END = "<!-- python-criteria-readings:end -->"
+
+#: 「自己判自己」的显式声明档：不探针（递归），由 --selfcheck 覆盖，不算通过。
+SELF_COVERAGE = "self-coverage"
+
+
+def parse_python_contracts(text: str) -> tuple[list[dict], list[str]]:
+    """解析 §12.2 的 `python-criteria-readings` 块。纯函数，便于自检注入假块。
+
+    与之五的清单同一纪律：**理由字段为空/过短都算格式错** —— `none:` 写不出理由，
+    就说明登记的人没想清楚为什么它不需要读数，那正是要挡的东西。
+    """
+    findings: list[str] = []
+    entries: list[dict] = []
+    begin = text.find(PYTHON_BEGIN)
+    end = text.find(PYTHON_END)
+    if begin < 0 or end < 0 or end < begin:
+        findings.append(
+            "契约表块不存在（`tools/gate/README.md §12.2` 的 python-criteria-readings "
+            "begin/end 标记）：registry 外 Python 判据的读数契约因此不可见"
+        )
+        return entries, findings
+    body = text[begin + len(PYTHON_BEGIN):end]
+    for raw in body.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or line.startswith("<!--"):
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        if len(parts) < 4:
+            findings.append(f"契约表行格式不合法（应为 `id | 读数契约 | 探针 | 备注`）：{line[:90]}")
+            continue
+        entry = {
+            "id": parts[0],
+            "reading": parts[1],
+            "probe": parts[2],
+            "note": parts[3],
+            "kind": "",
+            "pattern": None,
+            "reason": "",
+            "probe_kind": "",
+            "invoke": "",
+            "probe_ok": False,
+            "probe_reason": "",
+            "verdict": "",
+            "scanned": None,
+            "detail": "",
+        }
+        reading = parts[1]
+        if reading == "scanned":
+            entry["kind"] = "scanned"
+        elif reading.startswith("count:"):
+            expr = reading[len("count:"):].strip()
+            try:
+                entry["pattern"] = re.compile(expr)
+                entry["kind"] = "count"
+            except re.error as error:
+                findings.append(f"{entry['id']}：count 正则不合法（{expr}）：{error}")
+        elif reading.startswith("none:"):
+            reason = reading[len("none:"):].strip()
+            if len(reason) < 6:
+                findings.append(f"{entry['id']}：声明「无扫描语义」但理由为空/过短 —— 登记必须可复核")
+            entry["kind"] = "none"
+            entry["reason"] = reason
+        else:
+            findings.append(
+                f"{entry['id']}：读数契约只认 `scanned` / `count:<正则>` / `none:<理由>`，实得 `{reading[:40]}`"
+            )
+        probe = parts[2]
+        if probe == "self":
+            entry["probe_kind"] = "self"
+        elif probe.startswith("none:"):
+            reason = probe[len("none:"):].strip()
+            if len(reason) < 6:
+                findings.append(f"{entry['id']}：探针声明不跑但理由为空/过短 —— 不跑也要说得清")
+            entry["probe_kind"] = "none"
+            entry["probe_reason"] = reason
+        elif probe:
+            entry["probe_kind"] = "command"
+            entry["invoke"] = probe
+            entry["probe_ok"] = True
+        else:
+            findings.append(f"{entry['id']}：探针列只认 `<命令>` / `self` / `none:<理由>`，实得空")
+        if not entry["note"]:
+            findings.append(f"{entry['id']}：备注列为空 —— 每条契约都要说清为什么这样登记（成本 / 覆盖方式）")
+        entries.append(entry)
+    if not entries and not findings:
+        findings.append("契约表块存在但没有任何条目：要么补条目，要么删块（空表等于没表）")
+    return entries, findings
+
+
+def judge_python_criteria(external_entries: list[dict], block_text: str) -> tuple[list[dict], list[str]]:
+    """把「§12 清单推出的 registry 外 Python 判据」与「§12.2 契约表」对上。纯函数。
+
+    方向是反的（与之一致）：不是「表里有什么就判什么」，而是先从 registry-external-gates
+    清单推出全部入口为 .py 的判据，再逐条回查契约表 —— 新加一支没登记的，当场红
+    （`ext-unregistered`）。接缝是 id；兜底接受入口文件去 .py 的主干（§12 两处清单的
+    命名风格本就不统一，`conflict-markers` vs `check_conflict_markers.py`）。
+
+    反向也查：契约表里登记了清单里没有任何 .py 判据能对上的条目 ⇒ 表陈旧（finding，
+    判红）。不查这一向，删掉一支判据后契约表会长期留着一行「有契约」的假声明。
+    """
+    findings: list[str] = []
+    contracts, block_findings = parse_python_contracts(block_text)
+    findings.extend(block_findings)
+    by_id = {contract["id"]: contract for contract in contracts}
+    py_entries = [entry for entry in external_entries if str(entry.get("entry", "")).endswith(".py")]
+    rows: list[dict] = []
+    matched: set[str] = set()
+    for entry in py_entries:
+        contract = by_id.get(entry["id"]) or by_id.get(Path(entry["entry"]).stem)
+        if contract is None:
+            findings.append(
+                f"{entry['id']}：registry 外 Python 判据（{entry['entry']}）在 §12.2 契约表里没有读数契约 "
+                "—— 未登记 ⇒ 它的「绿」不含任何读数（ext-unregistered，判红）"
+            )
+            rows.append({
+                "id": entry["id"], "entry": entry["entry"],
+                "reading": "", "kind": "", "pattern": None, "reason": "",
+                "probe": "", "note": "", "probe_kind": "", "invoke": "",
+                "probe_ok": False, "probe_reason": "",
+                "verdict": EXT_UNREGISTERED, "scanned": None,
+                "detail": "§12 清单里有、契约表里没有（未登记 ⇒ 判红）",
+            })
+            continue
+        matched.add(contract["id"])
+        row = {**entry, **contract}
+        if row["probe_kind"] == "self":
+            row["verdict"] = SELF_COVERAGE
+            row["detail"] = "self 行：探针不跑自己（递归），由 --selfcheck 覆盖 —— not a pass，单列"
+        rows.append(row)
+    for contract in contracts:
+        if contract["id"] not in matched:
+            findings.append(
+                f"{contract['id']}：契约表登记了它，但 §12 清单里没有任何 .py 判据能对上"
+                "（id 与入口主干都匹配不上）—— 表陈旧 / 断线 = 死门候补"
+            )
+    return rows, findings
+
+
+def run_python_external(root: Path, timeout: int) -> int:
+    """`--python-external` 模式：§12 清单 → §12.2 契约表 → 探针 → 判定 → 打印。"""
+    readme = Path(__file__).resolve().parent / "README.md"
+    try:
+        block_text = readme.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"BLIND_GATES ENV ERROR: 读不到 {readme}：{error} —— 契约表不可见", file=sys.stderr)
+        return EXIT_ENV
+
+    entries, findings = judge_registry_external(
+        block_text, set(), None, lambda rel: (readme.parent / rel).is_file()
+    )
+    rows, py_findings = judge_python_criteria(entries, block_text)
+    probe_external(rows, root, timeout)
+    findings = findings + py_findings
+
+    counts: dict[str, int] = {name: 0 for name in (
+        EXT_MEASURED, EXT_DECLARED_UNPROBED, EXT_REGISTERED_NO_SCAN, SELF_COVERAGE,
+        EXT_UNMEASURED, EXT_UNREGISTERED, EXT_BLIND, EXT_SKIPPED, EXT_FAILED, EXT_ENV,
+    )}
+    width = max((len(str(row.get("id"))) for row in rows), default=10)
+    print()
+    print(f"{'CRITERION'.ljust(width)}  {'READ':>5}  {'PROBE':<5}  {'VERDICT':<24} EVIDENCE")
+    print("-" * (width + 60))
+    for row in rows:
+        verdict = row.get("verdict", EXT_ENV)
+        counts[verdict] = counts.get(verdict, 0) + 1
+        scanned = "-" if row.get("scanned") is None else str(row.get("scanned"))
+        probe_label = {"command": "yes", "self": "self", "none": "no"}.get(row.get("probe_kind"), "-")
+        if verdict in EXT_RED:
+            verdict = f"{verdict} (!)"
+        print(f"{str(row.get('id')).ljust(width)}  {scanned:>5}  {probe_label:<5}  {verdict:<24} {row.get('detail', '')}")
+
+    red = [row for row in rows if row.get("verdict") in EXT_RED]
+    for row in red:
+        print()
+        print(f"PYTHON_EXTERNAL_RED {row.get('id')}：{row.get('verdict')}")
+        print(f"  入口：{row.get('entry')}")
+        print(f"  读数契约：{row.get('reading') or '（未登记）'}")
+        print(f"  事实：{row.get('detail')}")
+    print()
+    for finding in findings:
+        print(f"  PYTHON_EXTERNAL_FINDING: {finding}")
+    print()
+    print(
+        "PYTHON_CRITERIA_SUMMARY "
+        f"total={len(rows)} measured={counts[EXT_MEASURED]} "
+        f"self_coverage={counts[SELF_COVERAGE]} "
+        f"registered_no_scan={counts[EXT_REGISTERED_NO_SCAN]} "
+        f"declared_unprobed={counts[EXT_DECLARED_UNPROBED]} "
+        f"unmeasured={counts[EXT_UNMEASURED]} unregistered={counts[EXT_UNREGISTERED]} "
+        f"blind={counts[EXT_BLIND]} skipped={counts[EXT_SKIPPED]} "
+        f"failed={counts[EXT_FAILED]} env={counts[EXT_ENV]}"
+    )
+    if counts[EXT_MEASURED]:
+        print(f"  有读数：{counts[EXT_MEASURED]} 支 registry 外 Python 判据能说出它读了多少 —— 只有这一档算通过")
+    no_pass = (counts[SELF_COVERAGE] + counts[EXT_REGISTERED_NO_SCAN]
+               + counts[EXT_DECLARED_UNPROBED] + counts[EXT_SKIPPED] + counts[EXT_ENV])
+    if no_pass:
+        print(f"  not a pass：{no_pass} 支（self 行由 selfcheck 覆盖 / 已登记无扫描语义 / 探针未跑 / 显式 SKIP / 环境缺解释器）")
+    if red:
+        print(f"  判红：{len(red)} 支 —— 见上方 PYTHON_EXTERNAL_RED 段")
     code = external_exit_code(rows)
     if findings and code == EXIT_OK:
         code = EXIT_BLOCKING
@@ -1871,6 +2132,16 @@ def selfcheck() -> int:
         ("ex-count", "ok a\nok b\nok c\nSELFTEST OK\n", 0, "count:^\\s*ok\\s", True, EXT_MEASURED),
         # 空集形态：一条证据行都没有，却仍然打印了「全绿」的收口句 —— 最典型的盲门输出。
         ("ex-count-empty", "SELFTEST OK\n", 0, "count:^\\s*ok\\s", True, EXT_UNMEASURED),
+        # ADR-0013 D1「三类一套契约、模式各自声明」的立论反例（g21 现场教训）：
+        # `summary: total=17 …` 行一直有数字，上一轮却误判「g21 只有定论句、没有数字」——
+        # 根源是元判据只认 `scanned` 关键字，而不是 g21 没输出。契约按**该判据自己的行
+        # 模式**声明后，正反两面都必须被验到：行在 ⇒ measured；行没了/改了字段名 ⇒ 红。
+        ("ex-summary-dialect", "    summary: total=17 ok=17 drift=0 warn=0\n", 0,
+         "count:summary:\\s*total=(\\d+)\\s+ok=(\\d+)\\s+drift=(\\d+)(?:\\s+warn=(\\d+))?",
+         True, EXT_MEASURED),
+        ("ex-summary-gone", "g21 agent-parity: 绿（台账 ⇄ 锚点 ⇄ 真身 全对账一致）\n", 0,
+         "count:summary:\\s*total=(\\d+)\\s+ok=(\\d+)\\s+drift=(\\d+)(?:\\s+warn=(\\d+))?",
+         True, EXT_UNMEASURED),
         ("ex-skip",
          "gate: scanned 0 file(s); blocking 0; exempted 0; skipped 1.\n"
          "  SKIPPED (not a pass): nothing in scope=1\n",
@@ -1940,6 +2211,111 @@ def selfcheck() -> int:
         expect(zero_rows[0]["verdict"] == EXT_BLIND,
                f"端到端探针：scanned 0 在登记之后仍必须判红（既有语义不变），实得 {zero_rows[0]['verdict']}")
 
+    # --- 元判据之六（registry 外 Python 判据）：解析 → 推导对账 → 判定 → 探针 ----------
+    #
+    # 与之五同一纪律：解析、推导、判定、探针四层各自配反例。摘掉本段的判定分支
+    # （未登记判红 / self 单列 / 探针分流），下面的断言就会失败 —— selfcheck 必须红，
+    # 以证明「第三类覆盖」是这段代码在承重，而不是文档在自说自话。
+    good_py = (
+        PYTHON_BEGIN + "\n"
+        "# 注释\n"
+        "py-a | scanned | some-command --flag | 实测便宜\n"
+        "py-b | scanned | another-command | 备注不能空\n"
+        "py-self | scanned | self | 由 selfcheck 覆盖，不探针\n"
+        "py-none | none:这是纯文本对账判据，无扫描语义 | none:探针会真发网络请求，成本不值当 | 理由可复核\n"
+        + PYTHON_END + "\n"
+    )
+    py_entries, py_findings = parse_python_contracts(good_py)
+    expect(len(py_entries) == 4, f"契约表解析：期望 4 条，实得 {len(py_entries)}")
+    expect(not py_findings, f"契约表解析：合法块不该有 finding，实得 {py_findings}")
+    expect(py_entries[2]["probe_kind"] == "self" and not py_entries[2]["probe_ok"],
+           "契约表解析：`self` 行必须被识别为不探针")
+    expect(py_entries[3]["kind"] == "none" and py_entries[3]["probe_kind"] == "none",
+           "契约表解析：none: 读数契约与 none: 探针必须都能识别")
+    for case_id, text, wanted in (
+        ("pyc-no-block", "no markers\n", "契约表块不存在"),
+        ("pyc-short-line", PYTHON_BEGIN + "\na | scanned\n" + PYTHON_END + "\n", "格式不合法"),
+        ("pyc-empty-note", PYTHON_BEGIN + "\na | scanned | some-cmd | | \n" + PYTHON_END + "\n", "备注列为空"),
+        ("pyc-empty-probe", PYTHON_BEGIN + "\na | scanned |  | 备注\n" + PYTHON_END + "\n", "探针列只认"),
+        ("pyc-short-reason", PYTHON_BEGIN + "\na | none:x | self | 备注\n" + PYTHON_END + "\n", "理由为空"),
+        ("pyc-bad-contract", PYTHON_BEGIN + "\na | whatever | self | 备注\n" + PYTHON_END + "\n", "读数契约只认"),
+        ("pyc-empty-block", PYTHON_BEGIN + "\n# 只有注释\n" + PYTHON_END + "\n", "没有任何条目"),
+    ):
+        _e, findings = parse_python_contracts(text)
+        expect(any(wanted in item for item in findings),
+               f"{case_id}: 期望 finding 含「{wanted}」，实得 {findings}")
+
+    # 推导对账（反方向清单）：§12 清单推出 .py 判据 → 回查契约表。
+    # 未登记 ⇒ ext-unregistered（红）；self 行 ⇒ self-coverage（单列 not-a-pass）；
+    # 契约表登记了清单里没有的 ⇒ 表陈旧（finding，判红）。
+    derived_py = [
+        {"id": "py-a", "entry": "a_criterion.py", "why": ""},
+        {"id": "py-stem-alias", "entry": "py-b.py", "why": ""},  # id 不同但主干 py-b 能对上
+        {"id": "py-self", "entry": "self_criterion.py", "why": ""},
+        {"id": "py-brand-new", "entry": "brand_new.py", "why": ""},  # ① 未登记
+    ]
+    inv_rows, inv_findings = judge_python_criteria(derived_py, good_py)
+    inv_verdicts = {row["id"]: row["verdict"] for row in inv_rows}
+    expect(inv_verdicts.get("py-brand-new") == EXT_UNREGISTERED,
+           f"①未登记的 Python 判据必须 ext-unregistered，实得 {inv_verdicts.get('py-brand-new')}")
+    expect(any("未登记" in item or "契约表里没有" in item for item in inv_findings),
+           f"①未登记时应给出 finding，实得 {inv_findings}")
+    expect(external_exit_code(inv_rows) == EXIT_BLOCKING, "①退出码：未登记必须为 1")
+    expect(inv_verdicts.get("py-self") == SELF_COVERAGE,
+           f"④self 行必须单列 self-coverage（不折叠进其他档），实得 {inv_verdicts.get('py-self')}")
+    expect(SELF_COVERAGE not in EXT_RED and external_exit_code([{"verdict": SELF_COVERAGE}]) == EXIT_OK,
+           "④self 行不判红 —— 但它也不在唯一算通过的档里（由上一条断言与 EXT_RED 成员性共同钉住）")
+    expect(any("表陈旧" in item for item in inv_findings),
+           f"反向对账：契约表登记了清单里没有的判据必须报表陈旧，实得 {inv_findings}")
+    expect(not any("py-b" in item and "表陈旧" in item for item in inv_findings),
+           "入口主干（py-b.py → py-b）匹配上时不得误报表陈旧")
+
+    # 判定 + 探针层（真起子进程）：②登记后绿 ③scanned 0 仍红 ⑤探针命令坏 ⇒ ext-env。
+    with tempfile.TemporaryDirectory(prefix="blind-gates-python-") as tmp:
+        tmp_path = Path(tmp)
+        py = sys.executable.replace("\\", "/")
+        fixture_py = tmp_path / "py_reading.py"
+        fixture_py.write_text(
+            "import sys\nsys.stdout.write('py-registered: scanned 9 file(s); blocking 0.\\n')\n",
+            encoding="utf-8", newline="\n",
+        )
+        fixture_zero = tmp_path / "py_zero.py"
+        fixture_zero.write_text(
+            "import sys\nsys.stdout.write('py-blind: scanned 0 file(s); blocking 0; exempted 0; skipped 0.\\n')\n",
+            encoding="utf-8", newline="\n",
+        )
+        fixture_noread = tmp_path / "py_noread.py"
+        fixture_noread.write_text("import sys\nsys.stdout.write('done, all good\\n')\n", encoding="utf-8", newline="\n")
+        probe_block = (
+            PYTHON_BEGIN + "\n"
+            f"py-registered | scanned | {py} py_reading.py | 夹具\n"
+            f"py-noreading | scanned | {py} py_noread.py | 夹具\n"
+            f"py-blind | scanned | {py} py_zero.py | 夹具\n"
+            "py-broken-cmd | scanned | no-such-interpreter-4f2a1 x.py | 夹具\n"
+            + PYTHON_END + "\n"
+        )
+        probe_derived = [
+            {"id": "py-registered", "entry": "py_reading.py", "why": ""},
+            {"id": "py-noreading", "entry": "py_noread.py", "why": ""},
+            {"id": "py-blind", "entry": "py_zero.py", "why": ""},
+            {"id": "py-broken-cmd", "entry": "x.py", "why": ""},
+        ]
+        rows, _f = judge_python_criteria(probe_derived, probe_block)
+        probe_external(rows, tmp_path, timeout=120)
+        got = {row["id"]: row["verdict"] for row in rows}
+        expect(got.get("py-registered") == EXT_MEASURED,
+               f"②登记 + 实测有读数必须 ext-measured，实得 {got.get('py-registered')}")
+        expect(got.get("py-noreading") == EXT_UNMEASURED,
+               f"exit 0 但读数解析不出必须 ext-unmeasured（红），实得 {got.get('py-noreading')}")
+        expect(got.get("py-blind") == EXT_BLIND,
+               f"③scanned 0 + exit 0 + 无 SKIP 必须仍红（既有语义不变），实得 {got.get('py-blind')}")
+        expect(got.get("py-broken-cmd") == EXT_ENV,
+               f"⑤探针命令不存在必须 ext-env（不判红、也不是通过），实得 {got.get('py-broken-cmd')}")
+        expect(external_exit_code([{"verdict": EXT_ENV}]) == EXIT_OK,
+               "⑤ext-env 不判红（那是要修环境，不是判据查出问题）")
+        expect(external_exit_code(rows) == EXIT_BLOCKING,
+               "整批判定：unmeasured/blind 并存时退出码必须为 1")
+
     payload = json.dumps(
         {"cases": checked, "pass": checked - len(failures), "fail": len(failures)},
         ensure_ascii=False,
@@ -1953,6 +2329,8 @@ def selfcheck() -> int:
         return EXIT_BLOCKING
     print("selfcheck ok: 假盲门被抓、假正常被放、假 SKIP 不算红、无 scanned 字段记为不可判定")
     print("              scanned 不变 + 有新增文件报覆盖未跟进；未入索引文件被单列；两半残缺全被判红")
+    print("              外部判据（不分语言）与 registry 外 Python 判据：未登记判红 / 登记后转绿 /")
+    print("              scanned 0 仍红 / self 行单列 / 探针坏命令记 ext-env —— 六段各自的判定分支都在承重")
     return EXIT_OK
 
 
@@ -1995,6 +2373,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="元判据之五：盘点 run_all_gates.sh 里所有**非 Python** 的外部判据"
                              "（npm / node / pwsh / powershell），核「成功时有没有可解析读数」；"
                              "未登记或实测无读数 ⇒ 判红")
+    parser.add_argument("--python-external", action="store_true",
+                        help="元判据之六：盘点 README §12 清单里 registry 外的 **Python** 判据"
+                             "（5 支），回查 §12.2 读数契约表并真跑便宜探针；未登记或实测无读数"
+                             " ⇒ 判红；`self` 行（check_blind_gates 自己）由 --selfcheck 覆盖，不探针")
     parser.add_argument("--external-timeout", type=int, default=180,
                         help="单支外部判据探针的超时秒数（默认 180；超时记 ext-env，不判红）")
     parser.add_argument("--two-halves", action="store_true",
@@ -2010,6 +2392,8 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[2]
     if args.external:
         return run_external(root, args.external_timeout)
+    if args.python_external:
+        return run_python_external(root, args.external_timeout)
     python = args.python or os.environ.get("DSH_GOVERNANCE_PYTHON") or sys.executable
     registry = locate_registry(args.registry, args.gatesuite, python)
     gates = load_registry(registry)

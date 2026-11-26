@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""g21 · agent-parity —— routes.yaml ⇄ SKILL.md 锚点 ⇄ GOVERNANCE 段锚点 三方对账门禁，
+r"""g21 · agent-parity —— routes.yaml ⇄ SKILL.md 锚点 ⇄ GOVERNANCE 段锚点 三方对账门禁，
 外加第四方「真身」对账（目录 ⇄ 台账 ⇄ 散文声明数，ADR-0011 §D2）。
 
 设计依据（冻结基线 v3）：team 交付物 P2-智能体编排工程化.md §1/§2/§5；
@@ -58,14 +58,44 @@ error 行 ok:false，warn 行 ok:true 附 ok=true 的超龄/降级提示）。
 
 零第三方依赖（仅标准库）——立论：便携 Python 无 PyYAML 曾致 g18 假红，本门禁的
 routes.yaml 是受控子集（version + 单行 flow 条目），行式解析即可，不引入 PyYAML 依赖。
+
+扫描单位契约（ADR-0013 D2：扫描单位由判据自己定义、写进 docstring、读数与内部计数
+必须一致）。读数就是既有的 summary 行（**格式冻结，元判据按
+`summary: total=(\d+) ok=(\d+) drift=(\d+)` 登记**，不许加字段也不许改名 ——
+同一事实出两份读数必然漂，本仓的常数病）：
+
+    summary: total=17 ok=17 drift=0 warn=0
+
+  * 扫描单位 = routes.yaml 台账条目（机器可读唯一事实源的天然单位）。total = 本次
+    **逐条核过**的台账条目数 —— 不是文件数、不是锚点数、不是比对断言次数：后三者都是
+    条目的衍生物（随 forms 措辞、声明载体增删漂移），拿衍生物当分母会让「量了什么」
+    跟着无关改动变义。
+  * ok = 没有任何 error findings 的路由条数；drift = 有 error findings 的不同
+    routeId 数（孤儿锚 / 目录名 / 声明载体等伪 routeId 也计入，故 drift 条数 ≤ error
+    findings 条数）；warn = warn findings 条数（W301 超龄 / W302 载体无声明，
+    只计数不判红）。
+  * 为什么 total 足以回答「量到了」：四方对账的每一条判据（entry 存在且非空、双形态
+    锚点恰好一次、孤儿锚反向对账、声明⇄台账、目录⇄台账双向差集、router 自洽）
+    最终都落在这 N 个条目上 —— total=17 就是「17 个条目各自被全套判据过了一遍」。
+    total=0 只可能出现在空集结构错（E203 空台账 / E204 载体缺失或真身目录为空），
+    那条路径 raise + error 行 + **不打 summary 行**：「不可判定」≠「量过 0 条全对」。
+  * 加一条 routes（补齐锚点、目录、三处声明回填后）会怎样：total +1；ok/drift 随
+    该条目自己的判据结果计入；summary 行格式不变。
+  * 自洽断言（读数与实况必须一套账）：summary.total 必须 == 内部实际读到的
+    routes 条目数，不等 = 判据自身缺陷，fail-loud raise（脚本态经崩溃处理器落
+    E999 行并 exit 3）。这是 ADR-0013 D2「配负对照」的落地 —— 防「读数一套账、
+    实况另一套账」的病，而不是防台账写错（那是 E1xx 的职责）。
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 import re
 import subprocess
 import sys
+import tempfile
 from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -110,6 +140,14 @@ FORMS = {"workbuddy", "dsh"}
 WARN_DAYS = 90
 SCHEMA_VERSION = 1
 REASON_MAX = 500
+
+#: 元判据读数行的唯一解析口（selfcheck 与外部元判据共用同一正则，防两种读法各说各话）。
+READOUT_RE = re.compile(
+    r"^agent-parity: scanned (\d+) route\(s\); checked (\d+) assertion\(s\) "
+    r"across (\d+) carrier\(s\); drift (\d+); blocking (\d+)$")
+#: 最近一次成功运行打印的读数行及构成它的内部计数（--selfcheck 用它断言
+#: 「打印出来的」==「内部累加的」，防读数与实况两套账）。
+_LAST_READOUT: dict | None = None
 
 
 class Structural(Exception):
@@ -332,8 +370,15 @@ def finding(code: str, severity: str, route_id: str, side: str, ok: bool,
             "ok": ok, "reason": reason[:REASON_MAX]}
 
 
-def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date):
-    """返回 (errors, warns)。error/warn 行的 reason ≤500 字符且带指名文件的修复指引。"""
+def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date,
+             tally: Counter | None = None):
+    """返回 (errors, warns)。error/warn 行的 reason ≤500 字符且带指名文件的修复指引。
+
+    `tally` 是元判据读数 checked 的断言计数器：每执行一处比对就在此处 +1
+    （与判定同一处累加，禁事后公式反推 —— 读数与实况必须一套账）。
+    tally 为 None 时内部临时建一个，行为与计数完全无关。
+    """
+    tally = Counter() if tally is None else tally
     errors: list[dict] = []
     warns: list[dict] = []
     known = {r["id"] for r in routes}
@@ -343,12 +388,14 @@ def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date):
 
     for r in routes:
         rid = r["id"]
+        tally["entry_exists"] += 1  # 断言：entry 文件存在且非空
         entry_path = ROOT / r["entry"]
         if not entry_path.is_file() or entry_path.stat().st_size == 0:
             err("E105", rid, "routes",
                 f"入口文件缺失或为空：{r['entry']}",
                 "补齐该入口文件（含非空 SKILL.md），或改 routes.yaml 该条目的 entry 指向")
         if "workbuddy" in r["forms"]:
+            tally["anchor_exact_once"] += 1  # 断言：workbuddy 形态锚点恰好 1 次
             n = wb.get(rid, 0)
             if n == 0:
                 err("E101", rid, "workbuddy",
@@ -359,6 +406,7 @@ def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date):
                     f"SKILL.md 锚点 <!-- route:{rid} --> 出现 {n} 次（期望恰好 1 次）",
                     "删除多余锚点（每条路由每形态只允许一个锚点），复跑本门禁")
         if "dsh" in r["forms"]:
+            tally["anchor_exact_once"] += 1  # 断言：dsh 形态锚点恰好 1 次
             n = dsh.get(rid, 0)
             if n == 0:
                 err("E102", rid, "dsh",
@@ -369,6 +417,7 @@ def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date):
                 err("E104", rid, "dsh",
                     f"GOVERNANCE 段锚点 <!-- route:{rid} --> 出现 {n} 次（期望恰好 1 次）",
                     "删除多余锚点（含注释里的示例锚），复跑本门禁")
+        tally["lastverified_age"] += 1  # 断言：lastVerified 时效（超龄=W301 warn）
         age = (today - date.fromisoformat(r["lastVerified"])).days
         if age > WARN_DAYS:
             warns.append(finding("W301", "warn", rid, "routes", True,
@@ -379,6 +428,7 @@ def findings(routes: list[dict], wb: Counter, dsh: Counter, today: date):
             ("workbuddy", wb, "SKILL.md"),
             ("dsh", dsh, "GOVERNANCE 段")):
         for aid in sorted(counts):
+            tally["orphan_anchor"] += 1  # 断言：正文里每个锚点 id 是否都在台账内（反向对账）
             if aid not in known:
                 err("E103", aid, side,
                     f"{where} 存在台账外孤儿锚点 <!-- route:{aid} -->（{counts[aid]} 次）",
@@ -405,15 +455,17 @@ def skill_dirs() -> set[str]:
     return dirs
 
 
-def declared_counts() -> tuple[list[dict], list[dict]]:
+def declared_counts(tally: Counter | None = None) -> tuple[list[dict], list[dict]]:
     """三处人写载体里的「N 个专项 skill」声明 → (命中清单, 一处都没有的载体清单)。
 
     只放宽措辞（个/条、专项/既有项目级），不放过数值：同一个载体里命中几处就核几处，
     任何一处与台账不等即红 —— 「换一种说法」不该是逃出判据的办法。
     """
+    tally = Counter() if tally is None else tally
     hits: list[dict] = []
     silent: list[dict] = []
     for rel, short, label in DECLARED_SITES:
+        tally["declared_presence_scan"] += 1  # 断言：该载体里能找到计数声明（找不到=W302 warn）
         text = read_text(ROOT / rel)
         found = 0
         for lineno, line in enumerate(text.splitlines(), 1):
@@ -428,8 +480,13 @@ def declared_counts() -> tuple[list[dict], list[dict]]:
 
 
 def reconcile(routes: list[dict], router: str, dirs: set[str],
-              declared: list[dict], silent: list[dict]) -> tuple[list[dict], list[dict], dict]:
-    """A 声明⇄台账 / B 台账⇄真身 / C router 自洽。返回 (errors, warns, reconciliation)。"""
+              declared: list[dict], silent: list[dict],
+              tally: Counter | None = None) -> tuple[list[dict], list[dict], dict]:
+    """A 声明⇄台账 / B 台账⇄真身 / C router 自洽。返回 (errors, warns, reconciliation)。
+
+    `tally` 与 findings() 同一约定：断言计数与判定同处累加。
+    """
+    tally = Counter() if tally is None else tally
     errors: list[dict] = []
     warns: list[dict] = []
     route_ids = {r["id"] for r in routes}
@@ -443,6 +500,7 @@ def reconcile(routes: list[dict], router: str, dirs: set[str],
 
     # A 声明 ⇄ 台账
     for decl in declared:
+        tally["declared_matches_ledger"] += 1  # 断言：声明数值 == 台账派生值（E106）
         if decl["value"] == effective:
             continue
         err("E106", f"{decl['short']}:{decl['line']}", "declared",
@@ -453,6 +511,7 @@ def reconcile(routes: list[dict], router: str, dirs: set[str],
             f"新增/退役 skill 后必须同时回填这三处，否则跑 python tools/gate/agent_parity.py 会红")
 
     # B 台账 ⇄ 真身（双向差集；单方向只能抓一半）
+    tally["dir_registered"] += len(dirs)  # 断言：每个真身目录都在台账内（E107，双向差集覆盖全体）
     unregistered = sorted(dirs - registered - {router})
     dangling = sorted(registered - dirs)
     for name in unregistered:
@@ -464,6 +523,7 @@ def reconcile(routes: list[dict], router: str, dirs: set[str],
             f"preset/allin/allin.patch.yml GOVERNANCE 段各一个 <!-- route:{name} -->），"
             f"若是废弃 skill 则删目录；复跑本门禁")
     for route in routes:
+        tally["skill_dir_exists"] += 1  # 断言：台账每条 skill 的目录真实存在（E108）
         if route["skill"] in dirs:
             continue
         err("E108", route["id"], "routes",
@@ -472,6 +532,7 @@ def reconcile(routes: list[dict], router: str, dirs: set[str],
             f"并同时删掉双形态锚点（否则会变成 E103 孤儿锚）")
 
     # C router 自洽
+    tally["router_dir_exists"] += 1  # 断言：router 指向的目录存在（E109）
     if router not in dirs:
         err("E109", router, "router",
             f"routes.yaml 的 router={router} 在 {REL_SKILLS} 下没有同名目录（路由者指向空气）",
@@ -563,22 +624,61 @@ def print_finding(item: dict) -> None:
           f"severity={item['severity']} | {item['reason']}")
 
 
+def build_readout(scanned: int, checked: int, carriers: int,
+                  drift: int, blocking: int) -> str:
+    """构造元判据读数行（唯一构造点）。空集守卫的双保险：scanned=0 意味着台账为空 ——
+    那是 E203/E204 结构错的领地（raise + error 行 + 无读数行），绝不许用
+    「scanned 0」把「没量过」伪装成「量过 0 条全对」（SARIF 2.1.0 原则：输出承载发现，
+    「不可判定」不是一种发现，是不可判定）。"""
+    if scanned <= 0:
+        raise RuntimeError(
+            "空集不得产出读数行（scanned=0 是「没量过」，不是「量过全对」）")
+    return (f"agent-parity: scanned {scanned} route(s); "
+            f"checked {checked} assertion(s) across {carriers} carrier(s); "
+            f"drift {drift}; blocking {blocking}")
+
+
+def build_summary(routes: list[dict], errors: list[dict],
+                  warns: list[dict]) -> dict:
+    """summary 三元组的唯一构造点（扫描单位契约，ADR-0013 D2）。
+
+    total = 台账条目数 = 扫描单位；ok/drift/warn 口径见模块 docstring。
+    「无 findings 的路由条数」不用 total−drift：伪 routeId（声明载体 / 目录名）
+    会让它变负，而 portal 与 allin status 都把这个数当「台账里有多少条是真的」读。
+    """
+    drift_ids = {e["routeId"] for e in errors}
+    route_ids = {r["id"] for r in routes}
+    return {"total": len(routes), "ok": len(route_ids - drift_ids),
+            "drift": len(drift_ids), "warn": len(warns)}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="g21 agent-parity：routes.yaml ⇄ SKILL.md 锚点 ⇄ GOVERNANCE 段锚点 ⇄ "
                     "skills 目录真身/声明数 四方对账")
-    parser.parse_args(argv)
+    parser.add_argument(
+        "--selfcheck", action="store_true",
+        help="负对照自检（伪造 drift / 空台账 / 自洽断言触发），全程只用临时文件，不落真实产物")
+    args = parser.parse_args(argv)
+    if args.selfcheck:
+        return selfcheck()
 
     print("==> g21 agent-parity（编排路由台账三方对账 + 真身对账）")
     routes: list[dict] = []
     readable = False
+    tally: Counter = Counter()  # 元判据读数 checked：断言计数与判定同处累加
+    parties_loaded = 0  # 对账方成功加载数（= carriers；结构错时不产出读数行，恒为 4）
     try:
-        routes, router = parse_routes(read_text(ROUTES_FILE))
+        routes, router = parse_routes(read_text(ROUTES_FILE))  # 第 1 方：台账
+        parties_loaded += 1
         readable = True
-        wb_text = read_text(SKILL_FILE)
-        gov = gov_block(read_text(PATCH_FILE))
-        dirs = skill_dirs()
-        declared, silent = declared_counts()
+        wb_text = read_text(SKILL_FILE)  # 第 2 方：workbuddy 锚点载体
+        parties_loaded += 1
+        gov = gov_block(read_text(PATCH_FILE))  # 第 3 方：dsh 锚点载体
+        parties_loaded += 1
+        dirs = skill_dirs()  # 第 4 方：真身目录
+        parties_loaded += 1
+        declared, silent = declared_counts(tally)
     except Structural as exc:
         row = build_row(routes, [], {"total": 0, "ok": 0, "drift": 0, "warn": 0},
                         readable, error=(exc.code, exc.msg))
@@ -587,19 +687,42 @@ def main(argv=None) -> int:
         print(f"g21 agent-parity: 红（结构错 {exc.code}）")
         return 2
 
-    errors, warns = findings(routes, count_anchors(wb_text), count_anchors(gov), date.today())
-    recon_errors, recon_warns, recon = reconcile(routes, router, dirs, declared, silent)
+    errors, warns = findings(routes, count_anchors(wb_text), count_anchors(gov),
+                             date.today(), tally)
+    recon_errors, recon_warns, recon = reconcile(routes, router, dirs, declared,
+                                                 silent, tally)
     errors += recon_errors
     warns += recon_warns
-    # ok 只数「无 findings 的路由条数」：伪 routeId（声明载体 / 目录名）会让 total−drift 变负，
-    # 而 portal 与 allin status 都把这个数当「台账里有多少条是真的」读。
-    drift_ids = {e["routeId"] for e in errors}
-    route_ids = {r["id"] for r in routes}
-    summary = {"total": len(routes), "ok": len(route_ids - drift_ids),
-               "drift": len(drift_ids), "warn": len(warns)}
+    summary = build_summary(routes, errors, warns)
+    # 自洽断言（ADR-0013 D2 配负对照）：summary.total 就是扫描单位，必须等于内部
+    # 实际逐条核过的 routes 条目数；不等 = 判据自身缺陷（读数与实况两套账），
+    # fail-loud（脚本态经崩溃处理器落 E999 行并 exit 3）。
+    if summary["total"] != len(routes):
+        raise RuntimeError(
+            f"g21 自洽断言失败：summary.total={summary['total']} ≠ 内部 routes 条目数 "
+            f"{len(routes)}（读数与实况两套账，判据自身缺陷）")
     results = errors + warns
     row = build_row(routes, results, summary, readable, recon=recon)
     append_row(row)
+
+    # 元判据读数行：打印前先自校验两件事（fail-loud）——
+    #   a) 读数 == 内部计数（scanned/checked/carriers/drift/blocking 五个数字逐项）；
+    #   b) 两行不变量：读数 drift == summary.drift 且 blocking == error findings 条数
+    #      （summary 与 agent-parity 两行不得各说各话；若有人删掉这道自校验，
+    #      --selfcheck ④「伪造读数行」必须红）。
+    checked = sum(tally.values())
+    readout = build_readout(len(routes), checked, parties_loaded,
+                            summary["drift"], len(errors))
+    m = READOUT_RE.match(readout)
+    if (m is None or int(m.group(1)) != len(routes) or int(m.group(2)) != checked
+            or int(m.group(3)) != parties_loaded
+            or int(m.group(4)) != summary["drift"] or int(m.group(5)) != len(errors)):
+        raise RuntimeError("g21 读数行自校验失败：读数与内部计数/summary 不一致"
+                           "（两行不变量被破坏，读数与实况必须一套账）")
+    global _LAST_READOUT
+    _LAST_READOUT = {"scanned": len(routes), "checked": checked,
+                     "carriers": parties_loaded, "drift": summary["drift"],
+                     "blocking": len(errors), "line": readout}
 
     for e in errors:
         print_finding(e)
@@ -609,11 +732,194 @@ def main(argv=None) -> int:
           f"drift={summary['drift']} warn={summary['warn']}")
     print(f"    真身: router={recon['router']} 目录={recon['skillDirs']} "
           f"台账派生值={recon['effective']} 声明={[d['value'] for d in recon['declarations']]}")
-    print(f"    产物: {RUNS_FILE.relative_to(ROOT).as_posix()}")
+    try:
+        runs_rel = RUNS_FILE.relative_to(ROOT).as_posix()
+    except ValueError:  # 产物目录在仓外（--selfcheck 临时目录）：显示行为不致命
+        runs_rel = str(RUNS_FILE)
+    print(f"    产物: {runs_rel}")
+    print(readout)
     if errors:
         print("g21 agent-parity: 红（漂移，见上行修复指引）")
         return 1
     print("g21 agent-parity: 绿（台账 ⇄ 双形态锚点 ⇄ 真身目录 ⇄ 声明数 全对账一致）")
+    return 0
+
+
+def selfcheck() -> int:
+    r"""扫描单位契约负对照 ×4（全程临时文件，不改仓内任何文件，不落真实产物行）：
+
+      ① 伪造 drift：临时 SKILL.md 副本删掉一个锚点 ⇒ 红（exit 1），summary 行
+         drift=1、ok=total−1，读数行 drift 1 / blocking 1，两行互证一致；
+      ② 空台账：routes 为空 ⇒ 结构错 raise（E203，exit 2）且【无 summary 行、
+         无读数行】——「没量过」不得伪装成「量过 0 条全对」；
+      ③ 自洽断言触发：伪造 summary.total ≠ 内部 routes 条目数 ⇒ fail-loud
+         （RuntimeError，脚本态经崩溃处理器落 E999 行并 exit 3）；
+      ④ 伪造读数行：build_readout 被篡改（drift 与 summary 不一致）⇒ 打印前
+         自校验必须拦截（RuntimeError）—— 这条守的就是「两行不变量」：若哪天
+         有人删掉 main 里的自校验，④ 必红。
+
+    summary 行格式冻结（元判据按 `summary: total=(\d+) ok=(\d+) drift=(\d+)` 登记）；
+    读数行按模块级 READOUT_RE 解析（selfcheck 与外部元判据共用同一读法）。
+    """
+    failures: list[str] = []
+    real_routes, _router = parse_routes(read_text(ROUTES_FILE))
+
+    SUMMARY_RE = re.compile(
+        r"^    summary: total=(\d+) ok=(\d+) drift=(\d+) warn=(\d+)$")
+
+    def summary_of(out: str):
+        ms = [m for m in (SUMMARY_RE.match(ln) for ln in out.splitlines()) if m]
+        return ms[0] if len(ms) == 1 else None
+
+    def readout_of(out: str):
+        ms = [m for m in (READOUT_RE.match(ln) for ln in out.splitlines()) if m]
+        return ms[0] if len(ms) == 1 else None
+
+    def exc_of(out: str):
+        return next((ln for ln in out.splitlines() if ln.startswith("EXC ")), None)
+
+    def run_once(overrides: dict) -> tuple[int, str, dict | None]:
+        """monkeypatch 模块级常量/函数后在临时产物目录里跑一次 main()。"""
+        saved = {k: globals()[k] for k in overrides}
+        globals().update(overrides)
+        buf = io.StringIO()
+        rc, out, row = -1, "", None
+        try:
+            with contextlib.redirect_stdout(buf):
+                rc = main([])
+            out = buf.getvalue()
+            runs = overrides["RUNS_FILE"]
+            if runs.is_file():
+                lines = runs.read_text(encoding="utf-8").strip().splitlines()
+                row = json.loads(lines[-1]) if lines else None
+        except Exception as exc:  # 任何异常都算该组负对照失败，不许静默
+            out = buf.getvalue() + f"\nEXC {exc!r}"
+        finally:
+            globals().update(saved)
+        return rc, out, row
+
+    # ① 伪造 drift
+    real_wb_text = read_text(SKILL_FILE)
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        rid = real_routes[0]["id"]
+        anchor = f"<!-- route:{rid} -->"
+        if anchor not in real_wb_text:
+            failures.append("① fixture 失败：真仓 SKILL.md 找不到首个锚点，无法伪造 drift")
+        else:
+            forged = tmp / "SKILL-forged.md"
+            forged.write_text(real_wb_text.replace(anchor, "", 1), encoding="utf-8")
+            rc, out, row = run_once({
+                "SKILL_FILE": forged,
+                "AUDIT_DIR": tmp / "audit1",
+                "RUNS_FILE": tmp / "audit1" / "g21-runs.jsonl",
+            })
+            if exc_of(out):
+                failures.append(f"① {exc_of(out)}")
+            m = summary_of(out)
+            r = readout_of(out)
+            if rc != 1:
+                failures.append(f"① 伪造 drift 应 exit 1，实测 {rc}")
+            if m is None:
+                failures.append("① summary 行缺失或不唯一（格式必须保持冻结）")
+            else:
+                total, ok, drift, _warn = (int(m.group(i)) for i in range(1, 5))
+                if drift != 1:
+                    failures.append(f"① summary 行 drift 应为 1，实测 {drift}")
+                if ok != total - 1:
+                    failures.append(f"① summary 行 ok 应为 total−1={total - 1}，实测 {ok}")
+                if total != len(real_routes):
+                    failures.append(
+                        f"① summary 行 total 应为 {len(real_routes)}，实测 {total}（读数与实况两套账）")
+            if r is None:
+                failures.append("① 读数行缺失或不唯一")
+            else:
+                if int(r.group(4)) != 1:
+                    failures.append(f"① 读数行 drift 应为 1，实测 {r.group(4)}")
+                if int(r.group(5)) < 1:
+                    failures.append(f"① 读数行 blocking 应 ≥1，实测 {r.group(5)}")
+            if m is not None and r is not None and int(r.group(4)) != int(m.group(3)):
+                failures.append("① 两行不变量被破坏：读数行 drift ≠ summary 行 drift")
+            if row is None or row.get("summary", {}).get("drift") != 1:
+                failures.append("① 产物行 summary.drift 应为 1")
+            if row is not None and m is not None and (
+                    int(m.group(1)) != len(row["routes"])
+                    or int(m.group(2)) != row["summary"]["ok"]):
+                failures.append("① summary 行与产物行互证不一致")
+
+    # ② 空台账
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        empty = tmp / "routes-empty.yaml"
+        empty.write_text("version: 1\nrouter: x\nroutes:\n", encoding="utf-8")
+        rc, out, row = run_once({
+            "ROUTES_FILE": empty,
+            "AUDIT_DIR": tmp / "audit2",
+            "RUNS_FILE": tmp / "audit2" / "g21-runs.jsonl",
+        })
+        if exc_of(out):
+            failures.append(f"② {exc_of(out)}")
+        if rc != 2:
+            failures.append(f"② 空台账应 exit 2（结构错），实测 {rc}")
+        if summary_of(out) is not None:
+            failures.append("② 结构错分支不得打 summary 行（「没量」≠「量过 0 条全对」）")
+        if readout_of(out) is not None:
+            failures.append("② 结构错分支不得产出读数行（scanned=0 是「没量过」，不是「量过全对」）")
+        if row is None or row.get("error", {}).get("code") not in ("E203", "E204"):
+            failures.append("② 空台账应落 E203/E204 error 行（fail-loud）")
+
+    # ③ 自洽断言触发
+    real_build_summary = build_summary
+
+    def doctored_build_summary(routes, errors, warns):
+        s = real_build_summary(routes, errors, warns)
+        s["total"] += 1  # 伪造「读数与实况两套账」
+        return s
+
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        rc, out, row = run_once({
+            "build_summary": doctored_build_summary,
+            "AUDIT_DIR": tmp / "audit3",
+            "RUNS_FILE": tmp / "audit3" / "g21-runs.jsonl",
+        })
+        exc_line = exc_of(out)
+        if exc_line is None or "自洽断言失败" not in exc_line:
+            failures.append(f"③ 自洽断言未触发（应 fail-loud raise），实测 rc={rc}，{exc_line!r}")
+        if summary_of(out) is not None:
+            failures.append("③ 断言触发后不得再打 summary 行（读数不可信时不得输出）")
+
+    # ④ 伪造读数行：守「两行不变量」——自校验若被人删掉，这条必须红
+    real_build_readout = build_readout
+
+    def doctored_build_readout(scanned, checked, carriers, drift, blocking):
+        # 伪造 drift=5（与 summary 的 drift=0 矛盾）：自校验在就应拦截
+        return real_build_readout(scanned, checked, carriers, 5, blocking)
+
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        rc, out, row = run_once({
+            "build_readout": doctored_build_readout,
+            "AUDIT_DIR": tmp / "audit4",
+            "RUNS_FILE": tmp / "audit4" / "g21-runs.jsonl",
+        })
+        exc_line = exc_of(out)
+        if exc_line is None or "自校验失败" not in exc_line:
+            failures.append(
+                f"④ 读数行自校验未拦截伪造读数（自校验可能被删），实测 rc={rc}，{exc_line!r}")
+        if readout_of(out) is not None:
+            failures.append("④ 伪造读数行不应被打印出来")
+
+    if failures:
+        for msg in failures:
+            print(f"[g21][selfcheck] FAIL {msg}")
+        print("g21 agent-parity selfcheck: 红（负对照未全过，读数契约不可信）")
+        return 1
+    print("g21 agent-parity selfcheck: 绿（4/4 负对照通过）")
+    print("    ① 伪造 drift → exit 1，summary 行 drift=1 / ok=total−1，读数行 drift 1 / blocking 1，两行互证一致")
+    print("    ② 空台账 → 结构错 exit 2，无 summary 行、无读数行，落 E203 error 行")
+    print("    ③ 自洽断言（total ≠ 内部条目数）→ fail-loud raise（脚本态 E999 exit 3）")
+    print("    ④ 伪造读数行（drift 与 summary 不一致）→ 打印前自校验拦截（两行不变量守门有效）")
     return 0
 
 

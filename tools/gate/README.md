@@ -388,3 +388,41 @@ platform-harness | npm --prefix platform run harness | count:^\[PASS\] | no:需�
 （已完成：`-Quiet` 也打读数行 + 0 输入改退 3），本判据**不改判据本体**，只负责在它没有
 读数时把红点亮。
 
+### 12.2 registry 外 **Python** 判据的读数契约（2026-11-26 新增）
+
+§12.1 把读数通则推广到了不分语言的外部脚本；但 §12 清单里还有五支 registry 外的
+**Python** 判据，它们不进 registry、不受 `govlib.Report` 的 scanned 约束，而 §12.1 的
+推导方向（接线 run 行第一段**不是** Python）又刻意够不着它们 —— 于是「判据可以没有
+读数」在这一类上整类无人判。本表补上这一类，由 `check_blind_gates.py --python-external`
+（元判据之六）消费：
+
+**方向仍是反的**：先从上面 registry-external-gates 块推出全部入口为 `.py` 的判据，
+再逐条到下表查读数契约。新加一支 Python 判据而不在下表登记，当场判红
+（`ext-unregistered`）；下表登记了清单里没有的判据，同样红（表陈旧 = 死门候补）。
+接缝是 id（入口文件去 `.py` 的主干也算匹配）。
+
+**成本规则**：探针只登记便宜的 —— 实测 ~1s 量级的才写命令（本表五支全部实测 <1s）；
+贵的写 `none:<理由>`（理由过短视为没写），`none:` 不算通过。
+
+<!-- python-criteria-readings:begin -->
+# 格式：`id | 读数契约 | 探针 | 备注`；# 开头为注释，空行忽略。
+# id 与上面 registry-external-gates 块一致（同名即可对上；入口文件去 .py 的主干也算匹配）。
+# 读数契约三选一（同 §12.1）：scanned / count:<正则> / none:<理由>
+# 探针三选一：
+#   <命令>        —— 每批真跑一次核读数；只登记实测 ~1s 量级的便宜探针
+#   self          —— 本判据是 check_blind_gates 自己：探针跑自己 = 递归，不探针，
+#                    由 --selfcheck 覆盖。显式声明，不是漏登记；不算通过。
+#   none:<理由>   —— 不跑（成本/环境），理由必须写清；不算通过。
+conflict-markers | scanned | python tools/gate/check_conflict_markers.py | 实测 ~0.8s：git ls-files 全量文本扫描（1001 文件），读数 `scanned N file(s)`
+machine-trailer | count:^machine_trailer:\s*scanned\s+\d+ | python tools/gate/check_machine_trailer.py | 实测 ~0.5s：读数是自己的 summary 行方言（`scanned N commit(s)` 非 file(s)，白名单不认，故用 count 登记）
+check_machine_ledger | scanned | python tools/gate/check_machine_ledger.py --root . | 实测 ~0.8s：判 5 份月账 + git 计数，读数 `scanned N file(s)`
+check_blind_gates | scanned | self | 由 --selfcheck 覆盖，不探针：探针跑自己 = 递归；selfcheck 的负对照就是它的读数证据
+g21-agent-parity | count:summary:\s*total=(\d+)\s+ok=(\d+)\s+drift=(\d+)(?:\s+warn=(\d+))? | python tools/gate/agent_parity.py | 实测 ~0.3s：扫描单位 = routes.yaml 台账条目（total），读数 = **现有** `summary: total=17 ok=17 drift=0 warn=0` 行（ADR-0013 D2：扫描单位由判据自己定义，不加新行）；若哪天这行没了或改了字段名，按本模式解析不到 ⇒ ext-unmeasured（红）
+<!-- python-criteria-readings:end -->
+
+**判定词汇与 §12.1 完全同一本账**（`RULES.md` 的 0/1/2/3，不另造一套）：exit 0 且读数
+可解析 ⇒ `ext-measured`（唯一算通过）；exit 1 ⇒ `ext-failed`（判据自己已红，不重复计数）；
+exit 2/3 ⇒ `ext-env`（拒绝判定 —— 不判红、也绝不是通过）；有退出码但读数解析不出 ⇒
+`ext-unmeasured`（红）；清单里有、表里没有 ⇒ `ext-unregistered`（红）；`self` 行 ⇒
+`self-coverage`（not a pass，单列不折叠 —— 「谁验它」与「它算不算通过」是两件事）。
+
