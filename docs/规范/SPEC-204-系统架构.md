@@ -28,35 +28,35 @@
   归属为「对外交付物」（ADR-0006 同批审查结论，演进边界独立）。
 
 ```text
-            ┌─────────────────────────────────────────────────────┐
-  治理事实源 │  docs/ 规范(SPEC-*) · 事实源(机器分区) · 记录(审计/决策) │◄── 开卷必读
-            │         INDEX.md 总目录                              │
-            └─────────────────────────────────────────────────────┘
+            ┌──────────────────────────────────────────────────────────┐
+ 治理事实源 │  docs/ 规范(SPEC-*) · 事实源(机器分区) · 记录(审计/决策) │◄── 开卷必读
+            │         INDEX.md 总目录                                  │
+            └──────────────────────────────────────────────────────────┘
                               ▲ 单写者渲染判据 (refresh-gov-block.py --check exit 3 / check:preset-sync)
             ┌───────────────────────────────────────────────────────┐
-  治理大脑   │  preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END  │
+  治理大脑  │  preset/allin/allin.patch.yml  GOVERNANCE:BEGIN/END   │
    (Agent)  │        ──渲染──▶ .workbuddy/skills/…/SKILL.md         │
             │  + 17 个专项 skill 路由表                             │
             └───────────────────────────────────────────────────────┘
                  │ 调度/放行                       │ 治理段文本注入(非运行时耦合)
         ┌───────────────────┐         ┌──────────────────────────────────┐
-  执行面A│  allin CLI        │         │  执行面B: platform 集成平台        │
-        │  allin_cli.py     │         │  portal :9000 (node:http 零依赖)   │
-        │  kernel/ Cordis   │         │  Host围栏+loopbackOnly 安全边界     │
-        │  4 pillars:       │         │  @allin/core (registry/launch/     │
-        │  docs/platform/   │         │  workshop/probe/gitee)             │
-        │  preset/tools     │         │  data/ running.json tasks.log      │
+ 执行面A│  allin CLI        │         │  执行面B: platform 集成平台      │
+        │  allin_cli.py     │         │  portal :9000 (node:http 零依赖) │
+        │  kernel/ Cordis   │         │  Host围栏+loopbackOnly 安全边界  │
+        │  4 pillars:       │         │  @allin/core (registry/launch/   │
+        │  docs/platform/   │         │  workshop/probe/gitee)           │
+        │  preset/tools     │         │  data/ running.json tasks.log    │
         └───────────────────┘         └──────────────────────────────────┘
                  │ subprocess                      │ 读写共享状态
-            ┌─────────────────────────────────────────────────────┐
-  治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D19) │
-   (监工)    │  repocheck(30规则) · repo_hygiene(H1–H8)            │
-            └─────────────────────────────────────────────────────┘
+            ┌───────────────────────────────────────────────────────┐
+ 治理门禁   │  tools/gate: g00–g20(20道,缺g02) · docs_index(D1–D19) │
+  (监工)    │  repocheck(30规则) · repo_hygiene(H1–H8)              │
+            └───────────────────────────────────────────────────────┘
                  │ 校验对象 / 推送目标
-            ┌─────────────────────────────────────────────────────┐
-  外部       │  repos/<仓名> (77 成员仓, 独立进程) + Gitee API       │
+            ┌───────────────────────────────────────────────────────┐
+ 外部       │  repos/<仓名> (77 成员仓, 独立进程) + Gitee API       │
             │  divergence-events.jsonl 分歧事件源                   │
-            └─────────────────────────────────────────────────────┘
+            └───────────────────────────────────────────────────────┘
 ```
 
 （组件级架构图见 [`architecture/system-architecture.svg`](../../architecture/system-architecture.svg)；
@@ -183,7 +183,7 @@
 - PyPI 包 `allin-governance`（现版本 1.0.1，演进见根 `CHANGELOG.md`）：
   子命令 `init`（生成最小治理骨架）/ `repocheck` / `verify`。
 - **一份源码一处真身**：`tools/repocheck` 与治理门禁套件已于 2026-11-25 整体迁入独立仓
-  `allin-governance`（PyPI 包 2.4.1，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
+  `allin-governance`（PyPI 包 2.4.2，子包 `_repocheck` / `_gatesuite`），本仓只消费包、
   不再保留源码副本；因此「包 ↔ 仓内真身逐文件 sha256」的对账对象已然消失，
   ADR-0008 那条对账脚本随之退役，现行判据是 CI 的「可安装包 init 端到端」（装 wheel →
   与仓无关的目录 init → 门禁 exit 0）。

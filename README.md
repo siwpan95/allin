@@ -33,9 +33,9 @@
    - `allin-governance github` —— GitHub 建仓 / 转公开 / SSH 增量推送 / 独立复核 + 三端增量巡检（**gitee 远端为权威**，单向 gitee → 本地 → GitHub）。随包分发为 `allin-governance github`；SOP 见 [`github-sync-audit`](.workbuddy/skills/github-sync-audit/SKILL.md)。
    - [`preset/allin/`](preset/allin/安装说明.md) —— DeepSeek Harness 治理 preset 的声明式可重装副本。
    - [`kernel/`](kernel/README.md) —— Python/Cordis 服务图，[`allin_cli.py`](allin_cli.py) 作统一命令行入口。
-3. **可安装包**：[`packages/allin-governance/`](packages/allin-governance/) 把上述通用能力
-   公共核已独立成仓 **[`allin-governance`](https://gitee.com/siwpan/allin-governance)**（PyPI 包同名，
-当前版本 `2.4.1`，版本演进见该仓 CHANGELOG）。本仓只通过版本号消费它，不再内嵌其源码。
+3. **可安装包**：公共核已独立成仓 **[`allin-governance`](https://gitee.com/siwpan/allin-governance)**
+   （PyPI 包同名，**当前版本 `2.4.2`**，版本演进见该仓 CHANGELOG）。本仓按版本号消费它，
+   [`packages/allin-governance/`](packages/allin-governance/) 只留旧路径指针，不再内嵌源码。
 
 仓库为公开仓，许可 MIT-0（见 [`LICENSE`](LICENSE)）。
 
@@ -64,7 +64,13 @@
 git clone <本仓远端地址>
 cd allin
 bash scripts/bootstrap.sh          # 建 .venv、安装 PyYAML/watchdog、重建 docs/ ASCII 别名
+bash scripts/install_git_hooks.sh  # 装提交钩子（每台机 / 每个 clone 各一次，否则钩子一个都不跑）
 ```
+
+> **新人第一步是装钩子**：`core.hooksPath` 是仓库本地配置、不入库，`.git/hooks/` 也不入库 ⇒
+> 不跑上面这条，仓里 `tools/gate/hooks/` 的 `pre-commit` / `commit-msg` **只是两个普通文件**，
+> 门禁不跑、提交也不会自动带 `Machine: <本机 hostname>` trailer（2026-12-01 起强制）。
+> 自查：`bash scripts/install_git_hooks.sh --check`。详见[新人指南](docs/新人开发上手指南.md) §3.5。
 
 `scripts/bootstrap.sh` 幂等，可重复执行。可选步骤：
 
@@ -85,9 +91,15 @@ bash scripts/run_all_gates.sh --with-platform  # 额外跑 platform 的 check/te
 
 ```bash
 npm run check:governance          # 20 道治理门禁（g00-meta…g20-facts）
-npm run check:docs                # 文档索引契约 D1–D17
+npm run check:docs                # 文档索引契约 D1–D19
 allin-governance repocheck <目录>       # 离线仓库体检
 ```
+
+> **2026-11-26 新增四条归属类判据**（不在 `g00–g20` 序列里，编排在 `scripts/run_all_gates.sh`）：
+> `check_machine_trailer`（改了某机分区就必须声明 `Machine: <那台机>`）·
+> `check_machine_ledger`（月账引用的节要真实存在 + 归属通道成对 + 「未归属」数与 git 实测一致）·
+> `check_conflict_markers`（入库文件不许留冲突标记残骸）·
+> `machine_ledger`（归属取证工具，产出唯一口径，不判红）。判据与生效日见[新人指南](docs/新人开发上手指南.md) §4.2.3。
 
 > **门禁入口（2026-11-23 起）**：`scripts/run_all_gates.sh` 默认用 repocheck 的
 > 门禁规则族（规则 31-50）跑那 20 道门禁 —— 判据仍是同一份 `gates/*.py`，只是换了编排者。

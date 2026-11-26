@@ -425,6 +425,27 @@ run "$PY" tools/gate/check_blind_gates.py --root "$ROOT" \
 # 这一行（g15 就是），所以这条判据不能只依赖 govlib 的行为，必须逐道核输出。
 run "$PY" tools/gate/check_blind_gates.py --root "$ROOT" --two-halves
 
+# --- ⑪-b 外部判据（非 Python）的**读数契约**（同上，编排层 · 2026-11-25）--------
+# ⑩⑪ 判的是 registry 里那 20 道 **Python** 判据。本脚本还直接调 npm / node / pwsh /
+# powershell 的外部脚本，它们的读数方言不受 govlib 约束 —— 于是整类判据对盲门判据不可见。
+#
+# 现场实例（实测）：`scan_hardcoded.ps1 -Quiet` 在无 git 的 PATH 下扫 0 个文件、一行读数
+# 都不打、**退 0**；而扫了 1013 个文件零阻断时同样退 0 —— 两者在退出码上完全同形。
+# 唯一能区分的那行读数（`跟踪文件 N 个`）恰好被 `-Quiet` 挡住了。这不是某道门禁写错，
+# 是「判据可以没有读数」这件事本身没人判。
+#
+# 通则（不分语言，三选一）：① 成功时给出可解析读数；② 给不出的在 tools/gate/README.md
+# §12 的 external-script-criteria 清单里登记「无扫描语义 + 理由」；③ 二者皆无 ⇒ 判红。
+# 方向是反的：本步**从本脚本的 `run` 行推出**全部外部判据，再回查清单 —— 新加一个
+# 外部脚本而不登记，当场红（否则「新加一个没读数的脚本」仍然不可见 = 死门的生成方式）。
+# 行业同一口径：grep 未命中=1/出错=2、ripgrep 同构、pytest 收集不到用例退 5 ——
+# 「没有输入」永远有自己的非零码，从不都退 0。
+#
+# 成本：探针只跑清单里标 `yes` 的三支（scan_hardcoded / mcp selftest / platform check，
+# 合计约 8 秒）；其余六支按 `no:<理由>` 不跑，汇总里记 declared_unprobed（not a pass，
+# 逐条打印理由）—— 不跑的探针不叫通过，这一点必须留在汇总里。
+run "$PY" tools/gate/check_blind_gates.py --root "$ROOT" --external
+
 run "$PY" tools/gate/docs_index.py
 # docs_index 自检（D1–D17 夹具）：此前只在手工跑（「写了不跑」），且 Windows 无符号链接
 # 权限时干净夹具恒被 D6 误报 ⇒ 修为「探测权限后显式 SKIP」并接入跑批。

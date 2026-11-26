@@ -20,7 +20,14 @@
     · 散文提及（路径后紧跟空格与普通单词；`Program Files` 这类合法带空格目录除外）；
     · 审计注记（行内含「去本地化 / 已失效 / 已不存在 / 原…硬编码」等字样，-Strict 可关闭该豁免）。
 
-  退出码：0 = 无新增阻断；1 = 有新增阻断；2 = 参数/环境错误；3 = 自测失败。
+  退出码（2026-11-26 修盲门后）：
+    0 = 无新增阻断，**且确实扫到了文件**（读数行给出「跟踪文件 N>0」）；
+    1 = 有新增阻断；
+    2 = 参数/环境错误（一个可扫目标都没有）；
+    3 = **判定不成立** —— git 不可用 / `git` 调用失败 / 扫描到 0 个文件 / 自测失败。
+        「0 个文件」不是「0 个问题」：`grep` 未命中退 1、出错退 2，`pytest` 收集不到
+        用例退 5 —— 没有输入永远有自己的非零码。此前本脚本在无 git 的 PATH 下返回 0，
+        与「扫了 1013 个文件零阻断」在退出码上完全同形（标准盲门）。
 
 .PARAMETER Repos
   只扫这些仓名（相对 -ReposRoot）。默认扫 -ReposRoot 下全部 git 仓。
@@ -56,7 +63,9 @@
   明细打印上限，默认 60。
 
 .PARAMETER Quiet
-  只输出汇总与退出码。
+  只输出**读数行**与退出码。
+  读数行（`目标 N / 跟踪文件 M / 绝对路径命中 X / 死根命中 K / 新增阻断 Z`）不随 -Quiet 关闭：
+  这几个数本来就已算出，此前被 Quiet 吞掉导致「0 个文件」在输出上也不可见（盲门）。
 
 .PARAMETER SelfTest
   自测门禁本身（临时建仓验证：能抓死路径、不误报系统路径/URL/夹具/转义、基线棘轮生效）。
@@ -97,6 +106,10 @@ $ErrorActionPreference = 'Continue'
 
 # ── 去符盘默认（铁律 5，2026-09-26）：默认目标 = 脚本自身所在仓（tools/gate → 上两级 = 仓根，单目标）──
 if (-not $ReposRoot) { $Path = @($Path) + (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
+# 未绑定的 [string[]]$Path 在 @($Path) 里会留一个 $null 元素，随后被当成「路径不存在：」
+# 的空警告（2026-11-26 实测一次性噪声）—— 目标枚举要干净，否则「0 个目标」分不清是
+# 环境不成立还是自己多塞了一个空串。
+$Path = @($Path | Where-Object { $_ })
 $script:AuditDir = Join-Path $PSScriptRoot 'audit'
 # 2026-11-10 P0-15 单一真相源：基线默认落在**受跟踪**的 governance/baseline/（与 g01 同款），
 # 不再落 gitignore 的 audit/。此前手动跑（无 -Baseline）读的是不随仓的空基线，
@@ -139,6 +152,24 @@ $script:WhitelistDirs = @("$env:WINDIR", "$env:ProgramFiles", "${env:ProgramFile
 $script:RxAnnotation = [regex]'去本地化|已失效|已不存在|已删除|原.*硬编码|硬编码改|deprecated|placeholder|占位|内联自|复制自|整合自|选择性 vendor|vendor 自|源自|摘自|改编自|工程参考|门禁自检|gov-paths: allow|gov-python: allow|repo-hygiene: allow|gov-credentials: allow'
 $script:RootCache = @{}
 $script:Stat = @{}
+
+# ── git 可用性探测（2026-11-26 盲门修复）────────────────────────────────
+# 事故形态：PATH 里没有 git 时，`& git -C ... ls-files` 抛 CommandNotFoundException，
+# 被 `$ErrorActionPreference='Continue'` 吞成「空结果」⇒ 跟踪文件 0 个、命中 0 处、
+# 新增阻断 0 条 ⇒ **exit 0**。这在退出码上与「扫了 1013 个文件、零阻断」完全同形，
+# 是标准盲门（跑了、绿了、什么都没量）。
+# 修法不是「扫 0 个就跳过」（那是把盲门换成免检），而是让「没有输入」有**自己的**非零码：
+# git 不可用或 0 个文件 ⇒ exit 3（判定不成立），与「有阻断 ⇒ exit 1」区分开。
+$script:GitReady = $null
+$script:GitFail = New-Object System.Collections.ArrayList
+
+function Test-GitReady {
+  if ($null -ne $script:GitReady) { return $script:GitReady }
+  # 只认 Application：`git` 若被定义成函数/别名，行为不可控，按不可用处理。
+  $cmd = Get-Command git -CommandType Application -ErrorAction SilentlyContinue
+  $script:GitReady = [bool]$cmd
+  return $script:GitReady
+}
 
 function Add-Stat([string]$k) { if ($script:Stat.ContainsKey($k)) { $script:Stat[$k]++ } else { $script:Stat[$k] = 1 } }
 
@@ -197,16 +228,31 @@ function Invoke-Scan {
   param([object[]]$Targets)
   $hits = New-Object System.Collections.ArrayList
   $fileCount = 0
+  # 每次扫描重置「git 失败目标」：本函数在 -SelfTest 里被调多次，跨次残留会让判定串味。
+  $script:GitFail = New-Object System.Collections.ArrayList
   foreach ($t in $Targets) {
     $lines = New-Object System.Collections.ArrayList
     if ($t.Git) {
-      $fileCount += @(& git -C $t.Path ls-files 2>$null).Count
+      if (-not (Test-GitReady)) {
+        [void]$script:GitFail.Add("$($t.Name)（PATH 里找不到 git，无法枚举跟踪文件）")
+        continue
+      }
+      $lsFiles = @(& git -C $t.Path ls-files 2>$null)
+      if ($LASTEXITCODE -ne 0) {
+        [void]$script:GitFail.Add("$($t.Name)（git ls-files 退 $LASTEXITCODE：不是有效工作树？）")
+        continue
+      }
+      $fileCount += $lsFiles.Count
       # ⚠ 2026-09-26 修：PS 5.1 按 console 代码页(GBK)解码 git 输出，中文行文本变 mojibake，
       #   导致「审计注记」等中文豁免规则在 git-grep 模式下整体失效。临时切 OutputEncoding 到 UTF-8。
       $oldEnc = [Console]::OutputEncoding
       [Console]::OutputEncoding = [Text.Encoding]::UTF8
       try { $grepOut = @(& git -C $t.Path -c core.quotepath=false grep -n -I -E '[A-Za-z]:[\\/]' -- . 2>$null) }
       finally { [Console]::OutputEncoding = $oldEnc }
+      # `git grep` 的 1 = 没有匹配（正常），>1 = 出错（读不到内容 ≠ 没有命中）。
+      if ($LASTEXITCODE -gt 1) {
+        [void]$script:GitFail.Add("$($t.Name)（git grep 退 $LASTEXITCODE：内容读不全，命中集不可信）")
+      }
       foreach ($l in $grepOut) {
         if ($l -match '^([^:]+):(\d+):(.*)$') { [void]$lines.Add([pscustomobject]@{ File = $matches[1]; Line = [int]$matches[2]; Text = $matches[3] }) }
       }
@@ -317,7 +363,7 @@ function Invoke-Scan {
       }
     }
   }
-  return [pscustomobject]@{ Hits = $hits; Files = $fileCount }
+  return [pscustomobject]@{ Hits = $hits; Files = $fileCount; GitFailures = @($script:GitFail) }
 }
 
 # ───────────────────────── 自测 ─────────────────────────
@@ -404,6 +450,31 @@ if (-not $NoBaseline -and -not $WriteBaseline -and (Test-Path $Baseline)) {
 }
 $new = @($blocking | Where-Object { $known -notcontains $_.Identity })
 
+# ── 读数行：**无条件输出**（-Quiet 也输出）──────────────────────────────
+# 2026-11-26 盲门修复：这三个数本来就已经算出来了，只是被 `if (-not $Quiet)` 吞掉 ⇒
+# 盲门元判据（`tools/gate/check_blind_gates.py`）读不到「有没有量」，人也看不出
+# 「扫了 1013 个文件零阻断」和「git 没了、扫 0 个」的区别。读数行不是可选装饰：
+# 没有它，退出码 0 的含义就不封闭。
+Write-Output ("目标 {0} 个 / 跟踪文件 {1} 个 / 绝对路径命中 {2} 处 / 死根命中 {3} 处 / 新增阻断 {4} / 用时 {5:N1}s" -f `
+    @($targets).Count, $res.Files, $dead.Count, $blocking.Count, $new.Count, $sw.Elapsed.TotalSeconds)
+
+# ── 环境/输入不成立 ⇒ exit 3（不是 0，也不是 1）────────────────────────
+# 为什么单开一个码：「git 不可用」与「有死根阻断」是两件不同的事，判据必须能分开 ——
+# 混成 1 会让「修代码」成为错误的下一步（该修的其实是环境），混成 0 就是盲门本身。
+# 与 `check_machine_trailer.py` 的 exit 3 同口径：**判定不成立 ≠ 判定通过**。
+# 只坏一个目标也判 3：其余目标"绿"不能代替那个没读到的目标 —— 漏掉一仓和漏掉全部
+# 一样都是"没量"。宁可让人去修 PATH，也不要给出一份残缺的"零阻断"。
+$envBroken = @()
+if (@($res.GitFailures).Count -gt 0) {
+  $envBroken += ("git 不可用或调用失败（{0} 个目标无法枚举跟踪文件：{1}）" -f @($res.GitFailures).Count, (@($res.GitFailures) -join '；'))
+}
+if ($res.Files -eq 0) { $envBroken += '扫描到 0 个文件（没有任何被判的对象）' }
+if ($envBroken.Count -gt 0) {
+  Write-Output ("判定不成立（exit 3）：{0}" -f ($envBroken -join ' + '))
+  Write-Output '  这不是通过：门禁没读到输入，0 条阻断不代表代码里没有死路径。'
+  exit 3
+}
+
 if (-not $OutCsv) { $OutCsv = Join-Path $script:AuditDir ("hardcoded_gate_{0:yyyyMMdd-HHmmss}.csv" -f (Get-Date)) }
 if ($Quiet -and -not $PSBoundParameters.ContainsKey('OutCsv') -and -not $WriteBaseline) {
   $OutCsv = $null   # 静默模式（CI）默认不落盘，避免每次跑出一堆时间戳 CSV
@@ -436,7 +507,7 @@ if ($WriteBaseline) {
 
 if (-not $Quiet) {
   Write-Output '== 硬编码路径门禁（死根检测 · 基线棘轮）=='
-  Write-Output ("  目标 {0} 个 / 跟踪文件 {1} 个 / 绝对路径命中 {2} 处 / 用时 {3:N1}s" -f @($targets).Count, $res.Files, $dead.Count, $sw.Elapsed.TotalSeconds)
+  # 读数行已在上方**无条件**输出过（-Quiet 也输出），这里不再重复打一遍。
   Write-Output ("  死根命中: 阻断(CODE有效) {0} · 非阻断 {1}" -f $blocking.Count, ($dead.Count - $blocking.Count))
   if ($ExcludeGenerated) { Write-Output ("  已按 -ExcludeGenerated 过滤掉生成物/夹具/注释类 {0} 处，下面只剩可动项" -f $filteredOut) }
   if ($script:Stat.Count) { Write-Output ("  排除/分类: " + (($script:Stat.GetEnumerator() | Sort-Object Name | ForEach-Object { "{0}={1}" -f $_.Key, $_.Value }) -join '  ')) }

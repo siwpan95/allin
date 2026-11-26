@@ -130,8 +130,8 @@ TAG_PAT = re.compile(r"@`?(SIWPAN|DESKTOP-KQABATS|DESKTOP-8RSV60V|KQABATS|8RSV60
 #: 原型机承载痕迹：**盘符 + 顶层目录名**的形态（`repos` / `archive` / `nodejs`）。承载 ≠ 产出。
 #:
 #: 2026-11-26 从 `[FG]:…`（两个具体盘符）改成形态识别，两个理由：
-#: ① 盘符是**接线事实**、不是归属事实：原型盘今天接在 F:/G:，明天可能换  # gov-paths: allow gov-python: allow — 形态举例，非硬编码盘符（`E:`/`H:` 同样成立）；
-#:    把盘符写进判据，等于让判据随机器搬线而失效。
+#: ① 盘符是**接线事实**、不是归属事实：原型盘今天接在 F 盘或 G 盘上，明天可能换
+#:    （E 盘 / H 盘同样成立）；把盘符写进判据，等于让判据随机器搬线而失效。
 #: ② 原写法在源码里留下形如「盘符:\\目录」的**字面量**，被 `scan_hardcoded.ps1` 判成
 #:    "硬编码绝对路径且根不存在" —— 它判得对（那确实指向不存在的根）；
 #:    但判据不该靠基线压掉自己的分类模式。**改形态比加豁免干净**。
@@ -320,26 +320,33 @@ def parse_handover(text: str, machines: list[str]) -> dict:
       · 卷首**按机索引**（`### \\`@SIWPAN\\`（46 节）` 下的表格）—— 2026-11-25 起有；
       · 正文节标题里的 `@STEM` 标注（D18 判据要求新节必须标）。
     更早的卷（如 2026-10）**没有索引**，只有正文 —— 所以两条都要走。
+
+    ## 计数单位是「节」，不是「条目」（2026-11-26 修双计）
+
+    旧实现按 `(owner, section)` 去重，于是**同一节**只要两个来源给出不同 owner 就各记一条：
+      · 跨机索引块把某节也列了一遍 → `(跨机, 节)` 与 `(SIWPAN, 节)` 并存；
+      · 正文标题没标注（D18 豁免的历史节）→ `(None, 节)` 与索引块的 `(SIWPAN, 节)` 并存。
+    实测 2026-11 卷：**122 节被数成 137 条**，`totals.tagged` 从 116 虚增到 124，
+    `max(total_sections, tagged + untagged)` 又把虚增值取成"节数" ⇒ 对外报 `124/137`，
+    看着还自洽（124+13=137），其实分子分母都错。
+
+    两个必须分开的量：
+      · `per_machine[m]` = **归属记录**（同一节可被两台机各记一条 ⇒ 这是"谁认领过"）；
+      · `totals` = **按节号去重的节数**（`tagged + untagged == sections` 恒成立）。
     """
     alias = machine_aliases(machines)
     alias["跨机"] = "跨机"
-    per_machine: dict[str, list[dict]] = {stem: [] for stem in machines}
-    per_machine["跨机"] = []
-    untagged: list[dict] = []
-    seen: set[tuple[str, str]] = set()
+    #: 索引块表头里允许出现的机名集合（表头解析在按节汇总**之前**跑，所以先备好名字集）
+    per_machine_names = set(machines) | {"跨机"}
+    #: 节号 → 记录。**按节号去重**：索引表与标题是同一节的两个 `sources`，不是两节。
+    sections: dict[str, dict] = {}
 
-    def add(owner: str | None, section: str, title: str, source: str) -> None:
-        key = (owner or "", section)
-        if key in seen:
-            return  # 索引与正文各出现一次 —— 只记一条，别把同一节数两遍
-        seen.add(key)
-        match = DATE_PAT.search(title)
-        entry = {"section": section.strip(), "title": title.strip(),
-                 "date": match.group(1) if match else None, "source": source}
-        if owner is None:
-            untagged.append(entry)
-        elif owner in per_machine:
-            per_machine[owner].append(entry)
+    #: 索引表行 = **归属声明**，不是节。`节号 → [(owner|None, 标题)]`。
+    #: 2026-11-26 模型改正：节只由 `## ` 标题产生；索引行只做 annotate。
+    #: 旧实现让索引行也创建节 ⇒ 索引里列了、正文没有对应标题的条目被当成"节"，
+    #: 于是 `tagged` 能超过标题数（实测 110 > 99），恒等式靠 `max()` 掩盖。
+    claims: dict[str, list[tuple[str | None, str]]] = {}
+    dangling: list[dict] = []
 
     lines = text.split("\n")
     current: str | None = None
@@ -360,7 +367,7 @@ def parse_handover(text: str, machines: list[str]) -> dict:
                 match = re.search(r"@`?([^`（）]+)`?", stripped)
                 if match:
                     name = match.group(1).strip()
-                    current = alias.get(name.upper()) or (name if name in per_machine else None)
+                    current = alias.get(name.upper()) or (name if name in per_machine_names else None)
             continue
         if stripped.startswith("---"):
             current = None
@@ -369,29 +376,93 @@ def parse_handover(text: str, machines: list[str]) -> dict:
             cells = [c.strip() for c in stripped.strip("|").split("|")]
             if len(cells) < 2 or cells[0] in ("节", "---") or set(cells[0]) <= {"-", " "}:
                 continue
-            add(None if current == "__untagged__" else current, cells[0], cells[1], "index")
+            sec = cells[0].strip()
+            if sec:
+                claims.setdefault(sec, []).append(
+                    (None if current == "__untagged__" else current, cells[1]))
+        continue
 
-    total_sections = 0
+    # ---- 节只由标题产生（`## ` 标题是"这一节存在"的唯一依据）----
     for line in lines:
         if not line.startswith("## ") or line.startswith("###"):
             continue
-        if any(key in line for key in NOT_A_SECTION):
-            continue
         match = SECTION_HEADING.match(line.strip())
         if not match:
-            continue
-        total_sections += 1
+            continue        # 没有「、」的不是节（`## 按机索引（…）` 就落在这里）
         section, title = match.group(1), match.group(2)
+        # ⚠ 2026-11-26 修：旧实现是 `any(key in line for key in NOT_A_SECTION)` ——
+        # **子串**过滤整行，于是真实节 `## 二百三十、@SIWPAN 会话交接：公共核消费化…`
+        # 因为标题里含「会话交接」被整节丢掉（实测少算 1 节，还把它的索引行误报成"陈旧"）。
+        # 判据要过滤的是**节号位置上的关键词**，不是标题正文。
+        if section.strip() in NOT_A_SECTION:
+            continue
+        sec = section.strip()
+        if sec in sections:
+            continue        # 同号标题出现两次：只算一节（节号是主键）
+        match_date = DATE_PAT.search(title)
         tag = TAG_PAT.search(title)
-        owner = alias.get(tag.group(1).upper()) if tag else None
-        add(owner, section, title, "heading")
+        sections[sec] = {"section": sec, "title": title.strip(),
+                         "date": match_date.group(1) if match_date else None,
+                         "sources": ["heading"],
+                         "owners": ({alias.get(tag.group(1).upper()) or tag.group(1).upper(): "heading"}
+                                    if tag else {})}
 
-    tagged = sum(len(v) for v in per_machine.values())
+    # ---- 把索引行的归属贴到节上；贴不上的进 `dangling`（索引漂移，可报的缺陷）----
+    for sec, items in claims.items():
+        record = sections.get(sec)
+        if record is None:
+            dangling.append({"section": sec,
+                             "title": items[0][1].strip(),
+                             "claimed_by": [owner for owner, _title in items if owner],
+                             "sources": ["index"]})
+            continue
+        if "index" not in record["sources"]:
+            record["sources"].append("index")
+        for owner, _title in items:
+            if owner and owner not in record["owners"]:
+                record["owners"][owner] = "index"
+
+    # ---- 按节号汇总结数（唯一真相：每节只算一次）----
+    per_machine: dict[str, list[dict]] = {stem: [] for stem in machines}
+    per_machine["跨机"] = []
+    untagged: list[dict] = []
+    for record in sections.values():
+        entry = {"section": record["section"], "title": record["title"],
+                 "date": record["date"], "source": record["sources"][0],
+                 "sources": list(record["sources"])}
+        if not record["owners"]:
+            untagged.append(entry)
+            continue
+        for owner in record["owners"]:
+            if owner in per_machine:
+                per_machine[owner].append(entry)
+
+    total = len(sections)
+    tagged = sum(1 for r in sections.values() if r["owners"])
+    untagged_count = total - tagged
+    # 恒等式**硬断言**：不成立就是 bug，不许用 `max()` 取大者掩盖（那是 137 的来源）。
+    if tagged + untagged_count != total:
+        raise AssertionError(
+            f"A 级节数不守恒：tagged {tagged} + untagged {untagged_count} != sections {total}")
     return {
         "machines": per_machine,
         "untagged": untagged,
-        "totals": {"sections": max(total_sections, tagged + len(untagged)),
-                   "tagged": tagged, "untagged": len(untagged)},
+        "dangling": dangling,
+        "totals": {
+            # 恒等式：tagged + untagged == sections
+            "sections": total, "tagged": tagged, "untagged": untagged_count,
+            # 下钻：月账说「带 @机器」时指的是 `tagged_machine`（不含 @跨机）
+            "tagged_machine": sum(1 for r in sections.values() if set(r["owners"]) - {"跨机"}),
+            "cross_only": sum(1 for r in sections.values()
+                              if r["owners"] and not set(r["owners"]) - {"跨机"}),
+            # 同一节被两个来源认领到**不同**机：不是错，但要能看见（谁认领过一目了然）
+            "multi_owner": sum(1 for r in sections.values() if len(r["owners"]) > 1),
+            # 同一节被**两台以上实机**认领（不含 @跨机）⇒ 归属冲突，供人裁决
+            "owner_conflict": sum(1 for r in sections.values()
+                                  if len(set(r["owners"]) - {"跨机"}) > 1),
+            # 索引里有、正文里没有 ⇒ 索引漂移（不并入 tagged，单独可报）
+            "dangling_index": len(dangling),
+        },
     }
 
 
@@ -440,7 +511,7 @@ def classify_commits(commits: list[dict], machines: list[str]) -> dict:
         #: D 的明细（三者之和恒等于 D，**明细不搬出 D**，ADR §D4.3 / §P2）。
         #: 命名刻意与 `prototype_carrier` 区分 —— 它们是**两个不同集合**：
         #:   · `root_level`：只改机器区根级文件（`docs/事实源/机器/*.md`），不属任何单机；
-        #:   · `carrier_trace_no_partition`：标题/正文有原型盘痕迹（G:/F:），  # gov-paths: allow gov-python: allow — 形态举例
+        #:   · `carrier_trace_no_partition`：标题/正文有原型盘痕迹（G 盘 / F 盘），
         #:     且**没有**触及任何机器分区 ⇒ 归属仍未知；
         #:   · `other`：其余三源皆无的普通提交。
         #: （`prototype_carrier` 是"有盘痕迹且触及 8RSV60V 分区 ⇒ 从 C 级剔除"的那批，
@@ -486,7 +557,7 @@ def classify_commits(commits: list[dict], machines: list[str]) -> dict:
             if carrier and "DESKTOP-8RSV60V" in touched:
                 result["prototype_carrier"].append({
                     **entry, "would_be": "DESKTOP-8RSV60V",
-                    "why": "标题/正文含原型盘痕迹（G:/F:）—— 盘接到 8RSV60V 上"  # gov-paths: allow gov-python: allow — 形态举例
+                    "why": "标题/正文含原型盘痕迹（G 盘 / F 盘）—— 盘接到 8RSV60V 上"
                            "不等于活是该机干的（承载 ≠ 产出）"})
             if weak:
                 for stem, paths in weak.items():
@@ -524,8 +595,11 @@ def collect(repo: Path, month: str, machine: str | None = None) -> dict:
         raise FileNotFoundError(f"找不到机器分区目录 {MACHINE_DIR}（跑错仓？）")
 
     handover_path = repo / HANDOVER_DIR / f"{month}.md"
-    a_tier = {"machines": {stem: [] for stem in machines}, "untagged": [],
-              "totals": {"sections": 0, "tagged": 0, "untagged": 0}}
+    a_tier = {"machines": {stem: [] for stem in machines}, "untagged": [], "dangling": [],
+              # 无交接卷时全 0 —— 键要齐，否则下游 `a_tier["totals"]["…"]` 直接 KeyError
+              "totals": {"sections": 0, "tagged": 0, "untagged": 0,
+                         "tagged_machine": 0, "cross_only": 0,
+                         "multi_owner": 0, "owner_conflict": 0, "dangling_index": 0}}
     handover_note = None
     if handover_path.is_file():
         a_tier = parse_handover(handover_path.read_text(encoding="utf-8"), machines)
@@ -554,6 +628,19 @@ def collect(repo: Path, month: str, machine: str | None = None) -> dict:
             "out_of_window": tiers["out_of_window"],
             "handover_sections": a_tier["totals"]["sections"],
             "handover_sections_tagged": a_tier["totals"]["tagged"],
+            # 下钻：月账那句「N 节中 M 节已标注」里的 M 若指「带 @机器」，用这一个（不含 @跨机）
+            "handover_sections_tagged_machine": a_tier["totals"]["tagged_machine"],
+            "handover_sections_cross_only": a_tier["totals"]["cross_only"],
+            "handover_sections_untagged": a_tier["totals"]["untagged"],
+            "handover_sections_multi_owner": a_tier["totals"]["multi_owner"],
+            "handover_sections_owner_conflict": a_tier["totals"]["owner_conflict"],
+            # 索引里有、正文没有 ⇒ 索引漂移。**不并入 tagged**，单独可报（2026-11-26 模型改正）。
+            "handover_sections_dangling": a_tier["totals"]["dangling_index"],
+            # 机读行要抄的三个数（2026-11-26 team-lead 要求）：名字与 `ledger-counts` 机读行一致，
+            # 让月账的「数值见机读行」不再是死指针。
+            "sections": a_tier["totals"]["sections"],
+            "tagged": a_tier["totals"]["tagged"],
+            "dangling": a_tier["totals"]["dangling_index"],
             # ADR-0012 §D2.6 的记账恒等式：已标机节 + 未标机节 == 节总数。
             # 少了这一条，「A 级 124/137」这两个数就只能靠人相信工具没漏读。
             "sections_accounting_ok": (a_tier["totals"]["tagged"] + a_tier["totals"]["untagged"]
@@ -567,6 +654,8 @@ def collect(repo: Path, month: str, machine: str | None = None) -> dict:
         },
         "A_sections": a_tier["machines"],
         "A_untagged": a_tier["untagged"],
+        # 索引行指向了正文里不存在的节 —— 索引漂移的明细（供人复核/修索引）
+        "A_dangling_index": a_tier["dangling"],
         "B_commits": tiers["B"],
         "C_commits": tiers["C"],
         "cross_machine_tagged": tiers["cross_machine_tagged"],
@@ -575,7 +664,7 @@ def collect(repo: Path, month: str, machine: str | None = None) -> dict:
             "machine_id": PROTOTYPE, "kind": PROTOTYPE_KIND, "hostname": None,
             "count": labels["prototype"],
             "note": f"分机事实源 {SPLIT_DATE} 才建立；allin 当时在一台**未登记的原型机**上推进，"
-                    "其外置盘（F:/G:）现已接到 @DESKTOP-8RSV60V —— **不代表该机执行**"  # gov-paths: allow gov-python: allow — 形态举例
+                    "其外置盘（F 盘 / G 盘）现已接到 @DESKTOP-8RSV60V —— **不代表该机执行**"
                     "（承载 ≠ 产出，ADR 已明令）。此桶内的提交不计入任何实机的 A/B/C 级。",
             "commits": tiers["prototype_01"],
         },
@@ -653,7 +742,14 @@ def render_markdown(payload: dict, limit: int = 40) -> str:
         f"（双口径校验：author {t['count_cross_check']['author']} / "
         f"rev-list(带偏移) {t['count_cross_check']['revlist_offset']} ⇒ "
         f"{'一致' if t['count_cross_check']['ok'] else '**口径打架，本表数字不可引用**'}） |",
-        f"| A · 交接卷已标注的节 | {t['handover_sections_tagged']} / {t['handover_sections']} |",
+        # 2026-11-26：节只由 `## ` 标题产生，索引行只做归属。三个数直接可核：
+        # 带@机器 + 仅@跨机 + 未标 = 节数；索引行指向正文没有的节 ⇒ `dangling`（单列，不入分子）。
+        f"| A · 交接卷已标注的节 | {t['handover_sections_tagged']} / {t['handover_sections']}"
+        f"（带 `@机器` {t['handover_sections_tagged_machine']} · 仅 `@跨机` "
+        f"{t['handover_sections_cross_only']} · 未标 {t['handover_sections_untagged']}"
+        f" ⇒ 合计 {t['handover_sections']} 节）"
+        + (f"；另有 {t['handover_sections_dangling']} 条索引行指向正文不存在的节（索引漂移）"
+           if t["handover_sections_dangling"] else "") + " |",
         f"| B · 标题带 `@机名` 的提交 | {t['attributed_B']} |",
         f"| C · 仅凭触及分区（弱旁证） | {t['attributed_C_only']} |",
         f"| **D · 未归属（真缺口）** | **{t['unattributed_after_split']}**"
@@ -908,13 +1004,14 @@ def selfcheck() -> int:
                                "docs(ho): @跨机 共识类，不是某台机的活", post)
 
         (repo / HANDOVER_DIR).mkdir(parents=True, exist_ok=True)
-        (repo / HANDOVER_DIR / "2026-11.md").write_text(  # gov-python: allow — 调用末行已带 encoding="utf-8"，g09 只扫首行
+        _handover_body = (
             "# 交接 · 2026-11\n\n"
             "## 按机索引（以机器标识为顶层）\n\n"
-            "### `@SIWPAN`（2 节）\n\n"
+            "### `@SIWPAN`（3 节）\n\n"
             "| 节 | 标题 |\n| --- | --- |\n"
             "| 一百二十六 | SIWPAN 机自修（2026-11-03） |\n"
-            "| 一百三十八 | 分区文件夹化（2026-11-07 晨） |\n\n"
+            "| 一百三十八 | 分区文件夹化（2026-11-07 晨） |\n"
+            "| 一百六十六 | 索引里有、正文没有（2026-11-20） |\n\n"
             "### `@DESKTOP-KQABATS`（1 节）\n\n"
             "| 节 | 标题 |\n| --- | --- |\n"
             "| 一百一十七 | AgentOps 调研（2026-11-02） |\n\n"
@@ -922,18 +1019,25 @@ def selfcheck() -> int:
             "| 节 | 标题 |\n| --- | --- |\n"
             "| 一百一十四 | 官网上线（2026-11-01） |\n\n"
             "---\n\n"
+            # 节只由标题产生（2026-11-26 模型改正）⇒ 索引里的三行必须各自有对应标题，
+            # 唯一故意没有标题的是 `一百六十六` —— 它要落进 dangling，而不是被当成"节"。
             "## 一百二十六、SIWPAN 机自修（2026-11-03 @`SIWPAN`）\n\n"
-            "## 一百四十九、只有正文标注的节（2026-11-09 @`SIWPAN`）\n",
-            encoding="utf-8")
+            "## 一百三十八、分区文件夹化（2026-11-07 晨）\n\n"
+            "## 一百一十七、AgentOps 调研（2026-11-02 @`KQABATS`）\n\n"
+            "## 一百一十四、官网上线（2026-11-01）\n\n"
+            "## 一百四十九、只有正文标注的节（2026-11-09 @`SIWPAN`）\n"
+        )
+        (repo / HANDOVER_DIR / "2026-11.md").write_text(_handover_body, encoding="utf-8")
 
         payload = collect(repo, "2026-11")
         t = payload["totals"]
 
-        # ① A 级：索引解析出节号/标题/日期（索引 2 节 + 正文新增 1 节 = 3）
-        cases.append(("A 级：按机索引解析出节号/标题/日期",
+        # ① A 级：标题产生节（5 节），索引行只贴归属 ⇒ SIWPAN 3 节（含索引认领的两节）
+        cases.append(("A 级：节由标题产生、索引行贴归属（SIWPAN 3 节，含索引认领）",
                       len(payload["A_sections"]["SIWPAN"]) == 3
                       and payload["A_sections"]["SIWPAN"][0]["section"] == "一百二十六"
-                      and payload["A_sections"]["SIWPAN"][0]["date"] == "2026-11-03"))
+                      and payload["A_sections"]["SIWPAN"][0]["date"] == "2026-11-03"
+                      and t["handover_sections"] == 5))
         # ② A 级：正文 `@机名` 标注（索引里没有的那节）也要认
         cases.append(("A 级：正文 `@机名` 标注也计入（索引之外）",
                       any(item["section"] == "一百四十九"
@@ -943,6 +1047,84 @@ def selfcheck() -> int:
                       len(payload["A_sections"]["SIWPAN"]) == 3
                       and len(payload["A_untagged"]) == 1
                       and t["handover_sections"] >= 5))
+        # ③b A 级节数**按节号去重**（2026-11-26 修双计）：同一节被「索引表 + 标题 + 跨机块」
+        # 三处写到，只能算 **1 节**；旧实现按 (owner, section) 去重 ⇒ 会数成 3 条。
+        # 这组夹具同时是 team-lead 要的两条负对照的载体，且**不依赖 git**（纯解析）。
+        _ho = (
+            "# 交接 · 2026-11\n\n"
+            "## 按机索引（以机器标识为顶层）\n\n"
+            "### `@SIWPAN`（2 节）\n\n| 节 | 标题 |\n| --- | --- |\n"
+            "| 一百二十六 | 索引与标题都有（2026-11-03） |\n"
+            "| 一百三十八 | 两台机的索引都列了（2026-11-07） |\n\n"
+            "### `@DESKTOP-KQABATS`（1 节）\n\n| 节 | 标题 |\n| --- | --- |\n"
+            "| 一百三十八 | 同一节，第二台机也认领（2026-11-07） |\n\n"
+            "### `@跨机`（1 节）\n\n| 节 | 标题 |\n| --- | --- |\n"
+            "| 一百二十六 | 跨机块又列了一遍（2026-11-03） |\n\n"
+            "---\n\n"
+            "## 一百二十六、索引与标题都有（2026-11-03 @`SIWPAN`）\n\n"
+            "## 一百三十八、两台机的索引都列了（2026-11-07）\n\n"
+            "## 二百三十、@SIWPAN 会话交接：公共核消费化（2026-11-25）\n"
+        )
+        _ho_machines = ["SIWPAN", "DESKTOP-KQABATS", "DESKTOP-8RSV60V"]
+        ho = parse_handover(_ho, _ho_machines)
+        ho_tot = ho["totals"]
+        ho_all = [e["section"] for v in ho["machines"].values() for e in v]
+        cases.append((
+            "A 级节数按**节号**去重：索引 + 标题 + @跨机 写同一节 ⇒ 只算 1 节（不是 3 条）",
+            # 断言写「关系」而不是写死 3：节数计数器必须等于**实际不同节号数**，
+            # 且同一节被两方认领要能看见（multi_owner）。旧实现这两条都不成立。
+            ho_tot["sections"] == len(set(ho_all)) == 3
+            and len(ho_all) > 3          # 归属记录仍多于节数（两台机各一条，这是对的）
+            and ho_tot["multi_owner"] == 2,
+        ))
+        cases.append((
+            "A 级恒等式：tagged + untagged == sections（且 tagged 数**节**不数条目）",
+            ho_tot["tagged"] + ho_tot["untagged"] == ho_tot["sections"] == 3
+            and ho_tot["tagged"] == 3 and ho_tot["untagged"] == 0,
+        ))
+        cases.append((
+            "A 级归属记录：同节被两台机认领 ⇒ 两台各一条（节数不因此增加）",
+            # 只查归属记录本身：这样这一例只会在「归属没记到两台」时红，
+            # 不会因为计数缺陷连带变红（否则四个用例一起红，看不出是哪个修法在承重）。
+            any(e["section"] == "一百三十八" for e in ho["machines"]["SIWPAN"])
+            and any(e["section"] == "一百三十八" for e in ho["machines"]["DESKTOP-KQABATS"]),
+        ))
+        cases.append((
+            "A 级：标题里含「会话交接」的**真节**不得被整节丢掉（NOT_A_SECTION 只认节号位）",
+            # 同上：只查这一节在不在，不引用总节数。
+            any(e["section"] == "二百三十" for e in ho["machines"]["SIWPAN"]),
+        ))
+        # ③c 索引漂移（2026-11-26 模型改正）：索引行指向正文里没有的节 ⇒ 进 `dangling`，
+        # **不**并入 tagged / sections。这是"索引与正文对不上"唯一能被机器抓到的形态，
+        # 而本轮 Docu 刚修过 21 行索引错 —— 没有这个字段就只能靠人眼。
+        cases.append((
+            "A 级：索引有、正文无 ⇒ 进 dangling，且不增 tagged 与 sections",
+            t["handover_sections"] == 5 and t["handover_sections_dangling"] == 1
+            and payload["A_dangling_index"][0]["section"] == "一百六十六"
+            and t["handover_sections_tagged"] == 4
+            and all(item["section"] != "一百六十六"
+                    for v in payload["A_sections"].values() for item in v)
+            and all(item["section"] != "一百六十六" for item in payload["A_untagged"]),
+        ))
+        # ③d 索引与标题归属不同：记 `owner_conflict`（可见），节数仍 1、不重复计。
+        # 选「标 conflict」而不是「判红」：跨机协作时一节的索引归属与正文标注不一致，
+        # 往往是待裁决的事实分歧，工具只该把它摆出来，不该替人判谁对。
+        _ho_conflict = (
+            "# 交接 · 2026-11\n\n"
+            "## 按机索引（以机器标识为顶层）\n\n"
+            "### `@SIWPAN`（1 节）\n\n| 节 | 标题 |\n| --- | --- |\n"
+            "| 一百二十六 | 索引说 SIWPAN（2026-11-03） |\n\n"
+            "---\n\n"
+            "## 一百二十六、标题说 KQABATS（2026-11-03 @`DESKTOP-KQABATS`）\n"
+        )
+        ho_c = parse_handover(_ho_conflict, _ho_machines)
+        cases.append((
+            "A 级：索引与标题归属不同 ⇒ 记 owner_conflict（节数仍 1）",
+            ho_c["totals"]["owner_conflict"] == 1 and ho_c["totals"]["multi_owner"] == 1
+            and ho_c["totals"]["sections"] == 1
+            and len(ho_c["machines"]["SIWPAN"]) == 1
+            and len(ho_c["machines"]["DESKTOP-KQABATS"]) == 1,
+        ))
         # ④ B 级：短形态别名 `@KQABATS` → DESKTOP-KQABATS
         cases.append(("B 级：`@KQABATS` 归 DESKTOP-KQABATS（短形态别名）",
                       len(payload["B_commits"]["DESKTOP-KQABATS"]) == 1))
@@ -1120,7 +1302,10 @@ def main(argv: list[str] | None = None) -> int:
 
     t = payload["totals"]
     print(f"machine_ledger: {month} commits={t['commits_in_month']} "
-          f"A_sections={t['handover_sections_tagged']}/{t['handover_sections']} "
+          f"A_sections={t['handover_sections_tagged']}/{t['handover_sections']}"
+          f"(机器{t['handover_sections_tagged_machine']}+跨机{t['handover_sections_cross_only']}"
+          f"+未标{t['handover_sections_untagged']}) "
+          f"dangling_index={t['handover_sections_dangling']} "
           f"B={t['attributed_B']} C={t['attributed_C_only']} "
           f"D_unattributed={t['unattributed_after_split']} "
           f"prototype_01={t['prototype_01']} carrier={t['prototype_carrier']} "

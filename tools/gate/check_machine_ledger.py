@@ -22,9 +22,35 @@
 
 | 判据 | 判什么 | 判红条件 |
 | --- | --- | --- |
-| **A** | 月账里对交接卷的**节引用**必须落在真实存在的节上 | 引用的节号在该月卷的标题集合里**不存在**（且同行无撤销/订正标记） |
+| **A** | 月账里对交接卷的**节引用**必须落在真实存在的节上（点名卷可写在 `§` 前，也可写在紧邻的 `（YYYY-MM 卷）` 里 —— 两种位置**同义同严**） | 引用的节号在该月卷的标题集合里**不存在**（且同行无撤销/订正标记） |
 | **B** | 每份月账卷首必须声明**归属通道**，且声明要成对 | ①两条通道都没声明；②声明了「代整理」却缺「待…复核」（半张声明=免检章） |
-| **C** | 月账「未归属提交」一节的三个数字必须与 `git rev-list --count` 实测一致 | 总提交 / 可归属 / 未归属 任一对不上，或该节存在却读不到三个数字 |
+| **C** | 月账「未归属提交」一节的三个数字必须与 git 实测一致（**计数域**由该节的 pin 决定：`截至 <sha>` / `ledger-pin=<sha>`，无 pin 则 HEAD） | 总提交 / 可归属 / 未归属 任一对不上，或该节存在却读不到三个数字，或 pin 指向的提交在本仓读不到 |
+
+## 计数为什么要 pin 在提交上（2026-11-26）
+
+`总提交 N` 是**快照**。判据按 HEAD 比，账本就会**每提交一次自我失效一次**：写 391 时
+是对的，下一笔提交后 HEAD 就是 392，判据立刻判它造假；改成 392 下次提交又变 393。
+**改数字治不了，只会把一次红变成每次红。**
+
+解法是让数字带上**计数域**：
+
+```
+| 总提交 | 391 |                                  ← 旧写法（unpinned：按 HEAD 比，只 WARN 不判红）
+<!-- ledger-counts: total=391 … pin=29527481 -->   ← 机读 pin（首选，账本实际写法）
+总提交：391 笔（截至 `29527481`，author date / `+08:00`）  ← 人读形态（也认，`ledger-pin=` 为别名）
+```
+
+判据在有 pin 时用 `git log <sha>` 计数（**不随 HEAD 漂移**），并照常核数：
+
+| 情形 | 判定 |
+| --- | --- |
+| pin 指向的 sha 读不到（拼错 / 浅克隆 / 不在本仓历史 / 无 git） | **红** |
+| pin 上的计数 ≠ 自述 | **红** |
+| pin 上的计数 = 自述，HEAD 已 +N | **绿**（快照本就该落后于 HEAD） |
+| 无 pin，按 HEAD 比且不符 | **WARN**，文案带 `unpinned`（迁移期兼容；`--require-pin` 下改为红） |
+
+`--require-pin` 是这条兼容期的**收口开关**：迁移完成后在接线脚本里打开，「不写 pin」
+即判红。没有收口开关的豁免，会变成永久免检章。
 
 ## 哪些**不可**机检（写清楚，别让它们冒充已判）
 
@@ -126,6 +152,17 @@ NUM = r"(?:[0-9]+(?:\.[0-9]+)*|[" + CN_CHARS + r"]+)"
 CITE_SECTION_RE = re.compile(
     r"交接卷\s*(?:(\d{4}-\d{2})\s*卷?\s*)?[（(]?\s*§\s*(" + NUM + r")"
 )
+#: 形态①的**尾随卷名**：`§五十九（2026-09 卷）`。
+#: 2026-11-26：卷名写在 `§` 之后同样是「点名了卷」，与写在前面**等价** ——
+#: 此前只认前置写法（`交接卷 2026-09 §59`），尾随写法认不出卷名 ⇒ 退回「歧义 WARN」，
+#: 甚至连「点名了卷却查无此节」这条最硬的判红都触发不了（cite.volume 一直是 None）。
+#: 而 `交接卷 §五十九（2026-09 卷）` 恰恰是 D14 那边认可的写法（D14 要求 `§` 前 12 字符内
+#: 有「交接卷」）—— 两道判据各认一半，最自然的写法在它们之间无解（Docu 实测）。
+#: 必须紧邻（`\s*` 之后就是括号）：`（…）` 跑到句子别处去就是在说别的事，不能算点名。
+CITE_VOLUME_AFTER_RE = re.compile(r"\s*[（(]\s*(\d{4}-\d{2})\s*卷?\s*[)）]")
+#: 引用形态识别前先剥掉的**排版标记**：加粗/行内代码不改变「这句话指向哪一卷」。
+#: 只剥 `*` 与反引号 —— `_` 在机名与标识符里常见（`a_b`），剥了会改坏内容本身。
+_EMPHASIS_STRIP = str.maketrans("", "", "*`")
 #: 形态② `交接卷 181 节` / `交接卷第二百一十七节` / `原第二百二十五节 .6`
 CITE_VOLUME_RE = re.compile(
     r"(?:交接卷|原)\s*(?:§\s*)?第?\s*(" + NUM + r")\s*节(?:\s*\.\s*([0-9]+))?"
@@ -144,9 +181,24 @@ UNATTRIBUTED_HEAD = "未归属"
 COUNTS_MARKER = re.compile(r"ledger-counts:\s*([^\n]*?)(?:-->|$)", re.IGNORECASE)
 #: 兼容既有散文/表格写法（只认**键紧邻数字**的形态，不做跨句邻近匹配）：
 #: 实测反例——`可归属率仍停在 18%` 会被 `可归属\D{0,6}(\d+)` 读成「可归属=18」。
-PROSE_TOTAL = re.compile(r"(?:总提交|本月)\s*[:：]?\s*(\d+)\s*条")
+#: 2026-11-26：① 单位从「条」扩到「条|笔」（账本实际写 `**总提交：391 笔**`）；
+#: ② 允许数字两侧的加粗标记（`本月 **391** 条` —— 原式在 `本月` 与数字之间要求紧邻，
+#:    加粗就整条读不到，于是「读不到」被当成「没声明」）。
+PROSE_TOTAL = re.compile(r"(?:总提交|本月)\s*[:：]?\s*\**\s*(\d+)\s*\**\s*[条笔]")
 TABLE_ROW = re.compile(r"^\|\s*(总提交|可归属|未归属|有线索)\s*\|\s*\**\s*(\d+)\s*\**\s*\|", re.MULTILINE)
 HEAD_COUNT = re.compile(r"(\d+)\s*条")
+
+#: **计数 pin**：`总提交` 是**快照**，账本每提交一次就自我失效一次 —— 判据若按 HEAD 比，
+#: 数字永远差一（2026-11-26 现场：月账写 391 是对的，让 391 变错的是「写完之后又提交了一笔」）。
+#: 改成把计数钉在提交上：`截至 \`29527481\``（人读形态）或机读行 `ledger-pin=29527481`。
+#: 两种都认 —— 机读行是钉死用的（首选），散文是给人看的，两者不一致时**机读行优先**。
+#: 机读键**以 `pin=` 为准**（账本实际写法 `ledger-counts: … pin=29527481`），
+#: `ledger-pin=` 作别名兼容。`(?<![A-Za-z-])` 防止误吃 `spin=`/`背pin=` 这类尾巴。
+PIN_MARKER = re.compile(r"(?<![A-Za-z-])(?:ledger-)?pin\s*[=:]\s*`?([0-9a-fA-F]{7,40})`?",
+                        re.IGNORECASE)
+PIN_PROSE = re.compile(r"截至\s*`?([0-9a-fA-F]{7,40})`?")
+#: 少于 7 位不认：`截至 2026-11` 这种写法会被误当成 sha 前缀（实测有这种句子）。
+PIN_MIN_LEN = 7
 
 #: 「月账/交接的归属」规矩 2026-11-25 才立（`机器分区索引.md`）⇒ **B 的通道声明与
 #: A2 的机名标注只判此月及以后的卷**。对存量卷（含 2026-11-25 按 git 记录重建的
@@ -318,15 +370,28 @@ def collect_cites(text: str) -> list[Cite]:
     seen: set[tuple[str, int]] = set()
     lines = text.splitlines()
     for number, line in enumerate(lines, start=1):
+        # 排版标记不参与形态识别（2026-11-26）：`交接卷 **2026-09** §五十九` 是**自然写法**，
+        # `**` 只是把卷号加粗，不改变它指向哪一卷。原正则要求「交接卷」与 `§` 之间只能有
+        # `\s*`/卷号，加粗就整条不认 —— 结果是 A 条**看不见**这条引用（断言没人核），
+        # 比判错更坏：判错会有人来吵，看不见连吵的人都没有。
+        # 只剥 `*` 与反引号：`_` 在机名/标识符里常见（`a_b`），剥了会改坏内容。
+        scan = line.translate(_EMPHASIS_STRIP)
         found: list[tuple[int, str]] = []
         volumes: dict[str, str] = {}
-        for matched in CITE_SECTION_RE.finditer(line):
+        for matched in CITE_SECTION_RE.finditer(scan):
             key = docs_contract.tok_key(matched.group(2))
             if key:
                 found.append((matched.start(), key))
-                if matched.group(1):
-                    volumes[key] = matched.group(1)     # 引用里点名了卷
-        for matched in CITE_VOLUME_RE.finditer(line):
+                # 卷名两种位置等价：前置（`交接卷 2026-09 §59`）或紧邻尾随（`§59（2026-09 卷）`）。
+                # 前置优先（它离 `§` 更近，歧义更小）；尾随只在没写前置时补位。
+                volume = matched.group(1)
+                if not volume:
+                    after = CITE_VOLUME_AFTER_RE.match(scan, matched.end())
+                    if after:
+                        volume = after.group(1)
+                if volume:
+                    volumes.setdefault(key, volume)
+        for matched in CITE_VOLUME_RE.finditer(scan):
             base = docs_contract.tok_key(matched.group(1))
             if not base:
                 continue
@@ -337,7 +402,9 @@ def collect_cites(text: str) -> list[Cite]:
                 continue
             seen.add((key, number))
             start = max(0, position - 20)
-            cites.append(Cite(key=key, line=number, text=line[start:position + 40].strip(),
+            # 原文片段取**原行**（不取 scan）：判红文案要能让人按原样搜到那句话。
+            cites.append(Cite(key=key, line=number,
+                              text=line[max(0, start):position + 40].strip(),
                               volume=volumes.get(key)))
     return cites
 
@@ -447,8 +514,8 @@ def _names_volume(text: str, month: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 
-def _author_month_table(root: Path) -> dict[str, dict] | None:
-    """一次读出全部提交 → `{sha: {"month", "subject", "files", "author"}}`，月份按 **author date** 判。
+def _author_month_table(root: Path, rev: str = "HEAD") -> dict[str, dict] | None:
+    """一次读出 `rev` 之前的全部提交 → `{sha: {"month", "subject", "files", "author"}}`，月份按 **author date** 判。
 
     ## 为什么不用 `git rev-list --count --since/--until`
 
@@ -467,9 +534,16 @@ def _author_month_table(root: Path) -> dict[str, dict] | None:
 
     所以这里改成：**取全量 → 显式换算到 +08:00 → 按 `YYYY-MM` 判月**。
     643 条提交一次读完，代价可忽略；换来的是「哪一个数、按哪个日期、在哪个时区」全部写在代码里。
+
+    `rev` 是**计数域**（2026-11-26）：默认 `HEAD`；月账写了 pin 时传 pin 的 sha ——
+    「截至某提交的当月提交数」是**不会随后续提交变化**的数，这才是账本能站得住的写法。
+    结果按 `(仓, rev)` 缓存：同一批月账里 HEAD 与同一个 pin 都只读一次全量历史。
     """
+    key = (str(root), rev)
+    if key in _TABLE_CACHE:
+        return _TABLE_CACHE[key]
     command = ["git", "-c", "core.quotepath=false", "log", "--date=iso-strict",
-               "--pretty=format:%x1e%H%x1f%aI%x1f%s", "--name-only", "HEAD"]
+               "--pretty=format:%x1e%H%x1f%aI%x1f%s", "--name-only", rev]
     try:
         done = subprocess.run(command, cwd=str(root), stdout=subprocess.PIPE,
                               stderr=subprocess.DEVNULL, encoding="utf-8",
@@ -499,15 +573,25 @@ def _author_month_table(root: Path) -> dict[str, dict] | None:
             "files": [ln.strip() for ln in lines[1:] if ln.strip()],
             "author": author,
         }
-    return table or None
+    if not table:
+        return None
+    _TABLE_CACHE[key] = table
+    return table
 
 
-def _rev_count(root: Path, month: str, pathspec: list[str]) -> int | None:
+#: `_author_month_table` 的结果缓存：键 = (仓, rev)。同一次运行里 HEAD 会被
+#: `default_git_counts`（总提交 + 可归属两遍）、`_measured_clues`、以及 pin 校验反复用到；
+#: 不缓存就是同一份 643 条历史读 4 次。表是只读的，共享安全。
+_TABLE_CACHE: dict[tuple[str, str], dict[str, dict]] = {}
+
+
+def _rev_count(root: Path, month: str, pathspec: list[str], rev: str = "HEAD") -> int | None:
     """当月提交数（**author date** 口径）。`pathspec` 非空时只数触及这些路径前缀的提交。
 
-    返回 None ⇒ 实测不可用（非工作树 / git 缺失）—— 调用方据此记 SKIP，**不猜**。
+    返回 None ⇒ 实测不可用（非工作树 / git 缺失 / **rev 不存在**）—— 调用方据此记 SKIP 或
+    （pin 场景下）判「pin 读不到」，**不猜**。
     """
-    table = _author_month_table(root)
+    table = _author_month_table(root, rev)
     if table is None:
         return None
     count = 0
@@ -523,20 +607,24 @@ def _rev_count(root: Path, month: str, pathspec: list[str]) -> int | None:
     return count
 
 
-def default_git_counts(root: Path, month: str, machine: str) -> tuple[int | None, int | None]:
+def default_git_counts(root: Path, month: str, machine: str,
+                       rev: str | None = None) -> tuple[int | None, int | None]:
     """(当期总提交数, 可归属本机的提交数)。
 
     **可归属的口径写死在这里，且只写一次**：当月内触及该机**机器作用域路径**的提交。
     作用域 = `docs/事实源/机器/<机>/**` 与 `facts/machine/<机>(.json|/**)` ——
-    这两处是「一机一写」的边界，涉及其它路径的提交无法归到某一台机。
+    这两处是「一机一写」的边界，涉及其它的提交无法归到某一台机。
     口径不写在月账里（那会变成第二份真相源），月账只声明**数字**。
+
+    `rev`：计数域。None ⇒ HEAD（未 pin）；否则为月账 pin 的 sha。
     """
-    total = _rev_count(root, month, [])
+    rev = rev or "HEAD"
+    total = _rev_count(root, month, [], rev)
     scoped = _rev_count(root, month, [
         f"docs/事实源/机器/{machine}",
         f"facts/machine/{machine}.json",
         f"facts/machine/{machine}",
-    ])
+    ], rev)
     return total, scoped
 
 
@@ -588,6 +676,71 @@ def parse_declared_counts(section_text: str, heading_text: str) -> dict[str, int
     return out
 
 
+def parse_counts_pin(section_text: str, heading_text: str) -> str | None:
+    """读出「这份账是截至哪个提交」的 pin（散文 `截至 <sha>` 或机读行 `pin=<sha>`）。
+
+    为什么必须有它：`总提交 N` 是**快照**。判据按 HEAD 比，则账本**每提交一次就自我
+    失效一次** —— 写 391 时是对的，下一笔提交后 HEAD 就是 392，判据立刻判它造假。
+    把数字改成 392 是错的解法（下次提交又变 393）；正确解法是**把计数钉在提交上**。
+
+    解析范围只到「未归属提交」这一节：机读行认全节，散文 `截至` **只认贴着「总提交」
+    的那几行**。理由见下 —— 别处的 `截至` 说的是别的事，拿它当计数域是静默指错。
+
+    已知边界：同一节里若出现**两个不同的** pin，取机读行的第一条（今天三份月账里
+    `ledger-pin=` / `pin=` / `截至` 三处同值）。将来若真要分家（例如「可归属」钉在
+    另一个提交），必须把总提交那个写进 `ledger-counts:` 行 —— 本判据不替你选。
+    """
+    for text in (section_text, heading_text):
+        matched = PIN_MARKER.search(text)          # 机读行优先：它是钉死用的
+        if matched:
+            return matched.group(1)
+        # 散文形态：pin 必须**贴着「总提交」写**（同行，或紧随的 1~2 行）。
+        # 不扫整节正文 —— 实测 2026-11 账本里还有「…（137 节中 124 节已标注；截至
+        # `29527481`）」这种**别的意思**的 `截至`（说的是节数的快照）。若允许回退到
+        # 「正文里第一条 截至」，两处数字一旦分家，pin 就会静默指错，而且看不出来。
+        # 贴不住 ⇒ 返回 None ⇒ 上层按 `unpinned` 处理（可见地提示），**不猜**。
+        lines = text.splitlines()
+        for index, line in enumerate(lines):
+            if "总提交" not in line:
+                continue
+            for probe in lines[index:index + 3]:
+                matched = PIN_PROSE.search(probe)
+                if matched and len(matched.group(1)) >= PIN_MIN_LEN:
+                    return matched.group(1)
+    return None
+
+
+#: 卷里「可归属」的**分级分解**形态（2026-11-26 承认的第四种口径）。两种朝向都要认：
+#:   ① `… = B 31 + C 32 + @跨机 3 + PROTOTYPE-01 0 = 66`（和写在右边）
+#:   ② `可归属：66 笔（同一个 pin）= B 31 + C 32 + @跨机 3 + PROTOTYPE-01 0`（和写在左边）
+#: 实测账本用的是 ②。每类后面常带括号说明（`B（标题带 \`@机名\`）31`），
+#: 所以字母与数字之间允许一段**不含数字/+ / =** 的间隔 —— 不含 + 和 = 才不会跨到下一类去。
+_TERM_GAP = r"[^0-9+=＝]{0,30}"
+DECOMPOSITION = re.compile(
+    r"B" + _TERM_GAP + r"(\d+)\s*\+\s*"
+    r"C" + _TERM_GAP + r"(\d+)\s*\+\s*"
+    r"`?@?跨机`?" + _TERM_GAP + r"(\d+)\s*\+\s*"
+    r"`?(?:PROTOTYPE-\d+|原型机?)`?" + _TERM_GAP + r"(\d+)"
+)
+TRAILING_TOTAL = re.compile(r"\s*[=＝]\s*(\d+)")
+
+
+def parse_attribution_decomposition(text: str) -> tuple[int, int | None] | None:
+    """读出分级分解 → `(四类相加, 等号右边的自述值|None)`；读不到返回 None。
+
+    为什么承认它：`可归属` 的值取决于「什么算线索」的定义，判据另算的那三种口径
+    （标题带 @机 / 触及分区 / 并集）都只是**候选**。卷里写的分解更可解释 ——
+    读者能把 B/C/跨机/原型 四类自己加一遍。**但只有自洽的分解才算数**：
+    四类相加必须等于声明的「可归属」，且若写了 `= m` 还要与它相等。
+    """
+    matched = DECOMPOSITION.search(text)
+    if matched is None:
+        return None
+    parts_sum = sum(int(matched.group(index)) for index in (1, 2, 3, 4))
+    tail = TRAILING_TOTAL.match(text, matched.end())
+    return parts_sum, (int(tail.group(1)) if tail else None)
+
+
 def _section_body(text: str, heading_line: int) -> str:
     """取某标题行到下一个同级或更高级标题之间的正文。"""
     lines = text.splitlines()
@@ -615,6 +768,7 @@ def judge(
     git_counts,
     mutate: set[str] | None = None,
     volumes_for=None,                  # () -> {month: list[Section]}（跨卷引用解析用；可缺省）
+    require_pin: bool = False,          # 无计数 pin 时按 HEAD 比**并判红**（迁移完成后打开）
 ) -> Result:
     """跑三条判据。`mutate` 里列出的判据会**摘掉判红分支**（变异验证用）。
 
@@ -785,16 +939,45 @@ def judge(
             result.exempted += 1
 
         # ---- 判据 C：未归属提交的数字必须与 git 实测一致 --------------------
-        result_c = _judge_counts(root, ledger, is_local, git_counts, mutate)
+        result_c = _judge_counts(root, ledger, is_local, git_counts, mutate, require_pin)
         result.findings.extend(result_c.findings)
         result.undetermined.extend(result_c.undetermined)
+        # ⚠ 2026-11-26 修：此前只并了 findings / undetermined / skipped / exempted，
+        # **漏了 warnings** —— C 条原来不产 WARN 所以看不出来；`unpinned` 一出来
+        # 就被静默吞掉（实测：直接调 `_judge_counts` 有 2 条 WARN，跑整条判据只剩 A2 的）。
+        # 「不参与退出码」不等于「可以不打印」：提示项被吞掉，等于这条判据没这个能力。
+        result.warnings.extend(result_c.warnings)
         result.skipped += result_c.skipped
         result.exempted += result_c.exempted
 
     return result
 
 
-def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate: set[str]) -> Result:
+def _sha_where_count_was(root: Path, month: str, target: int) -> str | None:
+    """找出「当月提交数**首次**等于 target」的那个提交 —— 也就是账本这个数**为真的计数域**。
+
+    为什么不能拿 HEAD 举例（2026-11-26 现场）：HEAD 上 2026-11 是 392，而账本写的 391
+    在 `29527481` 上才成立。文案里举 HEAD 会让下一个人照着钉，钉完立刻 392≠391 判红 ——
+    提示语把人指向一个必然失败的答案，比不给提示更坏。
+
+    `_author_month_table` 的字典按 `git log` 顺序（新→旧）插入，所以从新往旧累加，
+    第一次达到 target 的那个 sha 就是「最晚的、target 为真的提交」。
+    """
+    table = _author_month_table(root, "HEAD")
+    if not table or target <= 0:
+        return None
+    seen = 0
+    for sha, entry in table.items():
+        if entry["month"] != month:
+            continue
+        seen += 1
+        if seen == target:
+            return sha[:8]
+    return None
+
+
+def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate: set[str],
+                  require_pin: bool = False) -> Result:
     """判据 C：三件事，各自独立成条，避免「一条不符就整节不可判」。"""
     out = Result()
     lines = ledger.text.splitlines()
@@ -809,9 +992,26 @@ def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate
         return out
 
     heading = lines[line_no - 1]
-    declared = parse_declared_counts(_section_body(ledger.text, line_no), heading)
-    total_measured, attributable_measured = git_counts(root, ledger.month, ledger.machine)
+    body = _section_body(ledger.text, line_no)
+    declared = parse_declared_counts(body, heading)
+    # 计数 pin：账本的「总提交 N」是**快照**。写了 `截至 <sha>` ⇒ 在该 sha 上计数
+    # （不会随后续提交漂移）；没写 ⇒ 退回 HEAD，且只提示不判红（见下）。
+    pin = parse_counts_pin(body, heading)
+    total_measured, attributable_measured = git_counts(root, ledger.month, ledger.machine, pin)
     window = _window_text(ledger.month)
+    pin_text = f"`{pin}`" if pin else ""
+
+    if pin and total_measured is None:
+        # pin 在**本仓读不到**：sha 拼错 / 不在本仓历史 / 浅克隆没带到 / 无 git。
+        # 这四种都不该判成「数字造假」，所以单列一条，并把复现命令写清（读者一眼能分诊）。
+        out.findings.append(Finding(
+            "C", ledger.rel, line_no,
+            f"「总提交」的计数 pin {pin_text} 在本仓读不到 —— sha 拼错 / 不在本仓历史 / "
+            f"浅克隆未带到 / 无 git，四种原因都会长这样。复现：`git cat-file -e {pin}^{{commit}}`"
+            f"；pin 之前计数只能按 HEAD 比，那正是「账本每提交一次就自我失效」的来源",
+            blocking=is_local and "c" not in mutate,
+        ))
+        return out
 
     if total_measured is None:
         out.skipped += 1
@@ -820,7 +1020,7 @@ def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate
         ))
         return out
 
-    # C1 总提交：与 git 当月实测比。窗口口径写进报错文案 —— 数字对不上时，
+    # C1 总提交：与 git 实测比。窗口口径写进报错文案 —— 数字对不上时，
     # 第一件事是让对方能一行命令复现，而不是争论「谁算错了」。
     if "总提交" not in declared:
         out.undetermined.append(Undetermined(
@@ -829,15 +1029,43 @@ def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate
             f"git 实测 {window} = {total_measured} 条",
         ))
     elif declared["总提交"] != total_measured:
-        out.findings.append(Finding(
-            "C", ledger.rel, line_no,
-            f"「总提交」自述 {declared['总提交']}，git 实测 {total_measured}"
-            f"（口径：**author date** / tz={TZ_NAME} / 窗口 {window}）"
-            f"—— 复现：`git log --pretty=%aI | grep -c '^{ledger.month}'`"
-            f"（**不要**用 `git rev-list --count --since/--until`：那按 committer date，"
-            f"会把它判成另一个数）",
-            blocking=is_local and "c" not in mutate,
-        ))
+        reproduce = (f"`git log {pin} --pretty=%aI | grep -c '^{ledger.month}'`" if pin
+                     else f"`git log --pretty=%aI | grep -c '^{ledger.month}'`")
+        common = (f"（口径：**author date** / tz={TZ_NAME} / 窗口 {window} / "
+                  f"计数域 {pin_text or 'HEAD'}）—— 复现：{reproduce}"
+                  f"（**不要**用 `git rev-list --count --since/--until`：那按 committer date，"
+                  f"会把它判成另一个数）")
+        # 建议钉的 sha = **这个数为真的那个提交**，不是 HEAD（见 `_sha_where_count_was`）。
+        suggest = _sha_where_count_was(root, ledger.month, declared["总提交"]) or _head_sha(root) or "<sha>"
+        if pin:
+            out.findings.append(Finding(
+                "C", ledger.rel, line_no,
+                f"「总提交」自述 {declared['总提交']}，pin 到 {pin_text} 上实测 {total_measured}{common}",
+                blocking=is_local and "c" not in mutate,
+            ))
+        elif require_pin:
+            # `--require-pin`：迁移完成后打开，让「不写 pin」本身变成红。
+            out.findings.append(Finding(
+                "C", ledger.rel, line_no,
+                f"「总提交」自述 {declared['总提交']}，HEAD 上实测 {total_measured}{common}。"
+                f"**未写计数 pin**（`--require-pin` 下视为红）：账本是快照，按 HEAD 比永远差一 —— "
+                f"请在总提交行写「截至 `{suggest}`」（或机读行加 `pin={suggest}`）。"
+                f"**钉的是「{declared['总提交']} 这个数所在的那个提交」，不是 HEAD**"
+                f"（HEAD 已经是 {total_measured}，钉它会立刻判红）",
+                blocking=is_local and "c" not in mutate,
+            ))
+        else:
+            # 兼容旧写法：**只提示不判红**。刻意保留 `unpinned` 这个词 —— 它是可 grep 的
+            # 迁移进度指标，也是「这条没判红不是因为对，而是因为还没补 pin」的唯一标记。
+            out.warnings.append(Warning_(
+                "C", ledger.rel, line_no,
+                f"unpinned：「总提交」自述 {declared['总提交']}，HEAD 上实测 {total_measured}{common}。"
+                f"**不判红**：账本是快照，每提交一次就自我失效一次，改数字治不了。"
+                f"请改为钉在提交上 —— 总提交行写「截至 `{suggest}`」"
+                f"（或机读行加 `pin={suggest}`），判据即在该 sha 上计数。"
+                f"**要钉的是「{declared['总提交']} 这个数所在的那个提交」，不是 HEAD**"
+                f"（HEAD 已 {total_measured}，照 HEAD 钉会立刻判红）",
+            ))
     else:
         out.exempted += 1
 
@@ -858,13 +1086,32 @@ def _judge_counts(root: Path, ledger: Ledger, is_local: bool, git_counts, mutate
             # 实测：2026-11 月账声明「有线索 72」，而三种口径给出 31 / 66 / 80。
             clues = _measured_clues(root, ledger.month)
             candidates = {clues["标题带机"], clues["触及分区"], clues["并集"]}
-            if declared["可归属"] not in candidates and "c" not in mutate:
+            # 2026-11-26：卷里写的**分级分解**是判据承认的第四种口径。
+            # 它是"可归属"最可解释的形态 —— 读者能自己把四类加起来复核：
+            #   `B 31 + C 32 + @跨机 3 + PROTOTYPE-01 0 = 66`
+            # 承认条件（三条同时成立，缺一不认 —— 不接受"随便写个 66"）：
+            #   ① 四类可解析；② 四类相加 == 等号右边的自述值；③ 该值 == 卷里声明的「可归属」；
+            #   而"总数守恒"由上面的 C2 已单独判（不守恒那里已经红了）。
+            decomposition = parse_attribution_decomposition(body)
+            if (decomposition is not None
+                    and decomposition[0] == declared["可归属"]
+                    and decomposition[1] in (None, declared["可归属"])):
+                out.exempted += 1
+            elif declared["可归属"] not in candidates and "c" not in mutate:
+                # 解析出了分解但不自洽 ⇒ 文案里直接把分解的和算给它看（这是最有用的一句）。
+                extra = ""
+                if decomposition is not None:
+                    parts_sum, stated = decomposition
+                    extra = (f"；卷里的分级分解四类相加 = {parts_sum}"
+                             + (f"，等号右边写 {stated}" if stated is not None else "")
+                             + f"，与自述可归属 {declared['可归属']} 不符")
                 out.warnings.append(Warning_(
                     "C", ledger.rel, line_no,
                     f"「可归属」声明 {declared['可归属']}，与三种实测口径都不等"
                     f"（标题带 @机 {clues['标题带机']} / 触及分区 {clues['触及分区']} / "
-                    f"并集 {clues['并集']}，均按 author date）—— 数字本身可能没错，"
-                    f"但**口径没写**，别人无法复现 ⇒ 请在卷内写明用的是哪一种",
+                    f"并集 {clues['并集']}，均按 author date），也没有可核的分级分解"
+                    f"（形如 `B 31 + C 32 + @跨机 3 + PROTOTYPE-01 0 = 66`）{extra}"
+                    f" —— 数字本身可能没错，但**口径没写或对不上**，别人无法复现",
                 ))
     elif "未归属" in declared:
         # 声明了未归属却没声明可归属口径 ⇒ 不可核，但**把实测候选一并打出来**，
@@ -1023,6 +1270,50 @@ _LEDGER_COUNTS_OK = """# SIWPAN 月账 · 2026-11
 
 _LEDGER_COUNTS_BAD = _LEDGER_COUNTS_OK.replace("| 未归属 | 358 |", "| 未归属 | 357 |")
 
+#: 计数 pin 的三态（2026-11-26）。**账本是快照**：写 391 时对，下一笔提交后 HEAD 就是 392，
+#: 判据若按 HEAD 比，就变成「账本每提交一次自我失效一次」。改数字治不了，所以钉提交。
+PIN_OK = "29527481"      # 存在，且该 sha 上当月 391 笔
+PIN_MISSING = "deadbee"  # 本仓读不到（拼错 / 浅克隆 / 不在本仓历史）
+PIN_EMPTY = "0badc0d"    # 存在，但该 sha 上当月 390 笔（差一）
+
+
+def _counts_at(head_total: int = 392, pin_total: int = 391):
+    """可注入的计数桩：**按 rev 返回不同的数** —— 这才造得出「pin 上 391 / HEAD 已 392」。
+
+    签名与 `default_git_counts` 一致 `(root, month, machine, rev=None)`；
+    rev 不是已知 pin 时返回 `(None, None)` ⇒ 上层按「pin 读不到」判红。
+    """
+    def impl(_root, _month, _machine, rev=None):
+        if rev is None:
+            return (head_total, 33)
+        if rev == PIN_OK:
+            return (pin_total, 33)
+        return (None, None)
+    return impl
+
+
+#: 带 pin 的计数节：机读行钉 sha（**首选**，键名 `pin=`，与账本实际写法一致），
+#: 散文里同时留人读形态。机读行优先，散文只是给人看的。
+_LEDGER_COUNTS_PINNED = _LEDGER_COUNTS_OK.replace(
+    "| 未归属 | 358 |\n",
+    "| 未归属 | 358 |\n\n"
+    "<!-- ledger-counts: total=391 attributable=33 unattributed=358 pin=%s -->\n\n"
+    "总提交：391 笔（截至 `%s`，author date / `+08:00`；本卷提交后 11 月为 392"
+    " —— 不是数字错，是快照会过期）\n" % (PIN_OK, PIN_OK),
+)
+#: 只有散文 `截至 <sha>`、没有机读行的形态：也必须钉得住。
+#: 这一例不是锦上添花 —— 2026-11-26 实测账本先写的是散文形态，判据当时只认 `ledger-pin=`
+#: 才侥幸靠散文救回来；两种形态各自一条断言，才不会依赖「另一种写法恰好也在」。
+_LEDGER_COUNTS_PINNED_PROSE = _LEDGER_COUNTS_OK.replace(
+    "| 未归属 | 358 |\n",
+    "| 未归属 | 358 |\n\n"
+    "总提交：391 笔（截至 `%s`，author date / `+08:00`；本卷提交后 11 月为 392）\n" % PIN_OK,
+)
+#: 负对照①：pin 指向一个本仓读不到的 sha。
+_LEDGER_COUNTS_PIN_MISSING = _LEDGER_COUNTS_PINNED.replace(PIN_OK, PIN_MISSING)
+#: 负对照②：pin 存在，但该 sha 上当月只有 390 笔（自述 391 不符）。
+_LEDGER_COUNTS_PIN_OFFBYONE = _LEDGER_COUNTS_PINNED
+
 #: 子号负对照：`§231.9` 不存在（`_VOLUME` 里只有 231.1 / 231.2）。
 #: 这一条守的是"父节存在 ≠ 引用成立"：把子号错判成 OK，月账就会永远带着错的子号，
 #: 而下一个人按 §231.9 去查必然查不到（2026-11 现场就是 §225.6/.7/.8 与 §4.1）。
@@ -1065,6 +1356,20 @@ _LEDGER_CROSS_UNNAMED = _CROSS_HEAD + "\n按交接卷 §五十九 的做法把�
 _LEDGER_CROSS_NAMED = _CROSS_HEAD + "\n按交接卷 2026-09 §五十九 的做法把流程收敛成一条命令。\n"
 #: ③ 点名了卷，但**那一卷没有**该节 ⇒ 坐标是空的，比不点名更硬（红）
 _LEDGER_CROSS_WRONG_VOLUME = _CROSS_HEAD + "\n按交接卷 2026-10 §五十九 的做法推进。\n"
+#: ④ 卷名写在 `§` **之后**（`§五十九（2026-09 卷）`）⇒ 与③ 之前的正例等价（绿）。
+#: 这一条为什么必须存在：D14 那边认「`§` 前 12 字符内有『交接卷』」，所以最自然的写法
+#: 是「交接卷 §五十九（2026-09 卷）」；若本判据只认前置卷名，这个写法在两道判据之间无解
+#: （Docu 2026-11-26 实测），只能退化成「不写 §、改用节标题」—— 可核性反而下降。
+_LEDGER_CROSS_TRAILING = _CROSS_HEAD + "\n按交接卷 §五十九（2026-09 卷）的做法把流程收敛成一条命令。\n"
+#: ⑤ 尾随卷名的**负对照**：点名 2026-10，而那一卷没有 §五十九 ⇒ 仍须判红。
+#: 守的是「放宽 ≠ 放水」：本次只让判据**认得出**写在后面的卷名，不让它「认不出就算了」。
+#: 若把 ④ 实现成「整行含卷号即绿」，这一例就会变绿 —— 那是把判据换成免检章。
+_LEDGER_CROSS_TRAILING_WRONG = _CROSS_HEAD + "\n按交接卷 §五十九（2026-10 卷）的做法推进。\n"
+#: ⑥ 卷号加粗（`交接卷 **2026-09** §五十九`）—— D14 放宽后允许的自然写法，A 必须**看得见**它。
+#: 「看不见」比「判错」更坏：判错会有人来吵，看不见连吵的人都没有（断言静默免检）。
+_LEDGER_CROSS_BOLD = _CROSS_HEAD + "\n按交接卷 **2026-09** §五十九 的做法把流程收敛成一条命令。\n"
+#: ⑦ 加粗卷名的负对照：同一个写法里 § 是**假的** ⇒ 必须判红（证明它不是「扫不到就放行」）。
+_LEDGER_CROSS_BOLD_WRONG = _CROSS_HEAD + "\n按交接卷 **2026-09** §九百九十九 的做法推进。\n"
 
 
 def _sandbox(files: dict[str, str]) -> tempfile.TemporaryDirectory:
@@ -1084,7 +1389,7 @@ def _ledgers_in(root: Path) -> list[Ledger]:
 
 def _judge_fixture(files: dict[str, str], local: str = "SIWPAN",
                    mutate: set[str] | None = None,
-                   git_counts=None) -> Result:
+                   git_counts=None, require_pin: bool = False) -> Result:
     tmp = _sandbox(files)
     try:
         root = Path(tmp.name)
@@ -1098,8 +1403,11 @@ def _judge_fixture(files: dict[str, str], local: str = "SIWPAN",
 
         return judge(
             root, ledgers, sections_for, local,
-            git_counts or (lambda _root, _month, _machine: (391, 33)),
+            # 注入签名统一为 (root, month, machine, rev)：rev 非 None 即「月账 pin 的 sha」，
+            # 夹具据此可以造出「pin 上 391 / HEAD 已 392」这种只有真仓才有的状态。
+            git_counts or (lambda _root, _month, _machine, _rev=None: (391, 33)),
             mutate=mutate,
+            require_pin=require_pin,
             # 全卷都在沙箱里 ⇒ 跨卷解析走真实路径（夹具写哪几卷，就能解析哪几卷）
             volumes_for=lambda: handover_volumes(root),
         )
@@ -1218,11 +1526,13 @@ def selfcheck(mutate: set[str]) -> int:
     clean: list[str] = []
     misreports: list[str] = []
 
-    def expect_block(label: str, files: dict[str, str], criterion: str, local: str = "SIWPAN") -> None:
+    def expect_block(label: str, files: dict[str, str], criterion: str, local: str = "SIWPAN",
+                     counts=None, require_pin: bool = False) -> None:
         # 注意：这里**不因 --mutate 而改变期望**。变异验证的语义是「摘掉判红分支后，
         # 这条负对照必须不再被抓」⇔「自检必须变红（misreports>0）」。若这里跟着变异
         # 放宽期望，变异验证就退化成恒真断言（`调试铁律 65`：恒返回同一值的判据不构成证据）。
-        got = _judge_fixture(files, local=local, mutate=mutate)
+        got = _judge_fixture(files, local=local, mutate=mutate,
+                             git_counts=counts, require_pin=require_pin)
         if any(f.criterion == criterion for f in got.blocking):
             caught.append(label)
         else:
@@ -1233,16 +1543,25 @@ def selfcheck(mutate: set[str]) -> int:
             )
 
     def expect_warn(label: str, files: dict[str, str], criterion: str = "A",
-                    local: str = "SIWPAN") -> None:
+                    local: str = "SIWPAN", counts=None, require_pin: bool = False,
+                    needle: str | None = None) -> None:
         """期望：**不阻断、但有 WARN 单列**。
 
         这条口径是本次新增的第三档：把「歧义」和「造假」判成同一个红，
         团队的下一个动作是加豁免而不是修数据。
+
+        `needle`：要求 WARN 文案里出现某个词（如 `unpinned`）—— 只查「有 C 类 WARN」
+        不足以证明是**哪一条**分支出的，弱断言会让「吞掉提示」的 bug 溜过去。
         """
-        got = _judge_fixture(files, local=local, mutate=mutate)
+        got = _judge_fixture(files, local=local, mutate=mutate,
+                             git_counts=counts, require_pin=require_pin)
+        hits = [w for w in got.warnings if w.criterion == criterion]
         if got.blocking:
             misreports.append(f"{label}：期望只 WARN，实际判红 {len(got.blocking)} 条")
-        elif not any(w.criterion == criterion for w in got.warnings):
+        elif needle is not None and not any(needle in w.message for w in hits):
+            misreports.append(f"{label}：期望 {criterion} WARN 文案含 {needle!r}，"
+                              f"实际 {len(hits)} 条都不含（提示被换个说法，或根本没走到那条分支）")
+        elif not hits:
             misreports.append(f"{label}：期望有 {criterion} WARN，实际 warnings={len(got.warnings)}"
                               "（跨卷引用既不红也不提示 ⇒ 歧义被静默吞掉）")
         else:
@@ -1260,8 +1579,10 @@ def selfcheck(mutate: set[str]) -> int:
         else:
             clean.append(label)
 
-    def expect_quiet(label: str, files: dict[str, str], local: str = "SIWPAN") -> None:
-        got = _judge_fixture(files, local=local, mutate=mutate)
+    def expect_quiet(label: str, files: dict[str, str], local: str = "SIWPAN",
+                     counts=None, require_pin: bool = False) -> None:
+        got = _judge_fixture(files, local=local, mutate=mutate,
+                             git_counts=counts, require_pin=require_pin)
         if got.blocking:
             misreports.append(f"{label}：期望静默，实际判红 {len(got.blocking)} 条："
                               + "；".join(f.message[:60] for f in got.blocking))
@@ -1277,6 +1598,60 @@ def selfcheck(mutate: set[str]) -> int:
     expect_quiet("C 正例：三个数字与 git 实测一致",
                  {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_OK})
     expect_quiet("C 正例：无该节 ⇒ skipped 不判红", base)
+
+    # ---- 计数 pin（2026-11-26）：账本是**快照**，判据必须钉在提交上才判得动。
+    # 这三例的分工是刻意的，缺一条这套逻辑就不成立：
+    #   ① pin 读不到 ⇒ 红（不能把「读不到」当「对得上」）
+    #   ② pin 上计数不符 ⇒ 红（钉住了也要真核数）
+    #   ③ pin 对、HEAD 已 +1 ⇒ **绿**（这正是现在那条真红的去向）
+    # ③ 用 `require_pin=True` 跑，是为了让它**承重**：若 pin 解析失效、退回按 HEAD 比，
+    # 392≠391 在 require_pin 下会判红 ⇒ 这一例立刻变红报出来，而不是悄悄"还是绿的"。
+    pin_files = {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_PINNED}
+    expect_quiet("C pin 正例：pin 上 391 与自述一致，HEAD 已 +1 ⇒ 仍绿（快照不算错）",
+                 pin_files, counts=_counts_at(head_total=392, pin_total=391), require_pin=True)
+    expect_quiet("C pin 正例：只有散文 `截至 <sha>`、无机读行 ⇒ 同样钉得住",
+                 {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_PINNED_PROSE},
+                 counts=_counts_at(head_total=392, pin_total=391), require_pin=True)
+    expect_block("C pin 负对照：pin 指向的 sha 在本仓读不到 ⇒ 红",
+                 {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_PIN_MISSING},
+                 "C", counts=_counts_at())
+    expect_block("C pin 负对照：pin 存在但该 sha 上当月 390 而自述 391 ⇒ 红",
+                 {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_PIN_OFFBYONE},
+                 "C", counts=_counts_at(head_total=392, pin_total=390))
+    # 迁移期兼容：不写 pin 的旧账 ⇒ 只 WARN（文案含 `unpinned`，可 grep 当迁移进度指标），
+    # 不判红；而 `--require-pin` 打开后同一条必须变红 —— 两个方向各一条断言，
+    # 否则「兼容期」会变成永久免检章（豁免没有收口日，就永远收不了口）。
+    expect_warn("C 兼容期：无 pin 且 HEAD 已 +1 ⇒ 只 WARN，不判红",
+                {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_OK},
+                "C", counts=_counts_at(head_total=392, pin_total=391), needle="unpinned")
+    expect_block("C 兼容期收口：--require-pin 下无 pin 且不符 ⇒ 红",
+                 {volume_rel: _VOLUME, ok_rel: _LEDGER_COUNTS_OK},
+                 "C", counts=_counts_at(head_total=392, pin_total=391), require_pin=True)
+
+    # ---- 可归属的「分级分解」口径（2026-11-26）--------------------------------
+    # 承认自洽的四类分解，但**不承认"像分解"的东西** —— 三个方向各一条，缺一条就成了免检章。
+    def _attr_warns(files: dict[str, str], counts=None) -> list:
+        got = _judge_fixture(files, mutate=mutate, git_counts=counts)
+        return [w for w in got.warnings if w.criterion == "C" and "可归属" in w.message]
+
+    _dec_ok = _LEDGER_COUNTS_OK.replace(
+        "| 未归属 | 358 |\n",
+        "| 未归属 | 358 |\n\n可归属分解：B 30 + C 2 + @跨机 1 + PROTOTYPE-01 0 = 33\n")
+    _dec_bad = _dec_ok.replace("B 30 + C 2", "B 31 + C 2")          # 相加 34 ≠ 自述 33
+    _dec_partial = _LEDGER_COUNTS_OK.replace(
+        "| 未归属 | 358 |\n", "| 未归属 | 358 |\n\n可归属分解：B 30 + C 3\n")  # 缺跨机/原型
+    if not _attr_warns({volume_rel: _VOLUME, ok_rel: _dec_ok}):
+        clean.append("C 可归属口径：自洽的四类分解 ⇒ 不再 WARN（承认这一种口径）")
+    else:
+        misreports.append("C 可归属口径：自洽分解仍被 WARN（口径没被承认）")
+    if _attr_warns({volume_rel: _VOLUME, ok_rel: _dec_bad}):
+        caught.append("C 可归属口径负对照：四类相加 ≠ 自述 ⇒ 仍 WARN")
+    else:
+        misreports.append("C 可归属口径负对照：不自洽的分解被放过（放宽成了免检章）")
+    if _attr_warns({volume_rel: _VOLUME, ok_rel: _dec_partial}):
+        caught.append("C 可归属口径负对照：只有两类（缺跨机/原型）⇒ 仍 WARN")
+    else:
+        misreports.append("C 可归属口径负对照：半个分解被当口径（四类缺一也放过）")
 
     # ---- 负对照一：造假节号（A）
     expect_block("A 负对照：引用不存在的 §999",
@@ -1309,6 +1684,16 @@ def selfcheck(mutate: set[str]) -> int:
                  {**cross_base, ok_rel: _LEDGER_CROSS_NAMED})
     expect_block("A 跨卷负对照：点名 2026-10，但那一卷没有 §五十九 ⇒ 红",
                  {**cross_base, ok_rel: _LEDGER_CROSS_WRONG_VOLUME}, "A")
+    # 卷名写在 § 之后（2026-11-26 新增）：与前置写法**同义同严**，两个方向各一条断言
+    expect_quiet("A 跨卷正例：卷名写在 § 之后 `§五十九（2026-09 卷）` ⇒ 绿",
+                 {**cross_base, ok_rel: _LEDGER_CROSS_TRAILING})
+    expect_block("A 跨卷负对照：尾随卷名点名 2026-10（该卷无 §五十九）⇒ 仍红，未放水",
+                 {**cross_base, ok_rel: _LEDGER_CROSS_TRAILING_WRONG}, "A")
+    # 卷号加粗（2026-11-26 新增）：D14 认了它，A 就必须看得见它 —— 两个方向各一条断言
+    expect_quiet("A 跨卷正例：卷号加粗 `交接卷 **2026-09** §五十九` ⇒ 绿（看得见且查得到）",
+                 {**cross_base, ok_rel: _LEDGER_CROSS_BOLD})
+    expect_block("A 跨卷负对照：卷号加粗但 §九百九十九 不存在 ⇒ 仍红（不是扫不到就放行）",
+                 {**cross_base, ok_rel: _LEDGER_CROSS_BOLD_WRONG}, "A")
 
     # ---- 子号错不许降级（2026-11-26 裁决）：父节存在 ≠ 引用成立
     expect_undetermined("A 负对照：子号写错（§231.9 不存在）⇒ 保持 UNDET，不得当成绿",
@@ -1370,6 +1755,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="变异验证：逗号分隔的 a/b/c，摘掉对应判据的判红分支（仅与 --selfcheck 合用）")
     parser.add_argument("--allow-undetermined", action="store_true",
                         help="存在不可判定项时不改退出码（仍打印）")
+    parser.add_argument("--require-pin", action="store_true",
+                        help="「总提交」必须写计数 pin（`截至 <sha>` 或 `ledger-pin=<sha>`）；"
+                             "缺 pin 且按 HEAD 比不符时**判红**（默认只 WARN，给旧写法留迁移期）")
     parser.add_argument("--verbose", action="store_true", help="打印全部豁免与不可判定明细")
     parser.add_argument("--local-machine", default=os.environ.get("ALLIN_MACHINE") or None,
                         help="本机标识（缺省：hostname 大写；用于区分本机卷与他机卷）")
@@ -1407,7 +1795,8 @@ def main(argv: list[str] | None = None) -> int:
         return cache[month]
 
     result = judge(root, ledgers, sections_for, local, default_git_counts, mutate=set(),
-                   volumes_for=lambda: handover_volumes(root))
+                   volumes_for=lambda: handover_volumes(root),
+                   require_pin=args.require_pin)
     result.caliber = (f"since/until 语义 = author date（不用 committer date）/ "
                       f"tz = {TZ_NAME} / 提交域 = HEAD@{_head_sha(root) or '?'} / "
                       f"判据 = A 节引用(A/B/C) · B 归属通道 · C 三个数字")

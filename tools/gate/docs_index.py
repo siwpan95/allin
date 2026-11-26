@@ -88,6 +88,83 @@ class Report:
         self.skipped.append(what)
 
 
+# ---------------------------------------------------------------- D14 本仓放宽层
+# 冲突（Docu 2026-11-26 实测，两道判据各认一半 ⇒ 最自然的写法无解）：
+#   · `交接卷 **2026-09** §五十九`  ⇒ D14 红（`**2026-09** ` 占满「§ 前 12 字符」，
+#     把「交接卷」挤出窗口，于是被判成裸 `§N`）；
+#   · `交接卷 §五十九（2026-09 卷）` ⇒ 月账 A 条红（卷名在 `§` 之后，只认前置写法）。
+#   绕开二者的唯一办法是「不写 `§`、改用节标题」，那会让 D9/D12 失去定位锚点，
+#   **可核性反而下降** —— 判据把人逼向更不可核的写法，是判据自己的失效。
+#
+# 本层只做**放宽**（红 → 绿），不放宽到全文：
+#   `§` 之前 **12 个内容字符**里出现「交接卷」即算限定词已给。
+#   「内容字符」= 先剥掉 markdown 强调/代码标记（`*` `_` 反引号）再数 —— 排版不该吃名额。
+#   为什么不干脆把窗口从 12 放大到 16：窗口是「就近」语义的载体，一放大就会把上一句的
+#   卷名算进来（`…见 2026-09 卷。按 §59 …` 这类换句情形），把「指别处」变成「就近」。
+#
+# 为什么以「叠加层」实现而不改判据本体：D14 的真身在公共核
+# `allin_governance/_gatesuite/runtime/docs_contract.py`（内核仓，本仓不改）。
+# 放宽规则留在本仓、由计数 `D14-qualified-volume` 逐条记账（不静默丢），
+# 判据本体仍是唯一真相源。**上游（allin-governance）需同步这条口径**，
+# 否则分发版 `g15-docs-contract` 与本仓对同一写法给出不同结论。
+D14_VOLUME_WORD = "交接卷"
+D14_WINDOW = 12
+_MD_MARKS = str.maketrans("", "", "*_`")
+#: 从 D14 的阻断文案里取回「哪个文件、第几行、哪个 §」—— 取不到就**保留阻断**（fail-closed）。
+_D14_BLOCK_RE = re.compile(r"^(?P<f>.+?):(?P<ln>\d+) 的裸 §(?P<tok>.+?) 按书写规范")
+
+
+def d14_window(line: str, at: int) -> str:
+    """`§`（位置 at）之前 12 个**内容字符**（剥掉 markdown 标记）。"""
+    return line[:at].translate(_MD_MARKS)[-D14_WINDOW:]
+
+
+class D14RelaxedReport(Report):
+    """在 D14 上加一层「卷名被加粗/带卷号」的放宽，其余判据一字不动。
+
+    放宽只作用于 D14 的**阻断项**，且方向单一（红→绿）：判据本体判绿的一律不碰。
+    解析不出「文件:行:§」的阻断原样保留 —— 放宽层自己失败时，宁可多拦一条，
+    也不能因为解析失败而静默放行（盲门的另一种形态）。
+    """
+
+    def __init__(self, docs: str) -> None:
+        super().__init__()
+        self._docs = docs
+        self._lines: dict[str, list[str]] = {}
+
+    def _line(self, rel: str, ln: int) -> str | None:
+        if rel not in self._lines:
+            path = os.path.join(self._docs, rel.replace("/", os.sep))
+            try:
+                self._lines[rel] = docs_contract.read_text(path).splitlines()
+            except OSError:
+                self._lines[rel] = []
+        lines = self._lines[rel]
+        return lines[ln - 1] if 1 <= ln <= len(lines) else None
+
+    def block(self, code: str, msg: str) -> None:
+        if code == "D14" and self._qualified_volume(msg):
+            # 豁免理由单独计数：放宽了多少条必须看得见，不能混进「本来就绿」里。
+            self.exempt("D14-qualified-volume")
+            return
+        super().block(code, msg)
+
+    def _qualified_volume(self, msg: str) -> bool:
+        matched = _D14_BLOCK_RE.match(msg)
+        if matched is None:
+            return False
+        line = self._line(matched.group("f"), int(matched.group("ln")))
+        if line is None:
+            return False
+        token = matched.group("tok")
+        hits = [m for m in docs_contract.SECTION_REF.finditer(line) if m.group(1) == token]
+        if not hits:
+            return False
+        # 该行**每一个**同号 `§` 都得在内容窗口里点名「交接卷」才降级：
+        # 一行里既有 `交接卷 §59` 又有裸 `§59` 时，裸的那条仍要拦。
+        return all(D14_VOLUME_WORD in d14_window(line, m.start()) for m in hits)
+
+
 def iter_docs_files(docs: str):
     """产出 docs 相对路径；显式跳过 ASCII 别名目录与历史树。
 
@@ -303,10 +380,12 @@ def check_d7(docs: str, rep: Report) -> None:
 
 # ---------------------------------------------------------------- 主流程
 def run(root: str, args) -> Report:
-    rep = Report()
     docs = os.path.join(root, "docs")
     if not os.path.isdir(docs):
         raise SystemExit("ENV ERROR: 找不到 docs/：%s" % docs)
+    # D14RelaxedReport 只在 D14 上加「卷名加粗/带卷号」的放宽（见该类的说明），
+    # 其余判据与 Report 行为完全一致 —— 换的是容器，不是判据。
+    rep = D14RelaxedReport(docs)
     files = sorted(iter_docs_files(docs))
     reg = load_index(docs, rep)
     check_d1(files, reg, rep)
@@ -388,6 +467,9 @@ SELFCHECK_CASES = [
     ("volume-gap", "交接卷号有空洞", False),
     ("volume-no-range", "交接卷缺覆盖区间", False),
     ("count-drift", "INDEX 头部自述份数与实际不符", False),
+    # D14 放宽层的两个方向（2026-11-26）—— 只放宽、不放水：
+    ("d14-bold-volume", "交接卷 **2026-09** §五十九（卷名加粗、卷号在中间）不判裸 §", True),
+    ("d14-bare-orphan", "裸 §五十九 前后都无卷名、本文件也没这一节 ⇒ 仍红", False),
 ]
 
 
@@ -406,9 +488,18 @@ def build_fixture(kind: str, base: str) -> str:
     with io.open(os.path.join(docs, "规范", spec_name), "w", encoding="utf-8") as f:
         f.write(spec)
 
+    # D14 放宽层的夹具（2026-11-26）：**同一份文件、同一行位置**，只差卷名写在哪 ——
+    # 两个方向必须给出相反的结论，否则这条放宽要么没生效、要么把判据变成了免检章。
+    d14_line = ""
+    if kind == "d14-bold-volume":
+        # 自然写法：`**2026-09** ` 占满「§ 前 12 字符」，把「交接卷」挤出 D14 的原始窗口
+        d14_line = "\n> 按交接卷 **2026-09** §五十九 推进（该节在 2026-09 卷）。\n"
+    elif kind == "d14-bare-orphan":
+        # 负对照：前后都没有卷名 ⇒ 裸 § 指本文件，而本文件没有这一节 ⇒ 必须仍红
+        d14_line = "\n> 按 §五十九 推进。\n"
     with io.open(os.path.join(docs, "事实源", "机器分区索引.md"), "w", encoding="utf-8") as f:
         f.write("# 机器分区索引\n\n> **时点** 2026-09-28\n"
-                "> **留痕** [交接卷 2026-08](../记录/交接/2026-08.md)\n")
+                "> **留痕** [交接卷 2026-08](../记录/交接/2026-08.md)\n" + d14_line)
     # D16 计划台账夹具（默认合法：状态在闭集内 + 证据指向记录区；D8/D1 计数同步 +1）
     with io.open(os.path.join(docs, "事实源", "组合分级决策索引.md"), "w", encoding="utf-8") as f:
         f.write("# 组合分级决策索引\n\n"

@@ -110,7 +110,7 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.4.1"
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.4.2"
           "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
@@ -171,7 +171,7 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.4.1"
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.4.2"
           "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance

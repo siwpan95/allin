@@ -60,14 +60,31 @@ g00–g20 是**判仓库**的门禁，判据对象是被管的仓。本文件判
 
 退出码：0 全部有量（或有据可查的 SKIP）/ 1 存在盲门 / 2 存在不可判定（未加
 `--allow-undetermined` 时）/ 3 环境错（找不到 registry、解释器不可用）。
+
+## 五段判据（同一份文件，各自可单独跑）
+
+| 段 | CLI | 判什么 |
+| --- | --- | --- |
+| 主判定 | 默认 | registry 的 20 道 **Python** 门禁：`scanned 0 + exit 0 + 无 SKIP` ⇒ 判红 |
+| 之二 | `--two-halves` | 每道门禁的 `--selfcheck` 是否 caught/clean 两半都验 |
+| 之三 | `--coverage-delta` | 未入索引的新文件（不在任何扫描面）+ scanned 是否跟进 |
+| 之四 | 主判定附带 | registry **之外**的判据是否已登记（`README §12` 清单） |
+| **之五** | **`--external`** | **不分语言**：外部脚本判据（npm/node/pwsh）成功时有没有可解析读数 |
+| 自检 | `--selfcheck` | 用假判据证明上面每一段都会红（负对照，87 例） |
+
+之五是 2026-11-25 补的：前四段只覆盖 Python，「判据可以没有读数」这件事在外部脚本上
+整类无人判。详见下方「元判据之五」段的推导与清单方向说明。
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import locale
 import os
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -640,6 +657,564 @@ def check_registry_external_files(
 
 
 # --------------------------------------------------------------------------- #
+# 元判据之五：**不分语言**的读数通则（外部脚本判据）
+#
+# 上面那三段判的是 registry 里的 20 道 **Python** 判据。可是 `scripts/run_all_gates.sh`
+# 里还有另一类判据：`npm` / `node` / `pwsh` / `powershell.exe` 直接调的**外部脚本**。
+# 它们的输出形态、退出码语义、读数方言全都不受 govlib 约束 —— 于是整类判据在退出码上
+# 与本文件要防的病**完全同形**：
+#
+#   2026-11-25 实测（本机 PATH 无 git）：`scan_hardcoded.ps1 -Quiet` 扫 0 个文件、
+#   一行读数都不打印、**退 0**。而它在扫了 1013 个文件、零阻断时同样退 0 ——
+#   两件事在退出码上不可区分，唯一能区分它们的读数行又被 `-Quiet` 挡住了。
+#   也就是说：这不是某一道门禁写错了，是**「判据可以没有读数」这件事本身没人判**。
+#
+#   **这道判据先于修复落地**：本段判定跑出来时，ps1 当场被判 `ext-unmeasured`（红）。
+#   2026-11-26 该脚本在源头修好（读数行不再被 `-Quiet` 吞、`git` 不可用或 0 个跟踪文件
+#   改退 3），**同一条命令**随即转 `ext-measured`（实测 `跟踪文件 1013 个`）——
+#   判据自己改了结论，这是本段最硬的验收。三情形现况（互不同义，实测）：
+#     PATH 含 git ⇒ `跟踪文件 1013 个` + exit 0（measured）；无 git ⇒ exit 3（ext-env，
+#     判据拒绝判定）；注入真死根 ⇒ exit 1（ext-failed，判据自己已红）。
+#   ⇒ 它**再也落不进** `scanned 0 + 退 0 + 无 SKIP` 那个三元组了 —— 那正是修复的意图：
+#     把「没量」从「绿」里摘出去，而不是换个地方继续绿。
+#
+# 行业口径早已一致（本仓已进 ADR 记账）：
+#   · grep：未命中=1、出错=2 —— 「没找到」和「没跑成」各有自己的非零码，从不都退 0；
+#   · ripgrep 同构；pytest 收集不到用例退 5（不是 0）。
+#   ⇒ **「没有输入」永远有自己的非零码。** 反过来说：一道判据只要退 0，就必须能说出
+#     它读了多少个对象；说不出，就没有资格用 0 表达「我查过了，干净」。
+#
+# 落成一条**不分语言**的通则（三选一，没有第四种）：
+#   ① 成功时给出**可解析的读数**：`scanned N file(s)` / `"scanned": N`（govlib 方言）、
+#      `跟踪文件 N`、`N/M gate(s) clean`、以及各判据自定义的**计数方言**
+#      （`count:<正则>`：数证据行，如 `^ok ` / `^\[PASS\]` / `^# pass `）；
+#   ② 给不出的，必须登记在**显式清单**里，写明「本判据无扫描语义」**及理由**；
+#   ③ 二者皆无 ⇒ 元判据判红（`ext-unregistered`）。
+#
+# 清单放 `tools/gate/README.md §12` 的机器可读块（单点维护，与 registry-external-gates
+# 同址：判据的归属与判据的读数契约本就该在一处读），本文件只读不硬编码：
+#
+#   <!-- external-script-criteria:begin -->
+#   id | 在 run_all_gates.sh 里的调用片段 | 读数契约 | 探针
+#   ...`scanned` | `count:<正则>` | `none:<理由>`     ...`yes` | `no:<理由>`
+#   <!-- external-script-criteria:end -->
+#
+# **清单方向是反的**：不是「清单里有什么就判什么」，而是从接线脚本里**推出**全部外部判据
+# （`run` 行里第一段不是 Python 的），再逐条到清单里查它的读数契约。
+# 差别是决定性的：前者会让「新加了一个外部脚本」继续不可见（那正是死门的生成方式），
+# 后者让**新加一个没有读数也没有登记的外部判据当场判红**。
+#
+# 四种「无读数」必须分开叫，绝不折叠（与主判定的 undetermined 同一纪律）：
+#   | `ext-unmeasured`        | 登记了读数契约，实测拿不到读数        | **判红** |
+#   | `ext-unregistered`      | 根本不在清单里                        | **判红** |
+#   | `ext-blind`             | 自报 `scanned 0` + 退 0 + 无 SKIP     | **判红** |
+#   | `ext-registered-no-scan`| 已登记「无扫描语义」+ 理由            | 否（not a pass，可见） |
+#   | `ext-declared-unprobed` | 声明有读数但探针不跑（成本/环境）     | 否（not a pass，可见） |
+# 后两类不判红，但它们**不叫通过**，且理由与判定同屏 —— 「我确实没量」必须可复核，
+# 否则「登记」就成了新的免检章。
+# --------------------------------------------------------------------------- #
+
+EXTERNAL_BEGIN = "<!-- external-script-criteria:begin -->"
+EXTERNAL_END = "<!-- external-script-criteria:end -->"
+
+EXT_MEASURED = "ext-measured"
+EXT_DECLARED_UNPROBED = "ext-declared-unprobed"
+EXT_REGISTERED_NO_SCAN = "ext-registered-no-scan"
+EXT_UNMEASURED = "ext-unmeasured"
+EXT_UNREGISTERED = "ext-unregistered"
+EXT_BLIND = "ext-blind"
+EXT_SKIPPED = "ext-skipped"
+EXT_FAILED = "ext-failed"
+EXT_ENV = "ext-env"
+
+#: 只有这三个判红 —— 「没量」「没登记」「自报零」。
+#: `ext-failed` 不列入：判据自己已经红了，不重复计数（与主判定 FAILED 同口径）。
+EXT_RED = (EXT_UNMEASURED, EXT_UNREGISTERED, EXT_BLIND)
+
+#: `_gatesuite/RULES.md` 的统一退出码词汇（**全部门禁一本账**，外部脚本照用）。
+#: 本文件按它分流，而不是自造一套「非 0 即失败」—— 那会把「这台机器判不了」与
+#: 「判据查出问题」说成同一件事，而这两件事的处置方式相反（一个去修环境，一个去修代码）。
+EXIT_VOCABULARY = {
+    2: "用法错误",
+    3: "环境错误（缺解释器、缺 git 工作树、扫到 0 个输入等，判定不成立）",
+}
+
+#: Python 解释器记号：第一段是这些的 `run` 行归 registry / 主判定管，不进本清单。
+PYTHON_TOKENS = frozenset({"$py", "python", "python3", "py", "python.exe", "python3.exe", "py.exe"})
+
+#: 各判据自定义计数方言的**公共**词表（用在 `count:` 之外的通用形态识别）。
+#: 每一条都要求带数字：`ALL GOLDEN VALUES MATCH` 这种「不提数量的断言」不算读数 ——
+#: 它恰恰是最典型的盲门输出（0 个用例时也长这样）。
+GENERIC_READINGS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # govlib / run.ts：`governance: 20/20 gate(s) clean`
+    ("gate(s) clean", re.compile(r"(?<![-\w])(\d+)\s*/\s*(\d+)\s+gate\(s\)\s+clean")),
+    # scan_hardcoded.ps1 非静默态：`跟踪文件 1013 个`
+    ("跟踪文件", re.compile(r"跟踪文件\s*(\d+)\s*个")),
+    # 通用「扫了 N 个」的中文/英文混合方言：`已扫描 42 个文件`
+    ("扫描文件", re.compile(r"扫描\s*(\d+)\s*个")),
+)
+
+
+def _norm_tokens(text: str) -> str:
+    """路径归一：正反斜杠、引号、首尾空白。清单与接线两侧必须同一套归一，否则永远对不上。"""
+    return text.strip().strip("`'\"").replace("\\", "/")
+
+
+def _norm_cmd(text: str) -> str:
+    """命令归一：只压空白。清单里的调用片段与接线脚本里的原文必须逐字可比。"""
+    return " ".join(str(text).split())
+
+
+def external_key(argv: list[str]) -> str | None:
+    """从一条 `run` 的 argv 推出**判据标识**；返回 None 表示「这是 Python 判据」。
+
+    标识是清单与接线之间的唯一接缝，所以它必须由 argv **确定性推导**，不能靠人命名
+    （靠人命名的话，改一次命令行就悄悄失联，而失联的清单看起来永远是全的）。
+
+    实测覆盖的四种形态（每种都在 --selfcheck 里有一条夹具）：
+      `npm run check:governance`            → `npm:check:governance`
+      `npm --prefix platform run check`     → `npm:platform:check`
+      `node platform/apps/mcp/src/index.js` → `node:platform/apps/mcp/src/index.js`
+      `pwsh … -File tools/gate/x.ps1 -Quiet`→ `file:tools/gate/x.ps1`
+    """
+    if not argv:
+        return None
+    head = _norm_tokens(argv[0])
+    base = os.path.basename(head).lower()
+    if head.lower() in PYTHON_TOKENS or base in PYTHON_TOKENS or base.startswith("python"):
+        return None
+    # `"$PY" -m allin_governance …` / `"$PY" tools/gate/x.py` 也是 Python 判据。
+    for token in argv[1:3]:
+        token = _norm_tokens(token)
+        if token.endswith(".py") or token == "-m":
+            return None
+    if base in ("npm", "npm.cmd", "npm.ps1", "npm.exe"):
+        prefix = ""
+        if "--prefix" in argv:
+            index = argv.index("--prefix")
+            prefix = _norm_tokens(argv[index + 1]) if index + 1 < len(argv) else ""
+        if "run" in argv:
+            index = argv.index("run")
+            sub = _norm_tokens(argv[index + 1]) if index + 1 < len(argv) else ""
+        else:
+            sub = next((tok for tok in argv[1:] if not tok.startswith("-") and tok != prefix), "")
+        parts = ["npm"] + ([prefix] if prefix else []) + ([sub] if sub else [])
+        return ":".join(parts)
+    if base in ("node", "node.exe"):
+        script = next((tok for tok in argv[1:] if not tok.startswith("-")), "")
+        return f"node:{_norm_tokens(script)}" if script else "node:"
+    if base in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
+        if "-File" in argv:
+            index = argv.index("-File")
+            script = _norm_tokens(argv[index + 1]) if index + 1 < len(argv) else ""
+            return f"file:{script}"
+        return f"shell:{base}"
+    if base in ("bash", "sh", "bash.exe", "sh.exe"):
+        script = next((tok for tok in argv[1:] if not tok.startswith("-")), "")
+        return f"sh:{_norm_tokens(script)}" if script else "sh:"
+    return f"cmd:{head}"
+
+
+def external_criteria_from_wiring(text: str) -> list[dict]:
+    """从接线脚本里**推出**全部外部判据（`run` 行的第一段不是 Python）。
+
+    行尾续行符先折叠（真实接线里 `--coverage-delta \\` 跨了两行），否则半条命令会被
+    当成一整条、参数丢失，判据标识也就跟着漂。重复的同一判据（if/elif 两个分支里
+    同时挂 pwsh 与 powershell.exe，或 REQUIRE_DEPS 两个分支各写一次 npm）按 key 去重。
+    """
+    joined = text.replace("\\\r\n", " ").replace("\\\n", " ")
+    found: list[dict] = []
+    seen: set[str] = set()
+    for raw in joined.splitlines():
+        match = re.match(r"^[ \t]*run[ \t]+(.+?)[ \t]*$", raw)
+        if match is None:
+            continue
+        command = match.group(1).strip()
+        if not command or command.startswith("()") or command.startswith("{"):
+            continue  # 函数定义行，不是调用
+        try:
+            argv = shlex.split(command)
+        except ValueError:
+            argv = []
+        key = external_key(argv) if argv else None
+        if key is None:
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        found.append({"key": key, "invoke": command, "argv": argv})
+    return found
+
+
+def parse_external_contracts(text: str) -> tuple[list[dict], list[str]]:
+    """解析 §12 的 `external-script-criteria` 块。纯函数，便于自检注入假块。
+
+    每行 `id | 调用片段 | 读数契约 | 探针`。契约与探针的**理由字段为空**都算格式错：
+    `none:` 写不出理由，就说明登记的人没想清楚为什么它不需要读数 —— 那正是要挡的东西。
+    """
+    findings: list[str] = []
+    entries: list[dict] = []
+    begin = text.find(EXTERNAL_BEGIN)
+    end = text.find(EXTERNAL_END)
+    if begin < 0 or end < 0 or end < begin:
+        findings.append(
+            "外部判据读数清单块不存在（`tools/gate/README.md §12` 的 external-script-criteria "
+            "begin/end 标记）：外部脚本判据的读数契约因此不可见 —— 「可判据却没有读数」会重新静默"
+        )
+        return entries, findings
+    body = text[begin + len(EXTERNAL_BEGIN):end]
+    for raw in body.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or line.startswith("<!--"):
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        if len(parts) < 4:
+            findings.append(
+                f"清单行格式不合法（应为 `id | 调用片段 | 读数契约 | 探针`）：{line[:90]}"
+            )
+            continue
+        entry = {
+            "id": parts[0],
+            "invoke": parts[1],
+            "reading": parts[2],
+            "probe": parts[3],
+            "kind": "",
+            "pattern": None,
+            "reason": "",
+            "probe_ok": False,
+            "probe_reason": "",
+        }
+        reading = parts[2]
+        if reading == "scanned":
+            entry["kind"] = "scanned"
+        elif reading.startswith("count:"):
+            expr = reading[len("count:"):].strip()
+            try:
+                entry["pattern"] = re.compile(expr)
+                entry["kind"] = "count"
+            except re.error as error:
+                findings.append(f"{entry['id']}：count 正则不合法（{expr}）：{error}")
+        elif reading.startswith("none:"):
+            reason = reading[len("none:"):].strip()
+            if len(reason) < 6:
+                findings.append(f"{entry['id']}：声明「无扫描语义」但理由为空/过短 —— 登记必须可复核")
+            entry["kind"] = "none"
+            entry["reason"] = reason
+        else:
+            findings.append(
+                f"{entry['id']}：读数契约只认 `scanned` / `count:<正则>` / `none:<理由>`，实得 `{reading[:40]}`"
+            )
+        probe = parts[3]
+        if probe == "yes":
+            entry["probe_ok"] = True
+        elif probe.startswith("no:"):
+            reason = probe[len("no:"):].strip()
+            if len(reason) < 6:
+                findings.append(f"{entry['id']}：声明探针不跑但理由为空/过短 —— 不跑也要说得清")
+            entry["probe_reason"] = reason
+        else:
+            findings.append(f"{entry['id']}：探针列只认 `yes` / `no:<理由>`，实得 `{probe[:40]}`")
+        entries.append(entry)
+    if not entries and not findings:
+        findings.append("清单块存在但没有任何条目：要么补条目，要么删块（空清单等于没清单）")
+    return entries, findings
+
+
+def judge_external_inventory(
+    wiring_text: str, block_text: str
+) -> tuple[list[dict], list[str]]:
+    """把「接线里推出来的外部判据」与「清单里登记的读数契约」对上。纯函数。
+
+    两个方向都查，缺一半就会留下一个静默的缝：
+      · 接线 → 清单：接线里有、清单里没有 ⇒ **未登记**（ext-unregistered，判红）。
+        这是本判据的**主火力**：新加一个外部脚本而不登记，当场红。
+      · 清单 → 接线：清单里有、接线里找不到调用片段 ⇒ 清单陈旧（finding，判红）。
+        不查这一向，删掉一道判据后清单会长期留着一行「已接线」的假声明。
+
+    接缝取**调用片段本身**（归一化空白后逐字相等），不取人起的名字：名字会漂，命令行
+    就是接线脚本里的原文 —— 抄一份命令才是第二处会漂的事实。
+    """
+    findings: list[str] = []
+    entries, block_findings = parse_external_contracts(block_text)
+    findings.extend(block_findings)
+    by_invoke = {_norm_cmd(entry["invoke"]): entry for entry in entries}
+
+    wiring = external_criteria_from_wiring(wiring_text)
+    rows: list[dict] = []
+    for item in wiring:
+        entry = by_invoke.get(_norm_cmd(item["invoke"]))
+        if entry is None:
+            findings.append(
+                f"{item['key']}：接线脚本里有这条外部判据，但 tools/gate/README.md §12 的"
+                f" external-script-criteria 清单里没有它的调用片段 —— 未登记 ⇒ 它的「绿」"
+                f"不含任何读数（调用：{item['invoke'][:90]}）"
+            )
+            rows.append(
+                {
+                    **item,
+                    "id": item["key"],
+                    "kind": "",
+                    "reason": "",
+                    "probe_ok": False,
+                    "probe_reason": "",
+                    "verdict": EXT_UNREGISTERED,
+                    "scanned": None,
+                    "detail": "接线里有、清单里没有（未登记 ⇒ 判红）",
+                }
+            )
+            continue
+        rows.append({**item, **entry, "verdict": "", "scanned": None, "detail": ""})
+
+    wired_commands = {_norm_cmd(item["invoke"]) for item in wiring}
+    for entry in entries:
+        if _norm_cmd(entry["invoke"]) not in wired_commands:
+            findings.append(
+                f"{entry['id']}：清单声明它的调用片段是 `{entry['invoke'][:80]}`，"
+                "但 scripts/run_all_gates.sh 里找不到这条 `run`（清单陈旧 / 已断线 = 死门候补）"
+            )
+    return rows, findings
+
+
+def classify_external(output: str, code: int, entry: dict) -> tuple[str, dict]:
+    """判定一道外部判据「有没有量」。纯函数 —— 与 classify() 同一纪律。
+
+    顺序是有意的：
+      1. 退出码非 0 ⇒ 它不是盲门（它已经响了 / 它拒绝判定），不重复计数，但**按
+         RULES.md 的统一退出码词汇分流**，不把三件事糊成一句「失败」：
+           `1` 阻断 ⇒ ext-failed（判据自己已红）；`2` 用法错误、`3` 环境错误（缺解释器、
+           缺 git 工作树、0 个输入 ⇒ 判定不成立）⇒ **ext-env（不判红，但绝不是通过）**。
+         分错了会骗人：本机 pwsh 的 PATH 里就没有 git，把 exit 3 说成「判据自己已判红」
+         会让读表的人去查判据逻辑，而事实是这台机器判不了。
+      2. 读数**先行**于登记：一道登记成「无扫描语义」的判据如果自己打印了
+         `scanned 0 + exit 0 + 无 SKIP`，那是它**自认**扫了 0 个对象 —— 登记挡不住这个，
+         也不该挡（登记是文档，读数是它自己说的话）；
+      3. 契约 `none:` ⇒ 已登记，不红，但**不算通过**；
+      4. 契约 `scanned` / `count:` 拿不到读数 ⇒ `ext-unmeasured`（判红）：这正是
+         **修复前** `scan_hardcoded.ps1 -Quiet` 的形态（它确有扫描语义，只是把读数行藏了）。
+         该脚本 2026-11-26 已在源头修好，所以今天这条分支由**合成退化夹具**守着 ——
+         真实脚本不再产生这个输出，但「别的脚本会」这件事不会因此消失；
+      5. 探针没跑 ⇒ `ext-declared-unprobed`：声明了有读数但没人复核，不算通过。
+    """
+    evidence: dict = {"scanned": None, "detail": "", "skip_reason": ""}
+    if code != 0:
+        meaning = EXIT_VOCABULARY.get(code, f"exit {code}")
+        if code in (2, 3):
+            evidence["detail"] = (
+                f"exit {code} = {meaning}：判据**拒绝判定**（没量到东西 / 调用不成立），"
+                "不是通过，也不是盲门（它没假装绿）"
+            )
+            return EXT_ENV, evidence
+        evidence["detail"] = f"exit {code} = {meaning}（判据自己已判红，非盲门，不重复计数）"
+        return EXT_FAILED, evidence
+    if entry.get("kind") == "":
+        evidence["detail"] = "读数契约不合法（见清单 finding），无从判定"
+        return EXT_UNMEASURED, evidence
+
+    verdict, base = classify(output, code)
+    reading: int | None = None
+    if verdict == MEASURED:
+        reading = base["scanned"]
+    elif verdict == SKIPPED:
+        evidence.update(
+            scanned=base["scanned"],
+            skip_reason=base["skip_reason"],
+            detail=f"scanned 0 但显式 SKIP（{base['skip_reason'] or '标记无理由文本'}）—— not a pass",
+        )
+        return EXT_SKIPPED, evidence
+    elif verdict == BLIND:
+        evidence["detail"] = "自报 scanned 0 + exit 0 + 无任何 SKIP 标记（既有语义不变 ⇒ 判红）"
+        return EXT_BLIND, evidence
+    else:
+        for label, pattern in GENERIC_READINGS:
+            match = pattern.search(output)
+            if match is not None:
+                reading = int(match.group(1))
+                evidence["detail"] = f"读数来自 {label} 形态：{match.group(0).strip()[:60]}"
+                break
+    if reading is None and entry.get("kind") == "count" and entry.get("pattern") is not None:
+        hits = [line for line in output.splitlines() if entry["pattern"].search(line)]
+        if hits:
+            reading = len(hits)
+            evidence["detail"] = f"计数读数：`{entry['pattern'].pattern}` 命中 {reading} 行"
+    if reading is not None:
+        evidence["scanned"] = reading
+        evidence["detail"] = evidence["detail"] or f"scanned {reading}"
+        return EXT_MEASURED, evidence
+
+    if entry.get("kind") == "none":
+        evidence["detail"] = f"已登记「本判据无扫描语义」：{entry.get('reason') or '（理由缺失）'}（not a pass）"
+        return EXT_REGISTERED_NO_SCAN, evidence
+    if not entry.get("probe_ok", False):
+        evidence["detail"] = (
+            f"声明读数契约 `{entry.get('reading')}` 但探针不跑：{entry.get('probe_reason')}（not a pass，未复核）"
+        )
+        return EXT_DECLARED_UNPROBED, evidence
+    evidence["detail"] = (
+        f"实测没有任何可解析读数（契约 `{entry.get('reading')}`）—— 成功但什么都没量"
+    )
+    return EXT_UNMEASURED, evidence
+
+
+def _decode_probe_output(raw: bytes) -> str:
+    """解码外部判据的输出 —— 依次试 UTF-8 → **本机 ANSI 代码页（mbcs）** → locale。
+
+    这不是防御性代码，是实测踩到的第一个坑（2026-11-25，逐字节验过）：
+    `pwsh` 被管道接走时按 `[Console]::OutputEncoding` 写字节，Windows 上默认是 OEM/ANSI
+    代码页（本机 cp936），而 Python 3 默认按 UTF-8 解 —— 实测同一份 94 字节：
+        utf-8 侧：`Ŀ�� 1 �� / �����ļ� 1013 �� / …`
+        mbcs 侧 ：`目标 1 个 / 跟踪文件 1013 个 / …`
+    也就是说，读数**在字节里明明存在**，却在解码那一步被抹成替换符，永远匹配不上。
+    后果是把一道已经修好的判据判成 `ext-unmeasured`（假红）——
+    这正是「判据在别的语言上失灵」的翻版，只不过这次失灵的是判据自己。
+
+    为什么不能只靠 `locale.getpreferredencoding()`：本机实测它返回 `utf-8`
+    （解释器开了 UTF-8 模式），与 pwsh 实际写出的 cp936 不一致 —— 所以 Windows 上
+    必须显式补一档 `mbcs`（= ANSI 代码页），而不是相信 locale 的说法。
+    """
+    if not raw:
+        return ""
+    candidates = ["utf-8"]
+    if os.name == "nt":
+        candidates.append("mbcs")  # 不是"多试一次"，是 Windows 上唯一正确的第二档
+    candidates.append(locale.getpreferredencoding(False) or "utf-8")
+    for encoding in candidates:
+        try:
+            return raw.decode(encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def probe_external(
+    rows: list[dict], root: Path, timeout: int
+) -> None:
+    """真起子进程跑每条外部判据（`probe:yes` 的），把读数契约**验**掉而不是信掉。
+
+    解释器缺席（CI 无 pwsh / 无 node）记 `ext-env`：那是环境事实，不是「通过」。
+    探针命令行取自**接线脚本原文**（`entry["invoke"]`），不另抄一份命令 ——
+    抄一份就多一处会漂移的事实。
+    """
+    for row in rows:
+        if row.get("verdict"):
+            continue  # 未登记的已经判红了，不必再跑
+        if not row.get("probe_ok", False):
+            verdict, evidence = classify_external("", 0, row)
+            row.update(verdict=verdict, **evidence)
+            continue
+        try:
+            argv = shlex.split(str(row.get("invoke") or ""))
+        except ValueError:
+            argv = []
+        if not argv:
+            row.update(verdict=EXT_ENV, detail="探针命令行无法解析，未跑")
+            continue
+        head = argv[0]
+        resolved = shutil.which(head)
+        if resolved is None:
+            row.update(
+                verdict=EXT_ENV,
+                detail=f"探针解释器不在 PATH 上（{head}）：本机无可跑对象，不是通过",
+            )
+            continue
+        # Windows 上 `npm` 是 .cmd/.ps1 垫片，CreateProcess 直接调起会 WinError 2。
+        # 走 `cmd /c <resolved>` 与 shell 里的实际执行路径一致；其余平台原样用解析结果。
+        argv = [resolved, *argv[1:]]
+        if resolved.lower().endswith((".cmd", ".bat")):
+            argv = [os.environ.get("COMSPEC", "cmd.exe"), "/c", *argv]
+        try:
+            done = subprocess.run(
+                argv,
+                cwd=str(root),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            row.update(verdict=EXT_ENV, detail=f"探针超时（>{timeout}s）：没跑完，无从判定")
+            continue
+        except OSError as error:
+            row.update(verdict=EXT_ENV, detail=f"探针无法调起：{error}")
+            continue
+        output = _decode_probe_output(done.stdout or b"")
+        verdict, evidence = classify_external(output, done.returncode, row)
+        row.update(verdict=verdict, **evidence)
+
+
+def external_exit_code(rows: list[dict]) -> int:
+    """外部判据 → 退出码。抽成函数，selfcheck 才能直接验它（退出码本身也是判据）。"""
+    return EXIT_BLOCKING if any(row.get("verdict") in EXT_RED for row in rows) else EXIT_OK
+
+
+def run_external(root: Path, timeout: int) -> int:
+    """`--external` 模式：盘点 → 核清单 → 探针 → 判定 → 打印。"""
+    readme = Path(__file__).resolve().parent / "README.md"
+    wiring = root / "scripts" / "run_all_gates.sh"
+    try:
+        block_text = readme.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"BLIND_GATES ENV ERROR: 读不到 {readme}：{error} —— 清单不可见", file=sys.stderr)
+        return EXIT_ENV
+    try:
+        wiring_text = wiring.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"BLIND_GATES ENV ERROR: 读不到 {wiring}：{error} —— 无从盘点", file=sys.stderr)
+        return EXIT_ENV
+
+    rows, findings = judge_external_inventory(wiring_text, block_text)
+    probe_external(rows, root, timeout)
+
+    counts: dict[str, int] = {name: 0 for name in (
+        EXT_MEASURED, EXT_DECLARED_UNPROBED, EXT_REGISTERED_NO_SCAN,
+        EXT_UNMEASURED, EXT_UNREGISTERED, EXT_BLIND, EXT_SKIPPED, EXT_FAILED, EXT_ENV,
+    )}
+    width = max((len(str(row.get("id"))) for row in rows), default=10)
+    print()
+    print(f"{'CRITERION'.ljust(width)}  {'READ':>5}  {'EXIT':>4}  {'PROBE':<5}  {'VERDICT':<22} EVIDENCE")
+    print("-" * (width + 60))
+    for row in rows:
+        counts[row.get("verdict", EXT_ENV)] = counts.get(row.get("verdict", EXT_ENV), 0) + 1
+        scanned = "-" if row.get("scanned") is None else str(row.get("scanned"))
+        probe = "yes" if row.get("probe_ok") else "no"
+        verdict = row.get("verdict", EXT_ENV)
+        if verdict in EXT_RED:
+            verdict = f"{verdict} (!)"
+        print(f"{str(row.get('id')).ljust(width)}  {scanned:>5}  {'-':>4}  {probe:<5}  {verdict:<22} {row.get('detail', '')}")
+
+    red = [row for row in rows if row.get("verdict") in EXT_RED]
+    for row in red:
+        print()
+        print(f"EXTERNAL_RED {row.get('id')}：{row.get('verdict')}")
+        print(f"  调用：{str(row.get('invoke'))[:120]}")
+        print(f"  读数契约：{row.get('reading') or '（未登记）'}")
+        print(f"  事实：{row.get('detail')}")
+    print()
+    for finding in findings:
+        print(f"  EXTERNAL_FINDING: {finding}")
+    print()
+    print(
+        "EXTERNAL_CRITERIA_SUMMARY "
+        f"total={len(rows)} measured={counts[EXT_MEASURED]} "
+        f"registered_no_scan={counts[EXT_REGISTERED_NO_SCAN]} "
+        f"declared_unprobed={counts[EXT_DECLARED_UNPROBED]} "
+        f"unmeasured={counts[EXT_UNMEASURED]} unregistered={counts[EXT_UNREGISTERED]} "
+        f"blind={counts[EXT_BLIND]} skipped={counts[EXT_SKIPPED]} "
+        f"failed={counts[EXT_FAILED]} env={counts[EXT_ENV]}"
+    )
+    if counts[EXT_MEASURED]:
+        print(f"  有读数：{counts[EXT_MEASURED]} 支外部判据能说出它读了多少 —— 只有这一档算通过")
+    no_pass = counts[EXT_REGISTERED_NO_SCAN] + counts[EXT_DECLARED_UNPROBED] + counts[EXT_SKIPPED] + counts[EXT_ENV]
+    if no_pass:
+        print(f"  not a pass：{no_pass} 支（已登记无扫描语义 / 探针未跑 / 显式 SKIP / 环境缺解释器）")
+    if red:
+        print(f"  判红：{len(red)} 支 —— 见上方 EXTERNAL_RED 段")
+    code = external_exit_code(rows)
+    if findings and code == EXIT_OK:
+        code = EXIT_BLOCKING
+    return code
+
+
+# --------------------------------------------------------------------------- #
 # 元判据之三：覆盖未跟进（scanned 数没变 / 新文件不在扫描面）
 #
 # 为什么「scanned 没变」本身是信号：
@@ -1195,6 +1770,176 @@ def selfcheck() -> int:
         )
         expect(any(wanted in item for item in findings), f"{case_id}: 期望 finding 含「{wanted}」，实得 {findings}")
 
+    # --- 外部判据通则（不分语言）：推导 → 核清单 → 判定 → 探针，四层各来一套 ----------
+    #
+    # 推导层：接线 → 判据标识。这条必须自己测，因为它一旦推错，整张盘点表就少几条而
+    # 清单看起来仍然「全」—— 一个只会漏报的盘点器，比没有盘点器更危险。
+    fake_wiring = (
+        'run "$PY" tools/gate/docs_index.py\n'
+        'run "$PY" -m allin_governance repocheck . --only-gates \\\n'
+        '  --fail-on error\n'
+        'run npm run check:governance\n'
+        'run npm run check:governance\n'
+        'run npm --prefix platform run check\n'
+        'run npm --prefix platform test\n'
+        'run node platform/apps/mcp/src/index.js --selftest\n'
+        'run pwsh -NoProfile -File tools/gate/scan_hardcoded.ps1 -Quiet\n'
+        # 续行断在**标识所依赖的那一段**上（真实接线里 `--root "$ROOT" \\` 就是这么断的）：
+        # 不折叠续行时 `-File` 后面没有 token，标识会退化成 `file:` 而凭空少一条判据。
+        'run powershell.exe -NoProfile -File \\\n'
+        '  tools/deploy/test_restore_drill.ps1\n'
+        'run() { :; }\n'
+    )
+    derived = [item["key"] for item in external_criteria_from_wiring(fake_wiring)]
+    expect(
+        derived == [
+            "npm:check:governance",
+            "npm:platform:check",
+            "npm:platform:test",
+            "node:platform/apps/mcp/src/index.js",
+            "file:tools/gate/scan_hardcoded.ps1",
+            "file:tools/deploy/test_restore_drill.ps1",
+        ],
+        f"外部判据推导：Python 行必须被排除、重复项必须去重、续行必须折叠，实得 {derived}",
+    )
+
+    # 清单块解析：四条格式错必须各自能被判出来（理由为空是最容易溜过去的一条）。
+    good_ext = (
+        EXTERNAL_BEGIN + "\n"
+        "# 注释\n"
+        "a | npm run check:governance | scanned | yes\n"
+        "b | node x.mjs --selftest | count:^ok | yes\n"
+        "c | pwsh -File y.ps1 | none:这是一条纯文本清单核对，无扫描语义 | no:会真造一份数据目录，成本不值当\n"
+        + EXTERNAL_END + "\n"
+    )
+    ext_entries, ext_findings = parse_external_contracts(good_ext)
+    expect(len(ext_entries) == 3, f"外部清单解析：期望 3 条，实得 {len(ext_entries)}")
+    expect(not ext_findings, f"外部清单解析：合法块不该有 finding，实得 {ext_findings}")
+    for case_id, text, wanted in (
+        ("ec-no-block", "no markers\n", "清单块不存在"),
+        ("ec-short-line", EXTERNAL_BEGIN + "\na | npm run x\n" + EXTERNAL_END + "\n", "格式不合法"),
+        (
+            "ec-empty-reason",
+            EXTERNAL_BEGIN + "\na | npm run x | none: | no:成本\n" + EXTERNAL_END + "\n",
+            "理由为空",
+        ),
+        (
+            "ec-bad-contract",
+            EXTERNAL_BEGIN + "\na | npm run x | whatever | yes\n" + EXTERNAL_END + "\n",
+            "读数契约只认",
+        ),
+        (
+            "ec-bad-probe",
+            EXTERNAL_BEGIN + "\na | npm run x | scanned | maybe\n" + EXTERNAL_END + "\n",
+            "探针列只认",
+        ),
+    ):
+        _e, findings = parse_external_contracts(text)
+        expect(any(wanted in item for item in findings), f"{case_id}: 期望 finding 含「{wanted}」，实得 {findings}")
+
+    # 未登记 ⇒ 判红。这是本通则的主火力：接线里新出现一条外部判据而清单没登记。
+    unreg_rows, unreg_findings = judge_external_inventory(
+        'run npm run brand-new-gate\n',
+        EXTERNAL_BEGIN + "\na | npm run check:governance | scanned | yes\n" + EXTERNAL_END + "\n",
+    )
+    expect(
+        [row["verdict"] for row in unreg_rows] == [EXT_UNREGISTERED],
+        f"未登记的外部判据必须判红，实得 {[row['verdict'] for row in unreg_rows]}",
+    )
+    expect(any("未登记" in item for item in unreg_findings), "未登记时应给出 finding 说明它为何判红")
+    expect(external_exit_code(unreg_rows) == EXIT_BLOCKING, "退出码：未登记必须为 1")
+    # 反向：清单里有、接线里没有 ⇒ 清单陈旧（死门候补），同样判红。
+    stale_rows, stale_findings = judge_external_inventory(
+        "run npm run check:governance\n",
+        EXTERNAL_BEGIN + "\na | npm run check:governance | scanned | yes\n"
+        "b | npm run gone-gate | scanned | yes\n" + EXTERNAL_END + "\n",
+    )
+    expect(any("清单陈旧" in item for item in stale_findings), f"清单陈旧应报 finding，实得 {stale_findings}")
+
+    # 判定层：四种「无读数」必须分开叫，且只有三档判红。
+    FAKE_EXTERNAL_CASES = (
+        # (id, 输出, 退出码, 契约, 探针, 期望)
+        ("ex-noreading", "done, all good\n", 0, "scanned", True, EXT_UNMEASURED),
+        ("ex-noreading-registered", "done, all good\n", 0, "none", True, EXT_REGISTERED_NO_SCAN),
+        ("ex-noreading-unprobed", "done, all good\n", 0, "scanned", False, EXT_DECLARED_UNPROBED),
+        # 既有语义不变：自己报 scanned 0 + 退 0 + 无 SKIP ⇒ 判红，**登记成 none 也挡不住**。
+        ("ex-zero-scan", "gate: scanned 0 file(s); blocking 0; exempted 0; skipped 0.\n", 0, "scanned", True, EXT_BLIND),
+        ("ex-zero-scan-registered", "gate: scanned 0 file(s); blocking 0; exempted 0; skipped 0.\n", 0, "none", True, EXT_BLIND),
+        ("ex-scanned", "gate: scanned 12 file(s); blocking 0; exempted 0; skipped 0.\n", 0, "scanned", True, EXT_MEASURED),
+        ("ex-gate-clean", "governance: 20/20 gate(s) clean\n", 0, "scanned", True, EXT_MEASURED),
+        ("ex-zh-reading", "  目标 3 个 / 跟踪文件 1013 个 / 绝对路径命中 0 处\n", 0, "scanned", True, EXT_MEASURED),
+        ("ex-count", "ok a\nok b\nok c\nSELFTEST OK\n", 0, "count:^\\s*ok\\s", True, EXT_MEASURED),
+        # 空集形态：一条证据行都没有，却仍然打印了「全绿」的收口句 —— 最典型的盲门输出。
+        ("ex-count-empty", "SELFTEST OK\n", 0, "count:^\\s*ok\\s", True, EXT_UNMEASURED),
+        ("ex-skip",
+         "gate: scanned 0 file(s); blocking 0; exempted 0; skipped 1.\n"
+         "  SKIPPED (not a pass): nothing in scope=1\n",
+         0, "scanned", True, EXT_SKIPPED),
+        # 退出码按 RULES.md 词汇分流：1=阻断 ⇒ 判据自己红；2/3=用法/环境 ⇒ 拒绝判定。
+        # `3` 这一档专为「缺 git / 0 个输入」而设（scan_hardcoded 修后就走这条）——
+        # 说成「判据自己已判红」会把读表的人引去查判据逻辑，而事实是这台机器判不了。
+        ("ex-exit1", "boom: 2 new blocking\n", 1, "scanned", True, EXT_FAILED),
+        ("ex-exit3", "判定不成立（exit 3）：git 不可用…\n目标 1 个 / 跟踪文件 0 个 / …\n",
+         3, "scanned", True, EXT_ENV),
+        ("ex-exit2", "usage: unknown option --foo\n", 2, "scanned", True, EXT_ENV),
+    )
+    for case_id, output, code, spec, probe_ok, expected in FAKE_EXTERNAL_CASES:
+        if spec.startswith("count:"):
+            entry = {"kind": "count", "pattern": re.compile(spec[len("count:"):]), "reason": "",
+                     "probe_ok": probe_ok, "probe_reason": "", "reading": spec}
+        else:
+            entry = {"kind": spec, "pattern": None,
+                     "reason": "已登记" if spec == "none" else "", "probe_ok": probe_ok,
+                     "probe_reason": "", "reading": spec}
+        verdict, evidence = classify_external(output, code, entry)
+        expect(verdict == expected, f"{case_id}: 外部判定期望 {expected}，实得 {verdict}（{evidence['detail']}）")
+    # 三档判红，其余不判红 —— 这条断言防的是「把所有 not-a-pass 都算红」（会让判据变成
+    # 常红噪音，最后被人关掉）与「一档都不算红」（会让通则形同虚设）两种反向错误。
+    for verdict, wanted_red in (
+        (EXT_UNMEASURED, True), (EXT_UNREGISTERED, True), (EXT_BLIND, True),
+        (EXT_REGISTERED_NO_SCAN, False), (EXT_DECLARED_UNPROBED, False),
+        (EXT_SKIPPED, False), (EXT_FAILED, False), (EXT_ENV, False), (EXT_MEASURED, False),
+    ):
+        expect(external_exit_code([{"verdict": verdict}]) == (EXIT_BLOCKING if wanted_red else EXIT_OK),
+               f"退出码：{verdict} 应{'判红' if wanted_red else '不判红'}")
+
+    # 探针层（真起子进程）：证明「成功但不输出读数」这一条判据真的会被跑出来判红，
+    # 而**给它登记之后**转绿（不判红），以及「输出 scanned 0」在登记之后**仍然红**。
+    # 夹具解释器用 sys.executable 只是为了跨平台可控 —— 被测的是探针管道与判定逻辑，
+    # 它们本身不看语言（用任何解释器跑同一个空输出，结论相同）。
+    with tempfile.TemporaryDirectory(prefix="blind-gates-external-") as tmp:
+        tmp_path = Path(tmp)
+        fixture = tmp_path / "fake_criterion.py"
+        fixture.write_text("import sys\nsys.stdout.write('done, all good\\n')\n", encoding="utf-8", newline="\n")
+        # 正斜杠：`invoke` 是**命令行原文**（与接线脚本同形态，POSIX 口径），
+        # Windows 绝对路径里的反斜杠会被 shlex 当转义吃掉 —— 真实接线里全是相对路径，
+        # 这里把夹具解释器也归一成正斜杠，测的才是探针管道而不是路径方言。
+        py = sys.executable.replace("\\", "/")
+        invoke = f"{py} {fixture.name}"
+        base_row = {"id": "fake-noreading", "invoke": invoke, "key": "fake-noreading",
+                    "reading": "scanned", "kind": "scanned", "pattern": None, "reason": "",
+                    "probe_ok": True, "probe_reason": "", "verdict": "", "scanned": None, "detail": ""}
+        rows = [dict(base_row)]
+        probe_external(rows, tmp_path, timeout=120)
+        expect(rows[0]["verdict"] == EXT_UNMEASURED,
+               f"端到端探针：成功且无读数的外部判据必须 ext-unmeasured，实得 {rows[0]['verdict']}")
+        expect(external_exit_code(rows) == EXIT_BLOCKING, "端到端探针：ext-unmeasured 必须判红")
+        registered = [dict(base_row, kind="none", reading="none:纯声明，无扫描语义", reason="纯声明")]
+        probe_external(registered, tmp_path, timeout=120)
+        expect(registered[0]["verdict"] == EXT_REGISTERED_NO_SCAN,
+               f"端到端探针：登记「无扫描语义」后必须转 not-a-pass（不判红），实得 {registered[0]['verdict']}")
+        expect(external_exit_code(registered) == EXIT_OK, "端到端探针：登记后不得再判红（否则登记无意义）")
+        zero = tmp_path / "fake_zero.py"
+        zero.write_text(
+            "import sys\nsys.stdout.write('gate: scanned 0 file(s); blocking 0; exempted 0; skipped 0.\\n')\n",
+            encoding="utf-8", newline="\n",
+        )
+        zero_rows = [dict(base_row, invoke=f"{py} {zero.name}", kind="none",
+                          reading="none:纯声明", reason="纯声明")]
+        probe_external(zero_rows, tmp_path, timeout=120)
+        expect(zero_rows[0]["verdict"] == EXT_BLIND,
+               f"端到端探针：scanned 0 在登记之后仍必须判红（既有语义不变），实得 {zero_rows[0]['verdict']}")
+
     payload = json.dumps(
         {"cases": checked, "pass": checked - len(failures), "fail": len(failures)},
         ensure_ascii=False,
@@ -1246,6 +1991,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--record", default=None, help="把本次判定追加为 JSONL（默认不落盘）")
     parser.add_argument("--selfcheck", "--selftest", dest="selfcheck", action="store_true",
                         help="用假门禁证明本判据会红（负对照）")
+    parser.add_argument("--external", action="store_true",
+                        help="元判据之五：盘点 run_all_gates.sh 里所有**非 Python** 的外部判据"
+                             "（npm / node / pwsh / powershell），核「成功时有没有可解析读数」；"
+                             "未登记或实测无读数 ⇒ 判红")
+    parser.add_argument("--external-timeout", type=int, default=180,
+                        help="单支外部判据探针的超时秒数（默认 180；超时记 ext-env，不判红）")
     parser.add_argument("--two-halves", action="store_true",
                         help="元判据之二：逐道跑 --selfcheck，核 caught/clean 两半是否都验（表格 + 退出码）")
     parser.add_argument("--coverage-delta", action="store_true",
@@ -1257,6 +2008,8 @@ def main(argv: list[str] | None = None) -> int:
         return selfcheck()
 
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[2]
+    if args.external:
+        return run_external(root, args.external_timeout)
     python = args.python or os.environ.get("DSH_GOVERNANCE_PYTHON") or sys.executable
     registry = locate_registry(args.registry, args.gatesuite, python)
     gates = load_registry(registry)

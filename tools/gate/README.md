@@ -320,3 +320,71 @@ machine-trailer | check_machine_trailer.py | 机器归属一致性判据：凡�
 
 **为什么 `check_blind_gates.py` 不占 g 编号**：g00–g20 判被管仓，它判门禁自己，属编排层。
 把它编进 g 序列，等于把「判据的判据」混进「判据」的清单。
+
+### 12.1 外部判据的**读数契约**（不分语言，2026-11-25 新增）
+
+上面那张表管的是「这道判据归谁」，管不了另一件事：**这道判据能不能说出它读了多少个对象**。
+
+registry 里的 20 道 Python 判据受 `govlib.Report` 约束，输出里有 `scanned N file(s)`；而
+`scripts/run_all_gates.sh` 里还有 `npm` / `node` / `pwsh` / `powershell.exe` 直接调的外部
+脚本，读数方言不受任何约束 —— 于是整类判据对盲门判据**不可见**。
+
+现场实例（2026-11-25 实测，本机 PATH 无 `git`，**修复前**）：`scan_hardcoded.ps1 -Quiet` 扫
+0 个文件、一行读数不打印、**退 0**；而它扫了 1013 个文件零阻断时同样退 0。两者在退出码上
+完全同形 —— 唯一能区分的那行读数（`目标 N 个 / 跟踪文件 N 个`）恰好被 `-Quiet` 挡住了。
+**「没跑」与「跑了没问题」必须可区分**，这在任何语言里都成立，不分 Python 还是 pwsh。
+
+> **该脚本已于 2026-11-26 在源头修好**（读数行不再被 `-Quiet` 吞；`git` 不可用或扫到
+> 0 个跟踪文件改退 `3`）。判定跑出来在先、修复落地在后，**同一条命令**随即从
+> `ext-unmeasured`（红）转 `ext-measured`（实测 `跟踪文件 1013 个`）—— 判据自己改了结论，
+> 这是本节最硬的验收。三种情形现况互不同义（实测）：`PATH` 含 git ⇒ `1013` + exit 0；
+> 无 git ⇒ exit 3（判据拒绝判定）；注入真死根 ⇒ exit 1（判据自己已红）。
+> 它**再也落不进** `scanned 0 + 退 0 + 无 SKIP` 那个三元组 —— 那正是修复的意图：
+> 把「没量」从「绿」里摘出去，而不是换个地方继续绿。
+
+因此定一条**不分语言**的通则（三选一，没有第四种）：
+
+1. 成功时给出**可解析的读数**（`scanned N file(s)` / `"scanned": N` / `跟踪文件 N` /
+   `N/M gate(s) clean`，或用下面的 `count:` 声明本判据的计数方言）；
+2. 给不出的，在下表登记「本判据无扫描语义」**并写明理由**；
+3. 二者皆无 ⇒ `check_blind_gates.py --external` **判红**。
+
+**方向是反的**：不是「表里有什么就判什么」，而是**从 `scripts/run_all_gates.sh` 里推出全部
+外部判据**（`run` 行第一段不是 Python 的），再逐条到下表查读数契约。新加一个外部判据而不
+登记，当场判红 —— 否则「新加一个没读数的脚本」这件事仍然不可见，那也是死门的生成方式。
+
+<!-- external-script-criteria:begin -->
+# 格式：`id | 在 run_all_gates.sh 里的调用片段 | 读数契约 | 探针`；# 开头为注释，空行忽略。
+# 只登记**非 Python** 的判据（Python 判据归 registry / 主判定管）。
+# 读数契约三选一：
+#   scanned        —— 该判据输出里有带数字的读数（govlib 方言或 code 里的通用形态）
+#   count:<正则>   —— 数「证据行」条数，命中行数 > 0 即算有量（测试型判据的方言）
+#   none:<理由>    —— 本判据**没有扫描语义**（必须写清理由；理由过短视为没写）
+# 探针列：yes = 每批真跑一次核读数；no:<理由> = 不跑（成本/环境），**不算通过**。
+scan-hardcoded | pwsh -NoProfile -ExecutionPolicy Bypass -File tools/gate/scan_hardcoded.ps1 -Quiet | scanned | yes
+mcp-selftest | node platform/apps/mcp/src/index.js --selftest | count:^\s*ok\s | yes
+platform-check | npm --prefix platform run check | count:^\s*\[check\]\s*通过 | yes
+npm-check-governance | npm run check:governance | scanned | no:与元判据步骤逐道复跑同一批 gate 重复，再花约 2 分钟不值当；读数形态由那一步的逐道判定覆盖
+npm-check-governance-selfcheck | npm run check:governance:selfcheck | scanned | no:同上（run.ts --selfcheck-all，每批已在「门禁工具自身回归」真跑一次，探针重复约 2 分钟）
+smoke-e2e | npm run smoke:e2e | count:ALLIN_E2E_SUMMARY.*effectivePassed= | no:依赖 platform/website 两侧 node_modules，干净检出里必然 SKIP；CI 另有独立 e2e step 真跑，探针只会复现 SKIP
+restore-drill | powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/deploy/test_restore_drill.ps1 | count:^\s*\[PASS\] | no:会真造一份 data/ 并跑一遍备份+恢复（robocopy 整目录），每批重复跑成本与收益不成比例
+platform-test | npm --prefix platform test | count:^# pass \d | no:只在 --with-platform 下跑且需要 platform 依赖；主链不跑它，探针会在干净检出里制造与主链无关的红
+platform-harness | npm --prefix platform run harness | count:^\[PASS\] | no:需要 platform 组件存活（金样例对账），主链只在 --with-platform 下跑，探针会制造与主链无关的红
+<!-- external-script-criteria:end -->
+
+**不跑的探针不叫通过**：`no:` 的那些条目在汇总里记 `declared_unprobed`（not a pass，逐条
+打印理由），它们的读数契约是**声明而非实测** —— 这一点必须诚实写在汇总里，否则「登记」
+就成了新的免检章。本机实测跑掉的三条（`scan-hardcoded` / `mcp-selftest` / `platform-check`，
+合计约 8 秒）是真核过的。
+
+**退出码按 `RULES.md` 的统一词汇分流，不自造「非 0 即失败」**：`1` 阻断 ⇒ `ext-failed`
+（判据自己已红，不重复计数）；`2` 用法错误 / `3` 环境错误（缺解释器、缺 git 工作树、
+扫到 0 个输入 ⇒ 判定不成立）⇒ `ext-env`，**不判红、也绝不是通过**。分错了会骗人：
+本机 pwsh 的 `PATH` 里就没有 `git`，把 exit 3 说成「判据自己已判红」会让人去查判据逻辑，
+而事实是这台机器判不了 —— 处置方向相反（一个修环境、一个修代码）。
+
+**为什么 `scan-hardcoded` 不登记成 `none:`**：它确有扫描语义（读 `git ls-files` 的每个文件）
+—— 把它登记成「无扫描语义」就是把读数缺口洗白，正是本判据要防的事。正确修法在脚本侧
+（已完成：`-Quiet` 也打读数行 + 0 输入改退 3），本判据**不改判据本体**，只负责在它没有
+读数时把红点亮。
+
