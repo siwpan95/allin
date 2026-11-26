@@ -1,15 +1,26 @@
 # 机器事实 · `DESKTOP-KQABATS`
 
-> **时点** 2026-11-24 17:35（**@`DESKTOP-KQABATS` 拉取远端 squash 后对齐 + `py_test_runner` 残留清理 —— 发布区 77 → 76** ——
+> **时点** 2026-11-25 19:35（**@`DESKTOP-KQABATS` allin + allin-governance 双仓迁入发布区 —— 发布区 76 → 77** ——
+>   用户指令「将 allin 和 allin·governance 移到 repos 下」：两仓从工作区同级迁入 `E:\projects\repos\`。
+>   先拆 `repos/allin` junction（只删链接不动真身），allin 逐顶层项移动；`docs/` 因句柄占用
+>   走 Copy-Item（394 文件 / 5,758,912 字节，新旧逐数校验一致），4 个自引用 junction
+>   （facts/records/spec/历史）按新仓根重建；旧 `docs/` 残留因单文件句柄占用待清理（不影响新仓）。
+>   `allin-governance` 从 Gitee 克隆的同源检出一同迁入，g17 判未登记 ⇒ 按判据补 `allin-governance.yaml`。
+>   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\repos\allin` **现存**；
+>   发布区 `E:\projects\repos` **77** 个目录（含 `allin` + `allin-governance`）；
+>   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
+>   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
+>   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
+> **留痕** [交接卷 2026-11](../../../记录/交接/2026-11.md) §二百三十七（@`DESKTOP-KQABATS` 双仓迁入发布区 · 自留痕）
+
+> **时点** 2026-11-24 17:35（**@`DESKTOP-KQABATS` 拉取远端 squash 后对齐 + `py_test_runner` 残留清理 —— 发布区 76** ——
 >   用户指令「拉取远端新增内容，若没有改善，再完成修复推进；删本地仓，记账；提交推送放行」：
 >   远端把 secrets-scan 那批 6 笔 squash 为 `1d15ce4`（含两处夹具修复，g04/g09 红项自愈）；
 >   @`DESKTOP-KQABATS` 本地旧 6 笔以 `backup/pre-squash-20261124` 留档后 `reset --hard` 对齐，无 force push。
 >   g17 仍报 `repos/py_test_runner` 未登记（该仓上游 404 已删、能力已上提 `tools/_shared/pytrunner`）⇒
 >   同 [交接卷 2026-11](../../../记录/交接/2026-11.md) §一百九十五 的清理口径（后续批次同理），把残留干净克隆（113 MB、无未提交改动）**移入**既定备份区
 >   `E:\projects\_repos_frozen_backup_2026-11-24\py_test_runner`（可随时恢复，零数据销毁）。
->   **可机检断言**（判据见 `g20-facts`）：仓根 `E:\projects\allin` **现存**；
->   发布区 `E:\projects\repos` **76** 个目录；
->   备份区 `E:\projects\_repos_frozen_backup_2026-11-24` **67** 个目录；
+>   **可机检断言**（判据见 `g20-facts`，计数口径以最新时点块为准）：
 >   主 Python `D:\Python314\python.exe` **现存**；`D:\musickit` **现存**；
 >   `D:\private-radio-stations` **现存**；`E:\projects\reference` **现存**；
 >   `E:\projects\_governance` **现存**；`E:\projects\foolproof-operation-master` **现存**。）
