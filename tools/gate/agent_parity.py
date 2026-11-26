@@ -60,11 +60,21 @@ error 行 ok:false，warn 行 ok:true 附 ok=true 的超龄/降级提示）。
 routes.yaml 是受控子集（version + 单行 flow 条目），行式解析即可，不引入 PyYAML 依赖。
 
 扫描单位契约（ADR-0013 D2：扫描单位由判据自己定义、写进 docstring、读数与内部计数
-必须一致）。读数就是既有的 summary 行（**格式冻结，元判据按
-`summary: total=(\d+) ok=(\d+) drift=(\d+)` 登记**，不许加字段也不许改名 ——
-同一事实出两份读数必然漂，本仓的常数病）：
+必须一致）。本门禁输出**两行**读数，角色与不变量如下：
+
+  * `    summary: total=… ok=… drift=… warn=…` = 人类摘要行（历史口径，portal /
+    allin status 消费，**格式冻结**，不许加字段也不许改名）。
+  * `agent-parity: scanned … checked … across … drift … blocking …` = 元判据读数行
+    （ADR-0013 契约，列位 0 起，`^agent-parity:` 可 grep）：checked 直接回答
+    「凭什么相信这次真的量到了」—— total 只说分母，checked 说做了多少功。
+    扫描单位 = routes.yaml 台账条目（scanned = len(routes)）；carriers = 对账方数（4）；
+    checked = 判红循环同一处逐点累加的实际比对断言数（禁事后公式反推）。
+  * **两行不变量**：不得各说各话 —— 读数行 drift 必须 == summary 的 drift，
+    blocking == error findings 条数；打印前自校验强制（不一致 fail-loud E999）。
+    若哪天有人删掉这道自校验，--selfcheck ④「伪造读数行」必须红。
 
     summary: total=17 ok=17 drift=0 warn=0
+agent-parity: scanned 17 route(s); checked 148 assertion(s) across 4 carrier(s); drift 0; blocking 0
 
   * 扫描单位 = routes.yaml 台账条目（机器可读唯一事实源的天然单位）。total = 本次
     **逐条核过**的台账条目数 —— 不是文件数、不是锚点数、不是比对断言次数：后三者都是
@@ -79,8 +89,9 @@ routes.yaml 是受控子集（version + 单行 flow 条目），行式解析即�
     最终都落在这 N 个条目上 —— total=17 就是「17 个条目各自被全套判据过了一遍」。
     total=0 只可能出现在空集结构错（E203 空台账 / E204 载体缺失或真身目录为空），
     那条路径 raise + error 行 + **不打 summary 行**：「不可判定」≠「量过 0 条全对」。
-  * 加一条 routes（补齐锚点、目录、三处声明回填后）会怎样：total +1；ok/drift 随
-    该条目自己的判据结果计入；summary 行格式不变。
+  * 加一条 routes（补齐锚点、目录、三处声明回填后）会怎样：total +1；checked +7
+    （现行 forms=[workbuddy, dsh] 下：entry 1 + 锚点 2 + lastVerified 1 + 孤儿锚比对 2
+    + 死链比对 1）；carriers 不变；ok/drift 随该条目自己的判据结果计入；两行格式均不变。
   * 自洽断言（读数与实况必须一套账）：summary.total 必须 == 内部实际读到的
     routes 条目数，不等 = 判据自身缺陷，fail-loud raise（脚本态经崩溃处理器落
     E999 行并 exit 3）。这是 ADR-0013 D2「配负对照」的落地 —— 防「读数一套账、
