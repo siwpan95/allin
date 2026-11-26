@@ -56,6 +56,17 @@ def fact(name: str):
     return deco
 
 
+def _machine_index():
+    """延迟导入：`machine_index` 在 tools/gate/ 下，本模块可能被以不同 cwd 调用。"""
+    import sys as _sys
+    from pathlib import Path as _Path
+    here = _Path(__file__).resolve().parent
+    if str(here) not in _sys.path:
+        _sys.path.insert(0, str(here))
+    import machine_index
+    return machine_index
+
+
 def assert_(name: str, *, use: tuple[str, ...], rule: str = "eq",
             why: str = "") -> None:
     """登记一条断言：比较 `use` 里两个事实。"""
@@ -272,12 +283,46 @@ def _f_skill_tools():
 
 
 # ============================================================ D 记账制度
-@fact("monthly_ledger_hosts")
-def _f_monthly_hosts():
-    """有月账的机器数（`事实源/机器/*/月账/*.md`）。"""
+#: 分机日：归档位只承接 `< SPLIT_DATE` 的历史（红线见机器分区索引 §归档位）
+SPLIT_DATE = "2026-10-30"
+
+
+@fact("monthly_ledger_real_hosts")
+def _f_monthly_real_hosts():
+    """有月账的**真机**数。
+
+    ⚠ 归档位（`kind: archive`）**不计入**：把它算进来，「3 台机」就变 4，
+    而这个数散落在 g20 / facts_parity / SPEC-204 架构图里，会一路传染。
+    谁是归档位从单点真相读（`docs/事实源/机器分区索引.md`），**不写死名字**。
+    """
     root = Path(FACTS["root"]())
     hosts = {p.parent.parent.name for p in (root / "docs" / "事实源" / "机器").glob("*/月账/*.md")}
-    return str(len(hosts))
+    return str(len(hosts & set(_machine_index().real_machines(root))))
+
+
+@fact("archive_ledger_redline")
+def _f_archive_redline():
+    """归档位月账**不得**含 `>= SPLIT_DATE` 的条目（ADR §D5 的红线）。
+
+    这条红线是归档位存在的**唯一条件**：它只承接"当时没有机器维度"的历史；
+    一旦开始记分机之后的活，它就变成"第四台机"，而那个身份是伪造的。
+
+    只认**条目形态**（`## <日期>` 标题 / `- **<日期>` 时间戳），不扫正文里的日期：
+    正文里合法地写着「承接边界 = `< 2026-10-30`」这类**政策句**，
+    扫正文会把政策当成违规（假红一旦出现，人就会把判据关掉）。
+    """
+    import re as _re
+    root = Path(FACTS["root"]())
+    head = _re.compile(r"^#{2,6}\s+(20\d\d-\d\d-\d\d)\b")
+    bullet = _re.compile(r"^- \*\*(20\d\d-\d\d-\d\d)")
+    bad: list[str] = []
+    for name in sorted(_machine_index().archive_ids(root)):
+        for path in sorted((root / "docs" / "事实源" / "机器" / name / "月账").glob("*.md")):
+            for line in FACTS["_read"](path).splitlines():
+                matched = head.match(line) or bullet.match(line)
+                if matched and matched.group(1) >= SPLIT_DATE:
+                    bad.append(f"{name}/{path.name}:{matched.group(1)}")
+    return "clean" if not bad else "violation: " + ", ".join(bad[:3])
 
 
 @fact("monthly_ledger_has_owner_note")
@@ -344,8 +389,13 @@ def _register_all():
     assert_("MCP 工具数 = SKILL 自述", use=("mcp_tool_count", "skill_tool_count"),
             why="工具面变化必须同步 SKILL；恒真断言等于没判（实测过）")
     # D 记账制度
-    assert_("月账覆盖三台机", use=("monthly_ledger_hosts", "3"),
-            why="SIWPAN / KQABATS / 8RSV60V 都该有月账")
+    # 2026-11-26：用户新增归档位后，原来的「数 4 个目录」会假红。**不改成 4** ——
+    # 那等于把归档位当成第四台机。改成"真机 3 台 + 归档位受红线约束"，比原来更强：
+    # 「覆盖」这个词从此有了主语（谁被覆盖），而归档位多了一条它必须守的边界。
+    assert_("月账覆盖 3 台真机（归档位不计入）", use=("monthly_ledger_real_hosts", "3"),
+            why="SIWPAN / KQABATS / 8RSV60V 各有一卷；归档位不是第四台机，不进这个数")
+    assert_("归档位月账不含 >= 2026-10-30 的条目", use=("archive_ledger_redline", "clean"),
+            why="归档位只承接分机前的历史；一旦记入分机后的活，它就是一台伪造的第四台机")
     assert_("月账有归属声明", use=("monthly_ledger_has_owner_note", "有"),
             why="铁律 6：本机自持要写明")
     assert_("黄金集条数 = 实现 case 数", use=("golden_case_count_file", "golden_case_count_impl"),

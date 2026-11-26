@@ -40,6 +40,9 @@ GATE = "facts-drift"
 EXIT_OK, EXIT_BLOCKING, EXIT_ENV = 0, 1, 3
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA = ROOT / "facts" / "facts.json"
+# 机器分区单点真相（谁是真机 / 谁是归档位）—— 判据不自己推断，见该模块 docstring
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_index import archive_ids  # noqa: E402
 DEFAULT_PORTS = ROOT / "docs" / "事实源" / "ports.yaml"
 DEFAULT_STATE = ROOT / "deploy" / "dolt" / "state" / "last_import.json"
 
@@ -215,20 +218,41 @@ def check_dolt_state(state: Path, head: str | None, findings: list[str], warning
     return {"state_sha": full[:8], "head": full_head[:8], "consistent": False, "relation": "divergent"}
 
 
-def check_machines(data: Path, root: Path, findings: list[str]) -> dict:
+def check_machines(data: Path, root: Path, findings: list[str],
+                   infos: list[str] | None = None) -> dict:
+    """机器 md 目录 ⇄ `facts.json.machines` 投影。
+
+    **归档位（`kind: archive`）不参与这条对账**（2026-11-26 语义决策）：
+    归档位不是机器 —— 让它的 md 进 `facts.json.machines`，会让「3 台机」在 facts 层
+    变成 4，并一路传染到 g20 / facts_parity / SPEC-204 架构图。它只承载分机前的历史。
+
+    谁是归档位**从单点真相读**（`docs/事实源/机器分区索引.md` 的 `kind: archive` 小节），
+    **不写死名字**：写死等于在代码里放第二份真相，换代号或加第二个归档位时不会报错，
+    只会让数字悄悄偏一格。
+    """
     doc = load_facts(data)
     j_machines = {m.get("machine_id") for m in doc.get("machines", []) if m.get("machine_id")}
+    skip = archive_ids(root)
     md_dir = root / "docs" / "事实源" / "机器"
     md_machines = set()
     if md_dir.is_dir():
         for p in md_dir.iterdir():
             if p.is_dir() and (p / f"{p.name}.md").is_file():
                 md_machines.add(p.name)
+    archived = sorted(md_machines & skip)
+    md_machines -= skip
     for k in sorted(md_machines - j_machines):
         findings.append(f"机器 md 存在但 facts.json 缺：{k}")
     for k in sorted(j_machines - md_machines):
         findings.append(f"facts.json 有机器但无 md：{k}")
-    return {"json_machines": len(j_machines), "md_machines": len(md_machines)}
+    # 归档位若被塞进 machines 投影，单独判红：那会让「几台机」这个数从源头变错。
+    for k in sorted(j_machines & skip):
+        findings.append(f"归档位 {k} 出现在 facts.json.machines 里 —— 它不是机器，"
+                        f"进了投影会让「3 台机」变成 4，并传染 g20 / facts_parity / 架构图")
+    if infos is not None and archived:
+        infos.append(f"归档位不参与 fixtures 对账：{archived}（kind: archive，非实体机器）")
+    return {"json_machines": len(j_machines), "md_machines": len(md_machines),
+            "archived": archived}
 
 
 def check_projects(data: Path, root: Path, findings: list[str]) -> dict:
@@ -418,6 +442,55 @@ def _selftest_bad_auth() -> bool:
         shutil.rmtree(root, ignore_errors=True)
 
 
+def _selftest_archive_machines() -> tuple[bool, str]:
+    """归档位语义的三条负对照（2026-11-26 语义决策）。
+
+    ① 真机目录缺投影 ⇒ **仍红**（这条没被放松）
+    ② 归档位缺投影 ⇒ **不红**（它不是机器，不进 machines 投影）
+    ③ 把归档位从索引标记里去掉（变回普通机）⇒ **又红**（证明豁免**来自索引**，不是写死名字）
+    """
+    import tempfile
+    root = Path(tempfile.mkdtemp(prefix="drift-arch-"))
+    base = root / "docs" / "事实源" / "机器"
+    for name in ("REAL-A", "ARCH-X"):
+        (base / name).mkdir(parents=True)
+        (base / name / f"{name}.md").write_text("x\n", encoding="utf-8")
+    index = root / "docs" / "事实源" / "机器分区索引.md"
+    marked = ("# 机器分区索引\n\n### 归档位（`kind: archive`，**不是第四台机**）\n\n"
+              "| 代号 | 分区文件 |\n| --- | --- |\n| `ARCH-X`（归档） | x |\n")
+    unmarked = "# 机器分区索引\n\n| 代号 | 分区文件 |\n| --- | --- |\n"
+    data = root / "facts.json"
+
+    index.write_text(marked, encoding="utf-8")
+    data.write_text(json.dumps({"machines": [{"machine_id": "REAL-A"}]}), encoding="utf-8")
+    found: list[str] = []
+    check_machines(data, root, found)
+    archive_quiet = not found
+
+    data.write_text(json.dumps({"machines": []}), encoding="utf-8")
+    found = []
+    check_machines(data, root, found)
+    real_red = any("REAL-A" in item for item in found)
+
+    index.write_text(unmarked, encoding="utf-8")
+    found = []
+    check_machines(data, root, found)
+    arch_red = any("ARCH-X" in item for item in found)
+
+    # ④ 归档位被塞进 machines 投影 ⇒ 红（会让「3 台机」从源头变 4）
+    index.write_text(marked, encoding="utf-8")
+    data.write_text(json.dumps({"machines": [{"machine_id": "REAL-A"},
+                                             {"machine_id": "ARCH-X"}]}), encoding="utf-8")
+    found = []
+    check_machines(data, root, found)
+    arch_in_projection_red = any("ARCH-X" in item and "不是机器" in item for item in found)
+
+    ok = archive_quiet and real_red and arch_red and arch_in_projection_red
+    note = (f"archive_quiet={archive_quiet} real_red={real_red} "
+            f"unmarked_red={arch_red} in_projection_red={arch_in_projection_red}")
+    return ok, note
+
+
 def selftest() -> int:
     import tempfile
     root = Path(tempfile.mkdtemp(prefix="allin-drift-selftest-"))
@@ -439,11 +512,13 @@ def selftest() -> int:
     cache_invalidates = (fresh_doc is not cached_doc
                          and len(fresh_doc["ports"]) == len(cached_doc["ports"]) + 1)
     cache_ok = cache_hit and cache_invalidates
+    arch_ok, arch_note = _selftest_archive_machines()
     ok = (drift_caught == EXIT_BLOCKING and clean == EXIT_OK
-          and bad_auth_caught and cache_ok)
+          and bad_auth_caught and cache_ok and arch_ok)
     print(json.dumps({"gate": GATE, "clean": clean, "drift_caught": drift_caught,
                       "bad_auth_caught": bad_auth_caught,
                       "facts_cache_hit": cache_hit, "facts_cache_invalidates": cache_invalidates,
+                      "archive_machines": arch_note,
                       "selftest": "PASS" if ok else "FAIL"}, ensure_ascii=False))
     return EXIT_OK if ok else EXIT_BLOCKING
 

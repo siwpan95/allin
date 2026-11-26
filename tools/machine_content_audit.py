@@ -115,7 +115,13 @@ SKIP_DIRS = {"node_modules", "vendor", "build", "dist", "dist-test", "dist-build
              # 2026-11-25（§225）：`.workbuddy/memory/automations/` 是 automation 自身历史
              # （gitignore 运行时产物），机器名是历史事实不是公共文档污染。与 .venv /
              # node_modules 同为产物目录，整类跳过；docs/ 下的公共文档仍照常判。
-             ".workbuddy"}
+             ".workbuddy",
+             # 2026-11-26：`audit/` 是**运行时产物目录**（`/tools/gate/audit/*` 已被 .gitignore
+             # 覆盖），不是公共文档。取证生成器 `machine_ledger.py` 会把逐提交的机器归属明细
+             # 写进 `audit/machine-ledger/*.md|*.json` —— 那些文件里**本来就该有**机器标识
+             # （没有它就没有证据），拿本侦察判它们等于判"证据不能提到证据对象"。
+             # 与 .workbuddy 同类：产物目录整类跳过，实体文档照常扫。
+             "audit"}
 SCAN_SUFFIX = (".md", ".yaml", ".yml", ".json")
 
 

@@ -35,6 +35,7 @@ ADR 仍留在 `docs/` 之外：ADR 属工程视图，不属四分类文档体系
 | ADR-0009 | [架构资产对账门禁固化](ADR-0009-架构资产对账门禁固化.md) | accepted | 2026-11-04 | SVG/adr/ 免检资产的「声明↔真身」六项对账变退出码（`tools/gate/check_arch_assets.py`） |
 | ADR-0010 | [三面贯通与编排纪律工程化](ADR-0010-三面贯通与编排纪律工程化.md) | accepted | 2026-11-05 | 三面 BFF 贯通 + `tools/orchestration/routes.yaml` + g21 三方对账门禁 + `smoke:e2e` 北极星 + Task Scheduler 守护面 |
 | ADR-0011 | [计数与基线从手写/隐式改为可判](ADR-0011-计数与基线从手写改为可判.md) | accepted | 2026-11-25 | 基线双侧棘轮（数量键 + 过期即红）+ 计数由台账/目录派生 + `scanned==0` 判盲门；g19 试点、余 19 道 2.4.x 同批 |
+| ADR-0012 | [机器归属与月账取证](ADR-0012-机器归属与月账取证.md) | accepted | 2026-11-26 | 归属分 A/B/C/E/D 五级（禁止 C 冒充 A、E 冲平 D）+ `Machine:` trailer 只判 2026-12-01 之后 + 异机月账代整理须带来源与待复核 + 「承载≠产出」明令 + PROTOTYPE-01 归档机（承接 `<2026-10-30`）+ 月账口径（author date · +08:00 · 三数恒等式） |
 
 ## 何时必须写 ADR
 

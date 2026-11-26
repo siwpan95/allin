@@ -448,6 +448,52 @@ run "$PY" tools/gate/agent_regression.py
 # 判据产物落 tools/gate/audit/g21-runs.jsonl（JSONL 逐行，audit/ 已被 .gitignore 覆盖）。
 # 放在 refresh-gov-block --check 之前：失败定位从「台账↔正文」到「正文↔副本」单向推进。
 run "$PY" tools/gate/agent_parity.py
+# 月账一致性判据（2026-11-26 接入；registry 之外，登记于 tools/gate/README.md §12）。
+# 为什么不是 g 编号：它判的是 `docs/事实源/机器/<机>/月账/` 这种**各机自持**的运行时
+# 记录，不是「判仓库」的套件契约；而且其中 B 条要判**异机卷**的归属通道声明 ——
+# 那与 g20「只判本机分区」的作用域收敛方式不同（B 判的是「这份卷说不说得清归属」，
+# 读就能看出来，不需要替他机复测硬盘），混进 g 序列会把两种作用域口径搅在一起。
+# 三条判据：A 节引用必须落在真实节上 / B 卷首必须声明归属通道且「代整理」要配对复核 /
+# C 「未归属提交」的数字必须与 `git rev-list --count` 实测一致。
+# 他机卷只报告不阻断（铁律 6），唯一例外是 B（归属不明是本判据的正当对象）。
+# 同时跑 `--selfcheck`：三条负对照（造假节号 / 缺来源标注 / 未归属数字不符）
+# 不红就等于没判；`--mutate a|b|c` 是变异验证，摘掉判红分支后自检**必须**变红。
+run "$PY" tools/gate/check_machine_ledger.py --root "$ROOT"
+run "$PY" tools/gate/check_machine_ledger.py --root "$ROOT" --selfcheck
+# 机器归属 trailer 判据（2026-11-26 接入；registry 之外，登记于 tools/gate/README.md §12）。
+# 为什么不是 g 编号：它判的不是"仓库长得合不合规"，而是一条**跨机的归属一致性**——
+# 「改了谁的分区」与「声明自己是哪台机」必须一致（铁律 6：只有该机可改自己的分区）。
+# 与 g20（本机自述一致性）的分工：g20 判"分区内容是不是本机该写的"，本条判
+# "提交这一层有没有留下机器声明"；一个是文档面，一个是历史面，作用域不同。
+#
+# 三段语义（混在一起就会误导）：
+#   · blocking —— 改了 `<STEM>` 分区却没声明 / 声明了别机（跨机越权）/ 声明了不存在的机名（拼错）；
+#   · rewritten —— merge 与平台 squash：message 由 git 生成或被服务端重写，
+#     **技术上无法带 trailer**，单列不判红（`--strict-rewritten` 可收紧）；
+#   · out-of-window —— 早于生效日的提交，**不适用**（不是绿也不是红）。
+#
+# 生效范围：只判 `EFFECTIVE_FROM`（2026-12-01）之后的提交。历史 391 笔全无 trailer，
+# 追溯等于让判据一落地就常红（D18/D19 同一先例：只判生效之后，不逼迫改写历史）。
+# 窗口内零提交时打印显式 SKIP（scanned 0 + exit 0 而无 SKIP = 盲门，由 ⑩ 抓）；
+# 另有过期守卫：cutoff 过 45 天仍零提交 ⇒ exit 2（配错或被整体绕过，不能长期静默）。
+run "$PY" tools/gate/check_machine_trailer.py
+# 判据自身回归：14 例负对照（含"拼错机名必须红""中文路径必须命中分区"
+# "out-of-window 不得判绿判红"）+ 变异探针（摘掉判红逻辑后自检必须变红）。
+# 门禁写了不跑 = 没有门禁（第六例）。
+run "$PY" tools/gate/check_machine_trailer.py --selfcheck
+
+# 冲突标记判据（2026-11-26 接入；registry 之外，登记于 tools/gate/README.md §12）。
+# 事故来源：`docs/记录/交接/2026-11.md` 曾长期残留一行 `||||||| parent of fbb7940`，
+# **所有门禁都没抓到** —— docs_index 判索引契约、relative_refs 判链接、g15 判节结构，
+# 没有一道看"这一行是不是 git 留下的残骸"。冲突标记是最典型的"局部像正常文本"的损坏。
+#
+# 判据：`git ls-files` 的每个文本文件，行首出现 `<<<<<<<` / `|||||||` / `>>>>>>>`
+# 即红（**不要求尾随空格**：被编辑器吞掉空格的残骸同样是没清干净）；`=======` 只在
+# 同文件已命中前三者之一时才算 —— 单独判它会把 Markdown 的 setext 标题和分隔线全打成红。
+# 代码块里的冲突标记同样判红：代码块里的 `<<<<<<<` 是损坏，不是示例。
+run "$PY" tools/gate/check_conflict_markers.py
+# 判据自身回归：6 例（含"无尾随空格也红""代码块内仍红""`=======` 单独不判"三条负对照）。
+run "$PY" tools/gate/check_conflict_markers.py --selfcheck
 # P0 S-4 门禁化回归（2026-11-11 P3 季度复跑补线）：MCP 自有工具面的路径穿越回归
 # （docs.cite / repo.health 的 4 条越界载荷必须 isError + CWE-22）。此前 index.js
 # --selftest 只能手工跑（"写了不跑 = 没有回归"），而它是 S-4 严重级唯一护栏 ——

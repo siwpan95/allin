@@ -22,3 +22,21 @@ repos:
         files: ^(platform/registry/.*\.yaml|tools/gate/governance/.*\.ya?ml)$
       - id: check-json
         files: \.json$
+  # 机器归属 trailer（2026-11-26 新增）：提交那一刻记下"这是哪台机器做的"。
+  # 为什么必须自动：本仓 author/committer 恒为同一个共享身份，2026-11 有 82% 的提交
+  # 事后查不出机器（详见 tools/gate/check_machine_trailer.py 头部）。人记不住，就必须由钩子记。
+  #
+  # `repo: local` + `language: system` 是刻意的：注入逻辑只有一份
+  # （tools/gate/check_machine_trailer.py），不复制到本文件，也不引入新依赖。
+  # 与 README §11 的 `core.hooksPath tools/gate/hooks`（零依赖路线）**互斥**：
+  # 设了 hooksPath 后 git 不看 .git/hooks，本钩子不会执行；装哪条见
+  # `scripts/install_git_hooks.sh`（--check 可看当前生效的是哪条）。
+  - repo: local
+    hooks:
+      - id: machine-trailer
+        name: "提交信息追加 Machine: <STEM> trailer（机器归属可机读）"
+        entry: python tools/gate/check_machine_trailer.py --inject --quiet
+        language: system
+        stages: [commit-msg]
+        pass_filenames: true
+        always_run: true

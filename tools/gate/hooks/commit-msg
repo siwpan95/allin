@@ -1,0 +1,60 @@
+#!/bin/sh
+# allin 仓 commit-msg 钩子 —— 追加 `Machine: <STEM>` trailer（机器归属可机读）
+#
+# 为什么存在
+# ----------
+# 本仓 author/committer 恒为同一个共享身份（`siwpan <siwpan@users.noreply.gitee.com>`），
+# 实测 2026-11 的 391 笔提交里 319 笔（82%）**任何来源都查不出是哪台机器做的**。
+# `git shortlog` / `.mailmap` 都救不了：官方文档明说 mailmap 不能凭空恢复归属
+# （共享账号时"统计无法区分实际参与者"）。所以归属必须在**提交那一刻**记下来，
+# 事后考古不算证据。
+#
+# 机制：Git 原生 trailer（`git interpret-trailers`），可由 `--parse` 机读，
+# 不使用自造的行格式。本钩子只做"追加"，不判红；判红由
+# `tools/gate/check_machine_trailer.py`（跑批时）负责 —— 钩子能被绕过（网页提交、
+# `--no-verify`），判据不能。
+#
+# 两条路径都可用，**幂等**（已有 `Machine:` 就跳过，不会叠两行）：
+#   A. `git config core.hooksPath tools/gate/hooks`（本仓 README §11 的既有机制，
+#      零依赖；本文件就是这条路径的实现）
+#   B. `pre-commit install --hook-type commit-msg`（.pre-commit-config.yaml 里挂了
+#      local hook，逻辑同一个脚本）
+#   注意 A 与 B 互斥：设了 `core.hooksPath` 后 git **只**看那个目录，`.git/hooks/`
+#   里的 pre-commit 钩子不会被调用。装哪个见 `scripts/install_git_hooks.sh`。
+#
+# 设计纪律
+# --------
+# · **绝不阻断提交**：注入失败只警告。钩子的第一职责是别把人的提交搞丢；
+#   漏了 trailer 会在下次跑批被判红（可见、可修），比提交被挡住要好。
+# · 不猜机器：只取 hostname（`ALLIN_MACHINE_STEM` 可覆盖容器/CI 的随机 hostname）。
+set -u
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$repo_root" || exit 0
+
+tool="tools/gate/check_machine_trailer.py"
+if [ ! -f "$tool" ]; then
+    echo "[commit-msg] WARN: 找不到 $tool —— 跳过 Machine: trailer 注入（不阻断提交）" >&2
+    exit 0
+fi
+
+# 解释器解析链与 scripts/run_all_gates.sh 同源：ALLIN_PYTHON → 仓内 .venv → PATH。
+if [ -n "${ALLIN_PYTHON:-}" ] && [ -x "${ALLIN_PYTHON}" ]; then
+    py="$ALLIN_PYTHON"
+elif [ -x ".venv/Scripts/python.exe" ]; then
+    py=".venv/Scripts/python.exe"
+elif [ -x ".venv/bin/python" ]; then
+    py=".venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+    py="python3"
+elif command -v python >/dev/null 2>&1; then
+    py="python"
+else
+    echo "[commit-msg] WARN: 找不到 Python —— 跳过 Machine: trailer 注入（不阻断提交）" >&2
+    exit 0
+fi
+
+"$py" "$tool" --inject --quiet "$1" || {
+    echo "[commit-msg] WARN: Machine: trailer 注入失败（不阻断提交，跑批时会被判红）" >&2
+}
+exit 0

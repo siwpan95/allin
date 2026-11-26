@@ -277,6 +277,24 @@ git config core.hooksPath tools/gate/hooks
 > 顺带实证：**`pathlib` 的 `Read/WriteText(encoding="utf-8")` 往返会保留 BOM**，而编辑工具会剥掉
 > ⇒ 批量改 `.ps1` 能用脚本就用脚本。
 
+**`commit-msg` 钩子（2026-11-26 新增，`hooks/commit-msg`）**：给提交信息追加
+`Machine: <STEM>` trailer（Git 原生 trailer，`git interpret-trailers --parse` 可机读）。
+起因是本仓 author/committer 恒为同一个共享身份，2026-11 有 82% 的提交事后查不出机器 ——
+归属只能在**提交那一刻**记下来。行为：**幂等**（已有该 trailer 就跳过，两条钩子路径同时生效也不会叠行）；
+**绝不阻断提交**（注入失败只警告，漏写的由判据在跑批时判红）。
+
+```bash
+# 两条路径互斥（设了 core.hooksPath 后 git 不看 .git/hooks），装哪条见安装脚本：
+bash scripts/install_git_hooks.sh              # A. 零依赖：core.hooksPath=tools/gate/hooks
+bash scripts/install_git_hooks.sh --pre-commit # B. 需已装 pre-commit（.pre-commit-config.yaml 里有 local 钩子）
+bash scripts/install_git_hooks.sh --check      # 看当前到底哪条生效（"装了但没生效"是本仓老坑）
+```
+
+> **网页端提交绕过钩子**：Gitee/GitHub 网页编辑、PR 的 Squash and merge 都不经过本地钩子。
+> 所以判据（`check_machine_trailer.py`）不依赖钩子，而是跑批时判 —— 并把
+> "技术上去不掉/带不上 trailer"的 merge 与 squash **单列**，不与"忘了写"混为一谈。
+
+
 ## 12. registry 之外的判据（例外必须显式、可读、单点维护）
 
 `governance/registry.json`（包内 `<site-packages>/allin_governance/_gatesuite/registry.json`）
@@ -290,6 +308,9 @@ git config core.hooksPath tools/gate/hooks
 # 格式：每行 `id | 入口文件（相对本目录） | 为什么不在 registry`；# 开头为注释，空行忽略。
 g21-agent-parity | agent_parity.py | 编排层判据：routes.yaml ⇄ SKILL.md 锚点 ⇄ GOVERNANCE 段锚点三方对账 + skill 入口存在性。它判的是**载体之间**是否一致，不是判仓库；registry 是「判仓库」的 20 道套件契约，装不下它。已由 run_all_gates.sh 与 npm run check 两处接线（本轮改动接进 npm check）
 check_blind_gates | check_blind_gates.py | 元判据：判的是那 20 道门禁**有没有真的量了东西**（scanned 0 + exit 0 + 无 SKIP ⇒ 判红），以及它们的自检是否两半都验。判据对象是门禁自己，不是被管仓；不占 g 编号 —— 给它编号会让「20 道」这个被 README / ADR / SVG 多份文档引用的计数漂移，一个为了防漂移而引入的漂移源是净负收益
+check_machine_ledger | check_machine_ledger.py | 月账一致性判据：A 月账对交接卷的节引用必须落在真实存在的节上（D9 只判 docs/ 树内锚点、D18 只判交接卷最新一节有没有标 @机名，没有一道判「月账引的那一节还在不在」）；B 每份月账卷首必须声明归属通道（本机自持 / 代整理+待该机复核），「代整理」不配复核承诺就是拿铁律 6 的合法通道当免检章；C 「未归属提交」一节的数字必须与 git rev-list --count 实测一致。判的是**各机自持的运行时记录**，且 B 条的作用域是异机卷（与 g20「只判本机分区」相反），装不进「判仓库」的套件契约。三条各配负对照 + --mutate a/b/c 变异验证
+conflict-markers | check_conflict_markers.py | 冲突标记残留判据：`git ls-files` 的文本文件行首出现 `<<<<<<<` / `|||||||` / `>>>>>>>` 即红（不要求尾随空格 —— 被编辑器吞掉空格的残骸同样是没清干净）；`=======` 只在同文件已命中前三者之一时才算（单独判会把 Markdown 的 setext 标题与分隔线全打成误报）。它判的是**文件内容里的合并残骸**，不是仓库结构契约：事故现场 `docs/记录/交接/2026-11.md` 残留一行 `||||||| parent of fbb7940` 长期存活，而 docs_index（索引契约）/ relative_refs（链接）/ g15（节结构与锚点）三类判据都不看它，registry 里也没有一处安放这条口径。6 例负对照（含代码块内仍红、`=======` 单独不判）
+machine-trailer | check_machine_trailer.py | 机器归属一致性判据：凡改动 `docs/事实源/机器/<STEM>/…` 的提交必须带 `Machine: <STEM>` trailer（铁律 6：只有该机可改自己的分区 ⇒「改了谁的分区」与「我是哪台机」必须一致），缺则红、跨机越权红、机名拼错也红（拼错放行等于给拼写错误发免检证）。它判的是**提交历史里的跨机归属声明**，不是「仓库长得合不合规」——registry 装的是后者；而且 merge / 平台 squash 属「技术上无法带 trailer」，必须单列而不能与「忘了写」混为一谈，这条区分口径在套件契约里无处安放。只判 EFFECTIVE_FROM（2026-12-01）之后的提交，历史不追溯（D18/D19 同先例）；14 例负对照 + 变异探针（摘掉判红分支后自检必须变红）
 <!-- registry-external-gates:end -->
 
 **为什么 g21 不登记进 registry**：登记会把"20 道"改成 21，牵连 SPEC-204 架构图、SVG 对账、
