@@ -1,6 +1,6 @@
 # Gitee 项目组合索引（siwpan）
 
-> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-24），是**索引**而非源码镜像。
+> 本文件由 [`tools/build_portfolio.py`](tools/build_portfolio.py) 从 Gitee API 自动生成（生成于 2026-11-26），是**索引**而非源码镜像。
 > **治理原则：源码按需懒拉取**——只有开始具体开发某项目时，才 `git clone` 到本地 `/repos/<仓名>`；
 > 不预先克隆全量仓库。本索引随远端变化而过期，需刷新时重跑：`python tools/build_portfolio.py --apply`。
 > 简介列里的多段盘符路径已按铁律 5 机械去符盘（远端原文可能仍含盘符）。
@@ -15,6 +15,7 @@
 | [siwpan/3dworld-demos](https://gitee.com/siwpan/3dworld-demos.git) | — | 0 | 公开 | 3dworld 三维引擎的演示程序集（39 个演示 + 成片录制/exe 打包/批量验收工具；引擎本体在 siwpan/3dworld） |
 | [siwpan/3dworld-globe](https://gitee.com/siwpan/3dworld-globe.git) | — | 0 | 公开 | 交互地球仪：真实海岸线 + 177 国国界(Natural Earth)，真实 UTC 昼夜/城市夜灯，程序化地形/云层/大气；最新 v0.2.1 |
 | [siwpan/allin](https://gitee.com/siwpan/allin.git) | Python | 0 | 公开 | do it better than future |
+| [siwpan/allin-governance](https://gitee.com/siwpan/allin-governance.git) | — | 0 | 公开 | 工作区治理中枢的公共核：可执行门禁 + 文档枢纽契约 + 仓库体检 + 机器事实采集 |
 | [siwpan/an-engine](https://gitee.com/siwpan/an-engine.git) | Python | 0 | 公开 | 统一 Python 游戏引擎：ECS + 事件总线 + 世界模型 + 卡牌战斗 + AI 叙事 + 音频合成 + TRPG 规则内核 |
 | [siwpan/anatomy3d](https://gitee.com/siwpan/anatomy3d.git) | — | 0 | 公开 | 人体解剖 3D 教育查看器：开放数据（Z-Anatomy/BodyParts3D）+ 自研 pyglet 查看器，教学用途非临床 |
 | [siwpan/art_video_gen](https://gitee.com/siwpan/art_video_gen.git) | — | 0 | 公开 | 元胞自动机 + 粒子系统生成随机艺术视频，程序化音频同步、ffmpeg 合并 |
@@ -67,7 +68,6 @@
 | [siwpan/players-unified](https://gitee.com/siwpan/players-unified.git) | — | 0 | 公开 | 本地三个播放器(daily_player/localplayer/PluginPlayer)的整合规划 meta 仓库 |
 | [siwpan/pluginplayer](https://gitee.com/siwpan/pluginplayer.git) | — | 0 | 公开 | 插件版 Windows 播放器：FFmpeg 9 + SDL3 重写内核，C ABI 插件宿主（事件总线 / 帧处理链 / JSON-RPC 控制通道 / 完整性清单） |
 | [siwpan/private-radio-stations](https://gitee.com/siwpan/private-radio-stations.git) | Python | 0 | 公开 | 私人电台 + 转播整机方案：音频电台（HLS / ICY）+ 视频转播 + 门户面板，独立进程、按需启停 |
-| [siwpan/pyinstaller](https://gitee.com/siwpan/pyinstaller.git) | — | 0 | 公开 | PyInstaller 批量打包工具箱：从基础 GUI 到专业级（签名 / UPX / 图标转换） |
 | [siwpan/pywallpaper](https://gitee.com/siwpan/pywallpaper.git) | — | 0 | 公开 | pywallpaper |
 | [siwpan/radio_special_instruments](https://gitee.com/siwpan/radio_special_instruments.git) | — | 0 | 公开 | 特殊乐器采样包库（CC0 等）+ 下载与乐器池生成脚本｜/repos/radio_special_instruments |
 | [siwpan/remix](https://gitee.com/siwpan/remix.git) | — | 0 | 公开 | remix pydub ??? |

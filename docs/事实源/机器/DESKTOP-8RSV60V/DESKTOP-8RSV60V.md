@@ -1,13 +1,13 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
-> **时点** 2026-11-26（**@`DESKTOP-8RSV60V` 对齐远端后现场复测：发布区双仓迁入 + 公共核钉版升 2.4.2** ——
+> **时点** 2026-11-26（**@`DESKTOP-8RSV60V` 现场复测：对齐远端 + 公共核升 2.5.0 + `pyinstaller` 仓退役** ——
 >   @`DESKTOP-8RSV60V` 拉取远端 43 笔至 `34df901`，双远端同 SHA、0/0、工作树干净；
->   @`DESKTOP-8RSV60V` 公共核仓 `G:/repos/allin-governance` 拉取 14 笔至 `fa6b813`，VERSION 2.4.2。
+>   @`DESKTOP-8RSV60V` 公共核 `allin-governance` 升 **2.5.0**（`scan` 区语义 + `pack` 子命令；PyPI 已发，单版本端点 200）。
 >   **现场复测实例值（每行单事实，避免路径与正反断言同行）**：
->   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **77**。
->   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **77**。
->   @`DESKTOP-8RSV60V` registry 条目 **83**。
->   @`DESKTOP-8RSV60V` 仓内 venv 已装 `allin-governance` **2.4.2**（与 `requirements-dev.txt` 钉值一致）。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **76**（本地检出口径；远端 Gitee 77 仓，差 5 个中文名旧仓未检出，见 PORTFOLIO）。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **76**。
+>   @`DESKTOP-8RSV60V` registry 条目 **82**（`pyinstaller.yaml` 随仓退役删除）。
+>   @`DESKTOP-8RSV60V` 仓内 venv 已装 `allin-governance` **2.5.0**（与 `requirements-dev.txt` 钉值一致）。
 >   @`DESKTOP-8RSV60V` `facts/machine/DESKTOP-8RSV60V.json` 的 `repos` 段复验通过：`write-agent` 仍在位、双远端。
 >   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) 第二百二十五节（状态结论）· [@`DESKTOP-8RSV60V` 月账](月账/2026-11.md)（复测流水）。
 > >

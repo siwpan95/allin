@@ -81,7 +81,7 @@
   <rect x="40" y="650" width="1160" height="92" rx="10" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
   <text x="60" y="674" class="ttl" fill="#1e293b">L4 · 外部  repos/ + Gitee API</text>
   <g>
-    <rect x="60" y="686" width="360" height="28" rx="6" class="chip"/><text x="72" y="705" class="chip-t">77 仓（PORTFOLIO.md 2026-11-24 刷新口径，含本仓）</text>
+    <rect x="60" y="686" width="360" height="28" rx="6" class="chip"/><text x="72" y="705" class="chip-t">77 仓（PORTFOLIO.md 2026-11-26 刷新口径，含本仓）</text>
     <rect x="432" y="686" width="360" height="28" rx="6" class="chip"/><text x="444" y="705" class="chip-t">Gitee API：公开 77 · MIT（铁律 0）</text>
     <rect x="804" y="686" width="380" height="28" rx="6" class="chip"/><text x="816" y="705" class="chip-t">divergence-events.jsonl：分歧事件源</text>
   </g>
@@ -115,7 +115,7 @@
   <text x="60" y="802" class="cap" fill="#9d174d">与治理子系统零代码耦合 —— 图中不与治理层连线即此意；健康度由独立 CI job / repocheck 排除清单兜底</text>
   <g>
     <rect x="60" y="810" width="540" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
-    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，2.4.2）</text>
+    <text x="72" y="830" class="chip-t" font-weight="700">packages/allin-governance（PyPI，2.5.0）</text>
     <text x="72" y="848" class="chip-t">init / repocheck / verify · 源码映射自 tools/（sha256 对账，ADR-0008）</text>
     <rect x="620" y="810" width="560" height="48" rx="8" fill="#ffffff" stroke="#db2777"/>
     <text x="632" y="830" class="chip-t" font-weight="700">website/ 对外站点（Express + node:sqlite，:9042）</text>

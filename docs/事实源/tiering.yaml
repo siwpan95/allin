@@ -266,7 +266,7 @@ tiering:
   tier: ②保留
   action: PyInstaller 批量打包工具箱，内部有用
   archive_target: ''
-  note: 内部工具
+  note: 2026-11-26 能力上提 allin-governance（pack 子命令），远端与本地仓删除，随 PyPI 保留
 - repo: zhuangtaiji
   seq: 38
   domain: 开发者/系统工具

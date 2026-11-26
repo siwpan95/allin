@@ -859,15 +859,6 @@
       "source_file": "platform/registry/projects/portal.yaml"
     },
     {
-      "project_id": "pyinstaller",
-      "name": "打包器",
-      "category": "tool",
-      "version": "1.0.0",
-      "path": "repos/pyinstaller",
-      "publish_repo": "siwpan/pyinstaller",
-      "source_file": "platform/registry/projects/pyinstaller.yaml"
-    },
-    {
       "project_id": "pywallpaper",
       "name": "效果器壁纸",
       "category": "media",
