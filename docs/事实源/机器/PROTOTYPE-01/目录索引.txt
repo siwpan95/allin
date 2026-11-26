@@ -1,0 +1,159 @@
+# G:\ 目录索引 —— 项目目录文档化索引（以 README 为准绳）
+#
+# 形态：每个项目一条 = 标题 + 首段摘要 + README 相对链接 + 体量
+# 事实源：各项目自己的 README（本文件不复制正文，只做索引；改项目请改它的 README）
+# 生成时间：2026-09-28 21:28    生成器：G:\tools\build_dir_index.py
+# 条目：123 个项目    缺失 README：1 个
+#
+# 说明：本索引替代原「全盘文件快照」形态（原 48.53 MB / 555,220 行，含 Temp/assets/node_modules 等非项目行）。
+#
+
+## repos/  （114 个项目）
+
+| 项目 | 标题 | 摘要 | README | 文件数 | 体量 |
+| --- | --- | --- | --- | --- | --- |
+| `Idle` | Idle Clicker — Canvas 放置挂机 | 一个用 Python tkinter 构建的放置/点击类游戏。融合了纪元进阶、科技树、英雄系统、装备掉落、主动技能、转生挑战等系统，35 种装备从石器时代一路发展到太空时代。灵感来源于《兽人领地》《极简塔防》和《巴尔的遗产》。 | [`Idle/README.md`](Idle/README.md) | 34 | 30.9 MB |
+| `adventurelog` | 探险日志（log）— Auto Exploration Idle RPG | tkinter 挂机放置 RPG：数据驱动（职业 / 技能 / 装备 / 怪物 / 地下城），支持 Excel / JSON 数据加载与自动挂机。 | [`adventurelog/README.md`](adventurelog/README.md) | 76 | 1.8 MB |
+| `allin-platform` | allin-platform —— Steam 式全项目集成平台 | 立项：PATH（2026-08-25 用户拍板：Node+Cordis 栈 / 新建本仓 / 单机工坊+静态目录 / 首批 8 项目）。 | [`allin-platform/README.md`](allin-platform/README.md) | 641 | 2.33 GB |
+| `an-engine` | allin-engine — 统一游戏引擎 | 从 PATH 下 100+ 个项目中提炼的通用 Python 游戏引擎（独立仓 siwpan/an-engine，本地 PATH），融合 ECS 架构、事件总线、世界模型、卡牌战斗、AI 叙事、音频合成等能力。 | [`an-engine/README.md`](an-engine/README.md) | 10300 | 140.0 MB |
+| `arcade` | 街机合集 arcade | 独立仓 siwpan/arcade（一仓一目录，2026-08-27 起）。单文件玩具整合项目（2026-08-25 用户拍板）：10 个小游戏收进一个选单壳，每玩法保留一个现行版，重复重做版已删除。 | [`arcade/README.md`](arcade/README.md) | 127 | 597.5 MB |
+| `art_video_gen` | ATT — 集成音视频生成器 | 元胞自动机 + 粒子系统生成随机艺术视频，程序化合成音频，ffmpeg 合并。 | [`art_video_gen/README.md`](art_video_gen/README.md) | 5115 | 454.5 MB |
+| `audio-generation` | BloodMusic — 程序化游戏音频合成引擎 | 全功能程序化游戏音频合成引擎，支持 BGM + SFX 实时生成、专辑制作。 纯自生成定位：全部音频由程序化合成产生，零外部采样。 | [`audio-generation/README.md`](audio-generation/README.md) | 1493 | 2.02 GB |
+| `audio-pipeline` | audio_pipeline | 纯音乐制作流水线（编排层）—— 把「拆歌 → 单音源导出 → 混音/分轨保留 → 后期重分离」四阶段串成一条 CLI 流水线。 | [`audio-pipeline/README.md`](audio-pipeline/README.md) | 25 | 247 KB |
+| `audio-separator` | audio_separator | 音频分离工具 —— 基于 Demucs（以及 BS-RoFormer）的人声/伴奏分离桌面应用，附批量处理与 Web 服务入口。 | [`audio-separator/README.md`](audio-separator/README.md) | 23977 | 757.4 MB |
+| `audiotool` | audiotool · 音频加工工具 | 一个自包含的 Windows 桌面小工具（Tkinter GUI），用于批量处理音频/视频： 选文件或文件夹 → 勾选操作 → 一键输出到 输入/audiotool_out/。 | [`audiotool/README.md`](audiotool/README.md) | 11 | 36 KB |
+| `auto_clicker` | 鼠标连点器 (auto_clicker) | 一个用 Python 写的 GUI 鼠标连点器。已做模块化拆分，点击引擎、热键、界面各司其职，方便维护和二次开发。 | [`auto_clicker/README.md`](auto_clicker/README.md) | 17 | 28 KB |
+| `backroom` | backroom · 后室光线投射演示 | 独立仓 siwpan/backroom（一仓一目录）。Backrooms（后室）风格的光线投射（raycaster）演示程序（pygame + numpy）。 发布面：gitee release v1.0.0（Windows 可执行程序，P… | [`backroom/README.md`](backroom/README.md) | 12 | 57 KB |
+| `bee` | Bee（蜜蜂挂机 RPG / 无尽的进度条） | 一款蜜蜂主题的挂机 RPG（放置进度条）游戏，支持系统托盘与实时音频。 | [`bee/README.md`](bee/README.md) | 644 | 144.6 MB |
+| `bilibili-helper-py` | B站视频下载助手 - Python桌面版 v2.1 | 原 Chrome 扩展的独立桌面版本，基于 Playwright 浏览器自动化，可直接使用浏览器登录状态下载视频。 | [`bilibili-helper-py/README.md`](bilibili-helper-py/README.md) | 52 | 5.05 GB |
+| `calculator` | calculator · Calculator ∞ Alchemia 解密终端 | 独立仓 siwpan/calculator（本地 G:\repos\calculator）。终端计算器（MVC 架构 + 密码学功能），零外部依赖、纯鼠标交互。 已并入街机 arcade（siwpan/arcade，games/calcul… | [`calculator/README.md`](calculator/README.md) | 7 | 39 KB |
+| `captcha-demo` | captcha_demo（人机验证演示系统） | 基于 tkinter 的人机验证（验证码）演示系统，采用 MVVM 架构，使用 tkinter Canvas 绘制界面，覆盖 6 类验证码识别交互。 | [`captcha-demo/README.md`](captcha-demo/README.md) | 18 | 327 KB |
+| `cellular_automaton` | Cellular Automaton Wallpaper | 一个功能丰富的 2D 元胞自动机桌面壁纸程序，基于 pygame + numpy 实现，包含 142 条规则（涵盖 4 大类）、7 种颜色主题、11 种预定义图案，支持连续状态 CA、反应-扩散系统、辉光后处理与自动轮换壁纸模式。 | [`cellular_automaton/README.md`](cellular_automaton/README.md) | 330 | 200.0 MB |
+| `cordis-snake` | Cordis 贪吃蛇 · 一切皆插件的游戏 | 用 Cordis 元框架（DeepSeek Harness 同款运行时内核）把贪吃蛇实现成一个 「无特权核心、一切皆插件」 的应用。本项目既是一个能玩的终端贪吃蛇， 也是一份可运行的 Cordis 架构样例：游戏逻辑、世界状态、蛇群、计时心… | [`cordis-snake/README.md`](cordis-snake/README.md) | 53 | 413 KB |
+| `cordis-table-app` | Cordis 表格小应用（Cordis 内核 + OpenPyXL） | 基于 Cordis（Node.js 插件框架）作为应用内核， 表格能力交给 Python + OpenPyXL，两者通过 JSON-RPC stdio 桥 连接。 | [`cordis-table-app/README.md`](cordis-table-app/README.md) | 21 | 100 KB |
+| `cordis-text-game` | Cordis 文字游戏（迷雾地窖） | 一个基于 Cordis 的「一切皆插件」文字冒险引擎示例。 | [`cordis-text-game/README.md`](cordis-text-game/README.md) | 34 | 168 KB |
+| `crawl-hub` | crawl_hub - 爬虫类工具统一启动器 | 聚合式整合（aggregation，非融合 fusion）。吸取 helminth 融合式整合失败的教训： 把 webcopier / sfx / font / bilibili / image-scraper 等爬虫重写融合成一个框架，… | [`crawl-hub/README.md`](crawl-hub/README.md) | 28 | 119 KB |
+| `d20` | D&D-GURPS 变体角色构建器 v3.0 | 融合 D&D 三宝书（玩家手册 PHB / 地下城主指南 DMG / 怪物图鉴 MM）与 GURPS Basic Set 规则的点数制角色构建器。支持属性购买、优缺点、天赋、 技能、技术（战技/法术）、装备、战斗宏与多种掷骰检定。 | [`d20/README.md`](d20/README.md) | 79 | 383 KB |
+| `d20-table-link` | d20-table-link —— d20（TRPG 规则内核）× Cordis 表格应用（载体）的联动适配器 | 把两个各自独立的项目接起来，不重复实现任何一侧： | [`d20-table-link/README.md`](d20-table-link/README.md) | 16 | 110 KB |
+| `daily_player` | 日常视频播放器 (Daily Player) | 基于 VLC 的日常视频播放器，支持字幕、播放列表和快捷键。 | [`daily_player/README.md`](daily_player/README.md) | 11 | 88.7 MB |
+| `darksouls` | Dark Souls: Card Chronicles | 一款黑暗之魂题材的 Roguelike 卡牌游戏。 | [`darksouls/README.md`](darksouls/README.md) | 79 | 2.8 MB |
+| `ddd2` | ddd2（元胞自动机视频生成器） | 一款使用元胞自动机生成视频、并带 tkinter 界面的应用。 | [`ddd2/README.md`](ddd2/README.md) | 6 | 38 KB |
+| `deepseek-harness` | DeepSeek Harness | English | 中文 | [`deepseek-harness/README.md`](deepseek-harness/README.md) | 21710 | 207.3 MB |
+| `diablo` | Diablo: Cataclysm Era | 一款暗黑破坏神风格的图形界面 RPG 游戏。 | [`diablo/README.md`](diablo/README.md) | 26 | 162 KB |
+| `dict-scene-engine` | 字典场景引擎（dict-scene-engine） | 基于 Cordis 4.0 插件架构的文字冒险游戏引擎。核心理念一句话：场景即字典，能力即插件 —— 游戏内容由场景字典描述，引擎的每个能力是一个可插拔插件，两者通过 cordis.yml 声明式组装。 | [`dict-scene-engine/README.md`](dict-scene-engine/README.md) | 1325 | 27.7 MB |
+| `drawpic` | drawpic | 故障艺术生成器 —— 集 21 个「故障艺术 + 网络美学」生成器于一体的 Tkinter 图形界面，支持静态 PNG 图片与动态 MP4 视频生成。 | [`drawpic/README.md`](drawpic/README.md) | 176 | 1.04 GB |
+| `dungeon` | Savage Dungeon | 一款基于 pygame-ce 的地牢 Roguelike 游戏。 | [`dungeon/README.md`](dungeon/README.md) | 41 | 816 KB |
+| `dwarf-scrolls` | Dwarf Scrolls — 矮人要塞风格的上古卷轴 | 以 矮人要塞（Dwarf Fortress）的像素/ASCII 终端画风 呈现 上古卷轴（The Elder Scrolls）：既有矮人要塞式的 Legends Mode（历史卷轴阅读器），也有一套 鼠标驱动的游历模式（可玩）——在程序生成… | [`dwarf-scrolls/README.md`](dwarf-scrolls/README.md) | 225 | 54.8 MB |
+| `easy-ai` | easy-ai — 通用 AI 对话框架 | 零硬编码、配置驱动、可嵌入任意项目的 AI 核心 + 叙事引擎 + TRPG 训练场。 | [`easy-ai/README.md`](easy-ai/README.md) | 94 | 1.2 MB |
+| `fish` | 懒人桌面养鱼模拟器 · lazy_fish_tank | 一个不催你上线的桌面养鱼桌宠。鱼不会死、不会病、不会消失；收益不过期、不清零； 离开多久回来都只是"欢迎回来"，没有一句催促。 | [`fish/README.md`](fish/README.md) | 265 | 53.3 MB |
+| `foolproof-operation` | Python 依赖库安装器 | 图形化 Python 依赖库管理工具：24 个功能分类、761 个库，另设「🔍 自动发现」桶承接待归类项。 | [`foolproof-operation/README.md`](foolproof-operation/README.md) | 90 | 1.2 MB |
+| `gan` | gan | 基于多种经典模型混合的随机视频生成器：用马尔可夫链、元胞自动机（Gray-Scott）、CNN / RNN / GNN 逐帧合成视频画面。 | [`gan/README.md`](gan/README.md) | 8 | 37 KB |
+| `god-hand-` | TwelveLabors | 十二试炼：神话重构。 | [`god-hand-/README.md`](god-hand-/README.md) | 65 | 413 KB |
+| `haha` | haha（MVC 消息应用） | 一款 tkinter MVC 架构的演示应用（消息显示）。 | [`haha/README.md`](haha/README.md) | 86 | 36 KB |
+| `happy-childrens-day` | 六一快乐 · 六一零食大闯关（无尽模式） | 独立仓 siwpan/happy-childrens-day（一仓一目录）。六一礼物：零食收集闯关小游戏（tkinter + 自研 ECS）。 发布面：gitee release v1.0.0（Windows 可执行程序，PyInstall… | [`happy-childrens-day/README.md`](happy-childrens-day/README.md) | 21 | 159 KB |
+| `hell-below` | 地狱之下（Hell Below） | 一款 tkinter 游戏启动器平台，聚合多个已本地化的小游戏。 | [`hell-below/README.md`](hell-below/README.md) | 163 | 2.2 MB |
+| `image-scraper` | image-scraper · 多源图片爬虫 | 从多个图片站统一抓取图片的命令行工具。基于 MidJourney 抓取器扩展而来，现支持 30 个源，统一调度、断点续传、防盗链绕过，并针对中国网络环境（GFW / 代理 / API key）做了优雅降级。 | [`image-scraper/README.md`](image-scraper/README.md) | 10509 | 18.14 GB |
+| `imgproc` | imgproc 批量图像加工 | Tkinter  GUI 工具，对文件夹内图像批量执行加工操作，绝不覆盖原图，结果输出到 输入文件夹/imgproc_out/。 | [`imgproc/README.md`](imgproc/README.md) | 11 | 23 KB |
+| `jotunnslayer` | JOTUNNSLAYER 复刻原型 · Python / pygame-ce | 俯视角幸存者割草（survivors-like）玩法复刻原型，对标《Jotunnslayer: Hordes of Hel》的核心循环。 全部素材程序化生成（零外部资源），数值与内容走明文数据表驱动，扩展内容不需要改逻辑。 | [`jotunnslayer/README.md`](jotunnslayer/README.md) | 72 | 51.7 MB |
+| `kard` | kard | KARD：一款类《吸血鬼幸存者》+《杀戮尖塔》关键字玩法的无尽模式卡牌动作游戏（英文版）。 | [`kard/README.md`](kard/README.md) | 1345 | 49.0 MB |
+| `lab` | D:/projects/lab — 多语言国际象棋引擎移植实验场 | 10 种编程语言的功能对等国际象棋引擎 + 基于 Cordis 的统一测试 harness（chess-cordis）。 权威架构与设计见 chess-cordis/UNIFIED_ARCHITECTURE_REPORT.md；依赖与运行环… | [`lab/README.md`](lab/README.md) | 121 | 1.1 MB |
+| `legend` | 文字传奇 · 点怪就打 （MVP + ECS + MVVM 混合架构） | 原单文件 demo.py 按以下架构拆分为多模块： | [`legend/README.md`](legend/README.md) | 37 | 169 KB |
+| `life-reset-simulator` | Life Reset Simulator | 人生重开模拟器：MBTI 风格出身选择 + 王权决策树，采用“本体 + JSON 内容库 + 决策树模块”设计的桌面模拟游戏。 | [`life-reset-simulator/README.md`](life-reset-simulator/README.md) | 60 | 1.4 MB |
+| `ling-train` | ling-train ——《火车进站》主题短视频自动化制作流水线（三代迭代） | 围绕《火车进站》（电影史）主题的短视频自动化制作流水线。本仓库实际承载三代迭代项目（历史遗留，2026-08-28 收口入库）： | [`ling-train/README.md`](ling-train/README.md) | 272 | 714.9 MB |
+| `localplayer` | 轻量播放器 · 本地媒体（Chrome / Edge 通用扩展） | 一个以浏览器扩展（Manifest V3）形式分发的轻量本地媒体播放器， 支持视频 / 音频混排播放列表、自动下一曲、音频 / 视频模式自动切换。 | [`localplayer/README.md`](localplayer/README.md) | 11337 | 264.43 GB |
+| `loly` | DOOM 风格伪 3D 光线投射游戏 | 一个用 Python + pygame-ce 实现的 Wolfenstein / DOOM 风格伪 3D 光线投射（raycasting）游戏。核心是一条 DDA 网格光线投射管线，墙体由程序化噪声纹理渲染，并增量加入了敌人 / 拾取物、s… | [`loly/README.md`](loly/README.md) | 52 | 552 KB |
+| `lonely-desert-road` | Endless Highway | 一款基于 ECS 架构的无尽高速公路驾驶游戏，含漂移玩法与电子风音频。 | [`lonely-desert-road/README.md`](lonely-desert-road/README.md) | 46 | 16.8 MB |
+| `maga` | 重装机兵同人游戏 | — | [`maga/README.md`](maga/README.md) | 28 | 168 KB |
+| `magic-tower` | 仓库：<https://gitee.com/siwpan/magic-tower> ｜ 许可：MIT-0（MIT No Attribution）（见 [LICENSE](LICENSE)） | — | [`magic-tower/README.md`](magic-tower/README.md) | 29 | 324 KB |
+| `mahjong` | 麻将连连看 (上海麻将) · MVVM 架构 | 单人麻将牌配对解谜游戏。使用标准 144 张麻将牌，按经典乌龟形多层堆叠， 配对两张相同的「自由牌」即可消除，清空全部 144 张牌即通关。 | [`mahjong/README.md`](mahjong/README.md) | 213 | 85.2 MB |
+| `math` | Cellular Automata - Formula Lab | A cellular automata simulation tool with pluggable formula support. | [`math/README.md`](math/README.md) | 26 | 58 KB |
+| `mathematical-formula-renderer` | CA Render Engine | 连续细胞自动机（Continuous Cellular Automata）可视化引擎 数学公式驱动 · 热切换配方 · 可视化编辑器 · 后处理特效 | [`mathematical-formula-renderer/README.md`](mathematical-formula-renderer/README.md) | 15 | 119 KB |
+| `mc-clone` | MCclone | MCclone：基于 allin_engine 的《我的世界》风格复刻合集，含 MC1（文字冒险，tkinter）与 MC2（2D 侧视复刻，pygame），由统一启动器管理。 | [`mc-clone/README.md`](mc-clone/README.md) | 240 | 88.0 MB |
+| `midi` | midi | MusicStudio 音乐制作/DAW 项目，含四个阶段工程（pro1–pro4）与统一入口。 | [`midi/README.md`](midi/README.md) | 85 | 262.2 MB |
+| `midjourney_video` | midjourney_video | Midjourney 视频下载工具 —— 用 Playwright 浏览器抓取 Midjourney Explore 页面视频并下载，附 CLI 统一启动器与 GUI。 | [`midjourney_video/README.md`](midjourney_video/README.md) | 38 | 78.1 MB |
+| `moba_battle_platform` | MOBA 英雄大乱斗 — 1v1 对战平台 | 「✨ 日志润色」把当前战斗日志改写成港漫风武侠短篇（在线调用 DeepSeek 模型， 风格可在下拉框指定或随机抽取）。首次使用点「🔑 密钥」按钮，在弹窗中输入 DeepSeek API Key 与模型名（默认 deepseek-v4-pr… | [`moba_battle_platform/README.md`](moba_battle_platform/README.md) | 16340 | 110.3 MB |
+| `mp` | mp | 随机音乐生成器 + WMP 风格可视化，纯 Python 标准库实现（tkinter 图形界面）。 独立仓 siwpan/mp（本地 PATH）。 | [`mp/README.md`](mp/README.md) | 53 | 187.5 MB |
+| `music-prompt-generator` | 纯音乐风格提示词生成器 · Music Prompt Generator | 一个从风格池（styles/）随机抽取要素、自动生成「纯音乐风格提示词」的小工具，用于 AI 音乐生成（Suno / Udio 等）的灵感与批量提示词生产。 | [`music-prompt-generator/README.md`](music-prompt-generator/README.md) | 81 | 337 KB |
+| `musickit` | <PATH> — phonk 混音项目（真实采样 + 本地混音引擎） | 选音规则（2026-08-17 起）： | [`musickit/README.md`](musickit/README.md) | 32009 | 106.62 GB |
+| `ncmturnmp3` | ncmturnmp3 —— 加密音乐多格式转换器 | 把国内主流音乐平台下载的加密音频解密并转换为通用格式，纯本地运行、不联网、 不依赖任何第三方服务。GUI（tkinter）与命令行共用同一套核心逻辑。 | [`ncmturnmp3/README.md`](ncmturnmp3/README.md) | 44 | 6.2 MB |
+| `novel` | 《万界归墟》小说生成器 | 双引擎程序化中文小说生成系统——融合 ASP 模板流（词库驱动多层嵌套循环）与因果链流（Save the Cat! 15 节拍叙事结构），自动生成莲花式地图诸天无限流长篇小说。 | [`novel/README.md`](novel/README.md) | 390 | 94.4 MB |
+| `novel-down` | novel-down · 读书爬虫（仅免费章节） | 规则驱动的网络小说离线阅读工具：目录发现 → 并发抓取 → 免费章节硬拦截 → 校对 → 四格式导出。 | [`novel-down/README.md`](novel-down/README.md) | 10444 | 14.85 GB |
+| `novel-generator` | novel_generator | ASP 模板流中文小说自动生成引擎：基于多层嵌套循环 + 词库随机替换，可离线生成单章、整卷乃至全本小说。 | [`novel-generator/README.md`](novel-generator/README.md) | 78 | 11.8 MB |
+| `novel-reader` | 综网终端 · 地狱之下平台  ·  视觉小说版 | 基于同名网络小说改编的 Tkinter 纯文字视觉小说游戏。 UI 以「综网终端」风格呈现，玩家以终端操作者身份接入地狱之下平台，浏览各世界档案。 | [`novel-reader/README.md`](novel-reader/README.md) | 91 | 39.5 MB |
+| `novel-run` | novel-run · 集成路线独立验证项目 | 目的：在不触碰 dict-scene-engine（DSE）与 novel 两个真实仓库源码的前提下， 用一套最小自包含项目验证「novel 生成器 ↔ DSE 运行时」的落地路线，并把两个真实仓库的 内容素材复制进来做实打实的题材对齐与内… | [`novel-run/README.md`](novel-run/README.md) | 398 | 66.1 MB |
+| `ollama_generator` | Ollama Generator — AI 文本生成库 | 基于 Ollama 的通用 AI 文本生成库，支持多轮对话和中文清洗。 | [`ollama_generator/README.md`](ollama_generator/README.md) | 13 | 58 KB |
+| `particle` | Particle System（独立粒子系统） | 单个粒子的数据结构： | [`particle/README.md`](particle/README.md) | 4110 | 664.8 MB |
+| `pdf` | pdf | 简易 PDF 阅读器 —— 基于 PyMuPDF 与 Pillow 的 Tkinter 桌面 PDF 阅读器，附若干物理教材 PDF 样本。 独立仓 siwpan/pdf（本地 PATH）。 | [`pdf/README.md`](pdf/README.md) | 19 | 410.0 MB |
+| `photo` | 简易图片爬虫（Image Crawler） | 谱系（2026-08-27）：本工具的提取语义已并入 image-scraper 源族（photo.json，A 模式纯配置源）；本桌面版维持独立发行与维护。 | [`photo/README.md`](photo/README.md) | 553 | 60.1 MB |
+| `photovideo` | photovideo | 图片转视频生成器 —— 把多张图片合成视频的 Tkinter 工具，内置 6 种动效模式（网格拼贴、横/纵长图滚动、淡入淡出、KenBurns 推镜、逐张高亮）。 | [`photovideo/README.md`](photovideo/README.md) | 35 | 1.65 GB |
+| `player` | player | 模拟 Windows Media Player（WMP）的可视化效果程序。 | [`player/README.md`](player/README.md) | 5 | 13 KB |
+| `players-unified` | players-unified | 版本 0.8.0 · Phase 1–3 已完成；Phase 4 的 S0/S1/S3/S4 已实测通过；Phase 5 的 S5-1/S5-2/S5-3 已落地 | [`players-unified/README.md`](players-unified/README.md) | 675 | 301.8 MB |
+| `pluginplayer` | PluginPlayer — 插件版播放器 | 发行版：https://gitee.com/siwpan/pluginplayer/releases | [`pluginplayer/README.md`](pluginplayer/README.md) | 24178 | 1.76 GB |
+| `print` | print | 中文拼音输入法 —— 基于本地字典与字体、用 Python 实现的拼音输入法（tkinter 候选窗口 + 全局键盘监听）。 | [`print/README.md`](print/README.md) | 31799 | 1.88 GB |
+| `private-radio-stations` | 📺📻 本地转播站（monorepo） | PATH —— 视频转播与音频电台的整合仓库（npm workspaces，独立仓 siwpan/private-radio-stations）。 （上游本地副本曾位于 PATH、PATH；本文档一律用当前副本路径。） | [`private-radio-stations/README.md`](private-radio-stations/README.md) | 250 | 329.5 MB |
+| `procedural-video` | procedural_video | kkrieger 风格的过程生成视频生成器，附带实时预览，几乎纯标准库实现（可整合多种视觉效果）。 | [`procedural-video/README.md`](procedural-video/README.md) | 7 | 45 KB |
+| `procgen` | procgen 程序化生成库 | 供各游戏项目 import 复用的程序化生成工具包（纯 Python + numpy）。 | [`procgen/README.md`](procgen/README.md) | 36 | 433 KB |
+| `project-root` | 诡秘之主 · 序列途径模拟系统 | 基于小说《诡秘之主》世界观的「序列魔药体系」模拟器 —— 数据驱动、含 CLI 演示与 tkinter 图形界面。 | [`project-root/README.md`](project-root/README.md) | 79 | 16.9 MB |
+| `py_test_runner` | py_test_runner — Python 项目全覆盖测试框架 | 多功能 Python 测试框架，支持静态扫描、架构检测、动态运行三大类测试。 由全哥创建，用于 G 盘项目（10,700+ Python 文件）的日常质量保障。 | [`py_test_runner/README.md`](py_test_runner/README.md) | 205 | 1.8 MB |
+| `pyinstaller` | PyInstaller 批量打包工具集 | 多功能 PyInstaller 批量打包工具箱，从基础到专业级打包。 | [`pyinstaller/README.md`](pyinstaller/README.md) | 20 | 47.7 MB |
+| `pywallpaper` | PyWallpaper — 数学公式驱动的动态壁纸引擎 | ECS 架构的音乐可视化动态壁纸系统，集成了 draw 项目的数学公式引擎和细胞自动机（CA）能力，支持粒子系统、流体模拟等多种效果类型。Python 负责逻辑，JSON 负责内容，通过装饰器 + 子类自动发现实现零硬编码注册。 | [`pywallpaper/README.md`](pywallpaper/README.md) | 9927 | 85.2 MB |
+| `random-dungeon-` | 随机地牢 · 终端文字地牢探险 | 独立仓 siwpan/random-dungeon-（本地 PATH）。纯 Python 标准库实现的终端文字地牢探险游戏。 | [`random-dungeon-/README.md`](random-dungeon-/README.md) | 9 | 12 KB |
+| `remix` | Remix — 音频混音 & 视频合成 | 一个用 Python + pydub 实现的桌面音频混音器与视频音频合成工具。 支持多轨混音、分轨增益、软/硬削波、峰值/RMS 归一化、淡入淡出、 交叉淡化、动态压缩、高低通滤波，以及视频音频提取/替换/混入。 | [`remix/README.md`](remix/README.md) | 39 | 1.11 GB |
+| `renamer` | renamer —— 正则批量重命名工具 | 一个自包含的桌面小工具，用正则表达式对文件夹内的文件进行批量重命名。 图形界面基于 Tkinter（中文 UI），核心逻辑纯标准库实现，无第三方依赖。 | [`renamer/README.md`](renamer/README.md) | 11 | 29 KB |
+| `repocheck` | repocheck · 仓库体检 | 一个自包含的桌面小工具，用来对某个根目录下的多个「项目」做一轮快速体检， 自动找出那些「没版本控制 / 没文档 / 没测试 / 没依赖声明 / 没 License / import 疑似断裂」 的工程卫生问题，并支持导出 CSV / HTM… | [`repocheck/README.md`](repocheck/README.md) | 11 | 41 KB |
+| `roleplayer` | Role Player 跑团模拟器 v3.0（原 D20 项目更名；包名沿用 d20） | 融合 D&D 三宝书（PHB / DMG / MM）、GURPS Basic Set 与 CoC 规则的跑团模拟器： 角色构建（点数制）+ GM 模拟（Oracle）+ 三规则集判定 + 战斗/法术/补给 + 任务/时钟 + 存档/repl… | [`roleplayer/README.md`](roleplayer/README.md) | 3506 | 20.0 MB |
+| `running-group-simulator` | Mirror of the Lost（镜中之失） | 基于 GURPS 4e 的三层 MVVM 架构 TRPG 终端引擎 — 让 GM 专注于叙事，让引擎处理裁决。 | [`running-group-simulator/README.md`](running-group-simulator/README.md) | 175622 | 2.22 GB |
+| `russia` | russia | Russian Roulette —— 俄罗斯轮盘赌（ECS 版）。 | [`russia/README.md`](russia/README.md) | 14 | 88 KB |
+| `sandbox` | 地牢冒险者 (Dungeon Delver) | 内联 alloy 引擎 + 内联 procgen 世界生成 = 一个完整的、可以运行的游戏。 独立仓 siwpan/sandbox（一仓一目录）。 | [`sandbox/README.md`](sandbox/README.md) | 158 | 51.8 MB |
+| `santi-teleprompter` | 远子学姐的三题故事 · 提词器 | 一个为「三题故事」而生的提词器。给定三个词语为题，限时写成美妙的故事——就像《文学少女》（野村美月）里远子学姐每天给心叶出的题目一样。 | [`santi-teleprompter/README.md`](santi-teleprompter/README.md) | 122 | 478.8 MB |
+| `sfx-download` | 通用免费公版音频爬取程序 (AudioCrawler) | 在 sfx 免费音效下载器基础上改造而来的通用音频爬取引擎：既能抓取 原 18 个免注册音效站，也能抓取 公共领域 / CC0 / CC BY 的免费公版音频 （Internet Archive、LibriVox 有声书、SoundHeli… | [`sfx-download/README.md`](sfx-download/README.md) | 934 | 916.2 MB |
+| `shikonghuaban` | 时空画板 (Space-Time Canvas) | 全屏音频可视化引擎：以黑洞 / Penrose 几何为主题，用 pygame 渲染吸积盘、引力透镜、霍金辐射与 Penrose 结构路径粒子，并通过 sounddevice 实时合成锯齿波音符。 | [`shikonghuaban/README.md`](shikonghuaban/README.md) | 72 | 41.8 MB |
+| `sign-in-simulator` | qiandao（签到 · 斯金纳箱） | 基于 tkinter 的签到奖励强化（斯金纳箱）演示工具，使用有界指数增长公式模拟签到触发概率与奖励选择。 | [`sign-in-simulator/README.md`](sign-in-simulator/README.md) | 21 | 107 KB |
+| `smile` | smile | 斯金纳箱 · 表情版 v2。 | [`smile/README.md`](smile/README.md) | 72 | 2.6 MB |
+| `station` | station | 音频制作工作站 v3.0（分层架构重构版），Python 实现。 | [`station/README.md`](station/README.md) | 68 | 20.7 MB |
+| `subtitle` | 字幕工具（subtitle） | 一个自包含的桌面字幕处理工具，基于 Tkinter + ffmpeg。面向中文用户，提供字幕提取、编辑、保存、烧录与翻译占位能力。 | [`subtitle/README.md`](subtitle/README.md) | 11 | 30 KB |
+| `table-hanging-machine` | 表格挂机 · Progress Quest v2 风格挂机桌游 | 独立仓 siwpan/table-hanging-machine（本地 PATH）。全自动挂机桌游：Excel 配置驱动 + 自动角色成长（tkinter GUI）。 | [`table-hanging-machine/README.md`](table-hanging-machine/README.md) | 29 | 164 KB |
+| `tavern-rogue` | TavernRogue - 酒馆异闻录 | 基于 D&D SRD 的 Roguelike 自走棋游戏（pygame-ce 图形界面） | [`tavern-rogue/README.md`](tavern-rogue/README.md) | 44 | 50.9 MB |
+| `test` | test（原型人格洞察 · 每日一测） | 基于荣格八功能与 45 种经典人物原型的每日人格测试网页（HTML 问答应用）。 | [`test/README.md`](test/README.md) | 11 | 124 KB |
+| `text-adventure` | text_adventure | 文字冒险解谜游戏（英文 + 中文双版本）。 | [`text-adventure/README.md`](text-adventure/README.md) | 48 | 248 KB |
+| `text-fps` | text_fps | 文字 FPS 战术战斗游戏（英文 + 中文双版本）。 | [`text-fps/README.md`](text-fps/README.md) | 96 | 1.4 MB |
+| `under-withered-limbs` | Carimara | 一款基于 pygame-ce 的卡牌游戏，含程序化音频合成工具。 | [`under-withered-limbs/README.md`](under-withered-limbs/README.md) | 5971 | 240.0 MB |
+| `video-generator` | 随机视频生成器 | 结合 draw/effects/ 和 pywallpaper/effects/ 两个项目的共计 9685 个效果预设，构建全新的随机视频生成器。 | [`video-generator/README.md`](video-generator/README.md) | 10301 | 812.6 MB |
+| `wav_music_gen` | AutoWav — 随机 WAV 音乐生成器 | 纯 Python 标准库实现，零外部依赖的 WAV 音乐生成器。 | [`wav_music_gen/README.md`](wav_music_gen/README.md) | 86 | 68.3 MB |
+| `wave4` | wave4 — 布朗噪声 / 分数阶布朗运动生成与分析工具包 | wave4 是一个零重依赖（仅 numpy / matplotlib / scipy）的 Python 包，用于生成布朗噪声与分数阶布朗运动（fBm），并提供 Hurst 指数估计、功率谱密度（PSD）分析与可视化能力。 | [`wave4/README.md`](wave4/README.md) | 36 | 96 KB |
+| `webcopier` | WebCopier — 网页正文抓取工具 v5.3 | 全功能网页正文抓取程序，支持多种提取方式和完善的反爬系统。 | [`webcopier/README.md`](webcopier/README.md) | 375 | 251.1 MB |
+| `weor` | weor — AI 小说生成系统 | 整合自原 PATH 散落脚本（autodugeon / fast / fast2 / fast3 / fast4 / media）， 并按 2025 年主流开源项目（AI_NovelGenerator / GOAT-Storytelling… | [`weor/README.md`](weor/README.md) | 60 | 992 KB |
+| `yasuo` | Yasuo — 通用文件加密/压缩工具 | 全功能文件加密与压缩工具，支持对称加密和无损压缩。 | [`yasuo/README.md`](yasuo/README.md) | 18 | 51 KB |
+| `yuanbao` | 🧬 细胞工厂 | 元胞自动机 × CNN 标签任务系统 —— 一个把 Conway 生命游戏式演化与卷积模式检测结合的轻量"挂机收集"沙盒。 | [`yuanbao/README.md`](yuanbao/README.md) | 31 | 11.3 MB |
+| `zhuangtaiji` | 多范式决策引擎 · 可视化工作台 | 一个把多种计算/决策范式连成「可编排系统」的 Python 引擎，提供 Tkinter 桌面工作台 与 React + react-flow Web 编排编辑器 两种前端界面。所有范式由同一份 config.json 驱动，并通过编排层（事… | [`zhuangtaiji/README.md`](zhuangtaiji/README.md) | 73 | 730 KB |
+
+## local/  （7 个项目）
+
+| 项目 | 标题 | 摘要 | README | 文件数 | 体量 |
+| --- | --- | --- | --- | --- | --- |
+| `12test/FFmpeg-master` | FFmpeg README | FFmpeg is a collection of libraries and tools to process multimedia content such as audio, video, subtitles and related… | [`12test/FFmpeg-master/README.md`](12test/FFmpeg-master/README.md) | 10681 | 87.5 MB |
+| `hushi_twrj` | 胡适日记 · 本地存档 | 来源：虚阁网 · 胡适集（台北商务印书馆版《胡适留学日记》+ 日记抄本）；辑补卷另见下方说明。 抓取日期：2026-09-08　全部采用 Python 标准库，零第三方依赖。 | [`hushi_twrj/README.md`](hushi_twrj/README.md) | 14225 | 135.9 MB |
+| `markdown` | Markdown Viewer | 一个基于 Tkinter 的本地 Markdown 查看器，用 Cordis（时空可组合性元框架） 重写了架构。 | [`markdown/README.md`](markdown/README.md) | 186 | 2.6 MB |
+| `pq-multiverse` | Progress Quest Multiverse | 一个 Progress Quest 的复刻版，结合多个流行游戏的世界观、角色、装备和怪物，打造一个庞大的多元宇宙自动 RPG 游戏。 | [`pq-multiverse/README.md`](pq-multiverse/README.md) | 121 | 798 KB |
+| `stay` | Progress Quest 2 — The Progression（Python / Tkinter 移植版） | 一个单人进度放置类游戏（Progress Quest 2）的 Python + Tkinter 移植实现。 包含完整的角色养成、战斗、装备、任务、剧情、商店系统，以及一套面向"不可信存档" 的健壮存档机制。 | [`stay/README.md`](stay/README.md) | 50 | 12.4 MB |
+| `test/cordis-main` | <div align="center"> <h1 id="satori">Cordis</h1> </div> | A Meta-Framework of Spatiotemporal Composability. | [`test/cordis-main/README.md`](test/cordis-main/README.md) | 138 | 365 KB |
+| `write` | `G:\local\write` — 网文创作与素材工作区 | 写作侧的工作目录：一部连载网文的正文/设定/素材 + 已公开发布作品的分析报告与参考资料。 非 git 仓（G:\local 为未发布/本地独有项目区）；文件多为文本素材，无构建链路。 | [`write/README.md`](write/README.md) | 2023 | 11.8 MB |
+
+## tools/  （1 个项目）
+
+| 项目 | 标题 | 摘要 | README | 文件数 | 体量 |
+| --- | --- | --- | --- | --- | --- |
+| `tools` | `G:\tools` — 工作区可执行工具（Executable Tooling） | 与 G:\allin\docs\（只放文档）分家的脚本区：把规矩变成可执行的检查、把一次性操作变成可复跑的脚本。 门禁类脚本在子目录 gate/；本目录根放工作区级工具。 | [`README.md`](README.md) | 28 | 460 KB |
+
+## allin/  （1 个项目）
+
+| 项目 | 标题 | 摘要 | README | 文件数 | 体量 |
+| --- | --- | --- | --- | --- | --- |
+| `allin` | allin —— 个人全项目治理索引仓库（`/projects/allin`） | 一个单一索引仓库承载工作区治理说明、文档枢纽入口与 DeepSeek Harness 治理模式的可重装载体： 游戏引擎、游戏、爬虫、音视频工具、电台/转播服务、AI 项目、音乐资产等全部个人项目的事实源与约定都从这里索引出去。 | [`README.md`](README.md) | 597 | 4.8 MB |
+
+## ⚠ 缺 README 的目录（1 个，待补齐）
+
+| 组 | 目录 | 路径 |
+| --- | --- | --- |
+| allin-platform | `allin-platform` | `G:\allin-platform` |
+
