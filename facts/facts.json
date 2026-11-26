@@ -580,6 +580,15 @@
       "source_file": "platform/registry/projects/game-prototypes.yaml"
     },
     {
+      "project_id": "govrule",
+      "name": "govrule · 治理规则 DSL（四值判据 + 证据 + 基线棘轮）",
+      "category": "tool",
+      "version": "0.1.0",
+      "path": "repos/govrule",
+      "publish_repo": "siwpan/govrule",
+      "source_file": "platform/registry/projects/govrule.yaml"
+    },
+    {
       "project_id": "hushi-twrj",
       "name": "胡适日记本地存档",
       "category": "crawler",

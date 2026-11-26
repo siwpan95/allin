@@ -1,0 +1,28 @@
+id: govrule
+name: govrule · 治理规则 DSL（四值判据 + 证据 + 基线棘轮）
+category: tool
+version: 0.1.0
+path: repos/govrule
+status: active
+manual: true
+note: >-
+  2026-11-26 新登记：本仓由「基于 allin 治理体系自制编程语言」的 P0 预演落地而来，
+  是把 20 道 Python 门禁的判据写成声明式规则的最小实现。
+  定位：九子句规则语言（scope / select / extract / where / assert / evidence /
+  severity / applies / exempt）+ 四值判据 `Pass | Fail | Skip | Unknown`
+  + 闭集诊断码与 span/expected/found + 基线棘轮（纯增长拒绝 / stale 判红 / CI 守卫）
+  + 双跑对照器（与 Python 门禁比 `(path, line)` 集合与退出码）。
+  零第三方运行时依赖，MIT-0，单一 CLI 入口 `govrule`。
+  与现有体系的关系：**不替代** allin-governance 的 20 道门禁，而是其判据的可移植表达；
+  迁移期以双跑一致性为唯一验收判据。当前为 M0 预演（非 M0 完成）：
+  无 CST/Resolver/Typeck/join/LSP，`same_shape` 的配对语义未闭合。
+  已登记理由与 `allin-governance` 同型：仓先存在，g17 完备性才看得见它。
+launch:
+  command: govrule list --rules rules
+publish:
+  repo: siwpan/govrule
+  branch: main
+verify:
+  commands:
+    - python -m unittest discover -s tests
+    - python -m govrule list --rules rules
