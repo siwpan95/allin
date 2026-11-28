@@ -25,7 +25,7 @@
 | HUB-03 | [`MEMORY.md`](MEMORY.md) | **路由页**：把历史引用导向新位置（大修后不再承载规则正文） |
 | HUB-04 | [`规范/README.md`](规范/README.md) | 规范总纲：效力等级、引用格式、**规则 → 门禁映射总表** |
 | HUB-05 | [`事实源/README.md`](事实源/README.md) · [`记录/README.md`](记录/README.md) · [`记录/交接/README.md`](记录/交接/README.md) | 各类准入判据与卷宗规则 |
-| HUB-06 | [`新人开发上手指南.md`](新人开发上手指南.md) | 新人开发上手指南（可复用模板）：环境/克隆/启动/流程/FAQ，含 allin 实测命令与占位符 |
+| HUB-06 | [`新人开发上手指南.md`](新人开发上手指南.md) | 新人上手教程（learning-oriented，9 步，命令带 verify 标记并由 `tools/tutorial/verify_guide.py` 执行） |
 
 ## 二、规范（`规范/`，21 份）
 

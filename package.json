@@ -26,6 +26,7 @@
     "console:check": "npm --prefix console run check",
     "console:smoke": "npm --prefix console run smoke",
     "console:plugins": "npm --prefix console run verify:plugins",
-    "console:lifecycle": "npm --prefix console run verify:lifecycle"
+    "console:lifecycle": "npm --prefix console run verify:lifecycle",
+    "check:guide": "python tools/tutorial/verify_guide.py"
   }
 }
