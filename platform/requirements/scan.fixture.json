@@ -1,0 +1,17 @@
+{
+  "_note": "消费方契约（consumer-driven contract）：allin 对 allin-governance scan --catalog 的字段假设。provider 升级若不 удовлетворяет 本 fixture，import_catalog.py 必须失败而不是静默少写。",
+  "schema": "allin-governance/discovery-catalog/v1",
+  "required_top": ["schema", "generated_at", "hostname", "discovered", "rows"],
+  "required_row": ["id", "path", "checkout", "launch", "publish"],
+  "required_publish": ["repo", "branch"],
+  "forbidden_row": ["name", "category", "note", "verify", "manual"],
+  "example_row": {
+    "id": "demo",
+    "path": "repos/demo",
+    "checkout": "local",
+    "launch": {"command": "python main.py", "basis": "main.py"},
+    "publish": {"repo": "siwpan/demo", "branch": "master"},
+    "machine_fields": ["id", "path", "checkout", "publish.repo", "publish.branch"],
+    "human_fields": ["name", "category", "version", "manual", "note", "verify"]
+  }
+}
