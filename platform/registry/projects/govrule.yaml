@@ -1,7 +1,7 @@
 id: govrule
 name: govrule · 治理规则 DSL（四值判据 + 证据 + 基线棘轮）
 category: tool
-version: 0.1.0
+version: 1.0.2
 path: repos/govrule
 status: active
 manual: true
