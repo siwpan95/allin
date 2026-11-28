@@ -1,0 +1,14 @@
+id: agent
+name: agent 总控
+category: automation
+version: 1.0.0
+path: repos/agent
+manual: true
+note: 四仓分工的总控/总入口：按 agent.contract.yml 选路到 allin / allin-governance / govrule；不持有事实、不写人工目录。
+launch:
+  command: python -m agent entry --list
+publish:
+  repo: siwpan/agent
+  branch: master
+verify:
+  command: python -m agent verify

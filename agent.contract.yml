@@ -1,0 +1,9 @@
+# agent 总控契约（由 agent 仓读取；本仓是被治理对象）
+schema: agent-entry-contract/v1
+repo: allin
+role: 各机事实源的持有者（分区、月账、registry、扫描观测态）
+entrypoint: docs/新人开发上手指南.md
+verification: npm run check
+controlled_by: agent
+owns: 各机事实源/项目登记观测态/消费方契约
+forbids: 会话总控/判据 DSL/通用扫描能力实现

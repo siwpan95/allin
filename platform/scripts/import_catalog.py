@@ -11,8 +11,8 @@
 不把「 provider 变了」悄悄降级成「写少几条」。
 
 用法：
-    python platform/scripts/import_catalog.py --root G:/repos --dry-run
-    python platform/scripts/import_catalog.py --root G:/repos
+    python platform/scripts/import_catalog.py --root <发布区> --dry-run
+    python platform/scripts/import_catalog.py --root <发布区>
 """
 
 from __future__ import annotations
@@ -67,11 +67,16 @@ def validate(cat: dict) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default="G:/repos", help="发布区根")
+    # 不写死任何机器的发布区路径：env 或由仓位置推导（<repo>/../repos）
+    ap.add_argument("--root", default=None, help="发布区根（默认 ALLIN_REPOS_ROOT 或仓根父目录）")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--unknown-policy", choices=["observe", "warn", "fail"], default="warn",
                     help="探针不可用（未知项目）的处置：observe=静默跳过 / warn=列出交人工（默认）/ fail=阻断")
     args = ap.parse_args(argv)
+    if args.root is None:
+        import os
+        args.root = os.environ.get("ALLIN_REPOS_ROOT") or str(
+            Path(__file__).resolve().parents[2].parent)
 
     try:
         cat = fetch(args.root)

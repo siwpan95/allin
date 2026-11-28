@@ -346,6 +346,15 @@
       "source_file": "platform/registry/projects/3dworld.yaml"
     },
     {
+      "project_id": "agent",
+      "name": "agent 总控",
+      "category": "automation",
+      "version": "1.0.0",
+      "path": "repos/agent",
+      "publish_repo": "siwpan/agent",
+      "source_file": "platform/registry/projects/agent.yaml"
+    },
+    {
       "project_id": "allin-engine",
       "name": "综合引擎（装配视图）",
       "category": "engine",
