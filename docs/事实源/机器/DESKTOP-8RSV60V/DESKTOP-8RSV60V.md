@@ -1,10 +1,10 @@
 # 机器事实 · `DESKTOP-8RSV60V`（台式机）
 
 > **时点** 2026-11-28（**@`DESKTOP-8RSV60V` agent 独立建仓后的计数更新** ——
->   新增仓 `agent`（四仓分工的总控/总入口），发布区计数 78 → 79。
+>   新增仓 `agent`（四仓分工的总控/总入口）；退役 `zhuangtaiji`（状态机已被 govrule 吃掉，仅留 PyPI 1.1.1）。**净计数 78 → 79 → 78**。
 >   **现场复测实例值（每行单事实）**：
->   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **79**。
->   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **79**。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 `.git` 目录 **78**。
+>   @`DESKTOP-8RSV60V` 发布区 `G:/repos` 含 origin 远端 **78**。
 >   > **留痕** [交接卷 2026-11.md](../../../记录/交接/2026-11.md) · 新仓已补 registry 条目 `agent.yaml`。
 >
 > **时点** 2026-11-26（**@`DESKTOP-8RSV60V` 现场复测：对齐远端 + 公共核升 2.5.0 + `pyinstaller` 仓退役** ——

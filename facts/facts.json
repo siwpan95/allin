@@ -1064,15 +1064,6 @@
       "path": "repos/write",
       "publish_repo": "siwpan/write",
       "source_file": "platform/registry/projects/write.yaml"
-    },
-    {
-      "project_id": "zhuangtaiji",
-      "name": "庄太极·多范式决策工作台",
-      "category": "tool",
-      "version": "1.0.0",
-      "path": "repos/zhuangtaiji",
-      "publish_repo": null,
-      "source_file": "platform/registry/projects/zhuangtaiji.yaml"
     }
   ],
   "tiering": [
