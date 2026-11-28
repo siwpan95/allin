@@ -93,6 +93,9 @@ EXEMPT = (
     # facts/machine/** 是各机机器事实**本尊**（B' 单源）；facts/facts.json 是它的派生聚合，
     # 机器段留在里面是设计（_machine_section_derived 标记）。schema 里的 machine:SIWPAN 是示例值。
     "facts/machine/", "facts/facts.json", "facts/facts.schema.json",
+    # facts/materials.json 是 docs 的**物料主数据派生视图**：title 抄自各机文档标题，
+    # 机器名出现在索引里属设计（它指向的是「那份文档」，不是「那台机器的事实」）。
+    "facts/materials.json",
 )
 
 #: 行内「路径引用」形态（不算特化内容）：`机器/SIWPAN/...`、`(docs/...)`、别名路径等。
