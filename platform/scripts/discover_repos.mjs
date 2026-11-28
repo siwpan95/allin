@@ -354,11 +354,26 @@ function auditRows(local, entries, remoteAvailable) {
       'publish.repo': es.map((e) => String(e.publish?.repo || '')),
       'publish.branch': es.map((e) => String(e.publish?.branch || '')),
     }
+    // human_values：人属字段的**值**（不只字段名）。2026-11-28 起，
+    // 快照从「审计底稿」升级为「可恢复备份」——registry 条目整批丢失时，
+    // 机器字段由本快照重建，人属字段也从这里恢复（此前只存字段名，丢了就真丢了）。
+    // 一个仓多条目时取首条非空值；语义冲突的合并由 --register 的人工步骤裁决。
+    const humanValues = {}
+    for (const k of HUMAN_OWNED_FIELDS) {
+      for (const e of es) {
+        if (e[k] !== undefined) { humanValues[k] = e[k]; break }
+      }
+    }
     rows.push({
       name,
       entries: es.length,
       machine,
       human_owned: [...human].sort(),
+      human_values: humanValues,
+      // 证据元数据：值从哪份条目抄来、何时采的。抄了值却没记来源，
+      // 恢复时就分不清是「当时的事实」还是「谁改过的版本」——K8s managedFields 同款纪律。
+      human_values_source: es.length ? `platform/registry/projects/${es[0].id || name}.yaml` : '',
+      human_values_captured_at: new Date().toISOString(),
       launch_probe: launch ? { command: launch.command, basis: launch.basis } : null,
       git_remote: gi.repo,
       local_head: gi.branch,

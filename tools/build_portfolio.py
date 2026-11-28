@@ -68,7 +68,7 @@ def fetch_all(owner):
 
 
 def de_drive(s):
-    """去符盘：X:\\foo / X:/foo -> /foo（铁律 5）。"""  # gov-paths: allow —— 文档示例（讲解去盘符行为本身），非写死路径
+    """去符盘：X:\\foo / X:/foo -> /foo（铁律 5）。"""  # gov-paths: allow / gov-python: allow —— 文档示例（讲解去盘符行为本身），非写死路径
     if not s:
         return s
     return re.sub(r"(?<![A-Za-z0-9_])[A-Za-z]:[\\/]", "/", s).replace("\\\\", "/")
