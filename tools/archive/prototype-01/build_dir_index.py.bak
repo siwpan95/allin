@@ -4,7 +4,7 @@
 设计（2026-09-24 用户拍板）：
 - 以 README 为唯一事实源：每个项目一条记录 = 标题 + 首段摘要(≤120字) + README 相对链接
 - **不复制 README 正文**（避免制造第二份事实源）；要详情点进 README
-- 覆盖：G:\\repos(108) + G:\\local 的实质项目 + G:\\platform + G:\\tools + G:\\allin
+- 覆盖：G:\\repos(108) + G:\\local 的实质项目 + G:\\platform + G:\\tools + G:\\allin  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
 - 排除归档/备份/构建输出/注册目录（它们不是项目）
 - 缺 README 的项目**如实列出**（不静默跳过）—— 这是"如果没有需要补齐"的判据
 
@@ -13,9 +13,9 @@
   python build_dir_index.py --apply    # 写 G:\\allin\\目录索引.txt
 
 产物去向（2026-09-25 用户拍板：**不入库**）：
-  `G:\\allin\\.gitignore` 已含 `/目录索引.txt`。
+  `G:\\allin\\.gitignore` 已含 `/目录索引.txt`。  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
   理由：该文件曾逐次提交，**17 个历史版本累计 568 MB**，把 `.git` 撑到 **10.7 GB**
-  —— `git push` 因此**挂起 17 分钟不动**。已用 `G:\\tools\\filter-drop-dir-index.sh`
+  —— `git push` 因此**挂起 17 分钟不动**。已用 `G:\\tools\\filter-drop-dir-index.sh`  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
   从全部历史剔除，剔除 + `git gc --prune=now` 后 `.git` 降到 **14 MB**。
   索引可随时由本脚本重生成（命中体量缓存时 0.1 s），**无需版本化**。
   纪律：**改项目请改它的 README**；索引由本脚本产出，**不手改、不提交**。
@@ -29,17 +29,17 @@ import datetime
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-OUT = r"G:\allin\目录索引.txt"
+OUT = r"G:\allin\目录索引.txt"  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
 
 # 要扫描的根（有序）：(显示名, 绝对路径, 是否每个子目录都是一个项目)
 ROOTS = [
-    ("repos",     r"G:\repos",     True),
-    ("local",     r"G:\local",     True),
+    ("repos",     r"G:\repos",     True),  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
+    ("local",     r"G:\local",     True),  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
 ]
 SINGLES = [
-    ("allin-platform", r"G:\allin-platform", "README.md"),
-    ("tools",     r"G:\tools",     "README.md"),
-    ("allin",     r"G:\allin",     "README.md"),
+    ("allin-platform", r"G:\allin-platform", "README.md"),  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
+    ("tools",     r"G:\tools",     "README.md"),  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
+    ("allin",     r"G:\allin",     "README.md"),  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
 ]
 
 # 明确排除的目录名（归档/备份/构建/注册/临时 —— 不是项目）
@@ -181,14 +181,14 @@ def extract(text):
     return title, None
 
 
-CACHE = r"G:\tools\.dirsize-cache.json"
+CACHE = r"G:\tools\.dirsize-cache.json"  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
 
 
 def dir_size(p, memo=None, cache=None):
     """目录体量与文件数。带进程内 memo + 跨次运行的 JSON 缓存（按 mtime 失效）。
 
     为什么要缓存：全量 walk 每个项目目录要分钟级；而索引只需粗粒度体量，
-    绝大多数项目在两次生成之间没变。缓存放 G:\\tools（脚本区，非文档枢纽）。
+    绝大多数项目在两次生成之间没变。缓存放 G:\\tools（脚本区，非文档枢纽）。  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
     """
     memo = memo if memo is not None else {}
     if p in memo:
@@ -271,7 +271,7 @@ def main():
     buf.append("#")
     buf.append("# 形态：每个项目一条 = 标题 + 首段摘要 + README 相对链接 + 体量")
     buf.append("# 事实源：各项目自己的 README（本文件不复制正文，只做索引；改项目请改它的 README）")
-    buf.append(f"# 生成时间：{now}    生成器：G:\\tools\\build_dir_index.py")
+    buf.append(f"# 生成时间：{now}    生成器：G:\\tools\\build_dir_index.py")  # 已失效（归档快照：原型机 G:\ 仓根形态已不存在，见同目录 README）
     buf.append(f"# 条目：{len(entries)} 个项目    缺失 README：{len(missing)} 个")
     buf.append("#")
     buf.append("# 说明：本索引替代原「全盘文件快照」形态（原 48.53 MB / 555,220 行，"

@@ -32,9 +32,9 @@
 ## 二、启动与自愈
 
 ```powershell
-python start-dsh-web.py              # 安装、构建、启动；需要时自愈修复 checkout
-python start-dsh-web.py --check      # 体检：工具链、依赖、迁移、插件钉版
-python start-dsh-web.py --diagnose   # 启动并把服务端输出全部落到日志文件
+python start-dsh-web.py              # 安装、构建、启动；需要时自愈修复 checkout  gov-cmd: allow 由 DSH 分发包提供，不在本仓
+python start-dsh-web.py --check      # 体检：工具链、依赖、迁移、插件钉版  gov-cmd: allow 同上
+python start-dsh-web.py --diagnose   # 启动并把服务端输出全部落到日志文件  gov-cmd: allow 同上
 ```
 
 `finish-deploy.cmd` = 同样的活拆成四步手动跑（install → build → start → `--check`）。
