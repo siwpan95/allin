@@ -110,7 +110,10 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "allin-governance==2.4.2"
+          # 公共核版本只从 requirements-dev.txt 读，不在 CI 里手抄（2.4.2 漏改过一次）
+          AG_PIN=$(grep -E '^allin-governance==' requirements-dev.txt)
+          test -n "$AG_PIN" || { echo "requirements-dev.txt 缺 allin-governance pin"; exit 1; }
+          "$RUNNER_TEMP/ag/bin/python" -m pip install --quiet "$AG_PIN"
           "$RUNNER_TEMP/ag/bin/allin-governance" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance
@@ -171,7 +174,10 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ag"
           "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet --upgrade pip
-          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "allin-governance==2.4.2"
+          # 公共核版本只从 requirements-dev.txt 读，不在 CI 里手抄（2.4.2 漏改过一次）
+          AG_PIN=$(grep -E '^allin-governance==' requirements-dev.txt)
+          test -n "$AG_PIN" || { echo "requirements-dev.txt 缺 allin-governance pin"; exit 1; }
+          "$RUNNER_TEMP/ag/Scripts/python.exe" -m pip install --quiet "$AG_PIN"
           "$RUNNER_TEMP/ag/Scripts/allin-governance.exe" init "$RUNNER_TEMP/scaffold"
           cd "$RUNNER_TEMP/scaffold"
           npm run check:governance

@@ -188,7 +188,8 @@ stages:
         displayName: 可安装包 init 端到端（生成骨架 → 跑门禁）
         pythonVersion: "3.13"
         commands:
-          - python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple --extra-index-url https://pypi.org/simple "allin-governance==2.4.2" && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
+          # 公共核版本只从 requirements-dev.txt 读，不在 CI 里手抄（2.4.2 漏改过一次）
+          - AG_PIN=$(grep -E '^allin-governance==' requirements-dev.txt) && test -n "$AG_PIN" && python -m venv /tmp/ag && /tmp/ag/bin/python -m pip install --quiet --upgrade pip && /tmp/ag/bin/python -m pip install --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple --extra-index-url https://pypi.org/simple "$AG_PIN" && /tmp/ag/bin/allin-governance init /tmp/scaffold && cd /tmp/scaffold && npm run check:governance
         settings: []
         caches: []
         notify: []
