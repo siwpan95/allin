@@ -360,10 +360,23 @@ def planned_home(venv):
 
 
 def repair_home(venv):
-    """把 pyvenv.cfg 的 home 改写为本地可用基准解释器；只改 home 一行，其余历史行原样保留。"""
+    """把 pyvenv.cfg 的 home 改写为本地可用基准解释器；只改 home 一行，其余历史行原样保留。
+
+    ⚠️ 局限（2026-11-28 调研指出，未在本函数内修）：改写 home 只解决「路径不存在」，
+    不能解决 ABI 漂移——跨 minor 时 stdlib/扩展模块仍按旧基准编译。
+    正确做法是 `python -m venv --upgrade <venv>`（重建链接与 stdlib），由
+    `allin-governance venv rebuild` 承担；本函数保留给「同名小版本搬家」这一窄场景。
+    """
     base, old = planned_home(venv)
     if not base:
         return None, None
+    # 跨 minor 拒绝改写：把 ABI 问题伪装成「修好了」比不修更危险
+    def _mm(p):
+        import re as _re
+        m = _re.search(r"(\d+)\.(\d+)", str(p))
+        return ".".join(m.groups()) if m else ""
+    if old and _mm(old) and _mm(base) and _mm(old) != _mm(base):
+        return None, old
     cfg = os.path.join(venv, "pyvenv.cfg")
     try:
         with open(cfg, encoding="utf-8", errors="replace") as f:
